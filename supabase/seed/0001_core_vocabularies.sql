@@ -2,83 +2,63 @@
 --
 -- Only what is universal lives here: no country, no product, no market rule.
 -- Modules and country packs add their own rows with `published_by` set to
--- their code. Every class names the standard terms it corresponds to.
+-- their code. Every row names the standard terms it corresponds to.
 
 -- ---------------------------------------------------------------------------
--- Classes. Six roots, as in Brick plus the agents and collections of IFC and
--- NGSI-LD: location, element, equipment, point, agent, collection.
+-- Device types. The codes of Nexgen, in a tree aligned on Brick and IFC. The
+-- module that derives each type into its own table is named.
 -- ---------------------------------------------------------------------------
 
-insert into classes (code, name, parent_code, allowed_parents, brick_class, ifc_class, citygml_class, description) values
-  ('location',   'Location',   null, '{}', 'Location',   'IfcSpatialElement', null, 'Somewhere: a district, a site, a building, a storey, a room, a zone.'),
-  ('element',    'Building or landscape element', null, '{location,element}', null, 'IfcElement', null, 'A physical part of a place: a roof face, a wall, a slab, a window, a tree.'),
-  ('equipment',  'Equipment',  null, '{location,element,equipment}', 'Equipment', 'IfcDistributionElement', null, 'A device or system: a PV array, an inverter, a battery, a charger, a heat pump, a meter.'),
-  ('point',      'Point',      null, '{location,element,equipment}', 'Point', 'IfcSensor', null, 'A source or target of values over time: a sensor, a setpoint, a command, a meter channel.'),
-  ('agent',      'Agent',      null, '{"",agent}', null, 'IfcActor', null, 'A party: an organisation or a person.'),
-  ('collection', 'Collection', null, '{"",collection}', 'Collection', 'IfcGroup', null, 'A grouping that is not a place: a portfolio, an energy community, a programme.');
-
-insert into classes (code, name, parent_code, allowed_parents, brick_class, ifc_class, citygml_class, description) values
-  ('district',      'District',      'location', '{""}',                          'Region',   'IfcSite',            'CityObjectGroup', 'A neighbourhood, an industrial zone, a campus.'),
-  ('site',          'Site',          'location', '{"",district}',                 'Site',     'IfcSite',            null,               'A coherent property: a farm, a factory site, a school campus.'),
-  ('parcel',        'Parcel',        'location', '{"",district,site}',            'Site',     'IfcSite',            'LandUse',          'A cadastral parcel.'),
-  ('building',      'Building',      'location', '{"",district,site,parcel}',     'Building', 'IfcBuilding',        'Building',         'A building.'),
-  ('building_part', 'Building part', 'location', '{building}',                    'Building', 'IfcBuilding',        'BuildingPart',     'A wing or a part of a building with its own height or roof.'),
-  ('storey',        'Storey',        'location', '{building,building_part}',      'Floor',    'IfcBuildingStorey',  'Storey',           'A level of a building.'),
-  ('space',         'Space',         'location', '{storey,building,building_part}','Space',   'IfcSpace',           'BuildingRoom',     'A room or a unit: an office, a flat, a shop.'),
-  ('zone',          'Zone',          'location', '{building,building_part,storey,site}', 'Zone', 'IfcZone',         null,               'A grouping of spaces sharing a purpose: a thermal zone, a tenant lot, a fire compartment.'),
-  ('outdoor_area',  'Outdoor area',  'location', '{site,parcel,district}',        'Outdoor_Area', 'IfcSite',        'LandUse',          'A car park, a field, a courtyard.'),
-  ('connection_point','Grid connection point','location', '{site,parcel,building,building_part,storey,space,outdoor_area}', null, null, null, 'Where a place is connected to a network: the point a supplier, a tariff and a sharing key attach to. Its meters are devices that can be swapped.'),
-  ('infrastructure','Infrastructure','location', '{"",district,site,parcel}',     null,       'IfcFacility',        'CityFurniture',    'A built facility that is not a building: a canopy structure, a bridge, a road.');
-
-insert into classes (code, name, parent_code, allowed_parents, brick_class, ifc_class, citygml_class, description) values
-  ('roof',       'Roof face',    'element', '{building,building_part,infrastructure}', 'Roof', 'IfcRoof',     'RoofSurface',   'One planar face of a roof, with its azimuth and tilt.'),
-  ('wall',       'Wall',         'element', '{building,building_part,storey,space}',   'Wall', 'IfcWall',     'WallSurface',   'A wall or a facade face.'),
-  ('slab',       'Slab',         'element', '{building,building_part,storey}',         null,   'IfcSlab',     'FloorSurface',  'A floor or ground slab.'),
-  ('opening',    'Window or door','element','{wall,roof}',                             'Window','IfcWindow',  'Window',        'A window, a door, a skylight in a wall or a roof.'),
-  ('ground',     'Ground surface','element','{site,parcel,outdoor_area,district}',     null,   'IfcGeographicElement', 'LandUse', 'A ground surface: a field, a car park surface, a terrain patch.'),
-  ('vegetation', 'Vegetation',   'element', '{site,parcel,outdoor_area,district}',     null,   'IfcGeographicElement', 'SolitaryVegetationObject', 'A tree, a hedge, a planted area.');
-
-insert into classes (code, name, parent_code, allowed_parents, brick_class, ifc_class, citygml_class, description) values
-  ('generator',     'Generator',            'equipment', '{}', 'Electrical_Generation_Equipment', 'IfcElectricGenerator', null, 'Any electricity-producing equipment.'),
-  ('pv_array',      'PV array',             'generator', '{}', 'PV_Array',            'IfcSolarDevice',          null, 'Photovoltaic modules sharing one orientation.'),
-  ('wind_turbine',  'Wind turbine',         'generator', '{}', 'Wind_Turbine',        'IfcElectricGenerator',    null, 'A wind turbine.'),
-  ('inverter',      'Inverter',             'equipment', '{}', 'Inverter',            'IfcElectricFlowStorageDevice', null, 'A power converter between DC and AC.'),
-  ('battery',       'Battery',              'equipment', '{}', 'Battery',             'IfcElectricFlowStorageDevice', null, 'An electrical energy storage system.'),
-  ('ev_charger',    'EV charger',           'equipment', '{}', 'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', null, 'An electric vehicle charging station.'),
-  ('heat_pump',     'Heat pump',            'equipment', '{}', 'Heat_Pump',           'IfcUnitaryEquipment',     null, 'A heat pump.'),
-  ('boiler',        'Boiler',               'equipment', '{}', 'Boiler',              'IfcBoiler',               null, 'A boiler.'),
-  ('hvac_unit',     'Air handling unit',    'equipment', '{}', 'AHU',                 'IfcUnitaryEquipment',     null, 'An air handling or ventilation unit.'),
-  ('meter',         'Meter',                'equipment', '{}', 'Meter',               'IfcFlowMeter',            null, 'A metering device.'),
-  ('electricity_meter','Electricity meter', 'meter',     '{}', 'Electrical_Meter',    'IfcFlowMeter',            null, 'An electricity meter.'),
-  ('gas_meter',     'Gas meter',            'meter',     '{}', 'Gas_Meter',           'IfcFlowMeter',            null, 'A gas meter.'),
-  ('heat_meter',    'Heat meter',           'meter',     '{}', 'Thermal_Energy_Meter','IfcFlowMeter',            null, 'A heat meter.'),
-  ('water_meter',   'Water meter',          'meter',     '{}', 'Water_Meter',         'IfcFlowMeter',            null, 'A water meter.');
-
-insert into classes (code, name, parent_code, allowed_parents, brick_class, ifc_class, citygml_class, description) values
-  ('sensor',        'Sensor',               'point', '{}', 'Sensor',   'IfcSensor',   null, 'Measures something.'),
-  ('setpoint',      'Setpoint',             'point', '{}', 'Setpoint', 'IfcController', null, 'A target value asked of a device.'),
-  ('command',       'Command',              'point', '{}', 'Command',  'IfcActuator', null, 'An order sent to a device.'),
-  ('organisation',  'Organisation',         'agent', '{}', null,       'IfcOrganization', null, 'A company, a public body, an association.'),
-  ('person',        'Person',               'agent', '{}', null,       'IfcPerson',   null, 'A natural person. Hold only what the purpose requires.'),
-  ('portfolio',     'Portfolio',            'collection', '{}', 'Collection', 'IfcGroup', null, 'A set of places managed together.'),
-  ('energy_community','Energy community',   'collection', '{}', 'Collection', 'IfcGroup', null, 'Participants sharing energy under a set of rules.');
+insert into device_types (code, name, parent_code, module_code, brick_class, ifc_class, description) values
+  ('generator',  'Generator',          null,        'energy',  'Electrical_Generation_Equipment', 'IfcElectricGenerator', 'Any electricity-producing device.'),
+  ('solar',      'PV system',          'generator', 'energy',  'PV_Array',            'IfcSolarDevice',          'Photovoltaic modules and their inverters.'),
+  ('wind',       'Wind turbine',       'generator', 'energy',  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
+  ('hydro',      'Hydro turbine',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
+  ('chp',        'Combined heat and power', 'generator', 'energy', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
+  ('biomass',    'Biomass plant',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
+  ('inverter',   'Inverter',           null,        'energy',  'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
+  ('battery',    'Battery',            null,        'energy',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
+  ('ev',         'EV charging station', null,       'energy',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
+  ('heatpump',   'Heat pump',          null,        'heating', 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
+  ('boiler',     'Boiler',             null,        'heating', 'Boiler',              'IfcBoiler',               'A boiler.'),
+  ('geothermal', 'Geothermal system',  null,        'heating', null,                  'IfcUnitaryEquipment',     'A ground-source heat exchange system.'),
+  ('hvac',       'Air handling unit',  null,        'heating', 'AHU',                 'IfcUnitaryEquipment',     'An air handling or ventilation unit.'),
+  ('meter',      'Meter',              null,        'grid',    'Meter',               'IfcFlowMeter',            'A physical metering device, on a connection point.'),
+  ('sensor_box', 'Sensor box',         null,        'monitoring',     'Sensor',              'IfcSensor',               'A device whose only job is to carry sensors.'),
+  ('controller', 'Controller',         null,        'monitoring',     'Controller',          'IfcController',           'A gateway or controller that drives other devices.');
 
 -- ---------------------------------------------------------------------------
--- Relation types.
+-- Profiles: what a building or a site is used for.
 -- ---------------------------------------------------------------------------
 
-insert into relation_types (code, name, inverse_name, subject_class, object_class, brick_relation, ifc_relation, description) values
-  ('feeds',        'feeds',          'is fed by',        'equipment', null,        'feeds',        'IfcRelConnectsPorts',       'Energy or a medium flows from the subject to the object.'),
-  ('monitors',     'monitors',       'is monitored by',  'point',     null,        'isPointOf',    'IfcRelAssignsToControl',    'The point measures or controls the object.'),
-  ('meters',       'meters',         'is metered by',    'meter',     null,        'meters',       null,                        'The meter measures what the object consumes or produces.'),
-  ('mounted_on',   'is mounted on',  'carries',          'equipment', 'element',   'hasLocation',  'IfcRelConnectsElements',    'The equipment is installed on the element (an array on a roof face).'),
-  ('serves',       'serves',         'is served by',     null,        'location',  'feeds',        'IfcRelServicesBuildings',   'The subject serves the place (a heat pump serves a zone).'),
-  ('shades',       'shades',         'is shaded by',     null,        null,        null,           null,                        'The subject casts shade on the object.'),
-  ('adjacent_to',  'is adjacent to', 'is adjacent to',   'location',  'location',  null,           'IfcRelSpaceBoundary',       'The two places share a boundary.'),
-  ('owns',         'owns',           'is owned by',      'agent',     null,        null,           'IfcRelAssignsToActor',      'Ownership.'),
-  ('occupies',     'occupies',       'is occupied by',   'agent',     'location',  null,           'IfcRelOccupiesSpaces',      'Occupation: a tenant, a resident.'),
-  ('operates',     'operates',       'is operated by',   'agent',     null,        null,           'IfcRelAssignsToActor',      'Operation and maintenance responsibility.'),
-  ('member_of',    'is member of',   'has member',       null,        'collection','isPartOf',     'IfcRelAssignsToGroup',      'Membership of a collection (a site in a portfolio, a participant in a community).');
+insert into profiles (code, name, nature, ifc_occupancy, citygml_function, description) values
+  ('residential', 'Residential',        'building', 'Residential',  'residential', 'Dwellings: a house, a flat, a block.'),
+  ('office',      'Office',             'building', 'Office',       'office',      'Office space.'),
+  ('school',      'School',             'building', 'Education',    'school',      'A school, a nursery, a training centre.'),
+  ('retail',      'Retail',             'building', 'Retail',       'retail',      'A shop, a supermarket.'),
+  ('industrial',  'Industrial',         'building', 'Industrial',   'industry',    'A factory, a workshop.'),
+  ('warehouse',   'Warehouse',          'building', 'Storage',      'warehouse',   'A storage or logistics hall.'),
+  ('agricultural','Agricultural',       'building', 'Agricultural', 'agriculture', 'A barn, a stable, a greenhouse.'),
+  ('public',      'Public building',    'building', 'Public',       'public',      'A town hall, a library, a sports hall.'),
+  ('healthcare',  'Healthcare',         'building', 'Healthcare',   'hospital',    'A hospital, a care home.'),
+  ('hospitality', 'Hospitality',        'building', 'Hotel',        'hotel',       'A hotel, a restaurant.'),
+  ('mixed',       'Mixed use',          'building', 'Mixed',        'mixed',       'Several uses in one building.'),
+  ('plant',       'Production site',    'site',     null,           'industry',    'A site whose purpose is a plant: a PV field, a wind farm.'),
+  ('car_park',    'Car park',           'site',     null,           'parking',     'An open car park.'),
+  ('land',        'Land',               'site',     null,           'agriculture', 'A field, a meadow, a wood.');
+
+-- ---------------------------------------------------------------------------
+-- Link types. Kinds refer to objects.kind.
+-- ---------------------------------------------------------------------------
+
+insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, brick_relation, ifc_relation, description) values
+  ('feeds',     'feeds',          'is fed by',       '{device}',       null,                 'feeds',       'IfcRelConnectsPorts',     'Energy or a medium flows from the subject to the object.'),
+  ('serves',    'serves',         'is served by',    '{device}',       null,                 'feeds',       'IfcRelServicesBuildings', 'The device serves the place (a heat pump serves a building).'),
+  ('shades',    'shades',         'is shaded by',    null,             null,                 null,          null,                      'The subject casts shade on the object.'),
+  ('adjacent_to','is adjacent to','is adjacent to',  null,             null,                 null,          'IfcRelSpaceBoundary',     'The two objects share a boundary.'),
+  ('owns',      'owns',           'is owned by',     '{participant}',  null,                 null,          'IfcRelAssignsToActor',    'Ownership, read from the participant (its contact owns the object).'),
+  ('occupies',  'occupies',       'is occupied by',  '{participant}',  null,                 null,          'IfcRelOccupiesSpaces',    'Occupation: a tenant, a resident, for a period.'),
+  ('operates',  'operates',       'is operated by',  '{participant}',  null,                 null,          'IfcRelAssignsToActor',    'Operation and maintenance responsibility.');
 
 -- ---------------------------------------------------------------------------
 -- Quantities, each with the one unit it is stored in (QUDT unit codes).
@@ -93,6 +73,7 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) value
   ('relative_humidity',   'Relative humidity',            'PERCENT',    'mean', 'RelativeHumidity'),
   ('co2_concentration',   'CO2 concentration',            'PPM',        'mean', 'DimensionlessRatio'),
   ('irradiance',          'Irradiance',                   'W-PER-M2',   'mean', 'Irradiance'),
+  ('occupancy',           'Occupancy',                    'NUM',        'last', 'Count'),
   ('state_of_charge',     'State of charge',              'PERCENT',    'last', 'DimensionlessRatio'),
   ('volume',              'Volume',                       'M3',         'sum',  'Volume'),
   ('mass_co2e',           'Greenhouse gas emissions',     'KiloGM',     'sum',  'Mass'),
@@ -102,25 +83,21 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) value
   ('ratio',               'Ratio',                        'UNITLESS',   'last', 'DimensionlessRatio');
 
 -- ---------------------------------------------------------------------------
--- Property definitions (bSDD / IFC property sets where they exist).
+-- Property definitions: attributes beyond the columns (bSDD / IFC property
+-- sets where they exist). Kinds refer to objects.kind.
 -- ---------------------------------------------------------------------------
 
-insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, applies_to, ifc_pset, ifc_property) values
-  ('gross_floor_area',     'Gross floor area',      'number',  'area',   0,    null, 'location',  'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
-  ('year_of_construction', 'Year of construction',  'integer', null,     1000, 2200, 'location',  'Pset_BuildingCommon',        'YearOfConstruction'),
-  ('number_of_storeys',    'Number of storeys',     'integer', null,     0,    300,  'location',  'Pset_BuildingCommon',        'NumberOfStoreys'),
-  ('occupancy_type',       'Occupancy type',        'text',    null,     null, null, 'location',  'Pset_BuildingCommon',        'OccupancyType'),
-  ('roof_area',            'Roof area',             'number',  'area',   0,    null, 'element',   'Qto_RoofBaseQuantities',     'GrossArea'),
-  ('thermal_transmittance','Thermal transmittance', 'number',  'thermal_transmittance', 0, null, 'element', 'Pset_WallCommon', 'ThermalTransmittance'),
-  ('is_external',          'Is external',           'boolean', null,     null, null, 'element',   'Pset_WallCommon',            'IsExternal'),
-  ('rated_power',          'Rated power',           'number',  'power',  0,    null, 'equipment', 'Pset_ElectricGeneratorTypeCommon', 'MaximumPowerOutput'),
-  ('peak_power',           'Peak power',            'number',  'power',  0,    null, 'generator', 'Pset_SolarDeviceTypeCommon', 'NominalPower'),
-  ('energy_capacity',      'Energy capacity',       'number',  'energy', 0,    null, 'battery',   'Pset_ElectricFlowStorageDeviceTypeCommon', 'NominalSupplyCurrent'),
-  ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    'equipment', null,                         null),
-  ('manufacturer',         'Manufacturer',          'text',    null,     null, null, null,        'Pset_ManufacturerTypeInformation', 'Manufacturer'),
-  ('model_reference',      'Model reference',       'text',    null,     null, null, null,        'Pset_ManufacturerTypeInformation', 'ModelReference'),
-  ('commissioning_date',   'Commissioning date',    'date',    null,     null, null, 'equipment', 'Pset_ManufacturerOccurrence', 'AcquisitionDate'),
-  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null,        null,                         null);
+insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
+  ('gross_floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building}',          'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
+  ('occupancy_type',       'Occupancy type',        'text',    null,     null, null, null, '{building,site}',     'Pset_BuildingCommon',        'OccupancyType'),
+  ('energy_label',         'Energy label',          'text',    null,     null, null, '{A+,A,B,C,D,E,F,G}', '{building}', null,               null),
+  ('roof_area',            'Roof area',             'number',  'area',   0,    null, null, '{surface}',           'Qto_RoofBaseQuantities',     'GrossArea'),
+  ('thermal_transmittance','Thermal transmittance', 'number',  'thermal_transmittance', 0, null, null, '{surface}', 'Pset_WallCommon',        'ThermalTransmittance'),
+  ('is_external',          'Is external',           'boolean', null,     null, null, null, '{surface}',           'Pset_WallCommon',            'IsExternal'),
+  ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
+  ('commissioning_date',   'Commissioning date',    'date',    null,     null, null, null, '{device}',            'Pset_ManufacturerOccurrence', 'AcquisitionDate'),
+  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
+  ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
 
 -- ---------------------------------------------------------------------------
 -- Tags (Project Haystack markers where one exists).
@@ -138,12 +115,26 @@ insert into tags (code, name, haystack_tag, description) values
   ('writable',        'Writable',            'writable','Accepts values sent to it (setpoints, commands).');
 
 -- ---------------------------------------------------------------------------
+-- Sources that are worldwide and open. National ones (cadastres, LiDAR,
+-- grid operators' hubs) come with country packs; commercial APIs with the
+-- modules that use them.
+-- ---------------------------------------------------------------------------
+
+insert into sources (code, name, kind, base_url, docs_url, auth, licence, attribution, description) values
+  ('openstreetmap', 'OpenStreetMap',        'api',  'https://overpass-api.de/api/',         'https://wiki.openstreetmap.org/wiki/Overpass_API', 'none', 'ODbL-1.0', '© OpenStreetMap contributors', 'Footprints, heights, tags and addresses of the world, through the Overpass API.'),
+  ('overture',      'Overture Maps',        'file', 'https://overturemaps.org/',            'https://docs.overturemaps.org/', 'none', 'ODbL-1.0 / CDLA-Permissive-2.0', '© Overture Maps Foundation', 'Buildings, places and addresses with stable GERS identifiers, as downloadable datasets.'),
+  ('wikidata',      'Wikidata',             'api',  'https://www.wikidata.org/w/api.php',   'https://www.wikidata.org/wiki/Wikidata:Data_access', 'none', 'CC0-1.0', null, 'Named places and organisations.'),
+  ('copernicus_dem','Copernicus DEM GLO-30','file', 'https://dataspace.copernicus.eu/',     'https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model', 'none', 'Copernicus licence', '© European Union, Copernicus', 'Ground elevation at 30 m, worldwide.'),
+  ('pvgis',         'PVGIS',                'api',  'https://re.jrc.ec.europa.eu/api/v5_3/', 'https://joint-research-centre.ec.europa.eu/pvgis-online-tool_en', 'none', 'CC-BY-4.0', '© European Union, JRC', 'Solar irradiation and PV production estimates, worldwide.'),
+  ('open_meteo',    'Open-Meteo',           'api',  'https://api.open-meteo.com/v1/',       'https://open-meteo.com/en/docs', 'none', 'CC-BY-4.0', '© Open-Meteo', 'Weather history and forecasts, worldwide.');
+
+-- ---------------------------------------------------------------------------
 -- Identifier schemes that are global. National ones come with country packs.
 -- ---------------------------------------------------------------------------
 
-insert into id_schemes (code, name, pattern, url_template, description) values
-  ('ifc_guid',      'IFC GlobalId',               '^[0-9A-Za-z_$]{22}$', null, 'The compressed GUID of an IFC object.'),
-  ('osm',           'OpenStreetMap',              '^(node|way|relation)/[0-9]+$', 'https://www.openstreetmap.org/{value}', 'An OpenStreetMap element.'),
-  ('overture_gers', 'Overture GERS',              '^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$', null, 'Global Entity Reference System identifier of Overture Maps.'),
-  ('wikidata',      'Wikidata',                   '^Q[0-9]+$', 'https://www.wikidata.org/wiki/{value}', 'A Wikidata item.'),
-  ('gs1_gsrn',      'GS1 Global Service Relation Number', '^[0-9]{18}$', null, 'The 18-digit GS1 number used for metering points in many countries.');
+insert into id_schemes (code, name, pattern, url_template, source_code, description) values
+  ('ifc_guid',      'IFC GlobalId',               '^[0-9A-Za-z_$]{22}$', null, null, 'The compressed GUID of an IFC object.'),
+  ('osm',           'OpenStreetMap',              '^(node|way|relation)/[0-9]+$', 'https://www.openstreetmap.org/{value}', 'openstreetmap', 'An OpenStreetMap element.'),
+  ('overture_gers', 'Overture GERS',              '^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$', null, 'overture', 'Global Entity Reference System identifier of Overture Maps.'),
+  ('wikidata',      'Wikidata',                   '^Q[0-9]+$', 'https://www.wikidata.org/wiki/{value}', 'wikidata', 'A Wikidata item.'),
+  ('gs1_gsrn',      'GS1 Global Service Relation Number', '^[0-9]{18}$', null, null, 'The 18-digit GS1 number used for metering points in many countries.');

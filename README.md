@@ -1,48 +1,50 @@
 # Nexgen OS
 
-An open foundation for describing the built world — districts, parcels,
-buildings, storeys, rooms, roofs, walls, equipment, sensors, organisations —
-in 3D and over time, so that architecture, energy, operations and
-compliance tools share one model.
+An open foundation for describing the built world — sites, buildings, roofs,
+meters, participants, devices, sensors — in 3D and over time, so that
+architecture, energy, operations and compliance tools share one model.
 
 Why it exists and what it promises: [MANIFESTO.md](MANIFESTO.md).
 
-> Status: **0.0 — the core schema**. No module, no pack, no format library is
-> published yet. The core is tested; nothing here is stable until 0.1.
+> Status: **0.0 — the core schema and the `architecture` module**. No pack
+> and no format library is published yet. The core is tested; nothing here is
+> stable until 0.1.
 
 ## The model in one screen
 
-Everything is an **entity**. What it is comes from a vocabulary; what is
-known about it is attached to it.
+The core names its objects after what the trades call them. Each is a table;
+what a trade knows beyond its columns is attached to it.
 
 | Table | Holds | Standard it follows |
 |---|---|---|
-| `entities` | everything that can be described, in one containment tree, with a main 3D shape, orientation, tags, lifecycle status | Brick entity, IFC spatial decomposition, NGSI-LD entity |
-| `entity_values` | typed values with validity periods and provenance (floor area, year built, peak power, U-value…) | IFC property sets, bSDD properties |
-| `relationships` | typed links: feeds, monitors, meters, mounted on, serves, shades, owns, occupies, member of | Brick relationships, IFC relationships |
-| `representations` | shapes and files: outlines, LoD blocks, roof models, meshes, BIM models, point clouds, orthophotos, images, videos, 3D tiles | CityGML / CityJSON levels of detail |
-| `external_ids` | identifiers known elsewhere, with validity | IFC GlobalId, OSM, Overture GERS, GS1, national registers |
-| `entity_lineage` | splits, merges, replacements | Overture GERS changelog |
-| `datastreams` / `observations` | measured, simulated, forecast series and setpoints | OGC SensorThings, Brick points |
-| `scenarios` | design variants: what exists (null) and what is proposed | IFC5 layers, OpenStudio measures |
-| `runs` | results of module computations, immutable and reproducible | — |
-| `classes`, `relation_types`, `property_defs`, `quantities`, `tags`, `id_schemes` | the vocabularies, as data | Brick, IFC, CityGML, bSDD, QUDT, Haystack |
+| `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; legal identity and invoicing are referenced from Ekwo OS | Ekwo companies and contacts |
+| `projects` | a working perimeter: energy community, portfolio, study, district plan | Nexgen projects |
+| `sites`, `buildings`, `surfaces` | places: an address and a parcel, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
+| `meters`, `participants` | connection points, and a site's role in a project behind them | IEC CIM UsagePoint, Nexgen participants |
+| `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
+| `series`, `readings` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
+| `attributes`, `external_ids`, `links`, `lineage`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
+| `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | — |
+| `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |
 
-Details, diagram and rules: [docs/model.md](docs/model.md).
+Details, diagram and rules: [docs/model.md](docs/model.md). Why named
+objects: [docs/decisions/0006](docs/decisions/0006-named-objects.md).
 
 ## Principles
 
-1. **One description, attached to.** No table per kind of thing: a new kind is
-   a vocabulary row, published by a module or a pack.
+1. **Concrete objects, generic attachments.** A building is a row of
+   `buildings`. A new kind of thing is a module table with the same id; a new
+   property is a vocabulary row; a new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
    falls in, anywhere on earth.
-3. **One way to read.** `entity_properties()` for values, `series()` for time
-   series, `entity_subtree()` for containment, `lod1_block()` for a derived
-   3D block.
+3. **One way to read.** `attributes_of()` for attributes, `resample()` for
+   series, `site_of()` and `country_of()` for where, `lod1_block()` for a
+   derived 3D block.
 4. **Deterministic core.** Nothing in the core calls a model. Modules hand
    results back through `record_run()`: same inputs, same engine, same run.
-5. **Modules in their own schema, countries as data, formats by format.**
+5. **Modules in their own schema, countries as data, formats by format,
+   invoices in Ekwo.**
 
 ## Run the tests
 
@@ -52,19 +54,22 @@ npm test        # PGlite + PostGIS in WebAssembly, no server needed
 npm run typecheck
 ```
 
-The tests describe four cases end to end: a house (tree, roof, PV,
-values over time, drone capture, scenario), a hall with three tenants
-(connection points, meter swap, occupancy, community, sensors, setpoints,
-cumulative registers), a district from open data (projected CRS, OSM
-identifiers, spatial queries, shading, parcel split) and security (row level
-security, viewers, run immutability, vocabulary hygiene).
+The tests describe five cases end to end: a house (site, building, roof
+face, PV system derived by a module, attributes over time, documents,
+scenario), a school with the `architecture` module (storeys, rooms, sensors
+for several quantities, setpoints, a heat pump serving the building), an
+energy community (project, participants behind their meters, contacts,
+groups, meter swap, cumulative register, a site in two projects), a district
+from open data (projected CRS, OSM identifiers, spatial queries, shading,
+plot split) and security (row level security, viewers, run immutability,
+vocabulary hygiene).
 
 ## Layout
 
 ```
 supabase/migrations/   the core schema
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (none yet)
+modules/               one Postgres schema per module (architecture shipped)
 packs/                 one folder per country (none yet)
 formats/               one MIT library per format (none yet)
 docs/                  model, decisions, research

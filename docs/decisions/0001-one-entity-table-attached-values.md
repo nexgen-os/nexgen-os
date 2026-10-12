@@ -1,6 +1,10 @@
 # 0001 — One entity table, with everything else attached to it
 
-**Decided 12/10/2026.**
+**Decided 12/10/2026. Withdrawn the same evening by [0006](0006-named-objects.md):**
+the generic entity was too abstract to work with; the core now names its
+objects. What survives of this decision is the attachment pattern (attributes,
+identifiers, links, series, documents attach to any object through one
+registry) and the vocabularies as data.
 
 A building, a storey, a roof face, a PV array, a sensor and an organisation are
 all rows of `entities`. What each one is comes from a vocabulary (`classes`).

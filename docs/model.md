@@ -2,109 +2,135 @@
 
 ```mermaid
 erDiagram
-  workspaces ||--o{ workspace_members : "who may work"
-  workspaces ||--o{ entities : owns
-  workspaces ||--o{ scenarios : owns
-  classes ||--o{ entities : "is a"
-  entities ||--o{ entities : contains
-  entities ||--o{ entity_values : "has values"
-  property_defs ||--o{ entity_values : types
-  quantities ||--o{ property_defs : "unit of"
-  entities ||--o{ relationships : subject
-  entities ||--o{ relationships : object
-  relation_types ||--o{ relationships : types
-  entities ||--o{ representations : "shown by"
-  entities ||--o{ external_ids : "known as"
-  id_schemes ||--o{ external_ids : scheme
-  entities ||--o{ entity_lineage : "became"
-  entities ||--o{ datastreams : observed
-  quantities ||--o{ datastreams : measures
-  datastreams ||--o{ observations : values
-  scenarios ||--o{ entities : "only in"
-  scenarios ||--o{ scenarios : "builds on"
-  entities ||--o{ runs : subject
+  organisations ||--o{ organisation_members : "who may work"
+  organisations ||--o{ contacts : "deals with"
+  organisations ||--o{ projects : owns
+  organisations ||--o{ sites : owns
+  sites ||--o{ buildings : holds
+  buildings ||--o{ surfaces : "roof faces, facades"
+  sites ||--o{ surfaces : "ground areas"
+  sites ||--o{ meters : "connection points"
+  projects ||--o{ participants : "takes part"
+  sites ||--o{ participants : "as"
+  contacts ||--o{ participants : "answers for"
+  participants ||--o{ participants : groups
+  sites ||--o{ devices : installed
+  surfaces ||--o{ devices : "mounted on"
+  meters ||--o{ devices : behind
+  device_directory ||--o{ devices : "instance of"
+  objects ||--o{ sensors : "point of"
+  objects ||--o{ series : observed
+  series ||--o{ readings : values
+  objects ||--o{ attributes : "has"
+  objects ||--o{ external_ids : "known as"
+  objects ||--o{ links : "subject / object"
+  objects ||--o{ documents : "files"
+  objects ||--o{ runs : subject
+  scenarios ||--o{ objects : "only in"
   modules ||--o{ runs : computed
 ```
 
-## Entities
+`objects` is the registry: one row per project, site, building, surface,
+meter, participant, device or sensor (and per storey or space of the
+`architecture` module), with its kind, its organisation and its scenario.
+The named tables keep it up to date by trigger. Attachments point to it;
+pages read the named tables.
 
-One table holds everything that can be described. The six root classes:
+## Who
 
-| Root | Examples | Brick | IFC |
-|---|---|---|---|
-| `location` | district, site, parcel, building, building part, storey, space, zone, outdoor area, grid connection point, infrastructure | Location | IfcSpatialElement |
-| `element` | roof face, wall, slab, window or door, ground surface, vegetation | — | IfcElement |
-| `equipment` | PV array, wind turbine, inverter, battery, EV charger, heat pump, boiler, air handling unit, meters | Equipment | IfcDistributionElement |
-| `point` | sensor, setpoint, command | Point | IfcSensor / IfcController / IfcActuator |
-| `agent` | organisation, person | — | IfcActor |
-| `collection` | portfolio, energy community | Collection | IfcGroup |
+- **organisations** — the tenant, with its members (`owner`, `editor`,
+  `viewer`). Its legal identity is its Ekwo company (`ekwo_company_id`).
+- **contacts** — a person or a company: an owner, a tenant, an installer, a
+  grid operator. An Ekwo contact (`ekwo_contact_id`): legal form, numbers,
+  addresses, bank details and invoices live there.
 
-Containment (`parent_id`) is a tree, checked against `classes.allowed_parents`
-by class ancestry: a storey sits in a building, a room in a storey, an
-inverter in a building or in another piece of equipment. Every other link is a
-relationship.
+## Where
 
-Each entity has one main shape (`geometry`) plus `elevation_m`, `height_m`,
-`azimuth_deg` and `tilt_deg`. That is enough for a level-of-detail 1 block
-(`lod1_block()`) and for any planar computation on a roof face. Richer shapes
-are representations.
+- **projects** — a working perimeter (energy community, portfolio, study,
+  district plan) with a country, a lifecycle (`simulation`, `creation`,
+  `active`, `inactive`, `archived`) and, when it has one, a perimeter.
+- **sites** — an address, a country, a parcel or a point, a profile (what it
+  is used for). Everything on a site inherits its country: `country_of()`.
+- **buildings** — footprint, elevation, height, storeys, year, profile,
+  lifecycle. `lod1_block()` extrudes the footprint.
+- **surfaces** — a roof face, a facade, a ground area or a canopy, on a
+  building or a site, with azimuth and tilt.
 
-## Attached to an entity
+## The grid side
 
-- **Values** (`entity_values`): one row per property and validity period.
-  History is kept by closing a period and opening the next. Two values of the
-  same property never overlap in the same scenario. Numbers are always in the
-  unit of the property's quantity. Read them with
-  `entity_properties(entity, at, scenario)`.
-- **Relationships**: typed and dated. The relation type may require a class on
-  either side (`occupies` goes from an agent to a location).
-- **Representations**: several per entity, each with its kind, its level of
-  detail (0, 1, 1.2, 1.3, 2, 2.2, 3), its geometry or the URI of a file, its
-  source and capture date. Heavy files (point clouds, meshes, BIM models,
-  videos, 3D tiles) stay in object storage. Only their registry row is in
-  Postgres.
-- **External identifiers**: unique per scheme in a workspace, checked against
-  the scheme's pattern, with validity periods.
-- **Lineage**: when an entity is split, merged or replaced, the old and new
-  entities are linked. Identifiers never encode anything and are never reused.
-- **Tags**: marker tags from `tags`, checked on use.
+- **meters** — a connection point: identifier and scheme (checked against
+  the scheme's pattern), commodity, direction, grid operator, validity. The
+  physical meter is a device of type `meter` on it and can be swapped.
+- **participants** — a site's role in a project: `producer`, `consumer` or
+  `prosumer`, with the contact who answers for it, a status, a join and
+  leave date (a site is in a project once at a time), and a parent for
+  groups. `participant_meters()` gives the meters behind a participant,
+  groups included.
 
-## Series
+## What
 
-A **datastream** is one quantity observed on one entity. It says what kind it
-is (`measured`, `simulated`, `forecast`, `setpoint`), what one value means
-(`interval`, `instant`, `cumulative`) and at which step it comes, and it may
-name the sensor or meter entity that produces it. **Observations** are its
-timestamped values, with a quality flag. `series(datastream, from, to, step)`
-resamples any series by the aggregation of its quantity. It is the one way
-pages and modules read series.
+- **devices** — type (from `device_types`), site, building, surface and
+  meter (all on the same site), catalogue product, manufacturer, model, rated
+  power, unit count, geometry, status. A module derives the types it owns:
+  `call derive_devices('energy.pv_systems', 'solar')` makes a table with the
+  same id, refused for any other type.
+- **device_directory** — products: manufacturer, model, unit power, capacity,
+  surface, price. Shared rows (`organisation_id` null) come from modules and
+  packs.
+- **sensors** — a point of any object (`host_id`): quantity, kind (`sensor`,
+  `setpoint`, `command`), the address a connector reads it at.
 
-## Scenarios
+## Attached to any object
 
-`scenario_id is null` is the world as it is. A scenario holds what a design
-variant adds: entities, values that override reality, relationships, series.
-A scenario may build on another one. `entity_properties` reads reality with
-the scenario chain's overrides applied in order.
+- **attributes** — one row per property and validity period, typed by
+  `property_defs` (datatype, unit, range, allowed values, kinds it applies
+  to). History is kept by closing a period and opening the next; two values
+  never overlap in the same scenario. Read with `attributes_of(object, at,
+  scenario)`.
+- **external_ids** — unique per scheme in an organisation, checked against
+  the scheme's pattern, with validity.
+- **links** — typed and dated (`serves`, `shades`, `occupies`, `owns`…); the
+  link type may require kinds on either side.
+- **lineage** — splits, merges, replacements. Identifiers never encode
+  anything and are never reused.
+- **documents** — permit, datasheet, report, photo, video, plan: a URI, a
+  media type, a source, a capture date. Heavy files stay in object storage.
+  3D models and point clouds are the `3d` module's.
+- **tags** — marker tags from `tags`, checked on write.
 
-## Runs
+## Over time
 
-A module hands its result back with
-`record_run(module, engine_version, subject, scenario, inputs, results)`.
-The run's identity is the sha256 of the module, the engine version, the
-subject, the scenario and the canonical inputs. The same identity returns the
-same run, and a finished run never changes.
+- **series** — one quantity on one object, `measured`, `simulated`,
+  `forecast` or `setpoint`; what one value means (`interval`, `instant`,
+  `cumulative`); its step; the sensor that produces it; its source.
+- **readings** — timestamped values with a quality flag.
+  `resample(series, from, to, step)` is the one way series are read.
+- **scenarios** — `scenario_id is null` is the world as it is. A scenario
+  holds what a variant adds: objects, attributes that override reality,
+  series. A scenario may build on another one.
+- **runs** — `record_run(module, engine_version, subject, scenario, inputs,
+  results)`: same identity, same run; a finished run never changes.
+
+## Vocabularies
+
+`device_types` (with the module that derives each), `profiles` (uses of a
+building or a site), `link_types`, `quantities` (one unit each, QUDT),
+`property_defs` (bSDD / IFC), `tags` (Haystack), `id_schemes` and `sources`
+(the external APIs and datasets: base URL, authentication type, licence,
+attribution, countries). Read by everyone signed in, written by migrations,
+seeds, modules and packs.
 
 ## Geometry
 
-Geometry is stored in EPSG:4326, always in three dimensions, with Z in metres
-above sea level. Any CRS is accepted on the way in, through GeoJSON `crs` or
-an SRID. `to_core_geometry()` transforms, validates and lifts the shape to 3D.
-`metric_srid()` gives the UTM zone of any shape, so areas and distances are in
-metres anywhere, without a national grid. `plan_area_m2()` uses it.
+Stored in EPSG:4326, always in three dimensions, Z in metres above sea
+level. Any CRS is accepted on the way in, through GeoJSON `crs` or an SRID.
+`to_core_geometry()` transforms, validates and lifts the shape to 3D;
+`metric_srid()` gives the UTM zone of any shape, so `plan_area_m2()` and
+distances are in metres anywhere, without a national grid.
 
 ## Security
 
-Every table carries `workspace_id`, copied by trigger from the entity it
-attaches to. Row level security reads that one column: `owner` and `editor`
-write, `viewer` reads. Vocabularies are read by everyone signed in and written
-only by migrations and seeds.
+Every table carries `organisation_id`, copied by trigger from the object an
+attachment points to. `secure_table()` applies the two policies: members
+read, owners and editors write. Objects named by a foreign key are checked
+to be in the same organisation and compatible scenario (`parent_check`).

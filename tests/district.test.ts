@@ -1,13 +1,13 @@
-// A district surveyed from open data: footprints arriving in a projected CRS
-// (UTM 28N here) and in WGS 84, buildings known by their OpenStreetMap and
-// Overture identifiers, a tree shading a roof, a parcel split in two, and a
-// spatial query over the district outline.
+// A district surveyed from open data: a project with a perimeter, footprints
+// arriving in a projected CRS (UTM 28N here) and in WGS 84, buildings known
+// by their OpenStreetMap identifiers, a building shading a roof face, a site
+// split in two, and a spatial query over the perimeter.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { entity, freshDatabase, one, workspace } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 let db: PGlite;
-let ws: string;
+let org: string;
 let district: string;
 
 // A 20 m × 15 m footprint in UTM zone 28N (EPSG:32628), near Dakar.
@@ -19,25 +19,25 @@ const utmFootprint = (x: number, y: number) => ({
 
 beforeAll(async () => {
   db = await freshDatabase();
-  ws = await workspace(db, 'A city');
+  org = await organisation(db, 'A city');
   const outline = await one<{ g: string }>(
     db,
     `select ST_AsGeoJSON(ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326)) g`,
   );
-  district = await entity(db, {
-    workspace_id: ws, class: 'district', name: 'Plateau', country: 'SN', geometry: JSON.parse(outline.g),
+  district = await insert(db, 'projects', {
+    organisation_id: org, name: 'Plateau', kind: 'district_plan', country: 'SN', geometry: JSON.parse(outline.g),
   });
   for (const [i, x] of [236100, 236300, 236500].entries()) {
-    const b = await entity(db, {
-      workspace_id: ws, class: 'building', name: `Building ${i + 1}`, parent_id: district,
-      geometry: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
+    const site = await insert(db, 'sites', { organisation_id: org, name: `Plot ${i + 1}`, country: 'SN', city: 'Dakar' });
+    const b = await insert(db, 'buildings', {
+      organisation_id: org, site_id: site, name: `Building ${i + 1}`, footprint: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
     });
-    await db.query(`insert into external_ids (entity_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
+    await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
+    await insert(db, 'participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
   }
   // One building outside the district, to prove the spatial query.
-  await entity(db, {
-    workspace_id: ws, class: 'building', name: 'Outside', country: 'SN', geometry: utmFootprint(240000, 1640000), height_m: 6,
-  });
+  const outside = await insert(db, 'sites', { organisation_id: org, name: 'Far plot', country: 'SN' });
+  await insert(db, 'buildings', { organisation_id: org, site_id: outside, name: 'Outside', footprint: utmFootprint(240000, 1640000), height_m: 6 });
 });
 
 afterAll(async () => {
@@ -48,17 +48,17 @@ describe('a district from open data', () => {
   it('normalises a projected footprint to WGS 84 3D and keeps its area in metres', async () => {
     const r = await one<{ srid: number; dims: number; area: string }>(
       db,
-      `select ST_SRID(geometry) srid, ST_NDims(geometry) dims, plan_area_m2(geometry) area from entities where name = 'Building 1'`,
+      `select ST_SRID(footprint) srid, ST_NDims(footprint) dims, plan_area_m2(footprint) area from buildings where name = 'Building 1'`,
     );
     expect(r.srid).toBe(4326);
     expect(r.dims).toBe(3);
     expect(Number(r.area)).toBeCloseTo(300, 0);
   });
 
-  it('finds the buildings inside the district outline', async () => {
+  it('finds the buildings inside the district perimeter', async () => {
     const r = await db.query<{ name: string }>(
-      `select b.name from entities b, entities d
-        where d.id = $1 and b.class = 'building' and ST_Within(ST_Force2D(b.geometry), ST_Force2D(d.geometry))
+      `select b.name from buildings b, projects p
+        where p.id = $1 and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry))
         order by b.name`,
       [district],
     );
@@ -68,44 +68,41 @@ describe('a district from open data', () => {
   it('finds a building by its OpenStreetMap identifier', async () => {
     const r = await one<{ name: string }>(
       db,
-      `select e.name from external_ids x join entities e on e.id = x.entity_id where x.scheme = 'osm' and x.value = 'way/1001'`,
+      `select b.name from external_ids x join buildings b on b.id = x.object_id where x.scheme = 'osm' and x.value = 'way/1001'`,
     );
     expect(r.name).toBe('Building 2');
   });
 
-  it('refuses the same identifier on two entities', async () => {
-    const b3 = await one<{ id: string }>(db, `select id from entities where name = 'Building 3'`);
+  it('refuses the same identifier on two objects', async () => {
+    const b3 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 3'`);
     await expect(
-      db.query(`insert into external_ids (entity_id, scheme, value) values ($1, 'osm', 'way/1001')`, [b3.id]),
+      db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', 'way/1001')`, [b3.id]),
     ).rejects.toThrow(/duplicate key/);
   });
 
-  it('records a tree shading a roof', async () => {
-    const tree = await entity(db, { workspace_id: ws, class: 'vegetation', name: 'Baobab', parent_id: district, height_m: 14 });
-    const b1 = await one<{ id: string }>(db, `select id from entities where name = 'Building 1'`);
-    const roof = await entity(db, { workspace_id: ws, class: 'roof', name: 'Roof 1', parent_id: b1.id, tilt_deg: 0 });
-    await db.query(`insert into relationships (subject_id, type_code, object_id) values ($1, 'shades', $2)`, [tree, roof]);
-    const r = await one<{ n: number }>(db, `select count(*)::int n from relationships where type_code = 'shades'`);
+  it('records a tall building shading the roof of its neighbour', async () => {
+    const b3 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 3'`);
+    const b2 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 2'`);
+    const roof = await insert(db, 'surfaces', { organisation_id: org, building_id: b2.id, name: 'Roof 2', kind: 'roof', tilt_deg: 0 });
+    await db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'shades', $2)`, [b3.id, roof]);
+    const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'shades'`);
     expect(r.n).toBe(1);
   });
 
-  it('keeps the trace of a parcel split in two', async () => {
-    const p = await entity(db, { workspace_id: ws, class: 'parcel', name: 'Parcel 12', parent_id: district, status: 'demolished' });
-    const a = await entity(db, { workspace_id: ws, class: 'parcel', name: 'Parcel 12a', parent_id: district });
-    const b = await entity(db, { workspace_id: ws, class: 'parcel', name: 'Parcel 12b', parent_id: district });
-    await db.query(`insert into entity_lineage (from_id, to_id, kind) values ($1, $2, 'split'), ($1, $3, 'split')`, [p, a, b]);
+  it('keeps the trace of a plot split in two', async () => {
+    const p = await one<{ id: string }>(db, `select id from sites where name = 'Plot 1'`);
+    const a = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1a', country: 'SN' });
+    const b = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1b', country: 'SN' });
+    await db.query(`insert into lineage (from_id, to_id, kind) values ($1, $2, 'split'), ($1, $3, 'split')`, [p.id, a, b]);
     const r = await db.query<{ name: string }>(
-      `select e.name from entity_lineage l join entities e on e.id = l.to_id where l.from_id = $1 order by e.name`,
-      [p],
+      `select s.name from lineage l join sites s on s.id = l.to_id where l.from_id = $1 order by s.name`,
+      [p.id],
     );
-    expect(r.rows.map((x) => x.name)).toEqual(['Parcel 12a', 'Parcel 12b']);
+    expect(r.rows.map((x) => x.name)).toEqual(['Plot 1a', 'Plot 1b']);
   });
 
-  it('counts revisions of an entity', async () => {
-    const b2 = await one<{ id: string }>(db, `select id from entities where name = 'Building 2'`);
-    await db.query(`update entities set height_m = 12.5 where id = $1`, [b2.id]);
-    await db.query(`update entities set name = 'Building 2 (school)' where id = $1`, [b2.id]);
-    const r = await one<{ revision: number }>(db, `select revision from entities where id = $1`, [b2.id]);
-    expect(r.revision).toBe(3);
+  it('counts the district by its participants', async () => {
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from participants where project_id = $1', [district]);
+    expect(r.n).toBe(3);
   });
 });

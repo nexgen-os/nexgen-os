@@ -27,20 +27,19 @@ So Nexgen OS is five commitments.
 
 ## 1. One description of a place, for everyone who works on it.
 
-Nexgen OS describes anything that can be described — a district, a parcel, a
-building, a storey, a room, a roof face, a wall, a window, a tree, a PV
-array, a heat pump, a charger, a sensor, an organisation — as an **entity**,
-in one model. What it is comes from a vocabulary. What we know about it is
-**attached** to it: values with the period they hold for, measurements over
-time, tags, the identifiers other systems know it by, its links to other
-entities, and its **representations** — a footprint, a block, a roof model, a
-BIM model, a point cloud, a mesh, an orthophoto, a video.
+Nexgen OS names the things the trades name — a project, a site, a building,
+a roof face, a participant, a meter, a device, a sensor — and keeps each one
+once, in a table that says what it always has. What we know beyond that is
+**attached** to it: attributes with the period they hold for, measurements
+over time, tags, the identifiers other systems know it by, its links to
+other objects, its documents — and, through the modules, its storeys and
+rooms, its 3D models, point clouds, orthophotos and videos.
 
-That is the whole core, and it is deliberately small. An architect, an
-energy engineer, a facility manager, a city planner and a resident open the
-same entity and attach what they know. Nobody re-measures a roof that
-somebody has already measured; everybody can see who measured it, when, and
-how.
+That is the whole core, and it is deliberately small and concrete. An
+architect, an energy engineer, a facility manager, a city planner and a
+resident open the same building and attach what they know. Nobody re-measures
+a roof that somebody has already measured; everybody can see who measured
+it, when, and how.
 
 ## 2. Built on the standards that already exist.
 

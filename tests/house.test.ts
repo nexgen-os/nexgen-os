@@ -1,47 +1,38 @@
-// A house, described the way an architect, an installer and a resident each
-// would: a tree of places, a roof face with its orientation, a PV array
-// mounted on it, values with their history, a drone point cloud and a video
-// as representations, a measured series and a simulated one in a scenario.
+// A house, described the way an installer, an architect and a resident each
+// would: a site, a building with its footprint, a roof face, a PV system on
+// it behind the house's meter, a module deriving that PV system into its own
+// table, attributes with their history, a drone video as a document, a
+// measured series and a simulated one in a scenario.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { entity, freshDatabase, one, workspace } from './helpers/db.js';
-
-// A 10 m × 8 m footprint, around 37.39° N (Seville), in WGS 84.
-const LON = -5.98;
-const LAT = 37.39;
-const dLon = (m: number) => m / (111_320 * Math.cos((LAT * Math.PI) / 180));
-const dLat = (m: number) => m / 111_320;
-const footprint = {
-  type: 'Polygon',
-  coordinates: [[
-    [LON, LAT], [LON + dLon(10), LAT], [LON + dLon(10), LAT + dLat(8)], [LON, LAT + dLat(8)], [LON, LAT],
-  ]],
-};
+import { freshDatabase, insert, one, organisation, square } from './helpers/db.js';
 
 let db: PGlite;
-let ws: string;
+let org: string;
+let site: string;
 let house: string;
 let roof: string;
+let meter: string;
 let pv: string;
 
 beforeAll(async () => {
   db = await freshDatabase();
-  ws = await workspace(db, 'A family');
-  const site = await entity(db, { workspace_id: ws, class: 'site', name: 'Garden plot', country: 'ES' });
-  house = await entity(db, {
-    workspace_id: ws, class: 'building', name: 'House', parent_id: site,
-    geometry: footprint, elevation_m: 12, height_m: 7.5,
+  org = await organisation(db, 'A family');
+  site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
+  house = await insert(db, 'buildings', {
+    organisation_id: org, site_id: site, name: 'House', profile: 'residential',
+    footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5, storeys_above_ground: 2,
   });
-  const ground = await entity(db, { workspace_id: ws, class: 'storey', name: 'Ground floor', parent_id: house });
-  await entity(db, { workspace_id: ws, class: 'space', name: 'Living room', parent_id: ground });
-  roof = await entity(db, {
-    workspace_id: ws, class: 'roof', name: 'South roof face', parent_id: house, azimuth_deg: 180, tilt_deg: 30,
+  roof = await insert(db, 'surfaces', {
+    organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
-  pv = await entity(db, { workspace_id: ws, class: 'pv_array', name: 'PV array', parent_id: house, tags: ['solar', 'elec'] });
-  await db.query(
-    `insert into relationships (subject_id, type_code, object_id) values ($1, 'mounted_on', $2)`,
-    [pv, roof],
-  );
+  meter = await insert(db, 'meters', {
+    organisation_id: org, site_id: site, identifier: '871000000000000001', scheme: 'gs1_gsrn',
+  });
+  pv = await insert(db, 'devices', {
+    organisation_id: org, site_id: site, building_id: house, surface_id: roof, meter_id: meter,
+    name: 'PV system', device_type: 'solar', power_kw: 3.6, unit_count: 9, tags: ['solar', 'elec'],
+  });
 });
 
 afterAll(async () => {
@@ -52,8 +43,8 @@ describe('a house', () => {
   it('stores its footprint in 3D WGS 84 and measures it in metres anywhere', async () => {
     const r = await one<{ dims: number; srid: number; area: string; utm: number }>(
       db,
-      `select ST_NDims(geometry) dims, ST_SRID(geometry) srid, plan_area_m2(geometry) area, metric_srid(geometry) utm
-         from entities where id = $1`,
+      `select ST_NDims(footprint) dims, ST_SRID(footprint) srid, plan_area_m2(footprint) area, metric_srid(footprint) utm
+         from buildings where id = $1`,
       [house],
     );
     expect(r.dims).toBe(3);
@@ -73,126 +64,177 @@ describe('a house', () => {
     expect(r.zmax).toBe(19.5);
   });
 
-  it('inherits its country from the site', async () => {
-    const r = await one<{ c: string }>(db, 'select entity_country($1) c', [roof]);
-    expect(r.c).toBe('ES');
+  it('knows where everything is and whose rules apply', async () => {
+    const r = await one<{ site: string; country: string }>(db, 'select site_of($1) site, country_of($1) country', [pv]);
+    expect(r.site).toBe(site);
+    expect(r.country).toBe('ES');
   });
 
-  it('refuses a storey directly on a site', async () => {
-    const site = await one<{ parent_id: string }>(db, 'select parent_id from entities where id = $1', [house]);
+  it('registers every object once, with its kind', async () => {
+    const r = await db.query<{ kind: string; n: number }>(
+      `select kind, count(*)::int n from objects where organisation_id = $1 group by kind order by kind`,
+      [org],
+    );
+    expect(r.rows).toEqual([
+      { kind: 'building', n: 1 }, { kind: 'device', n: 1 }, { kind: 'meter', n: 1 }, { kind: 'site', n: 1 }, { kind: 'surface', n: 1 },
+    ]);
+  });
+
+  it('refuses a device on a surface of another site', async () => {
+    const other = await insert(db, 'sites', { organisation_id: org, name: 'Elsewhere', country: 'ES' });
     await expect(
-      entity(db, { workspace_id: ws, class: 'storey', name: 'Floating storey', parent_id: site.parent_id }),
-    ).rejects.toThrow(/entity_class_not_allowed_under/);
+      insert(db, 'devices', { organisation_id: org, site_id: other, surface_id: roof, name: 'Stray', device_type: 'battery' }),
+    ).rejects.toThrow(/device_surface_site_mismatch/);
   });
 
-  it('attaches typed values with their history and reads them at any date', async () => {
-    await db.query(
-      `insert into entity_values (entity_id, property_code, value, valid_from, valid_to, source) values
-         ($1, 'peak_power', '3.6', null, '2025-06-01', 'installer datasheet'),
-         ($1, 'peak_power', '6.0', '2025-06-01', null, 'extension of 2025')`,
+  it('lets a module derive the PV system into its own table, with the same id', async () => {
+    await db.exec(`
+      create schema energy;
+      create table energy.pv_systems (
+        id uuid primary key,
+        inverter_count integer not null default 1,
+        panel_technology text,
+        annual_degradation numeric(5, 4) not null default 0.005
+      );
+      call derive_devices('energy.pv_systems', 'solar');
+    `);
+    await db.query(`insert into energy.pv_systems (id, inverter_count, panel_technology) values ($1, 1, 'mono')`, [pv]);
+    const r = await one<{ name: string; power_kw: string; panel_technology: string }>(
+      db,
+      `select d.name, d.power_kw, p.panel_technology from devices d join energy.pv_systems p using (id) where d.id = $1`,
       [pv],
     );
-    const before = await one<{ p: Record<string, number> }>(db, `select entity_properties($1, '2024-01-01') p`, [pv]);
-    const after = await one<{ p: Record<string, number> }>(db, `select entity_properties($1, '2026-01-01') p`, [pv]);
-    expect(before.p.peak_power).toBe(3.6);
-    expect(after.p.peak_power).toBe(6);
+    expect(r).toEqual({ name: 'PV system', power_kw: '3.600', panel_technology: 'mono' });
+    const battery = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Not a PV', device_type: 'battery' });
+    await expect(db.query(`insert into energy.pv_systems (id) values ($1)`, [battery])).rejects.toThrow(/device_type_mismatch/);
+    await db.query('delete from devices where id = $1', [battery]);
   });
 
-  it('refuses a value of the wrong type, out of range, or on the wrong class', async () => {
+  it('attaches typed attributes with their history and reads them at any date', async () => {
+    await db.query(
+      `insert into attributes (object_id, property_code, value, valid_from, valid_to, source) values
+         ($1, 'energy_label', '"E"', null, '2025-06-01', 'EPC 2019'),
+         ($1, 'energy_label', '"C"', '2025-06-01', null, 'EPC 2025 after insulation')`,
+      [house],
+    );
+    const before = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2024-01-01') p`, [house]);
+    const after = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-01-01') p`, [house]);
+    expect(before.p.energy_label).toBe('E');
+    expect(after.p.energy_label).toBe('C');
+  });
+
+  it('refuses an attribute of the wrong type, out of range, outside its list, or on the wrong kind', async () => {
     await expect(
-      db.query(`insert into entity_values (entity_id, property_code, value) values ($1, 'peak_power', '"big"')`, [pv]),
+      db.query(`insert into attributes (object_id, property_code, value) values ($1, 'efficiency', '"high"')`, [pv]),
     ).rejects.toThrow(/must be a number/);
     await expect(
-      db.query(`insert into entity_values (entity_id, property_code, value) values ($1, 'efficiency', '1.4')`, [pv]),
+      db.query(`insert into attributes (object_id, property_code, value) values ($1, 'efficiency', '1.4')`, [pv]),
     ).rejects.toThrow(/at most 1/);
     await expect(
-      db.query(`insert into entity_values (entity_id, property_code, value) values ($1, 'peak_power', '5')`, [roof]),
+      db.query(`insert into attributes (object_id, property_code, value) values ($1, 'energy_label', '"Z"')`, [house]),
+    ).rejects.toThrow(/must be one of/);
+    await expect(
+      db.query(`insert into attributes (object_id, property_code, value) values ($1, 'efficiency', '0.9')`, [roof]),
     ).rejects.toThrow(/property_not_applicable/);
   });
 
-  it('refuses two values over overlapping periods', async () => {
+  it('refuses two attributes over overlapping periods', async () => {
     await expect(
       db.query(
-        `insert into entity_values (entity_id, property_code, value, valid_from) values ($1, 'peak_power', '7', '2026-01-01')`,
-        [pv],
+        `insert into attributes (object_id, property_code, value, valid_from) values ($1, 'energy_label', '"B"', '2026-01-01')`,
+        [house],
       ),
     ).rejects.toThrow(/overlapping_value/);
   });
 
-  it('keeps a drone point cloud, a mesh and a video as representations', async () => {
+  it('keeps a drone video and a permit as documents of the building', async () => {
     await db.query(
-      `insert into representations (entity_id, kind, lod, uri, media_type, source, captured_at, metadata) values
-         ($1, 'point_cloud', null, 's3://captures/house.copc.laz', 'application/vnd.laszip+copc', 'drone flight', '2026-09-30', '{"points_per_m2": 400}'),
-         ($1, 'mesh', 2, 's3://models/house.glb', 'model/gltf-binary', 'photogrammetry', '2026-09-30', '{}'),
-         ($1, 'video', null, 's3://films/house-orbit.mp4', 'video/mp4', 'render', null, '{"camera": "orbit"}')`,
+      `insert into documents (object_id, name, kind, uri, media_type, source, captured_at, metadata) values
+         ($1, 'Orbit video', 'video', 's3://films/house-orbit.mp4', 'video/mp4', 'drone flight', '2026-09-30', '{"camera": "orbit"}'),
+         ($1, 'Building permit', 'permit', 's3://docs/permit-1998.pdf', 'application/pdf', 'town hall', null, '{}')`,
       [house],
     );
-    await db.query(
-      `insert into representations (entity_id, kind, lod, geometry, source) values ($1, 'solid', 1, lod1_block($1), 'derived')`,
-      [house],
-    );
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from representations where entity_id = $1', [house]);
-    expect(r.n).toBe(4);
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from documents where object_id = $1', [house]);
+    expect(r.n).toBe(2);
   });
 
   it('compares a measured series with a simulated one in a scenario, through one function', async () => {
     const sc = await one<{ id: string }>(
       db,
-      `insert into scenarios (workspace_id, name) values ($1, 'Add a battery') returning id`,
-      [ws],
+      `insert into scenarios (organisation_id, name) values ($1, 'Add a battery') returning id`,
+      [org],
     );
     const measured = await one<{ id: string }>(
       db,
-      `insert into datastreams (entity_id, quantity_code, kind, step) values ($1, 'energy', 'measured', '15 minutes') returning id`,
+      `insert into series (object_id, quantity_code, kind, step) values ($1, 'energy', 'measured', '15 minutes') returning id`,
       [pv],
     );
     const simulated = await one<{ id: string }>(
       db,
-      `insert into datastreams (entity_id, quantity_code, kind, step, scenario_id) values ($1, 'energy', 'simulated', '1 hour', $2) returning id`,
+      `insert into series (object_id, quantity_code, kind, step, scenario_id) values ($1, 'energy', 'simulated', '1 hour', $2) returning id`,
       [pv, sc.id],
     );
     await db.query(
-      `insert into observations (datastream_id, at, value)
+      `insert into readings (series_id, at, value)
        select $1, ts, 0.25 from generate_series('2026-07-01 12:00+00'::timestamptz, '2026-07-01 13:45+00', '15 minutes') ts`,
       [measured.id],
     );
     await db.query(
-      `insert into observations (datastream_id, at, value) values ($1, '2026-07-01 12:00+00', 1.1), ($1, '2026-07-01 13:00+00', 0.9)`,
+      `insert into readings (series_id, at, value) values ($1, '2026-07-01 12:00+00', 1.1), ($1, '2026-07-01 13:00+00', 0.9)`,
       [simulated.id],
     );
     const m = await db.query<{ value: number }>(
-      `select value from series($1, '2026-07-01 12:00+00', '2026-07-01 14:00+00', '1 hour')`,
+      `select value from resample($1, '2026-07-01 12:00+00', '2026-07-01 14:00+00', '1 hour')`,
       [measured.id],
     );
     const s = await db.query<{ value: number }>(
-      `select value from series($1, '2026-07-01 12:00+00', '2026-07-01 14:00+00', '1 hour')`,
+      `select value from resample($1, '2026-07-01 12:00+00', '2026-07-01 14:00+00', '1 hour')`,
       [simulated.id],
     );
     expect(m.rows.map((r) => r.value)).toEqual([1, 1]);
     expect(s.rows.map((r) => r.value)).toEqual([1.1, 0.9]);
   });
 
-  it('lets a scenario add equipment and override a value without touching reality', async () => {
+  it('lets a scenario add a device and override an attribute without touching reality', async () => {
     const sc = await one<{ id: string }>(db, `select id from scenarios where name = 'Add a battery'`);
-    const battery = await entity(db, {
-      workspace_id: ws, class: 'battery', name: 'Battery', parent_id: house, scenario_id: sc.id,
+    const battery = await insert(db, 'devices', {
+      organisation_id: org, site_id: site, building_id: house, meter_id: meter, name: 'Battery', device_type: 'battery',
+      power_kw: 5, scenario_id: sc.id,
     });
     await db.query(
-      `insert into entity_values (entity_id, property_code, value, scenario_id) values ($1, 'energy_capacity', '10', $2)`,
+      `insert into attributes (object_id, property_code, value, scenario_id) values ($1, 'efficiency', '0.92', $2)`,
       [battery, sc.id],
     );
     await db.query(
-      `insert into entity_values (entity_id, property_code, value, valid_from, scenario_id) values ($1, 'peak_power', '9', '2025-06-01', $2)`,
-      [pv, sc.id],
+      `insert into attributes (object_id, property_code, value, valid_from, scenario_id) values ($1, 'energy_label', '"A"', '2025-06-01', $2)`,
+      [house, sc.id],
     );
-    const real = await one<{ p: Record<string, number> }>(db, `select entity_properties($1, '2026-07-01') p`, [pv]);
-    const variant = await one<{ p: Record<string, number> }>(db, `select entity_properties($1, '2026-07-01', $2) p`, [pv, sc.id]);
-    expect(real.p.peak_power).toBe(6);
-    expect(variant.p.peak_power).toBe(9);
+    const real = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-07-01') p`, [house]);
+    const variant = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-07-01', $2) p`, [house, sc.id]);
+    expect(real.p.energy_label).toBe('C');
+    expect(variant.p.energy_label).toBe('A');
     const inReality = await one<{ n: number }>(
       db,
-      `select count(*)::int n from entities where class = 'battery' and scenario_id is null`,
+      `select count(*)::int n from devices where device_type = 'battery' and scenario_id is null`,
     );
     expect(inReality.n).toBe(0);
+    await expect(
+      db.query(`insert into attributes (object_id, property_code, value) values ($1, 'efficiency', '0.9')`, [battery]),
+    ).rejects.toThrow(/attachment_outside_object_scenario/);
+  });
+
+  it('removes everything attached when the building goes', async () => {
+    const shed = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
+    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'gross_floor_area', '9')`, [shed]);
+    await db.query(`insert into documents (object_id, name, uri) values ($1, 'Photo', 's3://photos/shed.jpg')`, [shed]);
+    await db.query('delete from buildings where id = $1', [shed]);
+    const r = await one<{ objects: number; attrs: number; docs: number }>(
+      db,
+      `select (select count(*)::int from objects where id = $1) objects,
+              (select count(*)::int from attributes where object_id = $1) attrs,
+              (select count(*)::int from documents where object_id = $1) docs`,
+      [shed],
+    );
+    expect(r).toEqual({ objects: 0, attrs: 0, docs: 0 });
   });
 });
