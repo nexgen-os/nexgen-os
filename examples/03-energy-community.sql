@@ -93,3 +93,6 @@ select record_run('energy', 'settlement-0.1.0', '00000000-0000-4000-8000-0003000
 --    where s.object_id = '00000000-0000-4000-8000-000300000041';
 -- The meters behind the landlord's group:
 --   select m.identifier from participant_meters('00000000-0000-4000-8000-000300000055') pm join meters m on m.id = pm.meter_id;
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Amsterdam' where organisation_id = '00000000-0000-4000-8000-000300000001';

@@ -304,6 +304,9 @@ create table sites (
   city             text,
   -- ISO 3166-2 subdivision, when the country's rules vary by region.
   region           text,
+  -- IANA time zone (Europe/Brussels). Daily and monthly readings of the
+  -- site's series are cut in it; a site without one has no daily readings.
+  time_zone        text,
   -- The parcel or the plot as a polygon, or just a point.
   geometry         geometry,
   profile          text references profiles(code),

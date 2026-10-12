@@ -103,3 +103,6 @@ select record_run('energy', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-000
 --     from resample('00000000-0000-4000-8000-000100000072', '2026-06-01', '2026-07-01', '1 day');
 -- What the scenario adds:
 --   select name, device_type, status from devices where scenario_id = '00000000-0000-4000-8000-000100000080';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Madrid' where organisation_id = '00000000-0000-4000-8000-000100000001';

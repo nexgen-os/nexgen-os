@@ -103,8 +103,12 @@ pages read the named tables.
 - **series** — one quantity on one object, `measured`, `simulated`,
   `forecast` or `setpoint`; what one value means (`interval`, `instant`,
   `cumulative`); its step; the sensor that produces it; its source.
-- **series_values** — the timestamped values of a series, with a quality flag.
-  `resample(series, from, to, step)` is the one way series are read.
+- **series_values** — the timestamped values of a series, with a quality code
+  (0 measured, 1 estimated, 2 substituted, 3 missing). Partitioned by week
+  on `at`; no organisation column (access goes through the series).
+  `resample(series, from, to, step, time_zone?)` is the one way series are
+  read: sub-day steps bin in absolute time, a day or more cuts in the site's
+  time zone, named error when there is none. Decision [0007](decisions/0007-series-at-scale.md).
 - **scenarios** — `scenario_id is null` is the world as it is. A scenario
   holds what a variant adds: objects, attributes that override reality,
   series. A scenario may build on another one.

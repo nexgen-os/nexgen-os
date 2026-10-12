@@ -96,3 +96,6 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
 --   select * from resample('00000000-0000-4000-8000-000200000071', '2026-01-12', '2026-01-13', '30 minutes');
 -- Where is classroom 5, and whose rules apply:
 --   select site_of('00000000-0000-4000-8000-000200000044'), country_of('00000000-0000-4000-8000-000200000044');
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Brussels' where organisation_id = '00000000-0000-4000-8000-000200000001';

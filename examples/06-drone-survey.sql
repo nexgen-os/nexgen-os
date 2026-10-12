@@ -67,3 +67,6 @@ insert into participants (organisation_id, project_id, site_id, name, role, cont
 -- Where the building's data came from, with license and attribution:
 --   select distinct src.name, src.license, src.attribution from attributes a join sources src on src.code = a.source_code
 --    where a.object_id in (select id from surfaces where building_id = '00000000-0000-4000-8000-000600000020');
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Rome' where organisation_id = '00000000-0000-4000-8000-000600000001';

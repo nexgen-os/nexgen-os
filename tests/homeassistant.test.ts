@@ -77,7 +77,7 @@ let imported: ImportResult;
 beforeAll(async () => {
   db = await freshDatabase(['architecture']);
   org = await organisation(db, 'A home');
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', profile: 'residential' });
+  const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
   building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
   imported = await importHomeAssistant(db, { organisationId: org, siteId: site, buildingId: building }, snapshot);
 });
@@ -119,9 +119,9 @@ describe('a Home Assistant home in Nexgen OS', () => {
   });
 
   it('converts values into the quantity units and keeps the state classes', async () => {
-    const power = await db.query<{ value: number; quality: string }>(
+    const power = await db.query<{ value: number; quality: number }>(
       `select v.value, v.quality from series_values v where v.series_id = $1 order by v.at`, [imported.series.get('sensor.inverter_active_power')]);
-    expect(power.rows).toEqual([{ value: 2.345, quality: 'measured' }, { value: 3.1205, quality: 'measured' }, { value: 0, quality: 'missing' }]);
+    expect(power.rows).toEqual([{ value: 2.345, quality: 0 }, { value: 3.1205, quality: 0 }, { value: 0, quality: 3 }]);
     const kinds = await db.query<{ ref: string; value_kind: string; kind: string }>(
       `select s.external_ref ref, se.value_kind, se.kind from series se join sensors s on s.id = se.sensor_id order by s.external_ref`);
     expect(kinds.rows.find((r) => r.ref.endsWith('total_yield'))).toMatchObject({ value_kind: 'cumulative', kind: 'measured' });

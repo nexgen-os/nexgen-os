@@ -68,3 +68,6 @@ insert into lineage (from_id, to_id, kind, at) values
 --   select s.name, b.name shaded_by from links l join surfaces s on s.id = l.object_id join buildings b on b.id = l.subject_id where l.type_code = 'shades';
 -- What plot 6 became:
 --   select s.name, l.kind, l.at from lineage l join sites s on s.id = l.to_id where l.from_id = '00000000-0000-4000-8000-000500000036';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Africa/Dakar' where organisation_id = '00000000-0000-4000-8000-000500000001';

@@ -234,7 +234,7 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
       const missing = s.state === 'unavailable' || s.state === 'unknown' || Number.isNaN(n);
       await db.query(
         `insert into series_values (series_id, at, value, quality) values ($1, $2, $3, $4)`,
-        [seriesId, s.last_updated, missing ? 0 : round(n * factor), missing ? 'missing' : 'measured'],
+        [seriesId, s.last_updated, missing ? 0 : round(n * factor), missing ? 3 : 0],
       );
     }
   }
@@ -258,10 +258,10 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
       order by s.metadata->'ha'->>'entity_id'`, [buildingId]);
   const states: HaState[] = [];
   for (const s of sensors.rows) {
-    const values = await db.query<{ at: Date; value: number; quality: string }>(
+    const values = await db.query<{ at: Date; value: number; quality: number }>(
       `select v.at, v.value, v.quality from series_values v join series se on se.id = v.series_id where se.sensor_id = $1 order by v.at`, [s.id]);
     for (const v of values.rows) {
-      const state = v.quality === 'missing' ? 'unavailable'
+      const state = v.quality === 3 ? 'unavailable'
         : s.ha.binary ? (v.value >= 1 ? 'on' : 'off')
         : String(round(v.value / s.ha.factor));
       states.push({ entity_id: s.ha.entity_id, state, last_updated: new Date(v.at).toISOString() });

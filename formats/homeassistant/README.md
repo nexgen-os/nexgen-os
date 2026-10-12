@@ -13,7 +13,7 @@ field lost. MIT, like every format library.
 | `device_class` + unit | `quantity_code` | temperature °C, humidity %, CO₂ ppm, power W/kW, energy Wh/kWh/MWh, battery %, irradiance W/m², volume and gas m³, occupancy; any other pair gets a quantity of its own, published by the library |
 | `state_class` | `series.value_kind` | `measurement` → `instant`; `total`, `total_increasing` → `cumulative` |
 | domain | `sensors.kind` | `number`, `climate`, `water_heater` → `setpoint`; `switch`, `light`, `cover`, `button`… → `command`; the rest → `sensor` |
-| state | `series_values` | in the quantity's unit (W → kW); `on`/`off` → 1/0; `unavailable` / `unknown` → quality `missing` |
+| state | `series_values` | in the quantity's unit (W → kW); `on`/`off` → 1/0; `unavailable` / `unknown` → quality code 3, `missing` |
 
 Everything else an entity carries — `unique_id`, `platform`, `icon`,
 `entity_category`, `disabled_by`, original name and class, the original unit

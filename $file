@@ -1,0 +1,21 @@
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = '$tz' where organisation_id = '00000000-0000-4000-8000-000$n00000001';

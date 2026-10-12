@@ -18,7 +18,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A cooperative');
   project = await insert(db, 'projects', { organisation_id: org, name: 'Harbour community', kind: 'energy_community', country: 'NL', status: 'active' });
   for (const n of [1, 2, 3]) {
-    const site = await insert(db, 'sites', { organisation_id: org, name: `Unit ${n}`, country: 'NL', city: 'Rotterdam', profile: 'warehouse' });
+    const site = await insert(db, 'sites', { organisation_id: org, name: `Unit ${n}`, country: 'NL', city: 'Rotterdam', time_zone: 'Europe/Amsterdam', profile: 'warehouse' });
     const meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: `87100000000000000${n}`, scheme: 'gs1_gsrn' });
     const tenant = await insert(db, 'contacts', { organisation_id: org, name: `Tenant ${n}`, kind: 'company' });
     const participant = await insert(db, 'participants', {

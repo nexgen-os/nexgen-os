@@ -99,3 +99,6 @@ select record_run('thermal', 'heat-loss-0.1.0', '00000000-0000-4000-8000-0007000
 -- Heat loss, reality against scenario:
 --   select coalesce(s.name, 'as is') variant, r.results->>'heat_loss_kw' kw from runs r left join scenarios s on s.id = r.scenario_id
 --    where r.subject_id = '00000000-0000-4000-8000-000700000020' order by 1;
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Berlin' where organisation_id = '00000000-0000-4000-8000-000700000001';

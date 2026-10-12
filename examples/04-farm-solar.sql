@@ -87,3 +87,6 @@ select record_run('energy', 'pvgis-5.3+core-0.1.0', d.id, null,
 --   select plan_area_m2(geometry) from surfaces where id = '00000000-0000-4000-8000-000400000033';
 -- What is behind each meter:
 --   select m.name, d.name device from meters m join devices d on d.meter_id = m.id where m.site_id = '00000000-0000-4000-8000-000400000010' order by 1, 2;
+
+-- Daily readings are cut in the site's time zone.
+update sites set time_zone = 'Europe/Paris' where organisation_id = '00000000-0000-4000-8000-000400000001';
