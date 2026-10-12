@@ -201,7 +201,7 @@ create table sources (
   secret_ref      text,
   -- ISO 3166-1 alpha-2 codes the source covers; empty = worldwide.
   countries       text[] not null default '{}',
-  licence         text,
+  license         text,
   attribution     text,
   published_by    text not null default 'core',
   constraint sources_code_format check (code ~ '^[a-z][a-z0-9_]*$'),

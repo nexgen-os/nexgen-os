@@ -21,7 +21,7 @@ beforeAll(async () => {
   site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'buildings', {
     organisation_id: org, site_id: site, name: 'House', profile: 'residential',
-    footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5, storeys_above_ground: 2,
+    footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5, floors_above_ground: 2,
   });
   roof = await insert(db, 'surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,

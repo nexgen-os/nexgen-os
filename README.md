@@ -6,9 +6,9 @@ architecture, energy, operations and compliance tools share one model.
 
 Why it exists and what it promises: [MANIFESTO.md](MANIFESTO.md).
 
-> Status: **0.0 — the core schema and the `architecture` module**. No pack
-> and no format library is published yet. The core is tested; nothing here is
-> stable until 0.1.
+> Status: **0.0 — the core schema, the `architecture` module, the Home
+> Assistant format library and seven example datasets**. No pack is published
+> yet. The core is tested; nothing here is stable until 0.1.
 
 ## The model in one screen
 
@@ -56,13 +56,14 @@ npm run typecheck
 
 The tests describe five cases end to end: a house (site, building, roof
 face, PV system derived by a module, attributes over time, documents,
-scenario), a school with the `architecture` module (storeys, rooms, sensors
+scenario), a school with the `architecture` module (floors, rooms, sensors
 for several quantities, setpoints, a heat pump serving the building), an
 energy community (project, participants behind their meters, contacts,
 groups, meter swap, cumulative register, a site in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries, shading,
 plot split) and security (row level security, viewers, run immutability,
-vocabulary hygiene).
+vocabulary hygiene). Every example in `examples/` loads and is checked, and
+the Home Assistant library goes in and out without losing a field.
 
 ## Layout
 
@@ -71,9 +72,10 @@ supabase/migrations/   the core schema
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture shipped)
 packs/                 one folder per country (none yet)
-formats/               one MIT library per format (none yet)
+formats/               one MIT library per format (homeassistant shipped)
+examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research
-tests/                 the core's tests
+tests/                 the core's tests, the examples, the format round trips
 ```
 
 ## Licence

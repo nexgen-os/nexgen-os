@@ -120,11 +120,11 @@ insert into tags (code, name, haystack_tag, description) values
 -- modules that use them.
 -- ---------------------------------------------------------------------------
 
-insert into sources (code, name, kind, base_url, docs_url, auth, licence, attribution, description) values
+insert into sources (code, name, kind, base_url, docs_url, auth, license, attribution, description) values
   ('openstreetmap', 'OpenStreetMap',        'api',  'https://overpass-api.de/api/',         'https://wiki.openstreetmap.org/wiki/Overpass_API', 'none', 'ODbL-1.0', '© OpenStreetMap contributors', 'Footprints, heights, tags and addresses of the world, through the Overpass API.'),
   ('overture',      'Overture Maps',        'file', 'https://overturemaps.org/',            'https://docs.overturemaps.org/', 'none', 'ODbL-1.0 / CDLA-Permissive-2.0', '© Overture Maps Foundation', 'Buildings, places and addresses with stable GERS identifiers, as downloadable datasets.'),
   ('wikidata',      'Wikidata',             'api',  'https://www.wikidata.org/w/api.php',   'https://www.wikidata.org/wiki/Wikidata:Data_access', 'none', 'CC0-1.0', null, 'Named places and organisations.'),
-  ('copernicus_dem','Copernicus DEM GLO-30','file', 'https://dataspace.copernicus.eu/',     'https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model', 'none', 'Copernicus licence', '© European Union, Copernicus', 'Ground elevation at 30 m, worldwide.'),
+  ('copernicus_dem','Copernicus DEM GLO-30','file', 'https://dataspace.copernicus.eu/',     'https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model', 'none', 'Copernicus license', '© European Union, Copernicus', 'Ground elevation at 30 m, worldwide.'),
   ('pvgis',         'PVGIS',                'api',  'https://re.jrc.ec.europa.eu/api/v5_3/', 'https://joint-research-centre.ec.europa.eu/pvgis-online-tool_en', 'none', 'CC-BY-4.0', '© European Union, JRC', 'Solar irradiation and PV production estimates, worldwide.'),
   ('open_meteo',    'Open-Meteo',           'api',  'https://api.open-meteo.com/v1/',       'https://open-meteo.com/en/docs', 'none', 'CC-BY-4.0', '© Open-Meteo', 'Weather history and forecasts, worldwide.');
 

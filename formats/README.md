@@ -6,3 +6,9 @@ data exchanges. Organised by format, never by country; each library has its
 own tests and can be used without Nexgen OS.
 
 No library is published yet.
+
+## Shipped
+
+| Library | Maps | Round trip |
+|---|---|---|
+| [`homeassistant`](homeassistant/README.md) | floors, areas, devices, entities and recorder states ⇄ floors, spaces, devices, sensors, series | tested, no field lost |

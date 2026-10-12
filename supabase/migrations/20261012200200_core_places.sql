@@ -44,7 +44,7 @@ create trigger scenarios_set_updated_at
 create table objects (
   id               uuid primary key,
   -- project, site, building, surface, participant, meter, device, sensor —
-  -- and the kinds modules register (storey, space, pv_system…).
+  -- and the kinds modules register (floor, space, pv_system…).
   kind             text not null,
   organisation_id  uuid not null references organisations(id) on delete cascade,
   scenario_id      uuid references scenarios(id) on delete cascade,
@@ -340,8 +340,8 @@ create table buildings (
   footprint            geometry,
   elevation_m          numeric(9, 3),
   height_m             numeric(9, 3),
-  storeys_above_ground integer,
-  storeys_below_ground integer,
+  floors_above_ground integer,
+  floors_below_ground integer,
   year_of_construction integer,
   status               text not null default 'in_service',
   tags                 text[] not null default '{}',
@@ -350,7 +350,7 @@ create table buildings (
   updated_at           timestamptz not null default now(),
   constraint buildings_name_not_blank check (btrim(name) <> ''),
   constraint buildings_height_positive check (height_m is null or height_m >= 0),
-  constraint buildings_storeys check ((storeys_above_ground is null or storeys_above_ground >= 0) and (storeys_below_ground is null or storeys_below_ground >= 0)),
+  constraint buildings_floors check ((floors_above_ground is null or floors_above_ground >= 0) and (floors_below_ground is null or floors_below_ground >= 0)),
   constraint buildings_year check (year_of_construction is null or year_of_construction between 1000 and 2200),
   constraint buildings_status check (status in ('planned', 'under_construction', 'in_service', 'out_of_service', 'demolished')),
   constraint buildings_footprint_core check (footprint is null or (ST_SRID(footprint) = 4326 and ST_NDims(footprint) = 3)),
@@ -358,7 +358,7 @@ create table buildings (
 );
 
 comment on table buildings is
-  'A building on a site: footprint, elevation, height, storeys, use, lifecycle (CityGML Building, IfcBuilding). Storeys and spaces come with the architecture module; the 3D files with the 3d module.';
+  'A building on a site: footprint, elevation, height, floors, use, lifecycle (CityGML Building, IfcBuilding). Floors and spaces come with the architecture module; the 3D files with the 3d module.';
 
 create index buildings_site_idx on buildings (site_id);
 create index buildings_footprint_idx on buildings using gist (footprint);

@@ -10,7 +10,7 @@ is specific to a trade lives here, one folder and one schema per module.
 2. **Derive, never widen.** A module that needs more about a device adds a
    table with the same id (`call derive_devices('energy.pv_systems',
    'solar')`); one that adds a kind of object declares it
-   (`call declare_object('architecture.storeys', 'storey', '{building_id}')`)
+   (`call declare_object('architecture.floors', 'floor', '{building_id}')`)
    so that attributes, sensors, series and documents attach to it.
 3. **Read the core freely, write it through `record_run()`.** A module may
    also publish vocabulary rows (device types, profiles, properties,
@@ -27,7 +27,7 @@ is specific to a trade lives here, one folder and one schema per module.
 
 | Module | Objects it adds | Computes |
 |---|---|---|
-| `architecture` (shipped) | storeys, spaces (rooms, zones, units) | the inside of a building after IFC and CityGML; BIM import and export through the format libraries |
+| `architecture` (shipped) | floors, spaces (rooms, zones, units) | the inside of a building after IFC and CityGML; BIM import and export through the format libraries |
 | `3d` | captures (drone flights, scans), models (glTF, IFC, CityJSON, 3D Tiles), point clouds (COPC), drawings (DXF, SVG), orthophotos | photogrammetry jobs (OpenDroneMap), registration, level-of-detail generation, the 3D models and videos a project is shown with |
 | `energy` | PV systems, batteries, chargers, wind turbines, allocation keys, tariffs, bill runs | PV production, consumption profiles, self-consumption, energy sharing, batteries, charging, flexibility; settlement lines handed to Ekwo for invoicing |
 | `heating` | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |

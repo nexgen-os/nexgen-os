@@ -12,14 +12,14 @@ this". Projects that went that way (InterConnect, SAREF-only models) became
 languages to learn before being useful.
 
 Two products that work well took the other road. Nexgen and EMS name four
-levels — organisation, project, participant, device — and the participant
+floors — organisation, project, participant, device — and the participant
 carries the one rule everyone understands: one participant is what sits
 behind one grid meter. Ekwo names its objects after the accounting trade —
 company, invoice, document, contact, product — and specialises them in
 modules (e-invoicing, fixed assets). Both stay small, and both stay concrete.
 
 Two inventories of the production schemas (EMS, 52 business tables; Nexgen,
-3,024 participants and 1,496 devices) also showed what the four levels lack:
+3,024 participants and 1,496 devices) also showed what the four floors lack:
 
 - the meter is folded into the participant (its identifier in four places);
 - places are not objects: footprints, roof faces and zones live in JSON;
@@ -48,7 +48,7 @@ a specialised one, and the **packs** that hold what varies by country.
 | `contacts` | a person or a company the organisation deals with: an Ekwo contact, referenced | Ekwo `contacts` |
 | `projects` | a working perimeter: an energy community, a portfolio, a study, a district plan; a country, a lifecycle | Nexgen `projects` |
 | `sites` | a place with an address and a parcel: the unit a person owns, rents or operates, and the thing behind a meter | CityGML LandUse, cadastral parcel |
-| `buildings` | footprint, elevation, height, storeys, use, lifecycle; the LoD 1 block derives from it | CityGML Building, IfcBuilding |
+| `buildings` | footprint, elevation, height, floors, use, lifecycle; the LoD 1 block derives from it | CityGML Building, IfcBuilding |
 | `surfaces` | a roof face, a facade, a ground area, a canopy: what a device is mounted on, with azimuth and tilt | CityGML RoofSurface, Nexgen orientation segments |
 | `meters` | a connection point: identifier and scheme, commodity, direction, grid operator, validity | IEC CIM UsagePoint |
 | `participants` | a site's role in a project — producer, consumer, prosumer — behind its meters, with its contact, its group and its period | Nexgen `participants`, CIM Customer |
@@ -80,14 +80,14 @@ type `solar`.
 What every object shares — an id, an organisation, a scenario, a kind — is
 kept once in `objects`, maintained by the triggers of the named tables. It is
 plumbing: attachments point to it, pages read `from buildings`. A module
-registers the kinds it adds (`storey`, `space`) the same way.
+registers the kinds it adds (`floor`, `space`) the same way.
 
 ### Sources and connectors
 
 The external systems data comes from — an open-data API, a grid operator's
 hub, a solar API, a register, a device protocol — are rows of `sources`:
 base URL, documentation, type of authentication (the secret itself stays in
-the installation's vault), countries covered, licence, attribution. An
+the installation's vault), countries covered, license, attribution. An
 identifier scheme, a series, a document or an attribute says which source it
 comes from. A **connector** — an organisation's configured link to a source,
 with its credentials reference, schedule, mappings to sensors and series and

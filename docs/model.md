@@ -31,7 +31,7 @@ erDiagram
 ```
 
 `objects` is the registry: one row per project, site, building, surface,
-meter, participant, device or sensor (and per storey or space of the
+meter, participant, device or sensor (and per floor or space of the
 `architecture` module), with its kind, its organisation and its scenario.
 The named tables keep it up to date by trigger. Attachments point to it;
 pages read the named tables.
@@ -51,7 +51,7 @@ pages read the named tables.
   `active`, `inactive`, `archived`) and, when it has one, a perimeter.
 - **sites** — an address, a country, a parcel or a point, a profile (what it
   is used for). Everything on a site inherits its country: `country_of()`.
-- **buildings** — footprint, elevation, height, storeys, year, profile,
+- **buildings** — footprint, elevation, height, floors, year, profile,
   lifecycle. `lod1_block()` extrudes the footprint.
 - **surfaces** — a roof face, a facade, a ground area or a canopy, on a
   building or a site, with azimuth and tilt.
@@ -116,7 +116,7 @@ pages read the named tables.
 `device_types` (with the module that derives each), `profiles` (uses of a
 building or a site), `link_types`, `quantities` (one unit each, QUDT),
 `property_defs` (bSDD / IFC), `tags` (Haystack), `id_schemes` and `sources`
-(the external APIs and datasets: base URL, authentication type, licence,
+(the external APIs and datasets: base URL, authentication type, license,
 attribution, countries). Read by everyone signed in, written by migrations,
 seeds, modules and packs.
 

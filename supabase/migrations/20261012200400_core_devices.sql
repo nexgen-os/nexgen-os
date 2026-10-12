@@ -83,6 +83,9 @@ create table devices (
   status            text not null default 'in_service',
   installation_date date,
   tags              text[] not null default '{}',
+  -- What a source knows about it beyond these columns (a Home Assistant
+  -- device's identifiers, a connector's handle). Extensions only.
+  metadata          jsonb not null default '{}',
   scenario_id       uuid references scenarios(id) on delete cascade,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
@@ -182,6 +185,9 @@ create table sensors (
   -- How a connector finds it: a Modbus register, an MQTT topic, an API path.
   external_ref     text,
   tags             text[] not null default '{}',
+  -- What the source knows about it beyond these columns (a Home Assistant
+  -- entity's class, icon, original unit). Extensions only.
+  metadata         jsonb not null default '{}',
   scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),

@@ -32,7 +32,7 @@ a roof face, a participant, a meter, a device, a sensor — and keeps each one
 once, in a table that says what it always has. What we know beyond that is
 **attached** to it: attributes with the period they hold for, measurements
 over time, tags, the identifiers other systems know it by, its links to
-other objects, its documents — and, through the modules, its storeys and
+other objects, its documents — and, through the modules, its floors and
 rooms, its 3D models, point clouds, orthophotos and videos.
 
 That is the whole core, and it is deliberately small and concrete. An
@@ -49,7 +49,7 @@ it stands for:
 
 - the spatial structure and the property sets of **IFC** (ISO 16739) and the
   buildingSMART Data Dictionary;
-- the levels of detail and surface semantics of **CityGML** and CityJSON;
+- the floors of detail and surface semantics of **CityGML** and CityJSON;
 - the classes, points and relationships of **Brick**, and the tags of
   **Project Haystack**;
 - the datastreams and observations of **OGC SensorThings**;
