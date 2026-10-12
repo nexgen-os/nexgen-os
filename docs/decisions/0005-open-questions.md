@@ -1,16 +1,25 @@
 # 0005 — Questions to settle before 0.1
 
+Settled on 12/10/2026:
+
+- **Contributor terms: DCO.** A sign-off on each commit, no contributor
+  agreement, and nothing that could relicense the core away from AGPL
+  (relicensing is what split Odoo's community in 2015). See
+  [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- **Home of the project: the `nexgen-os` GitHub organisation.** A neutral
+  foundation or association later, once there is traction (Open Home
+  Foundation and LF Energy are the models).
+- **Product types: `device_directory`.** A catalogue row (a PV module model, a
+  heat pump model) whose values every installed device inherits, as IFC types
+  do.
+
+Still open:
+
 - **Licence of the specification and vocabularies.** CC BY 4.0 is proposed,
   because it allows translations and forks. buildingSMART's CC BY-ND is the
   example to avoid.
-- **Contributor terms.** A DCO sign-off, or a contributor agreement. If an
-  agreement is chosen, it must never allow the core to be relicensed away from
-  AGPL. Relicensing is what split Odoo's community in 2015.
-- **Home of the project.** A GitHub organisation of its own now. A neutral
-  foundation or association later, once there is traction (Open Home
-  Foundation and LF Energy are the models).
-- **Product types.** A catalogue of product types (a PV module model, a heat
-  pump model) whose values every installed occurrence inherits, as IFC types
-  do.
 - **Revised forecasts.** Forecast revisions (the "belief time" of
-  FlexMeasures) as a column of `observations`.
+  FlexMeasures) as a column of `series_values`.
+- **Scale of series.** Partitioning, rollups and tiering of `series_values`
+  for hundreds of thousands of meters and sensors: a decision of its own once
+  the research in `docs/research/` is in.
