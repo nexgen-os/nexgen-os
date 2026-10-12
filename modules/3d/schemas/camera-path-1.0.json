@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexgen-os.org/schemas/camera-path-1.0.json",
+  "title": "Camera path",
+  "description": "How a camera moves over a scene, as geographic keyframes: the semantics of a KML tour, in JSON. Positions and targets are longitude, latitude and height above the WGS 84 ellipsoid (EPSG:4979). Renderer-neutral: a MapLibre free camera, three.js, CesiumJS or a KML export replay it frame for frame.",
+  "type": "object",
+  "required": ["version", "keyframes"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": "1.0" },
+    "crs": { "const": "EPSG:4979", "default": "EPSG:4979" },
+    "frame_rate": { "type": "number", "exclusiveMinimum": 0, "default": 30 },
+    "interpolation": { "enum": ["linear", "catmull-rom"], "default": "catmull-rom" },
+    "loop": { "type": "boolean", "default": false },
+    "keyframes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/keyframe" }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "required": ["lon", "lat", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "height": { "type": "number", "description": "Metres above the WGS 84 ellipsoid." }
+      }
+    },
+    "keyframe": {
+      "type": "object",
+      "required": ["t"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "type": "number", "minimum": 0, "description": "Seconds from the start." },
+        "position": { "$ref": "#/$defs/point" },
+        "target": { "$ref": "#/$defs/point", "description": "Where the camera looks (a KML LookAt). Either target, or heading and tilt." },
+        "heading": { "type": "number", "minimum": 0, "exclusiveMaximum": 360, "description": "Degrees clockwise from north (a KML Camera)." },
+        "tilt": { "type": "number", "minimum": 0, "maximum": 180, "description": "Degrees from straight down." },
+        "roll": { "type": "number", "minimum": -180, "maximum": 180, "default": 0 },
+        "fov": { "type": "number", "exclusiveMinimum": 0, "maximum": 179, "default": 45, "description": "Vertical field of view, degrees." },
+        "easing": { "enum": ["linear", "smooth", "bounce"], "default": "smooth", "description": "How the camera reaches this keyframe from the previous one (KML flyToMode)." },
+        "wait": { "type": "number", "minimum": 0, "description": "Seconds to hold here before moving on." }
+      },
+      "oneOf": [
+        { "required": ["position", "target"] },
+        { "required": ["position", "heading", "tilt"] },
+        { "required": ["wait"] }
+      ]
+    }
+  }
+}

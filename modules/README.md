@@ -28,7 +28,7 @@ is specific to a trade lives here, one folder and one schema per module.
 | Module | Objects it adds | Computes |
 |---|---|---|
 | `architecture` (shipped) | floors, spaces (rooms, zones, units) | the inside of a building after IFC and CityGML; BIM import and export through the format libraries |
-| `3d` | captures (drone flights, scans), models (glTF, IFC, CityJSON, 3D Tiles), point clouds (COPC), drawings (DXF, SVG), orthophotos | photogrammetry jobs (OpenDroneMap), registration, level-of-detail generation, the 3D models and videos a project is shown with |
+| `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | captures with their STAC Item, images with poses, rasters, point clouds (COPC), georeferenced models, drawings, 3D Tiles tilesets, scenes, camera paths, renders | photogrammetry through OpenDroneMap, 3D Tiles builds, extrusion tiles for MapLibre, the models and videos a project is shown with |
 | `energy` | PV systems, batteries, chargers, wind turbines, allocation keys, tariffs, bill runs | PV production, consumption profiles, self-consumption, energy sharing, batteries, charging, flexibility; settlement lines handed to Ekwo for invoicing |
 | `heating` | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |
 | `thermal` | envelope elements and their U-values, thermal bridges, glazing | thermal simulation of the envelope, heat losses, energy performance inputs |
