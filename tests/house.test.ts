@@ -175,12 +175,12 @@ describe('a house', () => {
       [pv, sc.id],
     );
     await db.query(
-      `insert into readings (series_id, at, value)
+      `insert into series_values (series_id, at, value)
        select $1, ts, 0.25 from generate_series('2026-07-01 12:00+00'::timestamptz, '2026-07-01 13:45+00', '15 minutes') ts`,
       [measured.id],
     );
     await db.query(
-      `insert into readings (series_id, at, value) values ($1, '2026-07-01 12:00+00', 1.1), ($1, '2026-07-01 13:00+00', 0.9)`,
+      `insert into series_values (series_id, at, value) values ($1, '2026-07-01 12:00+00', 1.1), ($1, '2026-07-01 13:00+00', 0.9)`,
       [simulated.id],
     );
     const m = await db.query<{ value: number }>(

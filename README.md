@@ -22,7 +22,7 @@ what a trade knows beyond its columns is attached to it.
 | `sites`, `buildings`, `surfaces` | places: an address and a parcel, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
 | `meters`, `participants` | connection points, and a site's role in a project behind them | IEC CIM UsagePoint, Nexgen participants |
 | `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
-| `series`, `readings` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
+| `series`, `series_values` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
 | `attributes`, `external_ids`, `links`, `lineage`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
 | `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | — |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |

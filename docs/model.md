@@ -20,7 +20,7 @@ erDiagram
   device_directory ||--o{ devices : "instance of"
   objects ||--o{ sensors : "point of"
   objects ||--o{ series : observed
-  series ||--o{ readings : values
+  series ||--o{ series_values : values
   objects ||--o{ attributes : "has"
   objects ||--o{ external_ids : "known as"
   objects ||--o{ links : "subject / object"
@@ -103,7 +103,7 @@ pages read the named tables.
 - **series** — one quantity on one object, `measured`, `simulated`,
   `forecast` or `setpoint`; what one value means (`interval`, `instant`,
   `cumulative`); its step; the sensor that produces it; its source.
-- **readings** — timestamped values with a quality flag.
+- **series_values** — the timestamped values of a series, with a quality flag.
   `resample(series, from, to, step)` is the one way series are read.
 - **scenarios** — `scenario_id is null` is the world as it is. A scenario
   holds what a variant adds: objects, attributes that override reality,

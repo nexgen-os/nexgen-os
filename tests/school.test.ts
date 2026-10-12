@@ -91,7 +91,7 @@ describe('a school with the architecture module', () => {
       [classroom1, sp.id],
     );
     await db.query(
-      `insert into readings (series_id, at, value) values
+      `insert into series_values (series_id, at, value) values
          ($1, '2026-01-10 08:00+00', 18.5), ($1, '2026-01-10 08:30+00', 19.5), ($2, '2026-01-10 08:00+00', 20)`,
       [measured.id, asked.id],
     );

@@ -1,7 +1,7 @@
 // An energy community: a project, three sites each behind its own meter,
 // taking part as participants with the company that answers for each, a
 // shared PV plant on a fourth site, a group of participants, a meter swapped
-// without losing the connection point, and the readings of a register.
+// without losing the connection point, and the values of a register.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { freshDatabase, insert, one, organisation } from './helpers/db.js';
@@ -111,7 +111,7 @@ describe('an energy community', () => {
       [meters[1]],
     );
     await db.query(
-      `insert into readings (series_id, at, value) values ($1, '2026-04-01 00:00+00', 1000), ($1, '2026-04-01 12:00+00', 1012), ($1, '2026-04-02 00:00+00', 1030)`,
+      `insert into series_values (series_id, at, value) values ($1, '2026-04-01 00:00+00', 1000), ($1, '2026-04-01 12:00+00', 1012), ($1, '2026-04-02 00:00+00', 1030)`,
       [register.id],
     );
     const r = await db.query<{ value: number }>(`select value from resample($1, '2026-04-01', '2026-04-03', '1 day')`, [register.id]);

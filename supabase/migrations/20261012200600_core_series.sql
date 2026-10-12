@@ -1,11 +1,11 @@
--- Nexgen OS — core: series and readings.
+-- Nexgen OS — core: series and their values.
 --
 -- Values that change continuously — energy through a meter, temperature in a
 -- room, production of a PV system, state of charge of a battery, a setpoint
--- sent to a heat pump — are series of readings attached to an object. The
+-- sent to a heat pump — are series of values attached to an object. The
 -- shape is the one of OGC SensorThings (Datastream, Observation) and of
 -- Brick points: a series says what is observed (an object), which quantity
--- (hence the unit), by what (a sensor), at which step; readings are its
+-- (hence the unit), by what (a sensor), at which step; its values are the
 -- timestamped values.
 --
 -- Measured, simulated and forecast series share the same shape, so a page
@@ -54,7 +54,7 @@ create trigger series_attach
   before insert or update on series
   for each row execute function attach('object_id');
 
-create table readings (
+create table series_values (
   series_id        uuid not null references series(id) on delete cascade,
   at               timestamptz not null,
   -- In the unit of the series' quantity, always.
@@ -67,10 +67,10 @@ create table readings (
   constraint readings_quality check (quality in ('measured', 'estimated', 'substituted', 'missing'))
 );
 
-comment on table readings is
+comment on table series_values is
   'Timestamped values of a series, in its quantity''s unit.';
 
-create or replace function readings_attach()
+create or replace function series_values_attach()
 returns trigger
 language plpgsql
 as $$
@@ -80,9 +80,9 @@ begin
 end;
 $$;
 
-create trigger readings_attach
-  before insert on readings
-  for each row execute function readings_attach();
+create trigger series_values_attach
+  before insert on series_values
+  for each row execute function series_values_attach();
 
 -- The one way series are read: resampled on a regular step, combined the
 -- way the quantity says (sum, mean or last).
@@ -104,7 +104,7 @@ as $$
            else (array_agg(r.value order by r.at desc))[1]
          end as value,
          count(*)::int as samples
-    from readings r
+    from series_values r
     join series s on s.id = r.series_id
     join quantities q on q.code = s.quantity_code
    where r.series_id = p_series_id
@@ -118,6 +118,6 @@ comment on function resample(uuid, timestamptz, timestamptz, interval) is
   'A series resampled on a regular step, combined by its quantity''s aggregation; a cumulative register gives its last index per step. The one function pages and modules read series through.';
 
 call secure_table('series');
-call secure_table('readings');
+call secure_table('series_values');
 
 grant execute on function resample(uuid, timestamptz, timestamptz, interval) to authenticated, service_role;

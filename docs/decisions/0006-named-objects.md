@@ -55,7 +55,7 @@ a specialised one, and the **packs** that hold what varies by country.
 | `devices` | what every device has: type, site, building, surface, meter, catalogue product, rated power, status; derived per type by a module table with the same id | Nexgen `devices`, Brick Equipment |
 | `device_directory` | the products: manufacturer, model, unit power, capacity, price | Nexgen `device_directory` |
 | `sensors` | a measurable or controllable point of any object: quantity, kind (sensor, setpoint, command), address at the source | Brick Point, Home Assistant entity |
-| `series`, `readings` | one quantity over time for one object, measured, simulated, forecast or asked; one store | OGC SensorThings |
+| `series`, `series_values` | one quantity over time for one object, measured, simulated, forecast or asked; one store | OGC SensorThings |
 | `attributes` | a typed value a trade attaches to any object, with validity and provenance | IFC property sets, bSDD |
 | `external_ids` | the identifiers an object is known by elsewhere | IFC GlobalId, OSM, Overture GERS, GS1 |
 | `links` | a typed, dated link that is not a column of either side: serves, shades, occupies, owns | Brick, IFC relationships |
