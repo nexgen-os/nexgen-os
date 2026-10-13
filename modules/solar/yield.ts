@@ -84,7 +84,7 @@ export async function runYield(db: Db, request: YieldRequest, client = pvgis()):
   if (!profile) throw new Error(`yield_profile_unknown: ${profileCode}`);
   const systemLoss = profile.losses.reduce((sum, l) => sum + Number(l.pct), 0);
 
-  let arrays = (await db.query<ArrayRow>('select name, azimuth_deg, tilt_deg, mounting, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by created_at, id', [request.pvSystemId])).rows;
+  let arrays = (await db.query<ArrayRow>('select name, azimuth_deg, tilt_deg, mounting, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by created_at, name, id', [request.pvSystemId])).rows;
   if (arrays.length === 0) {
     // A system described without arrays: one array on the device's own surface, with the system's power.
     arrays = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc }];

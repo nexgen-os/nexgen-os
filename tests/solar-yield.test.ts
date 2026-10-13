@@ -45,7 +45,7 @@ describe('a pvgis_like yield run', () => {
     const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
 
     expect(asked).toHaveLength(2);
-    const params = asked.map((u) => Object.fromEntries(new URL(u).searchParams));
+    const params = asked.map((u) => Object.fromEntries(new URL(u).searchParams)).sort((a, b) => Number(b.peakpower) - Number(a.peakpower));
     expect(params.map((p) => [p.peakpower, p.aspect, p.angle, p.loss, p.mountingplace])).toEqual([['20', '0', '30', '14', 'building'], ['10', '-90', '30', '14', 'building']]);
 
     // The recorded answer is the 1 kWp one and is served to both arrays: the run adds the two answers.
@@ -70,9 +70,10 @@ describe('a pvgis_like yield run', () => {
     expect(run.inputs).toMatchObject({
       profile: 'pvgis_like',
       weather: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', years: { from: 2023, to: 2023 } },
-      arrays: [{ kwp: 20, azimuth_deg: 180, tilt_deg: 30 }, { kwp: 10, azimuth_deg: 90, tilt_deg: 30 }],
       conventions: { time: 'interval start, UTC' },
     });
+    const arrays = (run.inputs.arrays as { kwp: number; azimuth_deg: number; tilt_deg: number }[]).sort((a, b) => b.kwp - a.kwp);
+    expect(arrays).toMatchObject([{ kwp: 20, azimuth_deg: 180, tilt_deg: 30 }, { kwp: 10, azimuth_deg: 90, tilt_deg: 30 }]);
     expect(run.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
   });
 

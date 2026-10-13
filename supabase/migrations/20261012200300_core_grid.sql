@@ -171,26 +171,5 @@ $$;
 comment on function participant_meters(uuid) is
   'The connection points a participant is behind, groups included.';
 
-create or replace function site_of(p_object_id uuid)
-returns uuid
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  k text;
-begin
-  select kind into k from objects where id = p_object_id;
-  return case k
-    when 'site'        then p_object_id
-    when 'building'    then (select site_id from buildings where id = p_object_id)
-    when 'surface'     then coalesce((select site_id from surfaces where id = p_object_id),
-                                     (select b.site_id from surfaces s join buildings b on b.id = s.building_id where s.id = p_object_id))
-    when 'meter'       then (select site_id from meters where id = p_object_id)
-    when 'participant' then (select site_id from participants where id = p_object_id)
-    else null
-  end;
-end;
-$$;
 
 grant execute on function participant_meters(uuid) to authenticated, service_role;

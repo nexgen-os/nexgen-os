@@ -207,28 +207,5 @@ comment on table sensors is
 create index sensors_host_idx on sensors (host_id);
 call declare_object('sensors', 'sensor', '{host_id}');
 
-create or replace function site_of(p_object_id uuid)
-returns uuid
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  k text;
-begin
-  select kind into k from objects where id = p_object_id;
-  return case k
-    when 'site'        then p_object_id
-    when 'building'    then (select site_id from buildings where id = p_object_id)
-    when 'surface'     then coalesce((select site_id from surfaces where id = p_object_id),
-                                     (select b.site_id from surfaces s join buildings b on b.id = s.building_id where s.id = p_object_id))
-    when 'meter'       then (select site_id from meters where id = p_object_id)
-    when 'participant' then (select site_id from participants where id = p_object_id)
-    when 'device'      then (select site_id from devices where id = p_object_id)
-    when 'sensor'      then site_of((select host_id from sensors where id = p_object_id))
-    else null
-  end;
-end;
-$$;
 
 grant execute on function derived_device_check() to service_role;

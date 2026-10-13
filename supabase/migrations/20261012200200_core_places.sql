@@ -56,6 +56,20 @@ create table objects (
 comment on table objects is
   'One row per object of any kind, with what every attachment needs: its organisation and its scenario. Maintained by the triggers of the named tables; never written by hand.';
 
+-- What every kind of object is: its table, and the columns that lead to its
+-- parents, in order of preference. Written by `declare_object()` for the core
+-- kinds and the modules' alike, so that `site_of()` finds its way from any
+-- object to its site without a module ever rewriting it.
+create table object_kinds (
+  kind            text primary key,
+  table_name      text not null,
+  parent_columns  text[] not null default '{}',
+  published_by    text not null default 'core'
+);
+
+comment on table object_kinds is
+  'One row per kind of object: the table that holds it and the columns leading to its parents, in order of preference. Filled by declare_object().';
+
 create index objects_organisation_idx on objects (organisation_id);
 
 -- BEFORE INSERT / UPDATE / AFTER DELETE on every named table. tg_argv[0] is
@@ -126,6 +140,9 @@ declare
   n   text := replace(p_table, '.', '_');
   col text;
 begin
+  insert into object_kinds (kind, table_name, parent_columns, published_by)
+  values (p_kind, p_table, p_parents, case when position('.' in p_table) > 0 then split_part(p_table, '.', 1) else 'core' end)
+  on conflict (kind) do update set table_name = excluded.table_name, parent_columns = excluded.parent_columns, published_by = excluded.published_by;
   execute format('create trigger %I before insert or update on %s for each row execute function register_object(%L)',
                  n || '_register', p_table, p_kind);
   execute format('create trigger %I after delete on %s for each row execute function register_object(%L)',
@@ -467,9 +484,11 @@ call declare_object('surfaces', 'surface', '{building_id,site_id}');
 -- Where an object is, and whose rules apply.
 -- ---------------------------------------------------------------------------
 
--- The site an object belongs to, through its own columns. Modules extend it
--- for the kinds they register by adding a case in their own migration
--- (`create or replace`), always ending in the core kinds.
+-- The site an object belongs to: from any object, follow the parent columns
+-- `object_kinds` names for its kind, and keep the first path that reaches a
+-- site (a participant is in a project and on a site; the site is the
+-- answer). A module never rewrites this function: declaring its objects is
+-- enough.
 create or replace function site_of(p_object_id uuid)
 returns uuid
 language plpgsql
@@ -477,16 +496,36 @@ stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  k text;
+  k       text;
+  t       text;
+  cols    text[];
+  col     text;
+  parent  uuid;
+  found   uuid;
 begin
+  if p_object_id is null then
+    return null;
+  end if;
   select kind into k from objects where id = p_object_id;
-  return case k
-    when 'site'     then p_object_id
-    when 'building' then (select site_id from buildings where id = p_object_id)
-    when 'surface'  then coalesce((select site_id from surfaces where id = p_object_id),
-                                  (select b.site_id from surfaces s join buildings b on b.id = s.building_id where s.id = p_object_id))
-    else null
-  end;
+  if k is null then
+    return null;
+  elsif k = 'site' then
+    return p_object_id;
+  end if;
+  select table_name, parent_columns into t, cols from object_kinds where kind = k;
+  if t is null then
+    return null;
+  end if;
+  foreach col in array cols loop
+    execute format('select %I from %s where id = $1', col, t) into parent using p_object_id;
+    if parent is not null then
+      found := site_of(parent);
+      if found is not null then
+        return found;
+      end if;
+    end if;
+  end loop;
+  return null;
 end;
 $$;
 
