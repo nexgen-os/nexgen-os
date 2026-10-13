@@ -4,6 +4,8 @@
 -- Modules and country packs add their own rows with `published_by` set to
 -- their code. Every row names the standard terms it corresponds to.
 
+set search_path = nexgen, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- Device types. The codes of Nexgen, in a tree aligned on Brick and IFC. The
 -- module that derives each type into its own table is named.

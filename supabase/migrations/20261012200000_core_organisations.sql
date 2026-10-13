@@ -12,6 +12,14 @@
 -- playbook: an organisation and a contact keep the Ekwo id they are known by,
 -- and Ekwo is the one place that knows them and invoices them.
 
+-- The core lives in its own schema, as every module does (decision 0010):
+-- `public` stays the installation's, and Ekwo OS or any other application
+-- can share the database. A connection reads it with `nexgen` on its
+-- search path; on PostgREST the schema is exposed and named by the client.
+create schema if not exists nexgen;
+grant usage on schema nexgen to authenticated, service_role;
+set search_path = nexgen, public, extensions;
+
 -- Geometry lives in PostGIS. On a hosted Supabase project the extension is
 -- already available; on a bare Postgres it has to be installed beforehand.
 create extension if not exists postgis;
@@ -23,6 +31,7 @@ create extension if not exists postgis;
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   new.updated_at := now();
@@ -86,7 +95,7 @@ returns member_role
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select m.role
     from organisation_members m
@@ -98,6 +107,7 @@ create or replace function can_read_organisation(p_organisation_id uuid)
 returns boolean
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select organisation_role(p_organisation_id) is not null;
 $$;
@@ -106,6 +116,7 @@ create or replace function can_write_organisation(p_organisation_id uuid)
 returns boolean
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select organisation_role(p_organisation_id) in ('owner', 'editor');
 $$;
@@ -114,6 +125,7 @@ create or replace function is_organisation_owner(p_organisation_id uuid)
 returns boolean
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select organisation_role(p_organisation_id) = 'owner';
 $$;
@@ -124,7 +136,7 @@ create or replace function organisations_add_creator()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if auth.uid() is not null then
@@ -145,6 +157,7 @@ create trigger organisations_add_creator
 -- (a module's); policy names are derived from it.
 create or replace procedure secure_table(p_table text)
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   n text := replace(p_table, '.', '_');

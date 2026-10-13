@@ -14,6 +14,8 @@
 -- for a hundred thousand meters (decision 0007): partitioned by week, no
 -- per-row organisation, a two-byte quality, one read function.
 
+set search_path = nexgen, public, extensions;
+
 create table series (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
@@ -96,6 +98,7 @@ create index series_values_at_brin on series_values using brin (at) with (pages_
 create or replace function series_values_partition(p_week date)
 returns text
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   monday date := date_trunc('week', p_week)::date;
@@ -126,6 +129,7 @@ create or replace function series_time_zone(p_series_id uuid)
 returns text
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select s.time_zone
     from series se
@@ -150,7 +154,7 @@ returns table (bucket timestamptz, value double precision, samples int)
 language plpgsql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   s     series%rowtype;

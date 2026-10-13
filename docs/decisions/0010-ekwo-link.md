@@ -1,6 +1,6 @@
 # 0010 — Where Ekwo OS runs, and what the bridge is
 
-**Proposed 13/10/2026.**
+**Proposed 13/10/2026, decided the same day: B, with A as the fallback.**
 
 ## Context
 
@@ -63,5 +63,10 @@ always works. The bridge is one module, `ekwo`, and one library:
 
 ## Decision
 
-Pending: move the core to schema `nexgen` now (B, with A as fallback), or
-keep it in `public` and bridge through the API only (A).
+B, with A as the path that always works. The core lives in the schema
+`nexgen` from its first migration; a connection reads it with `nexgen` on
+its search path, and on PostgREST the schema is exposed and named by the
+client, as for every module. The same question is open on the Ekwo side:
+its core could move from `public` to a schema `ekwo` at its next breaking
+release, which would make the convention uniform — one schema per core,
+one per module, `public` for the installation.

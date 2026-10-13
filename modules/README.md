@@ -1,11 +1,11 @@
 # `modules/` — one Postgres schema each, beside the core
 
-The core is `public`: the named objects and what is attached to them. What
+The core is the schema `nexgen`: the named objects and what is attached to them. What
 is specific to a trade lives here, one folder and one schema per module.
 
 ## The rules
 
-1. **One schema, and the core is not it.** A module depends on `public` by
+1. **One schema, and the core is not it.** A module depends on `nexgen` by
    foreign key; the core has no hook and no idea it exists.
 2. **Derive, never widen.** A module that needs more about a device adds a
    table with the same id (`call derive_devices('energy.pv_systems',
@@ -19,7 +19,7 @@ is specific to a trade lives here, one folder and one schema per module.
 5. **A country is data.** No module names one; what a country decides is in
    its pack.
 6. **The registry is a table.** The last statement of a module's first
-   migration writes its row into `public.modules`.
+   migration writes its row into `nexgen.modules`.
 7. **A module declares its inputs and outputs**, typed and with units, so
    that a run can be reproduced and compared.
 

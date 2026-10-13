@@ -21,6 +21,8 @@
 -- everyone signed in and written only by migrations and seeds. Each row says
 -- who published it: `core`, a module code or a pack code.
 
+set search_path = nexgen, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- device_types — what a device can be.
 -- ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ create or replace function device_type_is_a(p_type text, p_ancestor text)
 returns boolean
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   with recursive up as (
     select code, parent_code from device_types where code = p_type
@@ -176,6 +179,7 @@ create or replace function tags_known(p_tags text[])
 returns boolean
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select not exists (select 1 from unnest(p_tags) t where not exists (select 1 from tags where code = t));
 $$;

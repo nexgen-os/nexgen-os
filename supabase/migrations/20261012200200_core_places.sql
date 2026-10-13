@@ -12,6 +12,8 @@
 -- computations project on the fly to the UTM zone of the geometry
 -- (`metric_srid`), which works anywhere on earth without a national grid.
 
+set search_path = nexgen, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- scenarios — the reality, and the variants people design against it.
 -- ---------------------------------------------------------------------------
@@ -61,6 +63,7 @@ create index objects_organisation_idx on objects (organisation_id);
 create or replace function register_object()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if tg_op = 'INSERT' then
@@ -88,6 +91,7 @@ $$;
 create or replace function parent_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   col  text := tg_argv[0];
@@ -116,6 +120,7 @@ $$;
 -- tags check, updated_at, row level security.
 create or replace procedure declare_object(p_table text, p_kind text, p_parents text[] default '{}')
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   n   text := replace(p_table, '.', '_');
@@ -144,6 +149,7 @@ create or replace function metric_srid(p_geom geometry)
 returns integer
 language sql
 immutable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   -- UTM zone of the centroid: 326xx north, 327xx south.
   select case
@@ -160,6 +166,7 @@ create or replace function area_m2(p_geom geometry)
 returns numeric
 language sql
 immutable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select round(ST_Area(ST_Transform(ST_Force2D(p_geom), metric_srid(p_geom)))::numeric, 2);
 $$;
@@ -171,6 +178,7 @@ create or replace function to_core_geometry(p_geom geometry)
 returns geometry
 language plpgsql
 immutable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   g geometry := p_geom;
@@ -200,6 +208,7 @@ comment on function to_core_geometry(geometry) is
 create or replace function normalize_geometry()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   col text := tg_argv[0];
@@ -219,6 +228,7 @@ create or replace function footprint_volume(p_footprint geometry, p_base numeric
 returns geometry
 language plpgsql
 immutable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   ring   geometry;
@@ -385,6 +395,7 @@ create or replace function building_volume(p_building_id uuid)
 returns geometry
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select footprint_volume(b.footprint, coalesce(b.elevation_m, 0), coalesce(b.elevation_m, 0) + b.height_m)
     from buildings b where b.id = p_building_id;
@@ -447,6 +458,7 @@ create or replace function site_of(p_object_id uuid)
 returns uuid
 language plpgsql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   k text;
@@ -469,6 +481,7 @@ create or replace function country_of(p_object_id uuid)
 returns char(2)
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select coalesce(
     (select country from sites where id = site_of(p_object_id)),

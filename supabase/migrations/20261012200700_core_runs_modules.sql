@@ -9,6 +9,8 @@
 -- Nothing in the core calls a model; a module that uses one says so in its
 -- engine version and its inputs.
 
+set search_path = nexgen, public, extensions;
+
 create table modules (
   code              text primary key,
   name              text not null,
@@ -57,6 +59,7 @@ create trigger runs_attach
 create or replace function runs_immutable()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if old.status <> 'running' then
@@ -79,6 +82,7 @@ create or replace function run_hash(p_module text, p_engine_version text, p_inpu
 returns text
 language sql
 immutable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   -- jsonb text output is canonical: keys sorted, whitespace normalised.
   select encode(sha256(convert_to(p_module || E'\n' || p_engine_version || E'\n' || p_inputs::text, 'UTF8')), 'hex');
@@ -96,6 +100,7 @@ create or replace function record_run(
 )
 returns uuid
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   h    text := run_hash(p_module_code, p_engine_version,

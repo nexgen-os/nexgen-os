@@ -30,4 +30,5 @@ const again = await exportHomeAssistant(db, buildingId); // deep-equals snapshot
 ```
 
 The library speaks SQL only, through a one-method `Db` interface, so it runs
-on PGlite, node-postgres or postgres.js. Needs the `architecture` module.
+on PGlite, node-postgres or postgres.js, on a connection whose search path
+holds `nexgen`. Needs the `architecture` module.

@@ -11,6 +11,8 @@
 -- building or a site: what it observes, in which unit, read or written
 -- (Brick Point, Home Assistant entity). Its values are a series.
 
+set search_path = nexgen, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- device_directory — the products a device can be an instance of.
 -- ---------------------------------------------------------------------------
@@ -110,6 +112,7 @@ create index devices_geometry_idx on devices using gist (geometry);
 create or replace function devices_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if new.building_id is not null and site_of(new.building_id) <> new.site_id then
@@ -137,6 +140,7 @@ call declare_object('devices', 'device', '{site_id,building_id,surface_id,meter_
 create or replace function derived_device_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   t text;
@@ -155,6 +159,7 @@ $$;
 
 create or replace procedure derive_devices(p_table text, p_device_type text)
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   execute format('alter table %s add constraint %I foreign key (id) references devices(id) on delete cascade',
@@ -206,6 +211,7 @@ create or replace function site_of(p_object_id uuid)
 returns uuid
 language plpgsql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   k text;

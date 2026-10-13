@@ -7,6 +7,8 @@
 -- rows as objects, so that attributes, sensors, series, documents and runs
 -- attach to a floor or a space like to anything else.
 
+set search_path = nexgen, public, extensions;
+
 create schema architecture;
 grant usage on schema architecture to authenticated, service_role;
 
@@ -86,10 +88,11 @@ call declare_object('architecture.spaces', 'space', '{floor_id,building_id}');
 -- Where a floor or a space is.
 -- ---------------------------------------------------------------------------
 
-create or replace function site_of(p_object_id uuid)
+create or replace function nexgen.site_of(p_object_id uuid)
 returns uuid
 language plpgsql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   k text;
@@ -116,6 +119,7 @@ create or replace function architecture.building_of(p_object_id uuid)
 returns uuid
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   select coalesce(
     (select building_id from architecture.floors where id = p_object_id),

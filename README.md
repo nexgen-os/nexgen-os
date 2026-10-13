@@ -68,7 +68,7 @@ the Home Assistant library goes in and out without losing a field.
 ## Layout
 
 ```
-supabase/migrations/   the core schema
+supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture shipped)
 packs/                 one folder per country (none yet)

@@ -9,6 +9,8 @@
 -- Nexgen; the model also holds a site with several meters, and a site taking
 -- part in two projects.
 
+set search_path = nexgen, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- meters — connection points.
 -- ---------------------------------------------------------------------------
@@ -49,6 +51,7 @@ create index meters_site_idx on meters (site_id);
 create or replace function meters_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   pat text;
@@ -110,6 +113,7 @@ create index participants_parent_idx on participants (parent_id);
 create or replace function participants_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   p participants%rowtype;
@@ -154,6 +158,7 @@ create or replace function participant_meters(p_participant_id uuid)
 returns table (meter_id uuid)
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   with recursive down as (
     select id, site_id from participants where id = p_participant_id
@@ -170,6 +175,7 @@ create or replace function site_of(p_object_id uuid)
 returns uuid
 language plpgsql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   k text;

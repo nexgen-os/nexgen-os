@@ -22,6 +22,7 @@ export async function freshDatabase(modules: string[] = []): Promise<PGlite> {
   await db.exec(await readFile(join(here, 'supabase-shim.sql'), 'utf8'));
   for (const sql of await sqlFiles(join(repoRoot, 'supabase', 'migrations'))) await db.exec(sql);
   for (const sql of await sqlFiles(join(repoRoot, 'supabase', 'seed'))) await db.exec(sql);
+  await db.exec('set search_path = nexgen, public');
   for (const m of modules) {
     for (const sql of await sqlFiles(join(repoRoot, 'modules', m, 'migrations'))) await db.exec(sql);
   }

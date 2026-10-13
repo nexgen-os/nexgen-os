@@ -12,11 +12,14 @@
 -- Each attachment carries the organisation of its object, copied by trigger
 -- so that row level security reads one column, and may belong to a scenario.
 
+set search_path = nexgen, public, extensions;
+
 -- Copies the organisation of the object named by tg_argv[0], and refuses an
 -- attachment to an object of another scenario than its own.
 create or replace function attach()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   col  text := coalesce(tg_argv[0], 'object_id');
@@ -77,6 +80,7 @@ create trigger attributes_attach
 create or replace function attributes_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   def   property_defs%rowtype;
@@ -150,6 +154,7 @@ create or replace function attributes_of(
 returns jsonb
 language sql
 stable
+set search_path = nexgen, public, extensions, pg_temp
 as $$
   with recursive chain as (
     select s.id, s.parent_id, 1 as rank from scenarios s where s.id = p_scenario_id
@@ -202,6 +207,7 @@ create index external_ids_object_idx on external_ids (object_id);
 create or replace function external_ids_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   pat text;
@@ -254,6 +260,7 @@ create trigger links_attach
 create or replace function links_check()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   lt   link_types%rowtype;
@@ -309,6 +316,7 @@ comment on table successors is
 create or replace function successors_attach()
 returns trigger
 language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   a uuid;
