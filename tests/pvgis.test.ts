@@ -64,7 +64,7 @@ describe('the PVGIS connector', () => {
     const { fetch } = fetchWith(await recorded('pvgis-seriescalc-brussels-2023-48h.json'));
     const got = await pvgis({ fetch }).hourly({ lon: 4.35, lat: 50.85 }, { kwp: 1, azimuth_deg: 180, tilt_deg: 35, mounting: 'building', system_loss_pct: 14 }, { from: 2023, to: 2023 });
     const { seriesId } = await storeSeries(db, { organisationId: org, objectId: site, sourceCode: 'pvgis', kind: 'simulated' }, got.series[0]);
-    const days = await db.query<{ bucket: string; value: number; samples: number }>(`select bucket, value, samples from resample($1, '2023-01-01', '2023-01-03', '1 day')`, [seriesId]);
+    const days = await db.query<{ bucket: string; value: number; samples: number }>(`select bucket, value, samples from resample($1, '2023-01-01 00:00+01', '2023-01-03 00:00+01', '1 day')`, [seriesId]);
     expect(days.rows.map((d) => d.samples)).toEqual([23, 24]); // the first Brussels day starts at 23:00 UTC the day before
     const total = got.series[0].values.reduce((s, v) => s + v.value, 0);
     expect(days.rows.reduce((s, d) => s + d.value, 0)).toBeCloseTo(total - got.series[0].values[47].value, 5);
