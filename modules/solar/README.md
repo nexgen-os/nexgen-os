@@ -36,11 +36,13 @@ of its arrays, or its own `kwp_dc` when it has none.
 | Code | Imitates | Choices |
 |---|---|---|
 | `pvgis_like` | PVGIS PVcalc | SARAH / ERA5 components, Muneer, DEM horizon, Faiman 26.9 / 6.2, `system` 14 %, no clipping |
-| `pvwatts` | PVWatts v8 | Perez, Faiman 25 / 6.84, PVWatts DC and AC models, `system` 14 % |
-| `pvsyst_like` | PVsyst 8 | Hay-Davies, Uc 29 / Uv 0, losses in the loss-diagram order: iam, soiling 2, lid 2, module_quality −0.75, mismatch 2, dc_wiring 1.5, ac_wiring 1, availability 0 |
+| `pvwatts` | PVWatts v8, as `runYield` runs it | transposition by the weather source (Open-Meteo's `global_tilted_irradiance`), Faiman 25 / 6.84, PVWatts DC model, `system` 14 %; no inverter model, no clipping |
+| `pvsyst_like` | PVsyst 8 | transposition not verified (null), Uc 29 / Uv 0, losses in the loss-diagram order: iam, soiling 2, lid 2, module_quality −0.75, mismatch 2, dc_wiring 1.5, ac_wiring 1, availability 0 (usual starting values, not verified defaults) |
 | `pvsol_like` | PV\*SOL premium 2026 | Hofmann, Hay-Davies, ΔT per mounting (22 / 29 / 32 / 43 / 20 K), losses without values (PV\*SOL's defaults not verified) |
 
-Each row's `description` says what was not verified.
+Each row's `description` says which values are published defaults and
+which were not verified; a column naming a model nobody runs or nobody
+verified is null.
 
 ## Yield runs
 
@@ -60,7 +62,14 @@ power when it has none; each needs an azimuth, a tilt and a power.
 | Profile | Computed by | Weather | What else the request may give |
 |---|---|---|---|
 | `pvgis_like` | PVGIS `seriescalc`, one call per array | PVGIS's radiation database for the place (SARAH3, or ERA5 outside its coverage), the years asked | `raddatabase` to force one |
-| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked | `gammaPdc`, `typicalYear`, `anchor` |
+| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked in the site's local calendar | `gammaPdc`, `typicalYear`, `anchor` |
+
+`pvwatts` needs the site's time zone (`sites.time_zone`, IANA); without
+it, it throws a named error (`time_zone_required`). Days, months and years
+are cut in the site's local standard time (no daylight-saving shift, as in
+TMY files), so that a sunlit day is never split by UTC midnight; every
+value stays dated at the start of its hour, in UTC. The years asked are
+read with one day more on each side, then cut at the local new year.
 
 `pvwatts`, step by step, each a pure function tested on its own:
 
@@ -69,30 +78,41 @@ power when it has none; each needs an azimuth, a tilt and a power.
    winds read at its two ends.
 2. **Clean**: irradiance missing or below zero → 0, above 1,400 W/m² (the
    solar constant and a margin) → 1,400; temperature and wind gaps take the
-   last value read. A period without any temperature or wind is refused.
+   last value read. A period without any temperature or wind throws a
+   named error (`weather_without_temperature`, `weather_without_wind`).
 3. **Convert**: Faiman cell temperature with the profile's `u0` and `u1`,
    the PVWatts DC model with γ (`gamma_pdc` of the array's module product
-   when it is a `pvwatts` one, else the request's `gammaPdc`, else
-   `gamma_unknown`), then the profile's losses in their order.
+   when it is a `pvwatts` one, else the request's `gammaPdc`, else a named
+   error, `gamma_unknown`; γ outside [−0.01, 0] throws `gamma_out_of_range`,
+   a positive value being a sign error), then the fraction that remains
+   after the profile's losses, in their order (`remainingAfterLosses`).
 4. **Add up** the arrays hour by hour.
-5. **Typical year** (default; `typicalYear: false` keeps the real years as
-   they are): for each calendar month, the real month whose daily energies
-   are distributed most like those of every year (Finkelstein-Schafer
-   statistic on daily energy; a year covering less than 95 % of the month
-   is no candidate; the most recent year wins a tie). The months are chosen
-   once for the system, so every array reads the same days. The year is
-   laid on the calendar of `years.to`, 29 February left out, then scaled to
-   the mean annual of the years read. It is stored in a series of its own,
+5. **Typical year** (default): for each calendar month, the real month
+   whose daily energies (local days) are distributed most like those of
+   every year (Finkelstein-Schafer statistic on daily energy; a year
+   covering less than 95 % of the month is no candidate; the most recent
+   year wins a tie). The months are chosen once for the system, so every
+   array reads the same days. The year is laid on the local calendar of
+   `years.to` (the run's `calendar_year`), 29 February left out, 8,760
+   values: an hour the chosen month lacks takes the multi-year mean of that
+   hour (`hours_from_mean` in the run), and an hour no year has throws a
+   named error (`period_not_covered`). The year is then scaled to the mean
+   annual total over the years used. It is stored in a series of its own,
    named `typical year <from>-<to>`, apart from the real years.
+   **Real years** (`typicalYear: false`): the series as it is; the annual
+   is the mean over the years covered, a year counting when at least 95 %
+   of its hours have a value. The run records `years_covered`; when no
+   year is covered, a named error (`period_not_covered`).
 6. **Anchor** (`anchor: 'pvgis'`): each array's annual is brought to PVGIS's
    `PVcalc` yearly yield for the same array (same orientation, mounting and
    total loss) by one factor applied to every hour. The factors, PVGIS's
    radiation database and the system's factor are in the run.
 
 What `pvwatts` does not model, and says so in the run: inverter efficiency
-and clipping, incidence angle and spectral losses, and the far horizon in
-the hourly shape (PVGIS's horizon only reaches the annual, through the
-anchoring).
+and clipping, incidence angle and spectral losses, the far horizon in the
+hourly shape (PVGIS's horizon only reaches the annual, through the
+anchoring), and the rear side of a bifacial array: no gain is applied, and
+the run records `bifacial: 'not modelled'` for each bifacial array.
 
 ## Quantities
 

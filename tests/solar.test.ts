@@ -123,7 +123,7 @@ describe('the solar module', () => {
     expect(Number(r.kwp)).toBeCloseTo(5.1, 3);
   });
 
-  it('refuses an array on a surface of another site, by name', async () => {
+  it('throws a named error (`array_outside_system_site`) for an array on a surface of another site', async () => {
     const other = await insert(db, 'sites', { organisation_id: org, name: 'Barn', country: 'ES' });
     const ground = await insert(db, 'surfaces', {
       organisation_id: org, site_id: other, name: 'Field', kind: 'ground', azimuth_deg: 180, tilt_deg: 0,
@@ -210,16 +210,23 @@ describe('horizons', () => {
 
 describe('yield profiles', () => {
   it('ships the four profiles, each with an ordered list of losses', async () => {
-    const r = await db.query<{ code: string; kind: string; transposition_model: string; first: string }>(
+    const r = await db.query<{ code: string; kind: string; transposition_model: string | null; first: string }>(
       `select code, jsonb_typeof(losses) kind, transposition_model, losses -> 0 ->> 'code' first
          from solar.yield_profiles where published_by = 'solar' order by code`,
     );
     expect(r.rows).toEqual([
       { code: 'pvgis_like', kind: 'array', transposition_model: 'muneer', first: 'system' },
       { code: 'pvsol_like', kind: 'array', transposition_model: 'haydavies', first: 'soiling' },
-      { code: 'pvsyst_like', kind: 'array', transposition_model: 'haydavies', first: 'iam' },
-      { code: 'pvwatts', kind: 'array', transposition_model: 'perez', first: 'system' },
+      { code: 'pvsyst_like', kind: 'array', transposition_model: null, first: 'iam' },
+      { code: 'pvwatts', kind: 'array', transposition_model: null, first: 'system' },
     ]);
+    // The pvwatts row says what its engine runs: no model of its own for transposition, incidence or spectrum, no clipping.
+    const pvwatts = await one<{ transposition_model: string | null; iam_model: string | null; spectral_model: string | null; clipping: boolean; description: string }>(
+      db,
+      `select transposition_model, iam_model, spectral_model, clipping, description from solar.yield_profiles where code = 'pvwatts'`,
+    );
+    expect(pvwatts).toMatchObject({ transposition_model: null, iam_model: null, spectral_model: null, clipping: false });
+    expect(pvwatts.description).toContain('not modelled: inverter efficiency, clipping, incidence angle, spectrum, horizon in the hourly shape');
     const pvsyst = await one<{ codes: string[]; quality: number }>(
       db,
       `select array(select l ->> 'code' from jsonb_array_elements(losses) with ordinality e(l, i) order by i) codes,

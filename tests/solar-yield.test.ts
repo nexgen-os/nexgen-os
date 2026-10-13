@@ -76,7 +76,7 @@ describe('a pvgis_like yield run', () => {
     expect(run.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
   });
 
-  it('refuses a profile PVGIS cannot run, and a system whose site has no position, by name', async () => {
+  it('throws named errors for a profile PVGIS cannot run and a system whose site has no position', async () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_runnable_here/);
     const nowhere = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'BE' });
     const device = await insert(db, 'devices', { organisation_id: org, site_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });

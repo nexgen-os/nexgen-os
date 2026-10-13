@@ -6,7 +6,8 @@
 // plane-of-array irradiance, temperature and wind of a reanalysis read
 // through a weather connector (Open-Meteo's ERA5 archive), a Faiman cell
 // temperature, the PVWatts DC model, the profile's losses, a typical year
-// chosen month by month, and optionally an annual anchored on PVGIS.
+// chosen month by month in the site's local calendar, and optionally an
+// annual anchored on PVGIS.
 //
 // Either way the run records the system, the arrays, the weather and its
 // period, the models and losses, and the conventions the series are written
@@ -24,15 +25,18 @@ import {
   alignWeather,
   anchoringFactor,
   arrayEnergy,
+  checkedGamma,
   cleanWeather,
-  lossFactor,
+  meanAnnualOverCoveredYears,
   multiYearMeanAnnual,
+  remainingAfterLosses,
   rescaleFactor,
   scaled,
   selectTypicalMonths,
   toYearGrid,
   total,
   typicalYear,
+  withinLocalYears,
 } from './pvwatts.js';
 
 export const ENGINE_VERSION = 'pvgis-5.3+solar-0.1.0';
@@ -62,7 +66,7 @@ export interface YieldResult {
   annualKwh: number;
   kwhPerKwp: number;
   kwp: number;
-  /** The irradiance dataset: PVGIS's radiation database, or the reanalysis read. */
+  /** The irradiance dataset: PVGIS's radiation database, or the input reanalysis. */
   radiationDb: string;
 }
 
@@ -77,6 +81,8 @@ export interface YieldClients {
 interface SystemRow {
   organisation_id: string;
   site_id: string;
+  /** IANA time zone of the site. */
+  time_zone: string | null;
   kwp_dc: string | null;
   lon: number | null;
   lat: number | null;
@@ -92,6 +98,7 @@ interface ArrayRow {
   kwp_dc: string | null;
   /** From the array's module product when it is a `pvwatts` one. */
   gamma_pdc: number | null;
+  bifacial: boolean;
 }
 
 interface PvArray {
@@ -101,6 +108,7 @@ interface PvArray {
   tilt_deg: number;
   mounting: string;
   gamma_pdc: number | null;
+  bifacial: boolean;
 }
 
 interface ProfileRow {
@@ -147,7 +155,7 @@ export async function runYield(db: Db, request: YieldRequest, clients: YieldClie
 async function loadContext(db: Db, pvSystemId: string, profileCode: string): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
-      `select d.organisation_id, d.site_id, p.kwp_dc,
+      `select d.organisation_id, d.site_id, s.time_zone, p.kwp_dc,
               ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat,
               f.azimuth_deg device_azimuth, f.tilt_deg device_tilt
          from solar.pv_systems p
@@ -160,13 +168,15 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string): Pro
   ).rows[0];
   if (!system) throw new Error(`pv_system_not_found: ${pvSystemId}`);
   if (system.lon === null || system.lat === null) throw new Error('site_without_position: the site of the PV system has no geometry');
+  // `pvwatts` cuts days and months in the site's local calendar.
+  if (profileCode === 'pvwatts' && !system.time_zone) throw new Error('time_zone_required: the site of the PV system has no time zone; pvwatts cuts days and months in it');
 
   const profile = (await db.query<ProfileRow>('select losses, temperature_model, temperature_params from solar.yield_profiles where code = $1', [profileCode])).rows[0];
   if (!profile) throw new Error(`yield_profile_unknown: ${profileCode}`);
 
   let rows = (
     await db.query<ArrayRow>(
-      `select a.name, a.azimuth_deg, a.tilt_deg, a.mounting, a.kwp_dc,
+      `select a.name, a.azimuth_deg, a.tilt_deg, a.mounting, a.kwp_dc, a.bifacial,
               case when m.model = 'pvwatts' then (m.parameters ->> 'gamma_pdc')::float8 end gamma_pdc
          from solar.pv_arrays a
          left join solar.module_products m on m.id = a.module_product_id
@@ -177,12 +187,12 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string): Pro
   ).rows;
   if (rows.length === 0) {
     // A system described without arrays: one array on the device's own surface, with the system's power.
-    rows = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null }];
+    rows = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null, bifacial: false }];
   }
   const arrays = rows.map((a) => {
     if (a.azimuth_deg === null || a.tilt_deg === null) throw new Error(`array_without_orientation: ${a.name}`);
     if (a.kwp_dc === null || Number(a.kwp_dc) <= 0) throw new Error(`array_without_power: ${a.name}`);
-    return { name: a.name, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg), mounting: a.mounting, gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc) };
+    return { name: a.name, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg), mounting: a.mounting, gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc), bifacial: a.bifacial };
   });
   return { system, where: { lon: system.lon, lat: system.lat }, profile, arrays, kwp: arrays.reduce((s, a) => s + a.kwp, 0) };
 }
@@ -233,27 +243,36 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const u0 = Number(profile.temperature_params.u0);
   const u1 = Number(profile.temperature_params.u1);
   if (!Number.isFinite(u0) || !Number.isFinite(u1)) throw new Error('temperature_params_missing: the faiman model needs u0 and u1');
-  const leftAfterLosses = lossFactor(profile.losses);
+  const remainingFraction = remainingAfterLosses(profile.losses);
   const anchored = request.anchor === 'pvgis';
   const typical = request.typicalYear !== false;
-  const period = { from: `${request.years.from}-01-01`, to: `${request.years.to}-12-31` };
+  const timeZone = system.time_zone!;
+  const years = request.years;
+  // The years are the site's: one day more on each side is read, then
+  // every value outside the local years is left out.
+  const period = { from: `${years.from - 1}-12-31`, to: `${years.to + 1}-01-01` };
+  const local = (points: SeriesPoint[]) => withinLocalYears(points, timeZone, years);
 
   let siteTemperature: CollectedSeries | null = null;
   const perArray = [];
   for (const a of arrays) {
     const gamma = a.gamma_pdc ?? request.gammaPdc;
     if (gamma === undefined || !Number.isFinite(gamma)) throw new Error(`gamma_unknown: array ${a.name} has no pvwatts module product with gamma_pdc, and the request gives no gammaPdc`);
+    checkedGamma(gamma);
     const answer = await weather.history(where, period.from, period.to, {
       quantities: ['poa_irradiance', 'temperature', 'wind_speed'], tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL,
     });
     const read = (q: string) => answer.find((s) => s.quantity_code === q)?.values ?? [];
-    siteTemperature ??= answer.find((s) => s.quantity_code === 'temperature') ?? null;
-    const { hours, stats } = cleanWeather(alignWeather(read('poa_irradiance'), read('temperature'), read('wind_speed')));
-    const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, leftAfterLosses });
-    const modelled = multiYearMeanAnnual(toYearGrid(energy));
+    if (!siteTemperature) {
+      const t = answer.find((s) => s.quantity_code === 'temperature');
+      if (t) siteTemperature = { ...t, values: local(t.values) };
+    }
+    const { hours, stats } = cleanWeather(alignWeather(local(read('poa_irradiance')), read('temperature'), read('wind_speed')));
+    const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, remainingFraction });
+    const modelled = multiYearMeanAnnual(toYearGrid(energy, timeZone));
     let anchoring: { annual_kwh: number; factor: number; radiation_db: string; meteo_db: string } | null = null;
     if (anchored) {
-      const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - leftAfterLosses) * 100)), { raddatabase: request.raddatabase });
+      const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - remainingFraction) * 100)), { raddatabase: request.raddatabase });
       anchoring = { annual_kwh: yearly.annual_kwh, factor: anchoringFactor(yearly.annual_kwh, modelled), radiation_db: yearly.meta.radiation_db, meteo_db: yearly.meta.meteo_db };
     }
     perArray.push({ array: a, gamma, gammaSource: a.gamma_pdc !== null ? 'module_product' : 'request', hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
@@ -263,17 +282,25 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   // chosen once, on the system's energy, so that every array reads the
   // weather of the same days.
   const realYears = sumPoints(perArray.map((x) => x.energy));
-  const nYears = request.years.to - request.years.from + 1;
-  const grid = toYearGrid(realYears);
+  const grid = toYearGrid(realYears, timeZone);
   const months = typical ? selectTypicalMonths(grid) : null;
   let energy = realYears;
   let temperature = siteTemperature?.values ?? [];
   let rescale = 1;
+  let fromMean = 0;
+  let annual: number;
+  let yearsCovered: number[] | null = null;
   if (months) {
-    const year = typicalYear(grid, months, request.years.to);
-    rescale = rescaleFactor(multiYearMeanAnnual(grid), total(year));
-    energy = scaled(year, rescale);
-    temperature = typicalYear(toYearGrid(temperature), months, request.years.to);
+    const year = typicalYear(grid, months, years.to, timeZone);
+    rescale = rescaleFactor(multiYearMeanAnnual(grid), total(year.points));
+    energy = scaled(year.points, rescale);
+    fromMean = year.fromMean;
+    annual = total(energy);
+    if (siteTemperature) temperature = typicalYear(toYearGrid(temperature, timeZone), months, years.to, timeZone).points;
+  } else {
+    const covered = meanAnnualOverCoveredYears(realYears, timeZone, years);
+    annual = covered.annual;
+    yearsCovered = covered.yearsCovered;
   }
 
   const target: SeriesTarget = {
@@ -281,12 +308,12 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
     objectId: request.pvSystemId,
     sourceCode: weather.source_code,
     kind: 'simulated',
-    name: months ? `typical year ${request.years.from}-${request.years.to}` : null,
+    name: months ? `typical year ${years.from}-${years.to}` : null,
   };
   const stored = await storeSeries(db, target, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) });
   if (siteTemperature) await storeSeries(db, { ...target, objectId: system.site_id }, { ...siteTemperature, values: rounded(temperature) });
 
-  const annualKwh = round(months ? total(energy) : total(energy) / nYears);
+  const annualKwh = round(annual);
   const modelledTotal = perArray.reduce((s, x) => s + x.modelled, 0);
   const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
   const runId = await recordRun(
@@ -298,14 +325,17 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       weather: {
         source: weather.source_code,
         model: WEATHER_MODEL,
-        years: request.years,
+        years,
         period,
+        time_zone: timeZone,
         quantities: { poa_irradiance: 'global_tilted_irradiance, transposed by the source', temperature: 'air at 2 m', wind_speed: 'at 10 m' },
         time: 'preceding-hour means dated at the start of their hour; instants averaged over each hour',
         horizon: 'none',
       },
+      years_covered: yearsCovered,
       arrays: perArray.map((x) => ({
         name: x.array.name, kwp: x.array.kwp, azimuth_deg: x.array.azimuth_deg, tilt_deg: x.array.tilt_deg, mounting: x.array.mounting,
+        ...(x.array.bifacial ? { bifacial: 'not modelled' } : {}),
         gamma_pdc: x.gamma, gamma_source: x.gammaSource, hours: x.hours, cleaning: x.stats,
         modelled_annual_kwh: round(x.modelled), anchoring_factor: x.anchoring ? round(x.anchoring.factor) : null,
       })),
@@ -314,25 +344,32 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
         temperature: { model: 'faiman', u0, u1 },
         dc: 'pvwatts, reference 25 °C',
         poa_max_w_m2: POA_MAX_W_M2,
-        not_modelled: ['inverter efficiency', 'clipping', 'incidence angle', 'spectrum', 'horizon in the hourly shape'],
+        not_modelled: ['inverter efficiency', 'clipping', 'incidence angle', 'spectrum', 'horizon in the hourly shape', 'bifacial rear-side gain'],
       },
       losses: profile.losses,
-      loss_factor: round(leftAfterLosses),
+      remaining_fraction: round(remainingFraction),
       typical_year: months
         ? {
-            method: 'month by month, the real month whose daily energies are closest to all years (Finkelstein-Schafer on daily energy, at least 95 % of the hours, the most recent year on a tie), scaled to the multi-year mean annual',
+            method: 'month by month in the site\'s local standard time, the real month whose daily energies are closest to all years (Finkelstein-Schafer on daily energy, at least 95 % of the hours, the most recent year on a tie), an hour the chosen month lacks taken from the multi-year mean of that hour, scaled to the mean annual total over the years used',
             months,
+            hours_from_mean: fromMean,
             rescale_factor: round(rescale),
-            dated_in: request.years.to,
+            calendar_year: years.to,
             leap_hours_left_out: grid.leapHoursLeftOut,
           }
         : null,
       anchoring: anchored
         ? { source: reference.source_code, radiation_db: perArray[0].anchoring!.radiation_db, meteo_db: perArray[0].anchoring!.meteo_db, annual_kwh: round(anchoredTotal), modelled_annual_kwh: round(modelledTotal), factor: round(anchoredTotal / modelledTotal) }
         : { source: 'none' },
-      conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', typical_year: 'simulated, 365-day grid, 29 February left out' },
+      conventions: {
+        ...CONVENTIONS,
+        losses: 'each applies to what the previous ones left',
+        days: 'local standard time of the site\'s time zone',
+        typical_year: 'simulated, 365-day grid, 29 February left out',
+        real_years: 'the mean annual total over the years covered, a year counting with at least 95 % of its hours',
+      },
     },
-    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months },
+    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered },
   );
   return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }

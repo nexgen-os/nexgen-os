@@ -1,9 +1,9 @@
 // The `pvwatts` yield profile: each step of the model against values worked
-// out by hand, the Open-Meteo archive read in the core's conventions, a run
-// on a system of two arrays with recorded Open-Meteo and PVGIS answers, and
-// the acceptance test of decision 0012 at small scale: the same roof run
-// through `pvgis_like` and `pvwatts` gives two runs whose inputs say why
-// they differ.
+// out by hand, the Open-Meteo archive read in the core's conventions, runs
+// on a system of two arrays with a synthetic year of Open-Meteo answers and
+// a recorded PVGIS answer, and the acceptance test of decision 0012 at small
+// scale: the same roof run through `pvgis_like` and `pvwatts` gives two runs
+// whose inputs say why they differ.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -12,6 +12,7 @@ import { openMeteo } from '../connectors/open-meteo/index.js';
 import { pvgis } from '../connectors/pvgis/index.js';
 import type { Fetch } from '../formats/geocoding/index.js';
 import {
+  HOURS_PER_YEAR,
   alignWeather,
   anchoringFactor,
   arrayEnergy,
@@ -19,20 +20,33 @@ import {
   faimanCellTemperature,
   finkelsteinSchafer,
   hourOfYear,
-  lossFactor,
+  hourlyMean,
+  meanAnnualOverCoveredYears,
   multiYearMeanAnnual,
   pvwattsEnergyPerKwp,
+  remainingAfterLosses,
   rescaleFactor,
   scaled,
   selectTypicalMonths,
+  standardOffsetMinutes,
   toYearGrid,
   total,
   typicalYear,
+  withinLocalYears,
 } from '../modules/solar/pvwatts.js';
 import { runYield } from '../modules/solar/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 
 const FAIMAN = { u0: 25, u1: 6.84 };
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+/** One value per hour from `from` (included) to `to` (excluded), UTC instants. */
+const hourly = (from: string, to: string, value: (ms: number) => number): SeriesPoint[] => {
+  const out: SeriesPoint[] = [];
+  for (let ms = Date.parse(from); ms < Date.parse(to); ms += HOUR) out.push({ at: new Date(ms).toISOString(), value: value(ms) });
+  return out;
+};
 
 describe('the pvwatts model, step by step', () => {
   it('a clear-sky hour: 1000 W/m², 20 °C, 2 m/s, γ −0.35 %/K, 14 % losses', () => {
@@ -40,7 +54,7 @@ describe('the pvwatts model, step by step', () => {
     const tCell = faimanCellTemperature(1000, 20, 2, FAIMAN);
     expect(tCell).toBeCloseTo(45.853154, 5);
     // E = 1 × [1 − 0.0035 × 20.8532] × 0.86 = 0.927014 × 0.86 = 0.797232 kWh per kWp
-    expect(pvwattsEnergyPerKwp(1000, tCell, -0.0035, lossFactor([{ code: 'system', pct: 14 }]))).toBeCloseTo(0.797232, 6);
+    expect(pvwattsEnergyPerKwp(1000, tCell, -0.0035, remainingAfterLosses([{ code: 'system', pct: 14 }]))).toBeCloseTo(0.797232, 6);
     // At 25 °C and without losses, the module gives its rating times G / 1000.
     expect(pvwattsEnergyPerKwp(1000, 25, -0.0035, 1)).toBe(1);
     expect(pvwattsEnergyPerKwp(0, 40, -0.0035, 1)).toBe(0);
@@ -52,15 +66,25 @@ describe('the pvwatts model, step by step', () => {
     expect(tCell).toBe(71);
     expect(pvwattsEnergyPerKwp(900, tCell, -0.0035, 0.86)).toBeCloseTo(0.649386, 6);
     // The same hour on a 4 kWp array, through `arrayEnergy`.
-    expect(arrayEnergy([{ at: '2023-07-01T12:00:00.000Z', poa: 900, temperature: 35, wind: 0 }], { kwp: 4, gammaPdc: -0.0035 }, { ...FAIMAN, leftAfterLosses: 0.86 })[0].value).toBeCloseTo(4 * 0.649386, 6);
+    expect(arrayEnergy([{ at: '2023-07-01T12:00:00.000Z', poa: 900, temperature: 35, wind: 0 }], { kwp: 4, gammaPdc: -0.0035 }, { ...FAIMAN, remainingFraction: 0.86 })[0].value).toBeCloseTo(4 * 0.649386, 6);
   });
 
-  it('losses apply in their order, each to what the previous ones left; a loss without a value is refused', () => {
-    expect(lossFactor([{ code: 'system', pct: 14 }])).toBeCloseTo(0.86, 12);
+  it('bounds γ to [−0.01, 0]: a positive value is a sign error and throws a named error', () => {
+    expect(pvwattsEnergyPerKwp(1000, 25, 0, 1)).toBe(1);
+    expect(pvwattsEnergyPerKwp(1000, 35, -0.01, 1)).toBeCloseTo(0.9, 12);
+    expect(() => pvwattsEnergyPerKwp(1000, 60, 0.0035, 1)).toThrow(/gamma_out_of_range: 0.0035/);
+    expect(() => pvwattsEnergyPerKwp(1000, 60, -0.02, 1)).toThrow(/gamma_out_of_range/);
+    expect(() => pvwattsEnergyPerKwp(1000, 60, NaN, 1)).toThrow(/gamma_out_of_range/);
+    // Even on an array whose hours are all dark.
+    expect(() => arrayEnergy([], { kwp: 4, gammaPdc: 0.004 }, { ...FAIMAN, remainingFraction: 1 })).toThrow(/gamma_out_of_range/);
+  });
+
+  it('the fraction that remains after ordered losses: each applies to what the previous ones left; a loss without a value throws', () => {
+    expect(remainingAfterLosses([{ code: 'system', pct: 14 }])).toBeCloseTo(0.86, 12);
     // 0.98 × 0.985 × 1.0075 = 0.97253975: a negative loss is a gain.
-    expect(lossFactor([{ code: 'soiling', pct: 2 }, { code: 'dc_wiring', pct: 1.5 }, { code: 'module_quality', pct: -0.75 }])).toBeCloseTo(0.97253975, 10);
-    expect(lossFactor([])).toBe(1);
-    expect(() => lossFactor([{ code: 'iam', pct: null }])).toThrow(/loss_without_value: iam/);
+    expect(remainingAfterLosses([{ code: 'soiling', pct: 2 }, { code: 'dc_wiring', pct: 1.5 }, { code: 'module_quality', pct: -0.75 }])).toBeCloseTo(0.97253975, 10);
+    expect(remainingAfterLosses([])).toBe(1);
+    expect(() => remainingAfterLosses([{ code: 'iam', pct: null }])).toThrow(/loss_without_value: iam/);
   });
 
   it('aligns the irradiance of an hour with the mean of the instants that bound it', () => {
@@ -95,17 +119,30 @@ describe('the pvwatts model, step by step', () => {
     expect(() => cleanWeather([{ at: at(0), poa: 10, temperature: 9, wind: null }])).toThrow(/weather_without_wind/);
   });
 
-  it('lays years on a 365-day grid and leaves 29 February out', () => {
-    expect(hourOfYear('2023-01-01T00:00:00Z')).toBe(0);
-    expect(hourOfYear('2024-02-29T05:00:00Z')).toBeNull();
+  it('cuts years at the local standard midnight of the site, and lays them on a 365-day grid without 29 February', () => {
+    expect(hourOfYear('2023-01-01T00:00:00Z', 'UTC')).toEqual({ year: 2023, hour: 0 });
+    expect(hourOfYear('2024-02-29T05:00:00Z', 'UTC')).toEqual({ year: 2024, hour: null });
     // 1 March is hour 59 × 24 in a leap year as in any other.
-    expect(hourOfYear('2024-03-01T00:00:00Z')).toBe(1416);
-    expect(hourOfYear('2023-03-01T00:00:00Z')).toBe(1416);
-    expect(hourOfYear('2024-12-31T23:00:00Z')).toBe(8759);
+    expect(hourOfYear('2024-03-01T00:00:00Z', 'UTC').hour).toBe(1416);
+    expect(hourOfYear('2023-03-01T00:00:00Z', 'UTC').hour).toBe(1416);
+    expect(hourOfYear('2024-12-31T23:00:00Z', 'UTC').hour).toBe(8759);
+    // Brussels, UTC+1 in standard time: its year starts at 23:00 UTC the day before.
+    expect(hourOfYear('2022-12-31T23:00:00Z', 'Europe/Brussels')).toEqual({ year: 2023, hour: 0 });
+    // Los Angeles, UTC−8 in standard time, also in summer: no daylight-saving shift.
+    expect(hourOfYear('2023-01-01T07:00:00Z', 'America/Los_Angeles')).toEqual({ year: 2022, hour: 8759 });
+    expect(hourOfYear('2023-07-01T08:00:00Z', 'America/Los_Angeles')).toEqual({ year: 2023, hour: 181 * 24 });
+    // Sydney is UTC+11 in January (daylight saving), UTC+10 in standard time.
+    expect(standardOffsetMinutes('Australia/Sydney', 2023)).toBe(600);
+    expect(standardOffsetMinutes('Europe/Brussels', 2023)).toBe(60);
+    expect(() => toYearGrid([], '')).toThrow(/time_zone_required/);
+    expect(() => toYearGrid([], 'Mars/Olympus')).toThrow(/time_zone_unknown/);
+
     const leapDay = Array.from({ length: 24 }, (_, h) => ({ at: new Date(Date.UTC(2024, 1, 29, h)).toISOString(), value: 1 }));
-    const grid = toYearGrid([...leapDay, { at: '2024-03-01T00:00:00Z', value: 5 }]);
+    const grid = toYearGrid([...leapDay, { at: '2024-03-01T00:00:00Z', value: 5 }], 'UTC');
     expect(grid.leapHoursLeftOut).toBe(24);
     expect(grid.years.get(2024)![1416]).toBe(5);
+    // Only the points of the local years asked are kept.
+    expect(withinLocalYears([{ at: '2022-12-31T22:00:00Z', value: 1 }, { at: '2022-12-31T23:00:00Z', value: 2 }], 'Europe/Brussels', { from: 2023, to: 2023 })).toEqual([{ at: '2022-12-31T23:00:00Z', value: 2 }]);
   });
 
   it('measures how far a month is from the long term (Finkelstein-Schafer)', () => {
@@ -124,42 +161,89 @@ describe('the pvwatts model, step by step', () => {
   it('chooses, for each month, the real month closest to all years', () => {
     // 2021 alternates 1 and 3 kWh days; 2022 has only sunny days, 2023 only grey ones.
     // Together: 47 days at 1, 46 at 3, which 2021 resembles most.
-    const grid = toYearGrid([...covered(2021, (d) => (d % 2 === 0 ? 1 : 3)), ...covered(2022, () => 3), ...covered(2023, () => 1)]);
+    const grid = toYearGrid([...covered(2021, (d) => (d % 2 === 0 ? 1 : 3)), ...covered(2022, () => 3), ...covered(2023, () => 1)], 'UTC');
     const months = selectTypicalMonths(grid);
     expect(months[0]).toBe(2021);
     expect(months.slice(1)).toEqual(Array(11).fill(null));
     // Two identical years: the most recent wins.
-    expect(selectTypicalMonths(toYearGrid([...covered(2020, () => 2), ...covered(2021, () => 2)]))[0]).toBe(2021);
+    expect(selectTypicalMonths(toYearGrid([...covered(2020, () => 2), ...covered(2021, () => 2)], 'UTC'))[0]).toBe(2021);
     // A year with a few days only is no candidate.
-    expect(selectTypicalMonths(toYearGrid([...covered(2020, () => 2), ...january(2024, () => 2)]))[0]).toBe(2020);
+    expect(selectTypicalMonths(toYearGrid([...covered(2020, () => 2), ...january(2024, () => 2)], 'UTC'))[0]).toBe(2020);
   });
 
-  it('builds the typical year on one calendar, from the months chosen or the mean, and leaves missing hours out', () => {
-    const grid = toYearGrid([...january(2021, () => 1), ...january(2022, () => 3), { at: '2022-07-01T12:00:00Z', value: 6 }]);
-    const year = typicalYear(grid, [2022, ...Array(11).fill(null)], 2025);
-    expect(year).toHaveLength(32);
-    expect(year[0]).toEqual({ at: '2025-01-01T12:00:00.000Z', value: 3 });
-    expect(year[31]).toEqual({ at: '2025-07-01T12:00:00.000Z', value: 6 });
-    // With no month chosen, January is the mean of the two years.
-    expect(typicalYear(grid, Array(12).fill(null), 2025)[0].value).toBe(2);
+  it('fills an hour the chosen month lacks with the multi-year mean of that hour: always 8,760 values', () => {
+    // 2021 gives 1 every hour, 2022 gives 3 but lacks 12:00 on 5 January.
+    const hole = '2022-01-05T12:00:00.000Z';
+    const points = [...hourly('2021-01-01', '2022-01-01', () => 1), ...hourly('2022-01-01', '2023-01-01', () => 3).filter((p) => p.at !== hole)];
+    const grid = toYearGrid(points, 'UTC');
+    const k = hourOfYear(hole, 'UTC').hour!;
+    const year = typicalYear(grid, Array(12).fill(2022), 2025, 'UTC');
+    expect(year.points).toHaveLength(HOURS_PER_YEAR);
+    expect(year.fromMean).toBe(1);
+    expect(year.points[k]).toEqual({ at: '2025-01-05T12:00:00.000Z', value: hourlyMean(grid)[k] });
+    expect(year.points[k].value).toBe(1);
+    expect(year.points[k - 1].value).toBe(3);
+    // A month no year was chosen for is the mean across years.
+    expect(typicalYear(grid, [null, ...Array(11).fill(2022)], 2025, 'UTC').points[0].value).toBe(2);
+    // An hour no year has: nothing to fill it with, nothing invented.
+    expect(() => typicalYear(toYearGrid(points.filter((p) => !p.at.endsWith('-01-05T12:00:00.000Z')), 'UTC'), Array(12).fill(2022), 2025, 'UTC')).toThrow(/period_not_covered: no year has the hour 2025-01-05T12:00:00.000Z/);
   });
 
-  it('rescales the typical year to the mean annual of the years read, and anchors on a reference', () => {
-    // Hour 10: 2 then 4 → mean 3; hour 20: only 2023, 6 → mean annual 9.
-    const grid = toYearGrid([
-      { at: '2022-01-01T10:00:00Z', value: 2 },
-      { at: '2023-01-01T10:00:00Z', value: 4 },
-      { at: '2023-01-01T20:00:00Z', value: 6 },
-    ]);
-    expect(multiYearMeanAnnual(grid)).toBe(9);
-    const year = typicalYear(grid, [2022, ...Array(11).fill(null)], 2023);
-    expect(total(year)).toBe(2);
+  it('a site at −120° (Los Angeles): every month of the typical year starts and ends at night', () => {
+    // A sunlit day centred on 12:00 local solar time, i.e. 20:00 UTC; each
+    // day's height varies with the day and the year, so that months come
+    // from different years.
+    const sun = (ms: number) => {
+      const solarHour = ((((ms + HOUR / 2) / HOUR - 8) % 24) + 24) % 24;
+      const day = Math.floor((ms - 8 * HOUR) / DAY);
+      return Math.max(0, Math.sin((Math.PI * (solarHour - 6)) / 12)) * (1 + ((day * 7919) % 11) / 10);
+    };
+    const tz = 'America/Los_Angeles';
+    const energy = hourly('2021-01-01T08:00:00Z', '2023-01-01T08:00:00Z', sun);
+    const grid = toYearGrid(energy, tz);
+    expect([...grid.years.keys()]).toEqual([2021, 2022]);
+    // The two years alternate month by month: every junction joins two years.
+    const months = Array.from({ length: 12 }, (_, m) => (m % 2 === 0 ? 2021 : 2022));
+    const { points, fromMean } = typicalYear(grid, months, 2023, tz);
+    expect(points).toHaveLength(HOURS_PER_YEAR);
+    expect(fromMean).toBe(0);
+    // Laid on the local calendar, dated in UTC: the year starts at 08:00 UTC.
+    expect(points[0].at).toBe('2023-01-01T08:00:00.000Z');
+    expect(points[HOURS_PER_YEAR - 1].at).toBe('2024-01-01T07:00:00.000Z');
+    const starts = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30].reduce<number[]>((acc, d, m) => [...acc, (m === 0 ? 0 : acc[m - 1]) + d * 24], []).slice(1);
+    for (const k of starts) {
+      expect(points[k - 1].value).toBe(0);
+      expect(points[k].value).toBe(0);
+    }
+    // Cut at UTC midnight instead, the junctions would fall at 16:00 local, in full sun.
+    expect(sun(Date.parse('2023-02-01T00:00:00Z'))).toBeGreaterThan(0);
+    expect(selectTypicalMonths(grid).every((y) => y === 2021 || y === 2022)).toBe(true);
+  });
+
+  it('rescales the typical year to the mean annual total over the years used, and anchors on a reference', () => {
+    // 2022 gives 1 every hour, 2023 gives 3: mean annual 2 × 8,760.
+    const grid = toYearGrid([...hourly('2022-01-01', '2023-01-01', () => 1), ...hourly('2023-01-01', '2024-01-01', () => 3)], 'UTC');
+    expect(multiYearMeanAnnual(grid)).toBe(2 * HOURS_PER_YEAR);
+    const year = typicalYear(grid, Array(12).fill(2022), 2023, 'UTC').points;
+    expect(total(year)).toBe(HOURS_PER_YEAR);
     const k = rescaleFactor(multiYearMeanAnnual(grid), total(year));
-    expect(k).toBe(4.5);
-    expect(total(scaled(year, k))).toBe(9);
+    expect(k).toBe(2);
+    expect(total(scaled(year, k))).toBe(2 * HOURS_PER_YEAR);
     expect(rescaleFactor(9, 0)).toBe(1);
     expect(anchoringFactor(950, 1000)).toBe(0.95);
     expect(() => anchoringFactor(950, 0)).toThrow(/anchoring_impossible/);
+  });
+
+  it('real years: the mean annual total over the years covered, a year counting with 95 % of its hours', () => {
+    // 2022 complete; 2023 without its last 30 days (91.8 % of its hours); 2024 complete, 8,784 hours.
+    const points = [
+      ...hourly('2022-01-01', '2023-01-01', () => 1),
+      ...hourly('2023-01-01', '2023-12-02', () => 5),
+      ...hourly('2024-01-01', '2025-01-01', () => 2),
+    ];
+    expect(meanAnnualOverCoveredYears(points, 'UTC', { from: 2022, to: 2023 })).toEqual({ annual: 8760, yearsCovered: [2022] });
+    expect(meanAnnualOverCoveredYears(points, 'UTC', { from: 2022, to: 2024 })).toEqual({ annual: (8760 + 2 * 8784) / 2, yearsCovered: [2022, 2024] });
+    expect(() => meanAnnualOverCoveredYears(points, 'UTC', { from: 2023, to: 2023 })).toThrow(/period_not_covered/);
   });
 });
 
@@ -203,14 +287,42 @@ describe('the Open-Meteo archive', () => {
   });
 });
 
+/**
+ * An Open-Meteo archive that makes up its answer for the days asked: a sky
+ * whose clear-sky irradiance is dimmed by a cloudiness of each day, at 15 °C
+ * and 2 m/s, dated as Open-Meteo dates it (the mean of the hour before the
+ * stamp). The south plane gets more than the east one. After `missingFrom`,
+ * every value is null, as for hours the archive does not have yet.
+ */
+const syntheticArchive = (lon: number, asked: string[], missingFrom?: string): Fetch => async (url) => {
+  asked.push(url);
+  const q = new URL(url).searchParams;
+  const start = Date.parse(`${q.get('start_date')}T00:00:00Z`);
+  const end = Date.parse(`${q.get('end_date')}T00:00:00Z`) + DAY;
+  const plane = q.get('azimuth') === '0' ? 1 : 0.8;
+  const hourly: { time: number[]; global_tilted_irradiance: (number | null)[]; temperature_2m: (number | null)[]; wind_speed_10m: (number | null)[] } = {
+    time: [], global_tilted_irradiance: [], temperature_2m: [], wind_speed_10m: [],
+  };
+  for (let at = start; at < end; at += HOUR) {
+    const middle = at - HOUR / 2 + (lon / 15) * HOUR;
+    const solarHour = (((middle / HOUR) % 24) + 24) % 24;
+    const cloudiness = 0.3 + (0.7 * ((Math.floor(middle / DAY) * 7919) % 13)) / 12;
+    const missing = missingFrom !== undefined && at > Date.parse(missingFrom);
+    hourly.time.push(at / 1000);
+    hourly.global_tilted_irradiance.push(missing ? null : Math.round(Math.max(0, Math.sin((Math.PI * (solarHour - 6)) / 12)) * 800 * cloudiness * plane * 10) / 10);
+    hourly.temperature_2m.push(missing ? null : 15);
+    hourly.wind_speed_10m.push(missing ? null : 2);
+  }
+  return { ok: true, status: 200, json: async () => ({ hourly }) };
+};
+
 describe('a pvwatts yield run', () => {
   let db: PGlite;
   let org: string;
   let site: string;
   let system: string;
-  let south: Record<string, { time: number[]; global_tilted_irradiance: number[]; temperature_2m: number[]; wind_speed_10m: number[] }>;
   let pvcalc: { outputs: { totals: { fixed: { E_y: number } } } };
-  const weatherAsked: string[] = [];
+  let weatherAsked: string[] = [];
   const pvgisAsked: string[] = [];
 
   beforeAll(async () => {
@@ -222,12 +334,11 @@ describe('a pvwatts yield run', () => {
     const eastFace = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'East pitch', kind: 'roof', azimuth_deg: 90, tilt_deg: 30 });
     system = await insert(db, 'devices', { organisation_id: org, site_id: site, building_id: building, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
-    // The south array's modules have PVWatts parameters; the east array's have none.
+    // The south array's modules have PVWatts parameters; the east array's have none and are bifacial.
     const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvwatts', '{"pdc0": 400, "gamma_pdc": -0.0037}')`, [product]);
     await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, module_product_id, module_count) values ($1, $2, $3, 'South', 'roof_parallel', $4, 50)`, [org, system, southFace, product]);
-    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'East', 'roof_parallel', 10)`, [org, system, eastFace]);
-    south = await fixture('open-meteo-era5-brussels-2023-01-01-03-south30.json');
+    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc, bifacial) values ($1, $2, $3, 'East', 'roof_parallel', 10, true)`, [org, system, eastFace]);
     pvcalc = await fixture('pvgis-pvcalc-brussels-south30.json');
   });
 
@@ -235,18 +346,16 @@ describe('a pvwatts yield run', () => {
     await db.close();
   });
 
-  const clients = async () => {
-    const east = await fixture('open-meteo-era5-brussels-2023-01-01-03-east30.json');
-    const weather = openMeteo({ fetch: async (url) => { weatherAsked.push(url); return { ok: true, status: 200, json: async () => (new URL(url).searchParams.get('azimuth') === '0' ? south : east) }; } });
-    return { weather, pvgis: pvgis({ fetch: answering(pvcalc, pvgisAsked) }) };
+  const clients = (missingFrom?: string) => {
+    weatherAsked = [];
+    return { weather: openMeteo({ fetch: syntheticArchive(4.35, weatherAsked, missingFrom) }), pvgis: pvgis({ fetch: answering(pvcalc, pvgisAsked) }) };
   };
 
-  it('reads the weather per array, adds the energies, stores a typical year anchored on PVGIS and records everything it used', async () => {
-    const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, anchor: 'pvgis' }, await clients());
+  it('reads the weather per array for the local years, adds the energies, stores a typical year anchored on PVGIS and records everything it used', async () => {
+    const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, anchor: 'pvgis' }, clients());
 
-    // One weather read and one PVGIS yearly per array, for whole years.
-    expect(weatherAsked).toHaveLength(2);
-    expect(weatherAsked.map((u) => [new URL(u).searchParams.get('azimuth'), new URL(u).searchParams.get('start_date'), new URL(u).searchParams.get('end_date')])).toEqual([['0', '2023-01-01', '2024-01-01'], ['-90', '2023-01-01', '2024-01-01']]);
+    // One weather request and one PVGIS yearly per array; a day more on each side, for Brussels' year starts at 23:00 UTC.
+    expect(weatherAsked.map((u) => [new URL(u).searchParams.get('azimuth'), new URL(u).searchParams.get('start_date'), new URL(u).searchParams.get('end_date')])).toEqual([['0', '2022-12-31', '2024-01-02'], ['-90', '2022-12-31', '2024-01-02']]);
     expect(pvgisAsked.map((u) => [new URL(u).pathname.endsWith('/PVcalc'), new URL(u).searchParams.get('peakpower'), new URL(u).searchParams.get('loss')])).toEqual([[true, '20', '14'], [true, '10', '14']]);
 
     // The anchored annual of each array is PVGIS's answer: the recorded 1 kWp one is served to both.
@@ -255,38 +364,45 @@ describe('a pvwatts yield run', () => {
     expect(result.annualKwh).toBeCloseTo(2 * pvgisAnnual, 3);
     expect(result.radiationDb).toBe('ERA5');
 
-    // The south array's factor, worked out again from the recorded weather with the module's own γ.
-    const read = await openMeteo({ fetch: answering(south) }).history!({ lon: 4.35, lat: 50.85 }, '2023-01-01', '2023-12-31', { tilt_deg: 30, azimuth_deg: 180 });
-    const { hours } = cleanWeather(alignWeather(read[0].values, read[1].values, read[2].values));
-    const modelledSouth = total(arrayEnergy(hours, { kwp: 20, gammaPdc: -0.0037 }, { ...FAIMAN, leftAfterLosses: 0.86 }));
+    // The south array's factor, worked out again from the same weather with the module's own γ.
+    const read = await openMeteo({ fetch: syntheticArchive(4.35, []) }).history!({ lon: 4.35, lat: 50.85 }, '2022-12-31', '2024-01-01', { tilt_deg: 30, azimuth_deg: 180 });
+    const { hours } = cleanWeather(alignWeather(withinLocalYears(read[0].values, 'Europe/Brussels', { from: 2023, to: 2023 }), read[1].values, read[2].values));
+    expect(hours).toHaveLength(8760);
+    const modelledSouth = total(arrayEnergy(hours, { kwp: 20, gammaPdc: -0.0037 }, { ...FAIMAN, remainingFraction: 0.86 }));
 
-    const series = await one<{ kind: string; source: string; name: string; n: number }>(
+    // The local year 2023, every hour of it, dated at its start in UTC.
+    const series = await one<{ kind: string; source: string; name: string; n: number; first: Date; last: Date }>(
       db,
-      `select s.kind, s.source_code source, s.name, count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.id = $1 group by s.kind, s.source_code, s.name`,
+      `select s.kind, s.source_code source, s.name, count(v.*)::int n, min(v.at) first, max(v.at) last
+         from series s join series_values v on v.series_id = s.id where s.id = $1 group by s.kind, s.source_code, s.name`,
       [result.seriesId],
     );
-    // Three recorded days, the first hour of 3 January's day after left out: 71 hours, none invented for the rest of the year.
-    expect(series).toEqual({ kind: 'simulated', source: 'open_meteo', name: 'typical year 2023-2023', n: 71 });
+    expect(series).toMatchObject({ kind: 'simulated', source: 'open_meteo', name: 'typical year 2023-2023', n: 8760 });
+    expect([new Date(series.first).toISOString(), new Date(series.last).toISOString()]).toEqual(['2022-12-31T23:00:00.000Z', '2023-12-31T22:00:00.000Z']);
     const temperature = await one<{ n: number }>(db, `select count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.object_id = $1 and s.quantity_code = 'temperature'`, [site]);
-    expect(temperature.n).toBe(72);
+    expect(temperature.n).toBe(8760);
 
     const run = await one<{ module_code: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select module_code, engine_version, inputs, results from runs where id = $1', [result.runId]);
     expect(run.module_code).toBe('solar');
     expect(run.engine_version).toBe('solar-pvwatts-0.1.0');
     expect(run.inputs).toMatchObject({
       profile: 'pvwatts',
-      weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, period: { from: '2023-01-01', to: '2023-12-31' } },
+      weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, period: { from: '2022-12-31', to: '2024-01-01' }, time_zone: 'Europe/Brussels' },
+      years_covered: null,
       arrays: [
-        { name: 'South', kwp: 20, azimuth_deg: 180, tilt_deg: 30, gamma_pdc: -0.0037, gamma_source: 'module_product', hours: 71 },
-        { name: 'East', kwp: 10, azimuth_deg: 90, tilt_deg: 30, gamma_pdc: -0.0035, gamma_source: 'request', hours: 71 },
+        { name: 'South', kwp: 20, azimuth_deg: 180, tilt_deg: 30, gamma_pdc: -0.0037, gamma_source: 'module_product', hours: 8760 },
+        { name: 'East', kwp: 10, azimuth_deg: 90, tilt_deg: 30, bifacial: 'not modelled', gamma_pdc: -0.0035, gamma_source: 'request', hours: 8760 },
       ],
       model: { temperature: { model: 'faiman', u0: 25, u1: 6.84 }, dc: 'pvwatts, reference 25 °C' },
       losses: [{ code: 'system', pct: 14 }],
-      loss_factor: 0.86,
-      typical_year: { months: Array(12).fill(null), rescale_factor: 1, dated_in: 2023 },
+      remaining_fraction: 0.86,
+      typical_year: { months: Array(12).fill(2023), hours_from_mean: 0, rescale_factor: 1, calendar_year: 2023, leap_hours_left_out: 0 },
       anchoring: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', annual_kwh: 2 * pvgisAnnual },
-      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC' },
+      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the site's time zone" },
     });
+    // A monofacial array says nothing about a rear side.
+    expect(run.inputs.arrays[0]).not.toHaveProperty('bifacial');
+    expect(run.inputs.model.not_modelled).toContain('bifacial rear-side gain');
     expect(run.inputs.arrays[0].modelled_annual_kwh).toBeCloseTo(modelledSouth, 5);
     expect(run.inputs.arrays[0].anchoring_factor).toBeCloseTo(pvgisAnnual / modelledSouth, 5);
     expect(run.inputs.anchoring.factor).toBeCloseTo((2 * pvgisAnnual) / run.inputs.anchoring.modelled_annual_kwh, 5);
@@ -294,25 +410,43 @@ describe('a pvwatts yield run', () => {
   });
 
   it('keeps the real years as they are when asked, in a series apart from the typical year', async () => {
-    const typical = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, anchor: 'pvgis' }, await clients());
-    const real = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, await clients());
+    const typical = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
+    const real = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
     expect(real.seriesId).not.toBe(typical.seriesId);
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [real.runId]);
+    const run = await one<{ inputs: Record<string, any>; results: Record<string, any> }>(db, 'select inputs, results from runs where id = $1', [real.runId]);
     expect(run.inputs.typical_year).toBeNull();
     expect(run.inputs.anchoring).toEqual({ source: 'none' });
-    // Not anchored: the annual is the model's own, far below PVGIS's on three days of January.
+    expect(run.inputs.years_covered).toEqual([2023]);
+    expect(run.results.years_covered).toEqual([2023]);
+    // Not anchored, one whole year: the annual is the model's own, the typical year's too.
     expect(real.annualKwh).toBeCloseTo(run.inputs.arrays[0].modelled_annual_kwh + run.inputs.arrays[1].modelled_annual_kwh, 3);
-    expect(real.annualKwh).toBeLessThan(typical.annualKwh / 10);
+    expect(real.annualKwh).toBeCloseTo(typical.annualKwh, 3);
   });
 
-  it('refuses an array whose γ nobody gives, by name', async () => {
-    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, await clients())).rejects.toThrow(/gamma_unknown: array East/);
+  it('real years divide by the years covered: the last 30 days missing leave 2023 out', async () => {
+    const whole2022 = await runYield(db, { pvSystemId: system, years: { from: 2022, to: 2022 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
+    const twoYears = await runYield(db, { pvSystemId: system, years: { from: 2022, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z'));
+    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [twoYears.runId]);
+    expect(run.inputs.years_covered).toEqual([2022]);
+    expect(twoYears.annualKwh).toBeCloseTo(whole2022.annualKwh, 6);
+    await expect(
+      runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z')),
+    ).rejects.toThrow(/period_not_covered/);
+  });
+
+  it('throws named errors for an array whose γ nobody gives, a γ out of its bounds, and a site without a time zone', async () => {
+    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, clients())).rejects.toThrow(/gamma_unknown: array East/);
+    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: 0.0035 }, clients())).rejects.toThrow(/gamma_out_of_range: 0.0035/);
+    const somewhere = await insert(db, 'sites', { organisation_id: org, name: 'Somewhere', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    const device = await insert(db, 'devices', { organisation_id: org, site_id: somewhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
+    await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
+    await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients())).rejects.toThrow(/time_zone_required/);
   });
 
   it('runs the same roof through pvgis_like and pvwatts: two runs, two sources, the difference written in their inputs', async () => {
     const seriescalc = await fixture('pvgis-seriescalc-brussels-2023-48h.json');
     const viaPvgis = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch: answering(seriescalc) }));
-    const viaPvwatts = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, await clients());
+    const viaPvwatts = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
 
     const runs = await db.query<{ id: string; engine_version: string; inputs: Record<string, any> }>('select id, engine_version, inputs from runs where id = any($1) order by engine_version', [[viaPvgis.runId, viaPvwatts.runId]]);
     const [pvgisLike, pvwatts] = runs.rows;

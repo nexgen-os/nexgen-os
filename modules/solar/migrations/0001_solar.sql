@@ -454,35 +454,36 @@ insert into solar.yield_profiles
 values
   ('pvgis_like', 'Like PVGIS PVcalc', 'none', 'muneer', null, 'faiman', '{"u0": 26.9, "u1": 6.2}', null,
    '[{"code": "system", "pct": 14}]', false, 'solar',
-   'What PVGIS PVcalc does: hourly irradiance from SARAH (or ERA5 outside its coverage), which gives the direct and diffuse components; '
+   'What PVGIS PVcalc does; PVGIS itself runs it. Published by PVGIS: hourly irradiance from SARAH (or ERA5 outside its coverage), which gives the direct and diffuse components (no decomposition); '
    'Muneer transposition; the horizon PVGIS computes from its ~90 m elevation model (keep it in solar.horizons with its source); '
-   'Faiman cell temperature with U0 26.9 and U1 6.2 as PVGIS states; one aggregate system loss, 14 % by default. '
-   'The incidence and spectral models PVGIS applies were not verified for this profile and are left null; no inverter limit is modelled.'),
-  ('pvwatts', 'PVWatts', null, 'perez', null, 'faiman', '{"u0": 25, "u1": 6.84}', null,
-   '[{"code": "system", "pct": 14}]', true, 'solar',
-   'The quick estimate of PVWatts: Perez transposition, Faiman cell temperature with pvlib''s defaults U0 25 and U1 6.84, '
-   'the PVWatts DC model (module pdc0 and gamma_pdc) and AC model (inverter pdc0 and eta_inv_nom, 96 % in the PVWatts API), '
-   'one aggregate system loss, 14 % as in the PVWatts API example (the API has no default). DC power above the inverter''s is clipped. '
-   'The decomposition, incidence and spectral models are not fixed by this profile.'),
-  ('pvsyst_like', 'Like PVsyst', null, 'haydavies', null, 'pvsyst', '{"u_c": 29, "u_v": 0, "alpha_absorption": 0.9}', null,
+   'Faiman cell temperature with U0 26.9 and U1 6.2; one aggregate system loss, 14 % by default; no inverter model, so no clipping. '
+   'Not verified: the incidence and spectral models PVGIS applies, left null.'),
+  ('pvwatts', 'PVWatts', null, null, null, 'faiman', '{"u0": 25, "u1": 6.84}', null,
+   '[{"code": "system", "pct": 14}]', false, 'solar',
+   'The quick estimate of PVWatts, as this engine runs it: plane-of-array irradiance transposed by the weather source (Open-Meteo''s global_tilted_irradiance; no decomposition or transposition model of its own, both left null); '
+   'Faiman cell temperature with pvlib''s defaults U0 25 and U1 6.84 (a published default); the PVWatts DC model (gamma_pdc of the module, reference 25 °C); '
+   'one aggregate system loss, 14 % as in the PVWatts API example (the API has no default); '
+   'not modelled: inverter efficiency, clipping, incidence angle, spectrum, horizon in the hourly shape, nor a bifacial rear-side gain.'),
+  ('pvsyst_like', 'Like PVsyst', null, null, null, 'pvsyst', '{"u_c": 29, "u_v": 0, "alpha_absorption": 0.9}', null,
    '[{"code": "iam", "pct": null}, {"code": "soiling", "pct": 2}, {"code": "lid", "pct": 2}, {"code": "module_quality", "pct": -0.75},
      {"code": "mismatch", "pct": 2}, {"code": "dc_wiring", "pct": 1.5}, {"code": "ac_wiring", "pct": 1}, {"code": "availability", "pct": 0}]',
    true, 'solar',
-   'What a PVsyst 8 simulation assumes: Hay-Davies transposition (pvlib''s default; the PVsyst default was not verified on the pages read), '
-   'the PVsyst thermal model with Uc 29 and Uv 0 for free-standing modules (20 semi-integrated, 15 insulated back; alpha 0.9), '
-   'and the losses in the order of PVsyst''s loss diagram, each relative to the energy left by the previous ones: incidence (computed, from the module''s PAN when imported), '
-   'soiling 2 %, light-induced degradation 2 %, module quality -0.75 % (a gain), mismatch 2 %, DC wiring 1.5 %, AC wiring 1 %, unavailability 0 %. '
-   'These percentages are the usual PVsyst starting values, not defaults verified in its documentation; replace them with the study''s. '
-   'Irradiance level and thermal losses come from the models; the decomposition model is not fixed.'),
+   'What a PVsyst 8 simulation assumes. Published by PVsyst: the PVsyst thermal model with Uc 29 and Uv 0 for free-standing modules (20 semi-integrated, 15 insulated back; alpha 0.9); '
+   'the losses in the order of PVsyst''s loss diagram, each relative to the energy left by the previous ones (incidence computed, from the module''s PAN when imported); '
+   'inverter overload losses, hence clipping. '
+   'Not verified: PVsyst''s default transposition (left null; pvlib''s default is Hay-Davies) and decomposition (null); the percentages soiling 2 %, light-induced degradation 2 %, '
+   'module quality -0.75 % (a gain), mismatch 2 %, DC wiring 1.5 %, AC wiring 1 %, unavailability 0 % are usual starting values, not defaults found in its documentation; replace them with the study''s. '
+   'Irradiance level and thermal losses come from the models.'),
   ('pvsol_like', 'Like PV*SOL', 'hofmann', 'haydavies', null, 'delta_t',
    '{"reference_irradiance_w_m2": 1000, "delta_t_k": {"open_rack": 22, "roof_parallel": 29, "semi_integrated": 32, "insulated": 43, "floating": 20}}', null,
    '[{"code": "soiling", "pct": null}, {"code": "mismatch", "pct": null}, {"code": "dc_wiring", "pct": null}, {"code": "ac_wiring", "pct": null}]',
    true, 'solar',
-   'What PV*SOL premium 2026 does by default in its hourly mode: Hofmann (2017) decomposition, Hay-Davies transposition, '
-   'module temperature = ambient + delta_t x irradiance / 1000 W/m2 with no wind term, delta_t by mounting as PV*SOL gives it: '
+   'What PV*SOL premium 2026 does in its hourly mode. Published defaults of PV*SOL: Hofmann (2017) decomposition, Hay-Davies transposition, '
+   'module temperature = ambient + delta_t x irradiance / 1000 W/m2 with no wind term, delta_t by mounting: '
    '22 K free-standing, 29 K roof-parallel ventilated, 32 K integrated ventilated, 43 K integrated not ventilated, 20 K floating '
    '(PV*SOL''s "on roof" class, 28 K, has no mounting of its own here). '
-   'PV*SOL''s own loss names and default values were not verified on the pages read: the list carries the usual steps without percentages, to be filled from the study being reproduced.');
+   'Not verified: PV*SOL''s own loss names and default values (the list carries the usual steps without percentages, to be filled from the study being reproduced), '
+   'its incidence and spectral models (null), and its clipping (set, as for any inverter model).');
 
 -- ---------------------------------------------------------------------------
 -- Quantities the module reads and writes. Production power and energy and
