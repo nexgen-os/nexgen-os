@@ -13,7 +13,7 @@ insert into sites (id, organisation_id, name, country, street, postal_code, city
   ('00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000001', 'Ferme du Mont Noir', 'FR', 'Route de Boeschepe 3', '59270', 'Saint-Jans-Cappel', 'FR-HDF', 'agricultural',
    ST_GeomFromText('POLYGON((2.7210 50.7705, 2.7250 50.7705, 2.7250 50.7730, 2.7210 50.7730, 2.7210 50.7705))', 4326));
 
-insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, year_of_construction) values
+insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, year_built) values
   ('00000000-0000-4000-8000-000400000021', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Barn', 'agricultural',
    ST_GeomFromText('POLYGON((2.7215 50.7710, 2.7222 50.7710, 2.7222 50.7714, 2.7215 50.7714, 2.7215 50.7710))', 4326), 64, 8, 1, 2004),
   ('00000000-0000-4000-8000-000400000022', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Stable', 'agricultural',
@@ -36,17 +36,17 @@ insert into device_directory (id, organisation_id, device_type, manufacturer, mo
   ('00000000-0000-4000-8000-000400000090', null, 'solar', 'Longi', 'Hi-MO 6 545', 0.545, 2.56, null, null),
   ('00000000-0000-4000-8000-000400000091', '00000000-0000-4000-8000-000400000001', 'inverter', 'SMA', 'Sunny Tripower X 25', 25, null, 2890, 'EUR');
 
-insert into devices (id, organisation_id, site_id, building_id, surface_id, meter_id, name, device_type, directory_id, manufacturer, model, power_kw, unit_count, status, installation_date, tags) values
+insert into devices (id, organisation_id, site_id, building_id, surface_id, meter_id, name, device_type, directory_id, manufacturer, model, rated_power_kw, unit_count, status, installation_date, tags) values
   ('00000000-0000-4000-8000-000400000051', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000021', '00000000-0000-4000-8000-000400000031', '00000000-0000-4000-8000-000400000041',
-   'Barn roof array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 99.19, 182, 'in_service', '2023-06-20', '{solar,elec}'),
+   'Barn roof array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 99.19, 182, 'in_service', '2023-06-20', '{solar,electric}'),
   ('00000000-0000-4000-8000-000400000052', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', null, '00000000-0000-4000-8000-000400000033', '00000000-0000-4000-8000-000400000042',
-   'Lower field ground array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 498.6, 915, 'planned', null, '{solar,elec}'),
+   'Lower field ground array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 498.6, 915, 'planned', null, '{solar,electric}'),
   ('00000000-0000-4000-8000-000400000053', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', null, '00000000-0000-4000-8000-000400000034', '00000000-0000-4000-8000-000400000041',
-   'Car park array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 36.0, 66, 'planned', null, '{solar,elec}'),
+   'Car park array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 36.0, 66, 'planned', null, '{solar,electric}'),
   ('00000000-0000-4000-8000-000400000054', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000021', null, '00000000-0000-4000-8000-000400000041',
-   'Barn inverters', 'inverter', '00000000-0000-4000-8000-000400000091', 'SMA', 'Sunny Tripower X 25', 100, 4, 'in_service', '2023-06-20', '{elec}'),
+   'Barn inverters', 'inverter', '00000000-0000-4000-8000-000400000091', 'SMA', 'Sunny Tripower X 25', 100, 4, 'in_service', '2023-06-20', '{electric}'),
   ('00000000-0000-4000-8000-000400000055', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000022', null, '00000000-0000-4000-8000-000400000041',
-   'Milking parlour cooling', 'hvac', null, 'Packo', 'ICE 5000', 22, 1, 'in_service', '2012-03-01', '{elec}');
+   'Milking parlour cooling', 'hvac', null, 'Packo', 'ICE 5000', 22, 1, 'in_service', '2012-03-01', '{electric}');
 
 update devices set geometry = ST_GeomFromText('POLYGON((2.7234 50.7707, 2.7246 50.7707, 2.7246 50.7715, 2.7234 50.7715, 2.7234 50.7707))', 4326)
  where id = '00000000-0000-4000-8000-000400000052';
@@ -73,14 +73,14 @@ insert into modules (code, name, version, schema_name, requires_core_min) values
 on conflict (code) do nothing;
 
 select record_run('energy', 'pvgis-5.3+core-0.1.0', d.id, null,
-  jsonb_build_object('source', 'pvgis', 'peak_kw', d.power_kw, 'tilt', s.tilt_deg, 'azimuth', s.azimuth_deg, 'loss_pct', 14),
-  jsonb_build_object('annual_kwh', round(d.power_kw * case s.kind when 'ground' then 1010 when 'carport' then 980 else 1000 end)))
+  jsonb_build_object('source', 'pvgis', 'peak_kw', d.rated_power_kw, 'tilt', s.tilt_deg, 'azimuth', s.azimuth_deg, 'loss_pct', 14),
+  jsonb_build_object('annual_kwh', round(d.rated_power_kw * case s.kind when 'ground' then 1010 when 'carport' then 980 else 1000 end)))
   from devices d join surfaces s on s.id = d.surface_id
  where d.organisation_id = '00000000-0000-4000-8000-000400000001' and d.device_type = 'solar';
 
 -- Queries a page would run
 -- The arrays, where they stand and what they are expected to give:
---   select d.name, s.kind, s.azimuth_deg, s.tilt_deg, d.power_kw, d.status, r.results->>'annual_kwh' annual_kwh
+--   select d.name, s.kind, s.azimuth_deg, s.tilt_deg, d.rated_power_kw, d.status, r.results->>'annual_kwh' annual_kwh
 --     from devices d join surfaces s on s.id = d.surface_id left join runs r on r.subject_id = d.id
 --    where d.device_type = 'solar' and d.organisation_id = '00000000-0000-4000-8000-000400000001' order by d.name;
 -- Area available on the field, in m², from its outline:

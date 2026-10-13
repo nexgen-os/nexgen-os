@@ -103,10 +103,10 @@ describe('a Home Assistant home in Nexgen OS', () => {
       { ref: 'homeassistant://climate.living_room', host: 'device', quantity: 'ha_climate_c', kind: 'setpoint' },
       { ref: 'homeassistant://sensor.inverter_active_power', host: 'device', quantity: 'power', kind: 'sensor' },
       { ref: 'homeassistant://sensor.inverter_total_yield', host: 'device', quantity: 'energy', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.kitchen_co2', host: 'space', quantity: 'co2_concentration', kind: 'sensor' },
+      { ref: 'homeassistant://sensor.kitchen_co2', host: 'space', quantity: 'co2', kind: 'sensor' },
       { ref: 'homeassistant://sensor.living_room_temperature', host: 'device', quantity: 'temperature', kind: 'sensor' },
       { ref: 'homeassistant://sensor.outdoor_noise', host: 'building', quantity: 'ha_sound_pressure_db', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.thermostat_battery', host: 'device', quantity: 'state_of_charge', kind: 'sensor' },
+      { ref: 'homeassistant://sensor.thermostat_battery', host: 'device', quantity: 'charge_level', kind: 'sensor' },
       { ref: 'homeassistant://switch.garage_heater', host: 'space', quantity: 'ha_switch_none', kind: 'command' },
     ]);
     const published = await db.query<{ code: string; unit: string; published_by: string }>(

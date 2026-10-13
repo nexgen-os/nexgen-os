@@ -78,7 +78,7 @@ create table devices (
   serial_number     text,
   -- Rated power, the one figure every device has. Capacities, efficiencies
   -- and the rest are the module's.
-  power_kw          numeric(12, 3),
+  rated_power_kw          numeric(12, 3),
   unit_count        integer not null default 1,
   -- A point, or the area it covers (a module layout, a ground array).
   geometry          geometry,
@@ -92,7 +92,7 @@ create table devices (
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   constraint devices_name_not_blank check (btrim(name) <> ''),
-  constraint devices_power_positive check (power_kw is null or power_kw >= 0),
+  constraint devices_power_positive check (rated_power_kw is null or rated_power_kw >= 0),
   constraint devices_unit_count_positive check (unit_count > 0),
   constraint devices_status check (status in ('planned', 'installed', 'in_service', 'out_of_service', 'removed')),
   constraint devices_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),

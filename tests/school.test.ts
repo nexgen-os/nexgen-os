@@ -22,7 +22,7 @@ beforeAll(async () => {
   });
   school = await insert(db, 'buildings', {
     organisation_id: org, site_id: site, name: 'Main building', profile: 'school',
-    footprint: square(4.4702, 50.6802, 40, 20), elevation_m: 112, height_m: 9.5, floors_above_ground: 2, year_of_construction: 1968,
+    footprint: square(4.4702, 50.6802, 40, 20), elevation_m: 112, height_m: 9.5, floors_above_ground: 2, year_built: 1968,
   });
   ground = await insert(db, 'architecture.floors', { organisation_id: org, building_id: school, name: 'Ground floor', level: 0, elevation_m: 112, height_m: 3.2 });
   first = await insert(db, 'architecture.floors', { organisation_id: org, building_id: school, name: 'First floor', level: 1, elevation_m: 115.2, height_m: 3 });
@@ -31,7 +31,7 @@ beforeAll(async () => {
   classroom5 = await insert(db, 'architecture.spaces', { organisation_id: org, floor_id: first, name: 'Classroom 5', kind: 'room', area_m2: 60 });
   for (const [name, quantity, kind, ref] of [
     ['Temperature classroom 1', 'temperature', 'sensor', 'mqtt://school/c1/temp'],
-    ['CO2 classroom 1', 'co2_concentration', 'sensor', 'mqtt://school/c1/co2'],
+    ['CO2 classroom 1', 'co2', 'sensor', 'mqtt://school/c1/co2'],
     ['Heating setpoint classroom 1', 'temperature', 'setpoint', 'modbus://10.0.0.5/4001'],
   ]) {
     await insert(db, 'sensors', { organisation_id: org, host_id: classroom1, name, quantity_code: quantity, kind, external_ref: ref });
@@ -105,7 +105,7 @@ describe('a school with the architecture module', () => {
 
   it('serves the building with a heat pump, linked to it', async () => {
     const hp = await insert(db, 'devices', {
-      organisation_id: org, site_id: site, building_id: school, name: 'Air-to-water heat pump', device_type: 'heatpump', power_kw: 24,
+      organisation_id: org, site_id: site, building_id: school, name: 'Air-to-water heat pump', device_type: 'heat_pump', rated_power_kw: 24,
     });
     await db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'serves', $2)`, [hp, school]);
     const r = await one<{ name: string }>(
@@ -117,8 +117,8 @@ describe('a school with the architecture module', () => {
   });
 
   it('attaches an attribute to a room like to anything else', async () => {
-    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'occupancy_type', '"classroom"')`, [classroom1]).catch((e) => e);
-    // occupancy_type applies to buildings and sites; a room takes the module's own properties.
+    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'usage', '"classroom"')`, [classroom1]).catch((e) => e);
+    // usage applies to buildings and sites; a room takes the module's own properties.
     const r = await one<{ n: number }>(db, 'select count(*)::int n from attributes where object_id = $1', [classroom1]);
     expect(r.n).toBe(0);
     await db.query(

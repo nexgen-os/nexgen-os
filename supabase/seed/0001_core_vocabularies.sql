@@ -20,8 +20,8 @@ insert into device_types (code, name, parent_code, module_code, brick_class, ifc
   ('biomass',    'Biomass plant',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
   ('inverter',   'Inverter',           null,        'energy',  'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
   ('battery',    'Battery',            null,        'energy',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
-  ('ev',         'EV charging station', null,       'energy',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
-  ('heatpump',   'Heat pump',          null,        'heating', 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
+  ('charger',         'EV charging station', null,       'energy',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
+  ('heat_pump',   'Heat pump',          null,        'heating', 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
   ('boiler',     'Boiler',             null,        'heating', 'Boiler',              'IfcBoiler',               'A boiler.'),
   ('geothermal', 'Geothermal system',  null,        'heating', null,                  'IfcUnitaryEquipment',     'A ground-source heat exchange system.'),
   ('hvac',       'Air handling unit',  null,        'heating', 'AHU',                 'IfcUnitaryEquipment',     'An air handling or ventilation unit.'),
@@ -67,21 +67,28 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
 -- ---------------------------------------------------------------------------
 
 insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) values
+  -- energy and power: the generic pair for a sensor that does not say which
+  -- way, then one per direction so a page never guesses: taken from or
+  -- injected into the grid at a meter, produced by or consumed by a device.
   ('energy',              'Energy',                       'KiloW-HR',   'sum',  'Energy'),
-  ('energy_offtake',       'Energy taken from the grid','KiloW-HR',   'sum',  'Energy'),
-  ('energy_injection',       'Energy injected into the grid',  'KiloW-HR',   'sum',  'Energy'),
+  ('offtake_energy',      'Energy taken from the grid',   'KiloW-HR',   'sum',  'Energy'),
+  ('injection_energy',    'Energy injected into the grid','KiloW-HR',   'sum',  'Energy'),
+  ('production_energy',   'Energy produced',              'KiloW-HR',   'sum',  'Energy'),
+  ('consumption_energy',  'Energy consumed',              'KiloW-HR',   'sum',  'Energy'),
   ('power',               'Power',                        'KiloW',      'mean', 'Power'),
+  ('production_power',    'Power produced',               'KiloW',      'mean', 'Power'),
+  ('consumption_power',   'Power consumed',               'KiloW',      'mean', 'Power'),
   ('temperature',         'Temperature',                  'DEG_C',      'mean', 'Temperature'),
-  ('relative_humidity',   'Relative humidity',            'PERCENT',    'mean', 'RelativeHumidity'),
-  ('co2_concentration',   'CO2 concentration',            'PPM',        'mean', 'DimensionlessRatio'),
+  ('humidity',   'Relative humidity',            'PERCENT',    'mean', 'RelativeHumidity'),
+  ('co2',   'CO2 concentration',            'PPM',        'mean', 'DimensionlessRatio'),
   ('irradiance',          'Irradiance',                   'W-PER-M2',   'mean', 'Irradiance'),
   ('occupancy',           'Occupancy',                    'NUM',        'last', 'Count'),
-  ('state_of_charge',     'State of charge',              'PERCENT',    'last', 'DimensionlessRatio'),
+  ('charge_level',     'State of charge',              'PERCENT',    'last', 'DimensionlessRatio'),
   ('volume',              'Volume',                       'M3',         'sum',  'Volume'),
-  ('mass_co2e',           'Greenhouse gas emissions',     'KiloGM',     'sum',  'Mass'),
+  ('emissions',           'Greenhouse gas emissions',     'KiloGM',     'sum',  'Mass'),
   ('area',                'Area',                         'M2',         'last', 'Area'),
   ('length',              'Length',                       'M',          'last', 'Length'),
-  ('thermal_transmittance','Thermal transmittance',       'W-PER-M2-K', 'last', 'ThermalTransmittance'),
+  ('u_value','Thermal transmittance',       'W-PER-M2-K', 'last', 'ThermalTransmittance'),
   ('ratio',               'Ratio',                        'UNITLESS',   'last', 'DimensionlessRatio');
 
 -- ---------------------------------------------------------------------------
@@ -90,11 +97,11 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) value
 -- ---------------------------------------------------------------------------
 
 insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
-  ('gross_floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building}',          'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
-  ('occupancy_type',       'Occupancy type',        'text',    null,     null, null, null, '{building,site}',     'Pset_BuildingCommon',        'OccupancyType'),
+  ('floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building}',          'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
+  ('usage',       'Occupancy type',        'text',    null,     null, null, null, '{building,site}',     'Pset_BuildingCommon',        'OccupancyType'),
   ('energy_label',         'Energy label',          'text',    null,     null, null, '{A+,A,B,C,D,E,F,G}', '{building}', null,               null),
   ('roof_area',            'Roof area',             'number',  'area',   0,    null, null, '{surface}',           'Qto_RoofBaseQuantities',     'GrossArea'),
-  ('thermal_transmittance','Thermal transmittance', 'number',  'thermal_transmittance', 0, null, null, '{surface}', 'Pset_WallCommon',        'ThermalTransmittance'),
+  ('u_value','Thermal transmittance', 'number',  'u_value', 0, null, null, '{surface}', 'Pset_WallCommon',        'ThermalTransmittance'),
   ('is_external',          'Is external',           'boolean', null,     null, null, null, '{surface}',           'Pset_WallCommon',            'IsExternal'),
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
   ('commissioning_date',   'Commissioning date',    'date',    null,     null, null, null, '{device}',            'Pset_ManufacturerOccurrence', 'AcquisitionDate'),
@@ -111,9 +118,9 @@ insert into tags (code, name, haystack_tag, description) values
   ('critical',        'Critical',            null,     'Its failure has serious consequences (a hospital wing, a cold room).'),
   ('greenRoof',       'Green roof',          null,     'A vegetated roof.'),
   ('asbestosSuspected','Asbestos suspected', null,     'May contain asbestos; survey before works.'),
-  ('elec',            'Electrical',          'elec',   'Concerns electricity.'),
+  ('electric',        'Electrical',          'elec',   'Concerns electricity.'),
   ('solar',           'Solar',               'solar',  'Concerns solar energy.'),
-  ('his',             'Historised',          'his',    'Its values are kept as a history.'),
+  ('logged',          'Logged',              'his',    'Its values are kept as a history.'),
   ('writable',        'Writable',            'writable','Accepts values sent to it (setpoints, commands).');
 
 -- ---------------------------------------------------------------------------

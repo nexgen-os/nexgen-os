@@ -15,7 +15,7 @@ insert into contacts (id, organisation_id, name, kind, email) values
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
   ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', 'École du Centre', 'BE', 'Rue de l''École 12', '1380', 'Lasne', 'BE-WBR', 'school');
 
-insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, year_of_construction) values
+insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, year_built) values
   ('00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', 'Main building', 'school',
    ST_GeomFromText('POLYGON((4.4702 50.6802, 4.4708 50.6802, 4.4708 50.6805, 4.4702 50.6805, 4.4702 50.6802))', 4326), 112, 9.5, 2, 1968);
 
@@ -35,14 +35,14 @@ insert into sensors (organisation_id, host_id, name, quantity_code, kind, extern
 select '00000000-0000-4000-8000-000200000001', s.id, s.name || ' — ' || q.label, q.quantity, q.kind, format('mqtt://school/%s/%s', lower(replace(s.name, ' ', '-')), q.topic)
   from architecture.spaces s
   cross join (values ('temperature', 'temperature', 'sensor', 'temp'),
-                     ('CO2', 'co2_concentration', 'sensor', 'co2'),
+                     ('CO2', 'co2', 'sensor', 'co2'),
                      ('presence', 'occupancy', 'sensor', 'presence'),
                      ('heating setpoint', 'temperature', 'setpoint', 'setpoint')) as q(label, quantity, kind, topic)
  where s.name like 'Classroom%' or (s.name = 'Canteen' and q.label = 'presence');
 
-insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, power_kw, installation_date) values
+insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, installation_date) values
   ('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000020',
-   'Air-to-water heat pump', 'heatpump', 'Daikin', 'Altherma 3 H HT 18', 18, '2023-10-02');
+   'Air-to-water heat pump', 'heat_pump', 'Daikin', 'Altherma 3 H HT 18', 18, '2023-10-02');
 
 insert into links (subject_id, type_code, object_id) values
   ('00000000-0000-4000-8000-000200000050', 'serves', '00000000-0000-4000-8000-000200000020');
@@ -52,7 +52,7 @@ insert into series (id, organisation_id, object_id, quantity_code, sensor_id, ki
 select '00000000-0000-4000-8000-000200000071', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000041', 'temperature', id, 'measured', 'instant', '10 minutes'
   from sensors where name = 'Classroom 1 — temperature';
 insert into series (id, organisation_id, object_id, quantity_code, sensor_id, kind, value_kind, step)
-select '00000000-0000-4000-8000-000200000072', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000041', 'co2_concentration', id, 'measured', 'instant', '10 minutes'
+select '00000000-0000-4000-8000-000200000072', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000041', 'co2', id, 'measured', 'instant', '10 minutes'
   from sensors where name = 'Classroom 1 — CO2';
 insert into series (id, organisation_id, object_id, quantity_code, sensor_id, kind, value_kind)
 select '00000000-0000-4000-8000-000200000073', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000041', 'temperature', id, 'setpoint', 'instant'
@@ -78,7 +78,7 @@ select id, 'acoustic_class', to_jsonb(case when name like 'Classroom%' then 'B' 
   from architecture.spaces;
 
 insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000200000020', 'gross_floor_area', '1840', 'as-built drawings'),
+  ('00000000-0000-4000-8000-000200000020', 'floor_area', '1840', 'as-built drawings'),
   ('00000000-0000-4000-8000-000200000020', 'energy_label', '"D"', 'energy performance certificate 2022');
 
 insert into documents (object_id, name, kind, uri, media_type, source) values

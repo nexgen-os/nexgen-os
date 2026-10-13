@@ -43,7 +43,7 @@ create table device_types (
 );
 
 comment on table device_types is
-  'What a device can be: solar, wind, battery, ev, heatpump, boiler, inverter, meter, sensor… A tree aligned on Brick and IFC. A module derives the types it owns.';
+  'What a device can be: solar, wind, battery, charger, heat_pump, boiler, inverter, meter, sensor… A tree aligned on Brick and IFC. A module derives the types it owns.';
 
 create or replace function device_type_is_a(p_type text, p_ancestor text)
 returns boolean

@@ -30,7 +30,7 @@ select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'osm', 'way/' |
   from generate_series(1, 6) i;
 
 insert into attributes (object_id, property_code, value, source_code, source)
-select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'gross_floor_area', to_jsonb(300 * (2 + (i % 4))), 'openstreetmap', 'footprint × floors'
+select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floor_area', to_jsonb(300 * (2 + (i % 4))), 'openstreetmap', 'footprint × floors'
   from generate_series(1, 6) i;
 
 -- Heights come from the Copernicus height model, noted as such.

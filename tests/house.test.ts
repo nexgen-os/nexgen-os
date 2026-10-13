@@ -31,7 +31,7 @@ beforeAll(async () => {
   });
   pv = await insert(db, 'devices', {
     organisation_id: org, site_id: site, building_id: house, surface_id: roof, meter_id: meter,
-    name: 'PV system', device_type: 'solar', power_kw: 3.6, unit_count: 9, tags: ['solar', 'elec'],
+    name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
   });
 });
 
@@ -99,12 +99,12 @@ describe('a house', () => {
       call derive_devices('energy.pv_systems', 'solar');
     `);
     await db.query(`insert into energy.pv_systems (id, inverter_count, panel_technology) values ($1, 1, 'mono')`, [pv]);
-    const r = await one<{ name: string; power_kw: string; panel_technology: string }>(
+    const r = await one<{ name: string; rated_power_kw: string; panel_technology: string }>(
       db,
-      `select d.name, d.power_kw, p.panel_technology from devices d join energy.pv_systems p using (id) where d.id = $1`,
+      `select d.name, d.rated_power_kw, p.panel_technology from devices d join energy.pv_systems p using (id) where d.id = $1`,
       [pv],
     );
-    expect(r).toEqual({ name: 'PV system', power_kw: '3.600', panel_technology: 'mono' });
+    expect(r).toEqual({ name: 'PV system', rated_power_kw: '3.600', panel_technology: 'mono' });
     const battery = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Not a PV', device_type: 'battery' });
     await expect(db.query(`insert into energy.pv_systems (id) values ($1)`, [battery])).rejects.toThrow(/device_type_mismatch/);
     await db.query('delete from devices where id = $1', [battery]);
@@ -199,7 +199,7 @@ describe('a house', () => {
     const sc = await one<{ id: string }>(db, `select id from scenarios where name = 'Add a battery'`);
     const battery = await insert(db, 'devices', {
       organisation_id: org, site_id: site, building_id: house, meter_id: meter, name: 'Battery', device_type: 'battery',
-      power_kw: 5, scenario_id: sc.id,
+      rated_power_kw: 5, scenario_id: sc.id,
     });
     await db.query(
       `insert into attributes (object_id, property_code, value, scenario_id) values ($1, 'efficiency', '0.92', $2)`,
@@ -225,7 +225,7 @@ describe('a house', () => {
 
   it('removes everything attached when the building goes', async () => {
     const shed = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
-    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'gross_floor_area', '9')`, [shed]);
+    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'floor_area', '9')`, [shed]);
     await db.query(`insert into documents (object_id, name, uri) values ($1, 'Photo', 's3://photos/shed.jpg')`, [shed]);
     await db.query('delete from buildings where id = $1', [shed]);
     const r = await one<{ objects: number; attrs: number; docs: number }>(

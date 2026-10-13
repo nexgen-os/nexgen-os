@@ -42,18 +42,18 @@ insert into participants (id, organisation_id, project_id, name, is_group, statu
 update participants set parent_id = '00000000-0000-4000-8000-000300000055'
  where id in ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000052');
 
-insert into devices (id, organisation_id, site_id, meter_id, name, device_type, manufacturer, power_kw, unit_count, installation_date, tags) values
-  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', '00000000-0000-4000-8000-000300000044', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15', '{solar,elec}');
+insert into devices (id, organisation_id, site_id, meter_id, name, device_type, manufacturer, rated_power_kw, unit_count, installation_date, tags) values
+  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', '00000000-0000-4000-8000-000300000044', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15', '{solar,electric}');
 
 -- A month of quarter-hour offtake per consumer, and of injection by the plant.
 insert into series (id, organisation_id, object_id, quantity_code, kind, value_kind, step, source)
 select ('00000000-0000-4000-8000-0003000000' || (70 + row_number() over ()))::uuid, '00000000-0000-4000-8000-000300000001', m.id,
-       case when m.direction = 'injection' then 'energy_injection' else 'energy_offtake' end, 'measured', 'interval', '15 minutes', 'grid operator hub'
+       case when m.direction = 'injection' then 'injection_energy' else 'offtake_energy' end, 'measured', 'interval', '15 minutes', 'grid operator hub'
   from meters m where m.organisation_id = '00000000-0000-4000-8000-000300000001' order by m.identifier;
 
 insert into series_values (series_id, at, value)
 select s.id, ts,
-       case when s.quantity_code = 'energy_injection'
+       case when s.quantity_code = 'injection_energy'
             then round(greatest(0, 60 * sin(pi() * (extract(hour from ts at time zone 'Europe/Amsterdam') - 6) / 14))::numeric, 2)
             else round((3 + 9 * (case when extract(isodow from ts) < 6 and extract(hour from ts) between 7 and 18 then 1 else 0.3 end)
                         * (0.8 + 0.4 * random()))::numeric, 2) end

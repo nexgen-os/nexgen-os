@@ -367,7 +367,7 @@ create table buildings (
   height_m             numeric(9, 3),
   floors_above_ground integer,
   floors_below_ground integer,
-  year_of_construction integer,
+  year_built integer,
   status               text not null default 'in_service',
   tags                 text[] not null default '{}',
   scenario_id          uuid references scenarios(id) on delete cascade,
@@ -376,7 +376,7 @@ create table buildings (
   constraint buildings_name_not_blank check (btrim(name) <> ''),
   constraint buildings_height_positive check (height_m is null or height_m >= 0),
   constraint buildings_floors check ((floors_above_ground is null or floors_above_ground >= 0) and (floors_below_ground is null or floors_below_ground >= 0)),
-  constraint buildings_year check (year_of_construction is null or year_of_construction between 1000 and 2200),
+  constraint buildings_year check (year_built is null or year_built between 1000 and 2200),
   constraint buildings_status check (status in ('planned', 'under_construction', 'in_service', 'out_of_service', 'demolished')),
   constraint buildings_footprint_core check (footprint is null or (ST_SRID(footprint) = 4326 and ST_NDims(footprint) = 3)),
   constraint buildings_tags_known check (tags_known(tags))

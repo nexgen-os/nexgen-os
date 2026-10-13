@@ -94,14 +94,14 @@ export const SOURCE_CODE = 'homeassistant';
  */
 const QUANTITIES: Record<string, { quantity: string; factor: number }> = {
   'temperature|°C': { quantity: 'temperature', factor: 1 },
-  'humidity|%': { quantity: 'relative_humidity', factor: 1 },
-  'carbon_dioxide|ppm': { quantity: 'co2_concentration', factor: 1 },
+  'humidity|%': { quantity: 'humidity', factor: 1 },
+  'carbon_dioxide|ppm': { quantity: 'co2', factor: 1 },
   'power|W': { quantity: 'power', factor: 0.001 },
   'power|kW': { quantity: 'power', factor: 1 },
   'energy|Wh': { quantity: 'energy', factor: 0.001 },
   'energy|kWh': { quantity: 'energy', factor: 1 },
   'energy|MWh': { quantity: 'energy', factor: 1000 },
-  'battery|%': { quantity: 'state_of_charge', factor: 1 },
+  'battery|%': { quantity: 'charge_level', factor: 1 },
   'irradiance|W/m²': { quantity: 'irradiance', factor: 1 },
   'volume|m³': { quantity: 'volume', factor: 1 },
   'gas|m³': { quantity: 'volume', factor: 1 },
