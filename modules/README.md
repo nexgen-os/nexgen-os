@@ -49,3 +49,4 @@ a program in any language, JSON in and out, that never reads the database.
 | `construction` | phases, works, inspections, site diary | commissioning and progress of works |
 | `participation` | consultations, contributions | public consultation: read-only exports and portals |
 | `portfolio` | targets, indicators | KPIs and trajectories across many sites |
+| `nature` (later) | trees and vegetation, water bodies, land cover, soils, protected areas and habitats (CityGML Vegetation, WaterBody and LandUse; INSPIRE Land Cover, Protected Sites and Habitats; Copernicus and OpenStreetMap as sources) | what the living world around a site does to it and what a project does to it: tree shading on roofs and arrays, green roofs and their water, urban heat, stormwater, biodiversity and carbon stock, the ecological checks `compliance` asks for |
