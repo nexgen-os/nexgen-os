@@ -11,7 +11,7 @@
 // kilowatts and kilowatt-hours.
 
 import type { Fetch } from '../../formats/geocoding/index.js';
-import type { CollectedSeries, Point } from '../index.js';
+import { azimuthFromSouth, type CollectedSeries, type Point } from '../index.js';
 
 export const SOURCE_CODE = 'pvgis';
 
@@ -112,11 +112,7 @@ export function pvgis(options: { baseUrl?: string; fetch?: Fetch } = {}) {
 }
 
 /** The core's azimuth (from true north, clockwise) as PVGIS's aspect (from south, west positive), in (-180, 180]. */
-export function aspectOf(azimuthDeg: number): number {
-  let a = ((azimuthDeg - 180) % 360 + 360) % 360;
-  if (a > 180) a -= 360;
-  return a === -0 ? 0 : a;
-}
+export const aspectOf = azimuthFromSouth;
 
 /** `20230101:1210` → the start of that hour in UTC, ISO 8601. */
 export function hourStart(stamp: string): string {

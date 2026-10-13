@@ -42,17 +42,70 @@ of its arrays, or its own `kwp_dc` when it has none.
 
 Each row's `description` says what was not verified.
 
+## Yield runs
+
+`runYield(db, request, clients)` (`yield.ts`) runs two of the profiles. Both
+store the hourly energy as a `simulated` `production_energy` series on the
+PV system (kWh per hour, dated at the start of the hour, UTC), the air
+temperature on its site, and a run (`record_run('solar', …)`) whose inputs
+say which weather, which period, which arrays, which models and losses, and
+which conventions it was computed with. Two runs on the same roof are
+compared by reading their `runs.inputs` side by side.
+
+The request: `pvSystemId`, `years` (`from`, `to`, whole calendar years),
+`profileCode` (`pvgis_like` unless given). The arrays are the system's
+(`solar.pv_arrays`), or one array on the device's surface with the system's
+power when it has none; each needs an azimuth, a tilt and a power.
+
+| Profile | Computed by | Weather | What else the request may give |
+|---|---|---|---|
+| `pvgis_like` | PVGIS `seriescalc`, one call per array | PVGIS's radiation database for the place (SARAH3, or ERA5 outside its coverage), the years asked | `raddatabase` to force one |
+| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked | `gammaPdc`, `typicalYear`, `anchor` |
+
+`pvwatts`, step by step, each a pure function tested on its own:
+
+1. **Align**: the irradiance of an hour (a mean of the preceding hour at
+   Open-Meteo, dated at its start) with the mean of the temperatures and
+   winds read at its two ends.
+2. **Clean**: irradiance missing or below zero → 0, above 1,400 W/m² (the
+   solar constant and a margin) → 1,400; temperature and wind gaps take the
+   last value read. A period without any temperature or wind is refused.
+3. **Convert**: Faiman cell temperature with the profile's `u0` and `u1`,
+   the PVWatts DC model with γ (`gamma_pdc` of the array's module product
+   when it is a `pvwatts` one, else the request's `gammaPdc`, else
+   `gamma_unknown`), then the profile's losses in their order.
+4. **Add up** the arrays hour by hour.
+5. **Typical year** (default; `typicalYear: false` keeps the real years as
+   they are): for each calendar month, the real month whose daily energies
+   are distributed most like those of every year (Finkelstein-Schafer
+   statistic on daily energy; a year covering less than 95 % of the month
+   is no candidate; the most recent year wins a tie). The months are chosen
+   once for the system, so every array reads the same days. The year is
+   laid on the calendar of `years.to`, 29 February left out, then scaled to
+   the mean annual of the years read. It is stored in a series of its own,
+   named `typical year <from>-<to>`, apart from the real years.
+6. **Anchor** (`anchor: 'pvgis'`): each array's annual is brought to PVGIS's
+   `PVcalc` yearly yield for the same array (same orientation, mounting and
+   total loss) by one factor applied to every hour. The factors, PVGIS's
+   radiation database and the system's factor are in the run.
+
+What `pvwatts` does not model, and says so in the run: inverter efficiency
+and clipping, incidence angle and spectral losses, and the far horizon in
+the hourly shape (PVGIS's horizon only reaches the annual, through the
+anchoring).
+
 ## Quantities
 
-`ghi`, `dni`, `dhi`, `poa_irradiance` (W/m², mean) and `module_temperature`
-(°C, mean). Production power and energy and the generic `irradiance` are
-the core's.
+`ghi`, `dni`, `dhi`, `poa_irradiance` (W/m², mean), `module_temperature`
+(°C, mean) and `wind_speed` (m/s, mean; the cell temperature depends on it).
+Production power and energy and the generic `irradiance` are the core's.
 
 ## Not here yet
 
-- Yield runs and their summary (annual yield, specific yield, performance
-  ratio, P50 / P90), the IEC 61724-1 indicators, and the format readers
-  (PVGIS, EPW, PAN / OND, PVsyst and PV\*SOL CSV).
+- The run summary beyond the annual and specific yield (performance ratio,
+  P50 / P90), the IEC 61724-1 indicators, the `pvsyst_like` and
+  `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
+  PV\*SOL CSV).
 - `site_of()` does not know `pv_array` yet: modules extend it by replacing
   the whole function, which would drop another module's kinds. An array's
   site is its system's (`devices.site_id`).

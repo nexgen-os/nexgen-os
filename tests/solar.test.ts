@@ -53,6 +53,7 @@ describe('the solar module', () => {
     expect(q.rows).toEqual([
       { code: 'dhi', unit: 'W-PER-M2' }, { code: 'dni', unit: 'W-PER-M2' }, { code: 'ghi', unit: 'W-PER-M2' },
       { code: 'module_temperature', unit: 'DEG_C' }, { code: 'poa_irradiance', unit: 'W-PER-M2' },
+      { code: 'wind_speed', unit: 'M-PER-SEC' },
     ]);
   });
 

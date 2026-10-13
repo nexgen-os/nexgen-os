@@ -1,26 +1,59 @@
 // A PV yield as a run that says what it was computed from (decision 0012).
 //
-// The `pvgis_like` profile is the cheapest one to verify: PVGIS itself does
-// the computation (its irradiance, its DEM horizon, its one aggregate loss),
-// and the run records the system, the arrays, the years, the radiation
-// database PVGIS chose and the conventions the series are written in. The
-// hourly energy lands as a `simulated` series on the PV system; the run
-// keeps the summary. Engines run outside Postgres; the database holds the
-// parameters, the series and the run.
+// Two profiles run here. `pvgis_like` is the cheapest one to verify: PVGIS
+// itself does the computation (its irradiance, its DEM horizon, its one
+// aggregate loss). `pvwatts` computes here (`pvwatts.ts`): the hourly
+// plane-of-array irradiance, temperature and wind of a reanalysis read
+// through a weather connector (Open-Meteo's ERA5 archive), a Faiman cell
+// temperature, the PVWatts DC model, the profile's losses, a typical year
+// chosen month by month, and optionally an annual anchored on PVGIS.
+//
+// Either way the run records the system, the arrays, the weather and its
+// period, the models and losses, and the conventions the series are written
+// in. The hourly energy lands as a `simulated` series on the PV system, the
+// air temperature on its site; the run keeps the summary. Engines run
+// outside Postgres; the database holds the parameters, the series and the
+// run.
 
 import type { Db } from '../../formats/db.js';
-import { storeSeries, type CollectedSeries } from '../../connectors/index.js';
+import { storeSeries, type CollectedSeries, type SeriesPoint, type SeriesTarget, type WeatherProvider } from '../../connectors/index.js';
+import { openMeteo } from '../../connectors/open-meteo/index.js';
 import { pvgis, type PvgisSystem } from '../../connectors/pvgis/index.js';
+import {
+  POA_MAX_W_M2,
+  alignWeather,
+  anchoringFactor,
+  arrayEnergy,
+  cleanWeather,
+  lossFactor,
+  multiYearMeanAnnual,
+  rescaleFactor,
+  scaled,
+  selectTypicalMonths,
+  toYearGrid,
+  total,
+  typicalYear,
+} from './pvwatts.js';
 
 export const ENGINE_VERSION = 'pvgis-5.3+solar-0.1.0';
+export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.1.0';
+
+/** The Open-Meteo dataset the `pvwatts` profile reads: ERA5 alone, not Open-Meteo's blend of reanalyses. */
+const WEATHER_MODEL = 'era5';
 
 export interface YieldRequest {
   pvSystemId: string;
   years: { from: number; to: number };
-  /** Default `pvgis_like`; only that profile runs through PVGIS. */
+  /** Default `pvgis_like`. `pvgis_like` runs through PVGIS, `pvwatts` here. */
   profileCode?: string;
   /** PVGIS radiation database to force (`PVGIS-SARAH3`, `PVGIS-ERA5`); default: PVGIS's choice for the place. */
   raddatabase?: string;
+  /** `pvwatts`: temperature coefficient of power, 1/°C, for the arrays whose module product is not a `pvwatts` one with its `gamma_pdc`. */
+  gammaPdc?: number;
+  /** `pvwatts`: one typical year (default), or with `false` the real years as they are. */
+  typicalYear?: boolean;
+  /** `pvwatts`: anchor each array's annual on PVGIS's yearly yield for the same array. Default: no anchoring. */
+  anchor?: 'pvgis' | 'none';
 }
 
 export interface YieldResult {
@@ -29,7 +62,16 @@ export interface YieldResult {
   annualKwh: number;
   kwhPerKwp: number;
   kwp: number;
+  /** The irradiance dataset: PVGIS's radiation database, or the reanalysis read. */
   radiationDb: string;
+}
+
+type PvgisClient = ReturnType<typeof pvgis>;
+
+/** The connectors a run reads; each defaults to the open one. */
+export interface YieldClients {
+  pvgis?: PvgisClient;
+  weather?: WeatherProvider;
 }
 
 interface SystemRow {
@@ -48,7 +90,34 @@ interface ArrayRow {
   tilt_deg: string | null;
   mounting: string;
   kwp_dc: string | null;
+  /** From the array's module product when it is a `pvwatts` one. */
+  gamma_pdc: number | null;
 }
+
+interface PvArray {
+  name: string;
+  kwp: number;
+  azimuth_deg: number;
+  tilt_deg: number;
+  mounting: string;
+  gamma_pdc: number | null;
+}
+
+interface ProfileRow {
+  losses: { code: string; pct: number | null }[];
+  temperature_model: string | null;
+  temperature_params: Record<string, number>;
+}
+
+interface Context {
+  system: SystemRow;
+  where: { lon: number; lat: number };
+  profile: ProfileRow;
+  arrays: PvArray[];
+  kwp: number;
+}
+
+const CONVENTIONS = { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', energy: 'kWh per hour' };
 
 /** PVGIS knows two mountings: on a building, or free-standing. */
 const PVGIS_MOUNTING: Record<string, PvgisSystem['mounting']> = {
@@ -60,10 +129,22 @@ const PVGIS_MOUNTING: Record<string, PvgisSystem['mounting']> = {
   insulated: 'building',
 };
 
-export async function runYield(db: Db, request: YieldRequest, client = pvgis()): Promise<YieldResult> {
+export async function runYield(db: Db, request: YieldRequest, clients: YieldClients | PvgisClient = {}): Promise<YieldResult> {
+  // A PVGIS client alone is what the `pvgis_like` profile needs.
+  const given: YieldClients = 'hourly' in clients ? { pvgis: clients } : clients;
   const profileCode = request.profileCode ?? 'pvgis_like';
-  if (profileCode !== 'pvgis_like') throw new Error(`profile_not_runnable_here: ${profileCode} needs an engine; only pvgis_like runs through PVGIS`);
+  if (profileCode !== 'pvgis_like' && profileCode !== 'pvwatts') {
+    throw new Error(`profile_not_runnable_here: ${profileCode} needs an engine; pvgis_like runs through PVGIS, pvwatts here`);
+  }
+  if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
+  const context = await loadContext(db, request.pvSystemId, profileCode);
+  return profileCode === 'pvgis_like'
+    ? runPvgisLike(db, request, context, given.pvgis ?? pvgis())
+    : runPvwatts(db, request, context, given.weather ?? openMeteo(), given.pvgis ?? pvgis());
+}
 
+/** The system, its position, its arrays (or one for the whole system) and the profile, checked. */
+async function loadContext(db: Db, pvSystemId: string, profileCode: string): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
       `select d.organisation_id, d.site_id, p.kwp_dc,
@@ -74,30 +155,49 @@ export async function runYield(db: Db, request: YieldRequest, client = pvgis()):
          join sites s on s.id = d.site_id
          left join surfaces f on f.id = d.surface_id
         where p.id = $1`,
-      [request.pvSystemId],
+      [pvSystemId],
     )
   ).rows[0];
-  if (!system) throw new Error(`pv_system_not_found: ${request.pvSystemId}`);
+  if (!system) throw new Error(`pv_system_not_found: ${pvSystemId}`);
   if (system.lon === null || system.lat === null) throw new Error('site_without_position: the site of the PV system has no geometry');
 
-  const profile = (await db.query<{ losses: { code: string; pct: number }[] }>('select losses from solar.yield_profiles where code = $1', [profileCode])).rows[0];
+  const profile = (await db.query<ProfileRow>('select losses, temperature_model, temperature_params from solar.yield_profiles where code = $1', [profileCode])).rows[0];
   if (!profile) throw new Error(`yield_profile_unknown: ${profileCode}`);
-  const systemLoss = profile.losses.reduce((sum, l) => sum + Number(l.pct), 0);
 
-  let arrays = (await db.query<ArrayRow>('select name, azimuth_deg, tilt_deg, mounting, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by created_at, id', [request.pvSystemId])).rows;
-  if (arrays.length === 0) {
+  let rows = (
+    await db.query<ArrayRow>(
+      `select a.name, a.azimuth_deg, a.tilt_deg, a.mounting, a.kwp_dc,
+              case when m.model = 'pvwatts' then (m.parameters ->> 'gamma_pdc')::float8 end gamma_pdc
+         from solar.pv_arrays a
+         left join solar.module_products m on m.id = a.module_product_id
+        where a.pv_system_id = $1
+        order by a.created_at, a.id`,
+      [pvSystemId],
+    )
+  ).rows;
+  if (rows.length === 0) {
     // A system described without arrays: one array on the device's own surface, with the system's power.
-    arrays = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc }];
+    rows = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null }];
   }
-  for (const a of arrays) {
+  const arrays = rows.map((a) => {
     if (a.azimuth_deg === null || a.tilt_deg === null) throw new Error(`array_without_orientation: ${a.name}`);
     if (a.kwp_dc === null || Number(a.kwp_dc) <= 0) throw new Error(`array_without_power: ${a.name}`);
-  }
+    return { name: a.name, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg), mounting: a.mounting, gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc) };
+  });
+  return { system, where: { lon: system.lon, lat: system.lat }, profile, arrays, kwp: arrays.reduce((s, a) => s + a.kwp, 0) };
+}
 
-  const where = { lon: system.lon, lat: system.lat };
+/** What PVGIS is told about an array. */
+function pvgisSpec(a: PvArray, systemLossPct: number): PvgisSystem {
+  return { kwp: a.kwp, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: PVGIS_MOUNTING[a.mounting] ?? 'building', system_loss_pct: systemLossPct };
+}
+
+async function runPvgisLike(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, client: PvgisClient): Promise<YieldResult> {
+  // PVGIS takes one aggregate loss.
+  const systemLoss = profile.losses.reduce((sum, l) => sum + Number(l.pct), 0);
   const perArray = [];
   for (const a of arrays) {
-    const spec: PvgisSystem = { kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg), mounting: PVGIS_MOUNTING[a.mounting] ?? 'building', system_loss_pct: systemLoss };
+    const spec = pvgisSpec(a, systemLoss);
     perArray.push({ spec, answer: await client.hourly(where, spec, request.years, { raddatabase: request.raddatabase }) });
   }
 
@@ -108,32 +208,153 @@ export async function runYield(db: Db, request: YieldRequest, client = pvgis()):
   const stored = await storeSeries(db, target, energy);
   await storeSeries(db, { ...target, objectId: system.site_id }, temperature);
 
-  const kwp = perArray.reduce((s, x) => s + x.spec.kwp, 0);
   const nYears = request.years.to - request.years.from + 1;
   const annualKwh = round(energy.values.reduce((s, v) => s + v.value, 0) / nYears);
   const radiationDb = perArray[0].answer.meta.radiation_db;
-  const run = await db.query<{ id: string }>(
-    `select record_run('solar', $1, $2, null, $3::jsonb, $4::jsonb) id`,
-    [
-      ENGINE_VERSION,
-      request.pvSystemId,
-      JSON.stringify({
-        profile: profileCode,
-        weather: { source: client.source_code, radiation_db: radiationDb, meteo_db: perArray[0].answer.meta.meteo_db, years: request.years, horizon: perArray[0].answer.meta.horizon },
-        arrays: perArray.map((x) => ({ kwp: x.spec.kwp, azimuth_deg: x.spec.azimuth_deg, tilt_deg: x.spec.tilt_deg, mounting: x.spec.mounting })),
-        losses: profile.losses,
-        conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', energy: 'kWh per hour' },
-      }),
-      JSON.stringify({ series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp }),
-    ],
+  const runId = await recordRun(
+    db,
+    ENGINE_VERSION,
+    request.pvSystemId,
+    {
+      profile: 'pvgis_like',
+      weather: { source: client.source_code, radiation_db: radiationDb, meteo_db: perArray[0].answer.meta.meteo_db, years: request.years, horizon: perArray[0].answer.meta.horizon },
+      arrays: perArray.map((x) => ({ kwp: x.spec.kwp, azimuth_deg: x.spec.azimuth_deg, tilt_deg: x.spec.tilt_deg, mounting: x.spec.mounting })),
+      losses: profile.losses,
+      conventions: CONVENTIONS,
+    },
+    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp },
   );
-  return { runId: run.rows[0].id, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
+  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
+}
+
+async function runPvwatts(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider, reference: PvgisClient): Promise<YieldResult> {
+  if (!weather.history) throw new Error(`weather_without_history: ${weather.source_code} gives no past weather`);
+  if (profile.temperature_model !== 'faiman') throw new Error(`temperature_model_not_runnable_here: ${profile.temperature_model}; this engine has Faiman`);
+  const u0 = Number(profile.temperature_params.u0);
+  const u1 = Number(profile.temperature_params.u1);
+  if (!Number.isFinite(u0) || !Number.isFinite(u1)) throw new Error('temperature_params_missing: the faiman model needs u0 and u1');
+  const leftAfterLosses = lossFactor(profile.losses);
+  const anchored = request.anchor === 'pvgis';
+  const typical = request.typicalYear !== false;
+  const period = { from: `${request.years.from}-01-01`, to: `${request.years.to}-12-31` };
+
+  let siteTemperature: CollectedSeries | null = null;
+  const perArray = [];
+  for (const a of arrays) {
+    const gamma = a.gamma_pdc ?? request.gammaPdc;
+    if (gamma === undefined || !Number.isFinite(gamma)) throw new Error(`gamma_unknown: array ${a.name} has no pvwatts module product with gamma_pdc, and the request gives no gammaPdc`);
+    const answer = await weather.history(where, period.from, period.to, {
+      quantities: ['poa_irradiance', 'temperature', 'wind_speed'], tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL,
+    });
+    const read = (q: string) => answer.find((s) => s.quantity_code === q)?.values ?? [];
+    siteTemperature ??= answer.find((s) => s.quantity_code === 'temperature') ?? null;
+    const { hours, stats } = cleanWeather(alignWeather(read('poa_irradiance'), read('temperature'), read('wind_speed')));
+    const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, leftAfterLosses });
+    const modelled = multiYearMeanAnnual(toYearGrid(energy));
+    let anchoring: { annual_kwh: number; factor: number; radiation_db: string; meteo_db: string } | null = null;
+    if (anchored) {
+      const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - leftAfterLosses) * 100)), { raddatabase: request.raddatabase });
+      anchoring = { annual_kwh: yearly.annual_kwh, factor: anchoringFactor(yearly.annual_kwh, modelled), radiation_db: yearly.meta.radiation_db, meteo_db: yearly.meta.meteo_db };
+    }
+    perArray.push({ array: a, gamma, gammaSource: a.gamma_pdc !== null ? 'module_product' : 'request', hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
+  }
+
+  // Energies add up across arrays, hour by hour. The typical months are
+  // chosen once, on the system's energy, so that every array reads the
+  // weather of the same days.
+  const realYears = sumPoints(perArray.map((x) => x.energy));
+  const nYears = request.years.to - request.years.from + 1;
+  const grid = toYearGrid(realYears);
+  const months = typical ? selectTypicalMonths(grid) : null;
+  let energy = realYears;
+  let temperature = siteTemperature?.values ?? [];
+  let rescale = 1;
+  if (months) {
+    const year = typicalYear(grid, months, request.years.to);
+    rescale = rescaleFactor(multiYearMeanAnnual(grid), total(year));
+    energy = scaled(year, rescale);
+    temperature = typicalYear(toYearGrid(temperature), months, request.years.to);
+  }
+
+  const target: SeriesTarget = {
+    organisationId: system.organisation_id,
+    objectId: request.pvSystemId,
+    sourceCode: weather.source_code,
+    kind: 'simulated',
+    name: months ? `typical year ${request.years.from}-${request.years.to}` : null,
+  };
+  const stored = await storeSeries(db, target, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) });
+  if (siteTemperature) await storeSeries(db, { ...target, objectId: system.site_id }, { ...siteTemperature, values: rounded(temperature) });
+
+  const annualKwh = round(months ? total(energy) : total(energy) / nYears);
+  const modelledTotal = perArray.reduce((s, x) => s + x.modelled, 0);
+  const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
+  const runId = await recordRun(
+    db,
+    PVWATTS_ENGINE_VERSION,
+    request.pvSystemId,
+    {
+      profile: 'pvwatts',
+      weather: {
+        source: weather.source_code,
+        model: WEATHER_MODEL,
+        years: request.years,
+        period,
+        quantities: { poa_irradiance: 'global_tilted_irradiance, transposed by the source', temperature: 'air at 2 m', wind_speed: 'at 10 m' },
+        time: 'preceding-hour means dated at the start of their hour; instants averaged over each hour',
+        horizon: 'none',
+      },
+      arrays: perArray.map((x) => ({
+        name: x.array.name, kwp: x.array.kwp, azimuth_deg: x.array.azimuth_deg, tilt_deg: x.array.tilt_deg, mounting: x.array.mounting,
+        gamma_pdc: x.gamma, gamma_source: x.gammaSource, hours: x.hours, cleaning: x.stats,
+        modelled_annual_kwh: round(x.modelled), anchoring_factor: x.anchoring ? round(x.anchoring.factor) : null,
+      })),
+      model: {
+        transposition: 'by the weather source',
+        temperature: { model: 'faiman', u0, u1 },
+        dc: 'pvwatts, reference 25 °C',
+        poa_max_w_m2: POA_MAX_W_M2,
+        not_modelled: ['inverter efficiency', 'clipping', 'incidence angle', 'spectrum', 'horizon in the hourly shape'],
+      },
+      losses: profile.losses,
+      loss_factor: round(leftAfterLosses),
+      typical_year: months
+        ? {
+            method: 'month by month, the real month whose daily energies are closest to all years (Finkelstein-Schafer on daily energy, at least 95 % of the hours, the most recent year on a tie), scaled to the multi-year mean annual',
+            months,
+            rescale_factor: round(rescale),
+            dated_in: request.years.to,
+            leap_hours_left_out: grid.leapHoursLeftOut,
+          }
+        : null,
+      anchoring: anchored
+        ? { source: reference.source_code, radiation_db: perArray[0].anchoring!.radiation_db, meteo_db: perArray[0].anchoring!.meteo_db, annual_kwh: round(anchoredTotal), modelled_annual_kwh: round(modelledTotal), factor: round(anchoredTotal / modelledTotal) }
+        : { source: 'none' },
+      conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', typical_year: 'simulated, 365-day grid, 29 February left out' },
+    },
+    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months },
+  );
+  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+}
+
+async function recordRun(db: Db, engineVersion: string, subjectId: string, inputs: unknown, results: unknown): Promise<string> {
+  const run = await db.query<{ id: string }>(`select record_run('solar', $1, $2, null, $3::jsonb, $4::jsonb) id`, [engineVersion, subjectId, JSON.stringify(inputs), JSON.stringify(results)]);
+  return run.rows[0].id;
+}
+
+/** Values of several series added up, instant by instant. */
+function sumPoints(series: SeriesPoint[][]): SeriesPoint[] {
+  const byAt = new Map<string, number>();
+  for (const s of series) for (const v of s) byAt.set(v.at, (byAt.get(v.at) ?? 0) + v.value);
+  return [...byAt.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([at, value]) => ({ at, value }));
 }
 
 function sumSeries(series: CollectedSeries[]): CollectedSeries {
-  const byAt = new Map<string, number>();
-  for (const s of series) for (const v of s.values) byAt.set(v.at, (byAt.get(v.at) ?? 0) + v.value);
-  return { ...series[0], values: [...byAt.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([at, value]) => ({ at, value: round(value) })) };
+  return { ...series[0], values: rounded(sumPoints(series.map((s) => s.values))) };
+}
+
+function rounded(points: SeriesPoint[]): SeriesPoint[] {
+  return points.map((p) => ({ at: p.at, value: round(p.value) }));
 }
 
 function round(n: number): number {

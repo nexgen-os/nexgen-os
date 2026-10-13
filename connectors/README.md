@@ -23,7 +23,7 @@ the values go to the store of their kind.
 
 | Connector | Source | Licence |
 |---|---|---|
-| [`open-meteo`](open-meteo/index.ts) | `open_meteo` — hourly forecast of temperature and irradiance, worldwide | data CC BY 4.0; the free API is for non-commercial use, a paid plan otherwise |
+| [`open-meteo`](open-meteo/index.ts) | `open_meteo` — hourly forecast of temperature and irradiance, and history from the ERA5 archive (irradiance on a plane, temperature, wind speed), worldwide | data CC BY 4.0; the free API is for non-commercial use, a paid plan otherwise |
 | [`pvgis`](pvgis/index.ts) | `pvgis` — hourly energy, in-plane irradiance and temperature of a PV system over whole years (seriescalc), and its multi-year yield (PVcalc); azimuth from true north turned into PVGIS's aspect from south, hours dated at their start in UTC | free, no key, no restriction on use |
 
 ## Private connectors
