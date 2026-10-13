@@ -32,11 +32,15 @@ const VARIABLES: Record<string, VariableSpec> = {
  * Hourly archive variables (ERA5 reanalysis), to the core's quantities, in
  * the core's units once `wind_speed_unit=ms` is asked. `poa_irradiance` is
  * Open-Meteo's `global_tilted_irradiance`: the transposition to the plane is
- * done by Open-Meteo for the tilt and azimuth given.
+ * done by Open-Meteo for the tilt and azimuth given. `ghi`, `dni` and `dhi`
+ * are the horizontal components an engine transposes itself.
  */
 const HISTORY_VARIABLES: Record<string, VariableSpec> = {
   poa_irradiance: { variable: 'global_tilted_irradiance', value_kind: 'interval', precedingHour: true },
   irradiance: { variable: 'shortwave_radiation', value_kind: 'interval', precedingHour: true },
+  ghi: { variable: 'shortwave_radiation', value_kind: 'interval', precedingHour: true },
+  dni: { variable: 'direct_normal_irradiance', value_kind: 'interval', precedingHour: true },
+  dhi: { variable: 'diffuse_radiation', value_kind: 'interval', precedingHour: true },
   temperature: { variable: 'temperature_2m', value_kind: 'instant', precedingHour: false },
   wind_speed: { variable: 'wind_speed_10m', value_kind: 'instant', precedingHour: false },
 };

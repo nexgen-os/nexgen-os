@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexgen-pvlib"
+version = "0.1.0"
+description = "The pvlib engine of Nexgen OS: one pv_yield request as JSON on stdin, one result as JSON on stdout."
+license = { text = "MIT" }
+requires-python = ">=3.9"
+# The lower bounds are what the engine needs; the versions tested are in
+# README.md and in the `tested` extra.
+dependencies = ["pvlib>=0.11", "pandas>=1.5", "numpy>=1.23"]
+
+[project.optional-dependencies]
+tested = ["pvlib==0.16.1", "pandas==3.0.6", "numpy==2.5.4", "scipy==1.18.1"]
+
+[project.scripts]
+nexgen-pvlib = "nexgen_pvlib.__main__:main"
+
+[tool.setuptools]
+packages = ["nexgen_pvlib"]

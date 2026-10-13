@@ -61,7 +61,8 @@ change until 1.0, and every change is written down.
   has to move, as Ekwo's does.
 - [ ] Continuous integration: the test suite on three Node versions, a
   hygiene check (no country literal in code, no secret, English only), the
-  DCO check.
+  DCO check, and `engine-pvlib` (the pvlib engine on Python 3.12, compared
+  with `modules/solar/pvwatts.ts`).
 
 ### Before the first users
 

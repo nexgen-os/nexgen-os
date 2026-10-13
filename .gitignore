@@ -3,3 +3,6 @@ dist/
 .DS_Store
 .netlify
 packages/cli/assets/
+.venv-pvlib/
+__pycache__/
+*.egg-info/

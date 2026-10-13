@@ -15,11 +15,19 @@
 // air temperature on its site; the run keeps the summary. Engines run
 // outside Postgres; the database holds the parameters, the series and the
 // run.
+//
+// With an external engine (decision 0013), the profile and the engine are
+// two axes: the profile chooses the weather, the models and the losses, the
+// engine computes. The run builds the engine's `pv_yield` request from the
+// same system, arrays and profile, reads the weather through the same
+// connector, and stores what the engine answers as it comes.
 
 import type { Db } from '../../formats/db.js';
 import { storeSeries, type CollectedSeries, type SeriesPoint, type SeriesTarget, type WeatherProvider } from '../../connectors/index.js';
 import { openMeteo } from '../../connectors/open-meteo/index.js';
 import { pvgis, type PvgisSystem } from '../../connectors/pvgis/index.js';
+import { ENGINE_CONTRACT, describeEngine, runEngine, type EngineSpec } from '../../engines/runner.js';
+import { PVLIB_ENGINE, type EngineSeries, type PvYieldArray, type PvYieldRequest, type PvYieldResult } from '../../engines/pvlib/index.js';
 import {
   POA_MAX_W_M2,
   alignWeather,
@@ -58,6 +66,12 @@ export interface YieldRequest {
   typicalYear?: boolean;
   /** `pvwatts`: anchor each array's annual on PVGIS's yearly yield for the same array. Default: no anchoring. */
   anchor?: 'pvgis' | 'none';
+  /**
+   * An external engine that computes the profile (`pvlib`): its name, and
+   * the command that starts it unless `NEXGEN_ENGINE_<NAME>` gives it. The
+   * profile is then required; any profile whose models the engine has runs.
+   */
+  engine?: Pick<EngineSpec, 'name' | 'command' | 'timeoutMs'>;
 }
 
 export interface YieldResult {
@@ -91,6 +105,8 @@ interface SystemRow {
 }
 
 interface ArrayRow {
+  /** Null for the one array of a system described without arrays. */
+  id: string | null;
   name: string;
   azimuth_deg: string | null;
   tilt_deg: string | null;
@@ -99,20 +115,31 @@ interface ArrayRow {
   /** From the array's module product when it is a `pvwatts` one. */
   gamma_pdc: number | null;
   bifacial: boolean;
+  albedo: string | null;
+  module_model: string | null;
+  module_parameters: Record<string, unknown> | null;
+  module_count: number | null;
+  modules_per_string: number | null;
+  strings: number | null;
+  inverter_product_id: string | null;
+  inverter_model: string | null;
+  inverter_parameters: Record<string, unknown> | null;
+  inverter_count: number | null;
 }
 
-interface PvArray {
-  name: string;
+interface PvArray extends Omit<ArrayRow, 'azimuth_deg' | 'tilt_deg' | 'kwp_dc' | 'albedo'> {
   kwp: number;
   azimuth_deg: number;
   tilt_deg: number;
-  mounting: string;
-  gamma_pdc: number | null;
-  bifacial: boolean;
+  albedo: number | null;
 }
 
 interface ProfileRow {
   losses: { code: string; pct: number | null }[];
+  decomposition_model: string | null;
+  transposition_model: string | null;
+  iam_model: string | null;
+  spectral_model: string | null;
   temperature_model: string | null;
   temperature_params: Record<string, number>;
 }
@@ -140,19 +167,22 @@ const PVGIS_MOUNTING: Record<string, PvgisSystem['mounting']> = {
 export async function runYield(db: Db, request: YieldRequest, clients: YieldClients | PvgisClient = {}): Promise<YieldResult> {
   // A PVGIS client alone is what the `pvgis_like` profile needs.
   const given: YieldClients = 'hourly' in clients ? { pvgis: clients } : clients;
+  if (request.engine && !request.profileCode) throw new Error('profile_required: a run with an engine names the yield profile the engine computes');
   const profileCode = request.profileCode ?? 'pvgis_like';
-  if (profileCode !== 'pvgis_like' && profileCode !== 'pvwatts') {
+  if (!request.engine && profileCode !== 'pvgis_like' && profileCode !== 'pvwatts') {
     throw new Error(`profile_not_runnable_here: ${profileCode} needs an engine; pvgis_like runs through PVGIS, pvwatts here`);
   }
   if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
-  const context = await loadContext(db, request.pvSystemId, profileCode);
+  // `pvwatts` and the engines cut days and months in the site's local calendar.
+  const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined);
+  if (request.engine) return runWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
   return profileCode === 'pvgis_like'
     ? runPvgisLike(db, request, context, given.pvgis ?? pvgis())
     : runPvwatts(db, request, context, given.weather ?? openMeteo(), given.pvgis ?? pvgis());
 }
 
 /** The system, its position, its arrays (or one for the whole system) and the profile, checked. */
-async function loadContext(db: Db, pvSystemId: string, profileCode: string): Promise<Context> {
+async function loadContext(db: Db, pvSystemId: string, profileCode: string, needsTimeZone: boolean): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
       `select d.organisation_id, d.site_id, s.time_zone, p.kwp_dc,
@@ -168,18 +198,26 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string): Pro
   ).rows[0];
   if (!system) throw new Error(`pv_system_not_found: ${pvSystemId}`);
   if (system.lon === null || system.lat === null) throw new Error('site_without_position: the site of the PV system has no geometry');
-  // `pvwatts` cuts days and months in the site's local calendar.
-  if (profileCode === 'pvwatts' && !system.time_zone) throw new Error('time_zone_required: the site of the PV system has no time zone; pvwatts cuts days and months in it');
+  if (needsTimeZone && !system.time_zone) throw new Error(`time_zone_required: the site of the PV system has no time zone; ${profileCode} cuts days and months in it`);
 
-  const profile = (await db.query<ProfileRow>('select losses, temperature_model, temperature_params from solar.yield_profiles where code = $1', [profileCode])).rows[0];
+  const profile = (
+    await db.query<ProfileRow>(
+      `select losses, decomposition_model, transposition_model, iam_model, spectral_model, temperature_model, temperature_params
+         from solar.yield_profiles where code = $1`,
+      [profileCode],
+    )
+  ).rows[0];
   if (!profile) throw new Error(`yield_profile_unknown: ${profileCode}`);
 
   let rows = (
     await db.query<ArrayRow>(
-      `select a.name, a.azimuth_deg, a.tilt_deg, a.mounting, a.kwp_dc, a.bifacial,
-              case when m.model = 'pvwatts' then (m.parameters ->> 'gamma_pdc')::float8 end gamma_pdc
+      `select a.id, a.name, a.azimuth_deg, a.tilt_deg, a.mounting, a.kwp_dc, a.bifacial, a.albedo,
+              case when m.model = 'pvwatts' then (m.parameters ->> 'gamma_pdc')::float8 end gamma_pdc,
+              m.model module_model, m.parameters module_parameters, a.module_count, a.modules_per_string, a.strings,
+              a.inverter_product_id, i.model inverter_model, i.parameters inverter_parameters, a.inverter_count
          from solar.pv_arrays a
          left join solar.module_products m on m.id = a.module_product_id
+         left join solar.inverter_products i on i.id = a.inverter_product_id
         where a.pv_system_id = $1
         order by a.created_at, a.id`,
       [pvSystemId],
@@ -187,14 +225,32 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string): Pro
   ).rows;
   if (rows.length === 0) {
     // A system described without arrays: one array on the device's own surface, with the system's power.
-    rows = [{ name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null, bifacial: false }];
+    rows = [{
+      id: null, name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null, bifacial: false, albedo: null,
+      module_model: null, module_parameters: null, module_count: null, modules_per_string: null, strings: null, inverter_product_id: null, inverter_model: null, inverter_parameters: null, inverter_count: null,
+    }];
   }
   const arrays = rows.map((a) => {
     if (a.azimuth_deg === null || a.tilt_deg === null) throw new Error(`array_without_orientation: ${a.name}`);
     if (a.kwp_dc === null || Number(a.kwp_dc) <= 0) throw new Error(`array_without_power: ${a.name}`);
-    return { name: a.name, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg), mounting: a.mounting, gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc), bifacial: a.bifacial };
+    return {
+      ...a, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg),
+      gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc), albedo: a.albedo === null ? null : Number(a.albedo),
+    };
   });
   return { system, where: { lon: system.lon, lat: system.lat }, profile, arrays, kwp: arrays.reduce((s, a) => s + a.kwp, 0) };
+}
+
+/** The days of weather a run reads for whole local years: one day more on each side, the values outside cut later. */
+function weatherPeriod(years: { from: number; to: number }): { from: string; to: string } {
+  return { from: `${years.from - 1}-12-31`, to: `${years.to + 1}-01-01` };
+}
+
+/** γ of an array: its `pvwatts` module product's, else the request's, checked. */
+function gammaOf(a: PvArray, request: YieldRequest): { gamma: number; source: 'module_product' | 'request' } {
+  const gamma = a.gamma_pdc ?? request.gammaPdc;
+  if (gamma === undefined || !Number.isFinite(gamma)) throw new Error(`gamma_unknown: array ${a.name} has no pvwatts module product with gamma_pdc, and the request gives no gammaPdc`);
+  return { gamma: checkedGamma(gamma), source: a.gamma_pdc !== null ? 'module_product' : 'request' };
 }
 
 /** What PVGIS is told about an array. */
@@ -250,15 +306,13 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const years = request.years;
   // The years are the site's: one day more on each side is read, then
   // every value outside the local years is left out.
-  const period = { from: `${years.from - 1}-12-31`, to: `${years.to + 1}-01-01` };
+  const period = weatherPeriod(years);
   const local = (points: SeriesPoint[]) => withinLocalYears(points, timeZone, years);
 
   let siteTemperature: CollectedSeries | null = null;
   const perArray = [];
   for (const a of arrays) {
-    const gamma = a.gamma_pdc ?? request.gammaPdc;
-    if (gamma === undefined || !Number.isFinite(gamma)) throw new Error(`gamma_unknown: array ${a.name} has no pvwatts module product with gamma_pdc, and the request gives no gammaPdc`);
-    checkedGamma(gamma);
+    const { gamma, source: gammaSource } = gammaOf(a, request);
     const answer = await weather.history(where, period.from, period.to, {
       quantities: ['poa_irradiance', 'temperature', 'wind_speed'], tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL,
     });
@@ -275,7 +329,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - remainingFraction) * 100)), { raddatabase: request.raddatabase });
       anchoring = { annual_kwh: yearly.annual_kwh, factor: anchoringFactor(yearly.annual_kwh, modelled), radiation_db: yearly.meta.radiation_db, meteo_db: yearly.meta.meteo_db };
     }
-    perArray.push({ array: a, gamma, gammaSource: a.gamma_pdc !== null ? 'module_product' : 'request', hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
+    perArray.push({ array: a, gamma, gammaSource, hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
   }
 
   // Energies add up across arrays, hour by hour. The typical months are
@@ -370,6 +424,128 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       },
     },
     { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered },
+  );
+  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+}
+
+/** The engine's module and layout for an array: its module product's physics, or the PVWatts DC model on its power and γ. */
+function engineModule(a: PvArray, request: YieldRequest): Pick<PvYieldArray, 'module' | 'modules_per_string' | 'strings'> {
+  if (a.module_model && a.module_model !== 'pvwatts') {
+    const perString = a.modules_per_string ?? a.module_count;
+    if (perString === null) throw new Error(`array_without_layout: ${a.name} has ${a.module_model} module parameters but no module count or strings`);
+    return { module: { model: a.module_model as PvYieldArray['module']['model'], parameters: a.module_parameters ?? {} }, modules_per_string: perString, strings: a.strings ?? 1 };
+  }
+  // PVWatts scales linearly with pdc0: the array as one module of its whole power.
+  return { module: { model: 'pvwatts', parameters: { pdc0: a.kwp * 1000, gamma_pdc: gammaOf(a, request).gamma } }, modules_per_string: 1, strings: 1 };
+}
+
+/** The one inverter of the system as the engine sees it, or none (`no_loss`) when no array names one. */
+function engineInverter(arrays: PvArray[]): PvYieldRequest['inverter'] {
+  const products = new Set(arrays.map((a) => a.inverter_product_id));
+  if (products.size > 1) throw new Error('inverters_differ: the arrays name different inverters; one engine request per inverter is not built yet');
+  const a = arrays[0];
+  if (a.inverter_product_id === null) return { model: 'no_loss' };
+  const count = a.inverter_count ?? 1;
+  const parameters = { ...(a.inverter_parameters ?? {}) };
+  if (count > 1) {
+    if (a.inverter_model !== 'pvwatts') throw new Error(`inverter_count_not_runnable: ${count} ${a.inverter_model} inverters; only a pvwatts inverter scales by its count`);
+    parameters.pdc0 = Number(parameters.pdc0) * count;
+  }
+  return { model: a.inverter_model as PvYieldRequest['inverter']['model'], parameters };
+}
+
+async function runWithEngine(db: Db, request: YieldRequest, profileCode: string, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider): Promise<YieldResult> {
+  if (!weather.history) throw new Error(`weather_without_history: ${weather.source_code} gives no past weather`);
+  const spec: EngineSpec = { ...(request.engine!.name === PVLIB_ENGINE.name ? PVLIB_ENGINE : {}), ...request.engine! };
+  const described = await describeEngine(spec);
+  if (!described.kinds.includes('pv_yield')) throw new Error(`engine_kind_unsupported: ${spec.name} accepts ${described.kinds.join(', ')}, not pv_yield`);
+  const timeZone = system.time_zone!;
+  const years = request.years;
+  const period = weatherPeriod(years);
+  const local = (points: SeriesPoint[]) => withinLocalYears(points, timeZone, years);
+
+  // A profile that names a transposition lets the engine transpose the
+  // horizontal components; one that names none reads the plane-of-array
+  // irradiance the weather source transposed, array by array, as `pvwatts`.
+  // Intervals are cut to the local years; instants are sent whole, so that
+  // the last interval has its two ends.
+  const transposed = profile.transposition_model !== null;
+  const sent: EngineSeries[] = [];
+  if (transposed) {
+    const components = profile.decomposition_model === null || profile.decomposition_model === 'none' ? ['ghi', 'dni', 'dhi'] : ['ghi'];
+    for (const s of await weather.history(where, period.from, period.to, { quantities: [...components, 'temperature', 'wind_speed'], model: WEATHER_MODEL })) {
+      sent.push(s.value_kind === 'interval' ? { ...s, values: local(s.values) } : s);
+    }
+  } else {
+    for (const [i, a] of arrays.entries()) {
+      const quantities = i === 0 ? ['poa_irradiance', 'temperature', 'wind_speed'] : ['poa_irradiance'];
+      for (const s of await weather.history(where, period.from, period.to, { quantities, tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL })) {
+        sent.push(s.quantity_code === 'poa_irradiance' ? { ...s, values: local(s.values), array: a.name } : s);
+      }
+    }
+  }
+
+  const engineRequest: PvYieldRequest = {
+    kind: 'pv_yield',
+    site: { lat: where.lat, lon: where.lon, time_zone: timeZone },
+    arrays: arrays.map((a) => ({ name: a.name, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: a.mounting as PvYieldArray['mounting'], albedo: a.albedo, ...engineModule(a, request) })),
+    inverter: engineInverter(arrays),
+    losses: profile.losses.map((l) => ({ code: l.code, fraction: l.pct === null ? null : Number(l.pct) / 100 })),
+    models: {
+      decomposition: profile.decomposition_model === 'none' ? null : profile.decomposition_model,
+      transposition: profile.transposition_model,
+      temperature: profile.temperature_model ?? '',
+      ...(Object.keys(profile.temperature_params).length > 0 ? { temperature_parameters: profile.temperature_params } : {}),
+      aoi: profile.iam_model ?? 'no_loss',
+      spectral: profile.spectral_model ?? 'no_loss',
+    },
+    weather: sent,
+  };
+  const answer = await runEngine<PvYieldRequest, PvYieldResult>(spec, engineRequest);
+  if (answer.version !== described.version) throw new Error(`engine_contract_mismatch: ${spec.name} described itself as ${described.version} and answered as ${answer.version}`);
+
+  // The answer is stored as it comes: the engine's series are core series.
+  const answered = answer.result.series;
+  const energy = answered.find((s) => s.quantity_code === 'production_energy' && s.array === undefined);
+  if (!energy) throw new Error(`engine_contract_mismatch: ${spec.name} answered no production_energy for the system`);
+  const target: SeriesTarget = { organisationId: system.organisation_id, objectId: request.pvSystemId, sourceCode: weather.source_code, kind: 'simulated', name: `${spec.name} ${years.from}-${years.to}` };
+  const stored = await storeSeries(db, target, energy);
+  const perArray: Record<string, Record<string, string>> = {};
+  for (const s of answered.filter((x) => x.array !== undefined)) {
+    const a = arrays.find((x) => x.name === s.array);
+    if (!a) throw new Error(`engine_contract_mismatch: ${spec.name} answered a series for an array the request does not have: ${s.array}`);
+    // An array described without its own row: its series hang on the system.
+    const { seriesId } = await storeSeries(db, { ...target, objectId: a.id ?? request.pvSystemId }, s);
+    (perArray[a.name] ??= {})[s.quantity_code] = seriesId;
+  }
+
+  const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
+  const annualKwh = round(covered.annual);
+  const runId = await recordRun(
+    db,
+    described.version,
+    request.pvSystemId,
+    {
+      profile: profileCode,
+      engine: { name: spec.name, version: described.version, contract: ENGINE_CONTRACT, dependencies: described.dependencies },
+      weather: {
+        source: weather.source_code,
+        model: WEATHER_MODEL,
+        years,
+        period,
+        time_zone: timeZone,
+        quantities: transposed ? sent.map((s) => s.quantity_code) : 'poa_irradiance per array, temperature, wind_speed',
+        horizon: 'none',
+      },
+      arrays: arrays.map((a, i) => ({
+        name: a.name, kwp: a.kwp, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: a.mounting,
+        module_model: engineRequest.arrays[i].module.model, ...(a.bifacial ? { bifacial: 'not modelled' } : {}),
+      })),
+      model: answer.result.meta,
+      losses: profile.losses,
+      conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the site\'s time zone' },
+    },
+    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, years_covered: covered.yearsCovered, array_series: perArray },
   );
   return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }

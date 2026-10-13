@@ -4,13 +4,11 @@
 // a recorded PVGIS answer, and the acceptance test of decision 0012 at small
 // scale: the same roof run through `pvgis_like` and `pvwatts` gives two runs
 // whose inputs say why they differ.
-import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import type { SeriesPoint } from '../connectors/index.js';
 import { openMeteo } from '../connectors/open-meteo/index.js';
 import { pvgis } from '../connectors/pvgis/index.js';
-import type { Fetch } from '../formats/geocoding/index.js';
 import {
   HOURS_PER_YEAR,
   alignWeather,
@@ -35,7 +33,8 @@ import {
   withinLocalYears,
 } from '../modules/solar/pvwatts.js';
 import { runYield } from '../modules/solar/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, square } from './helpers/db.js';
+import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
 const FAIMAN = { u0: 25, u1: 6.84 };
 const HOUR = 3_600_000;
@@ -247,12 +246,6 @@ describe('the pvwatts model, step by step', () => {
   });
 });
 
-const fixture = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8'));
-const answering = (body: unknown, asked: string[] = []): Fetch => async (url) => {
-  asked.push(url);
-  return { ok: true, status: 200, json: async () => body };
-};
-
 describe('the Open-Meteo archive', () => {
   it('asks ERA5 on the plane in its conventions and dates every value at the start of its hour, in UTC', async () => {
     const recorded = await fixture('open-meteo-era5-brussels-2023-01-01-03-south30.json');
@@ -286,35 +279,6 @@ describe('the Open-Meteo archive', () => {
     await expect(provider.history!({ lon: 4.35, lat: 50.85 }, '2023-01-01', '2023-01-02', { quantities: ['poa_irradiance'] })).rejects.toThrow(/orientation_required/);
   });
 });
-
-/**
- * An Open-Meteo archive that makes up its answer for the days asked: a sky
- * whose clear-sky irradiance is dimmed by a cloudiness of each day, at 15 °C
- * and 2 m/s, dated as Open-Meteo dates it (the mean of the hour before the
- * stamp). The south plane gets more than the east one. After `missingFrom`,
- * every value is null, as for hours the archive does not have yet.
- */
-const syntheticArchive = (lon: number, asked: string[], missingFrom?: string): Fetch => async (url) => {
-  asked.push(url);
-  const q = new URL(url).searchParams;
-  const start = Date.parse(`${q.get('start_date')}T00:00:00Z`);
-  const end = Date.parse(`${q.get('end_date')}T00:00:00Z`) + DAY;
-  const plane = q.get('azimuth') === '0' ? 1 : 0.8;
-  const hourly: { time: number[]; global_tilted_irradiance: (number | null)[]; temperature_2m: (number | null)[]; wind_speed_10m: (number | null)[] } = {
-    time: [], global_tilted_irradiance: [], temperature_2m: [], wind_speed_10m: [],
-  };
-  for (let at = start; at < end; at += HOUR) {
-    const middle = at - HOUR / 2 + (lon / 15) * HOUR;
-    const solarHour = (((middle / HOUR) % 24) + 24) % 24;
-    const cloudiness = 0.3 + (0.7 * ((Math.floor(middle / DAY) * 7919) % 13)) / 12;
-    const missing = missingFrom !== undefined && at > Date.parse(missingFrom);
-    hourly.time.push(at / 1000);
-    hourly.global_tilted_irradiance.push(missing ? null : Math.round(Math.max(0, Math.sin((Math.PI * (solarHour - 6)) / 12)) * 800 * cloudiness * plane * 10) / 10);
-    hourly.temperature_2m.push(missing ? null : 15);
-    hourly.wind_speed_10m.push(missing ? null : 2);
-  }
-  return { ok: true, status: 200, json: async () => ({ hourly }) };
-};
 
 describe('a pvwatts yield run', () => {
   let db: PGlite;
