@@ -207,8 +207,17 @@ create table sources (
   countries       text[] not null default '{}',
   license         text,
   attribution     text,
+  -- What the licence allows an installation to do with what it fetched:
+  -- keep it this many days (null: for ever) and pass it on to others.
+  -- A solar API's roof layers are a 30-day cache nobody may redistribute;
+  -- an open register is both kept and shared.
+  retention_days  integer,
+  redistributable boolean not null default true,
+  -- core, a module code, a pack, or the private connector package that
+  -- brought the source along.
   published_by    text not null default 'core',
   constraint sources_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
+  constraint sources_retention_positive check (retention_days is null or retention_days > 0),
   constraint sources_kind check (kind in ('api', 'file', 'registry', 'device', 'manual')),
   constraint sources_auth check (auth in ('none', 'api_key', 'oauth2', 'certificate', 'mandate'))
 );

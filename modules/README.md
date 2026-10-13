@@ -33,7 +33,7 @@ is specific to a trade lives here, one folder and one schema per module.
 | `heating` | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |
 | `thermal` | envelope elements and their U-values, thermal bridges, glazing | thermal simulation of the envelope, heat losses, energy performance inputs |
 | `grid` | grid operators, meter-data mandates, supply contracts, tariff components | retrieval of meter data from grid operators' hubs, tariff resolution |
-| `monitoring` | connectors, connector configurations and mappings, collection runs, alarms | live readings from equipment and hubs, control through existing systems (Home Assistant, OpenEMS), battery dispatch, demand response |
+| `monitoring` | collection schedules and their runs, alarms (connections are core, connectors are libraries: [0011](../docs/decisions/0011-external-data.md)) | live readings from equipment and hubs, control through existing systems (Home Assistant, OpenEMS), battery dispatch, demand response |
 | `compliance` | requirements, checks, findings | regulatory analysis against the country packs: permits, solar obligations, protected zones, energy-sharing rules, performance certificates |
 | `construction` | phases, works, inspections, site diary | commissioning and progress of works |
 | `participation` | consultations, contributions | public consultation: read-only exports and portals |

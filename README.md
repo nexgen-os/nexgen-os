@@ -24,7 +24,7 @@ what a trade knows beyond its columns is attached to it.
 | `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
 | `series`, `series_values` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
 | `attributes`, `external_ids`, `links`, `successors`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
-| `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | — |
+| `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations, the module registry, an organisation's use of a source | — |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |
 
 Details, diagram and rules: [docs/model.md](docs/model.md). Why named
@@ -72,7 +72,8 @@ supabase/migrations/   the core, in the schema `nexgen` (`public` stays the inst
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture shipped)
 packs/                 one folder per country (none yet)
-formats/               one MIT library per format (homeassistant shipped)
+formats/               one MIT library per format or geocoder (homeassistant, geocoding)
+connectors/            the interfaces to the outside world and the open connectors (open-meteo)
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research
 tests/                 the core's tests, the examples, the format round trips

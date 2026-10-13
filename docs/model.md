@@ -114,6 +114,10 @@ pages read the named tables.
   `resample(series, from, to, step, time_zone?)` is the one way series are
   read: sub-day steps bin in absolute time, a day or more cuts in the site's
   time zone, named error when there is none. Decision [0007](decisions/0007-series-at-scale.md).
+- **forecast_values** — every issue of a `forecast` series, one row per
+  instant and issue time; `resample()` gives the latest issue, or the latest
+  before `p_issued_before`. Each kind of series has its one store, checked
+  on write. Decision [0011](decisions/0011-external-data.md).
 - **scenarios** — `scenario_id is null` is the world as it is. A scenario
   holds what a variant adds: objects, attributes that override reality,
   series. A scenario may build on another one.
@@ -126,7 +130,9 @@ pages read the named tables.
 building or a site), `link_types`, `quantities` (one unit each, QUDT),
 `property_defs` (bSDD / IFC), `tags` (Haystack), `id_schemes` and `sources`
 (the external APIs and datasets: base URL, authentication type, license,
-attribution, countries). Read by everyone signed in, written by migrations,
+attribution, countries, retention). An organisation's use of a source is a
+`connections` row; the code that reads it is a connector under
+`connectors/` ([0011](decisions/0011-external-data.md)). Read by everyone signed in, written by migrations,
 seeds, modules and packs.
 
 ## Geometry

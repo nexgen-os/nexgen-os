@@ -82,10 +82,8 @@ export interface HaSnapshot {
   states: HaState[];
 }
 
-/** The one thing the library needs from a database driver. */
-export interface Db {
-  query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
-}
+import type { Db } from '../db.js';
+export type { Db };
 
 export const SOURCE_CODE = 'homeassistant';
 

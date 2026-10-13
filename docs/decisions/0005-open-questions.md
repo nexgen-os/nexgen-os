@@ -18,8 +18,8 @@ Still open:
 - **Licence of the specification and vocabularies.** CC BY 4.0 is proposed,
   because it allows translations and forks. buildingSMART's CC BY-ND is the
   example to avoid.
-- **Revised forecasts.** Forecast revisions (the "belief time" of
-  FlexMeasures) as a column of `series_values`.
+- **Revised forecasts.** Settled in [0011](0011-external-data.md): every
+  issue of a forecast in `forecast_values`, read by issue time.
 - **Scale of series.** Settled in [0007](0007-series-at-scale.md).
 - **Where Ekwo OS runs.** Same database or its own, and what the bridge is:
   [0010](0010-ekwo-link.md), proposed.

@@ -120,6 +120,56 @@ comment on function series_values_partition(date) is
   'Creates the weekly partition holding a date and moves the week''s rows out of the default partition. pg_partman does the same on a schedule.';
 
 -- ---------------------------------------------------------------------------
+-- forecast_values — a forecast is issued again and again.
+-- ---------------------------------------------------------------------------
+
+-- A forecast series keeps every issue: the value for 14:00 as issued at
+-- 06:00, then as issued at 12:00. Pages read the latest issue; a study of
+-- forecast accuracy, or of what was known when a decision was taken, reads
+-- the issues before a given time (`resample(..., p_issued_before)`).
+-- Measured, simulated and setpoint series have one value per instant and
+-- live in series_values. Small next to series_values: an installation
+-- partitions it the same way when it needs to.
+create table forecast_values (
+  series_id  uuid not null references series(id) on delete cascade,
+  at         timestamptz not null,
+  -- When the forecast was made (the belief time of FlexMeasures).
+  issued_at  timestamptz not null,
+  value      double precision not null,
+  primary key (series_id, at, issued_at)
+);
+
+comment on table forecast_values is
+  'Every issue of a forecast series: one row per instant and issue time, in the quantity''s unit. The latest issue is what a page shows; earlier issues are what an accuracy study reads.';
+
+create index forecast_values_at_brin on forecast_values using brin (at) with (pages_per_range = 32);
+
+-- Each kind of series has its one store: a forecast goes to forecast_values
+-- with its issue time, everything else to series_values.
+create or replace function series_store_check()
+returns trigger
+language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  k text;
+begin
+  select kind into k from series where id = new.series_id;
+  if tg_table_name = 'forecast_values' and k <> 'forecast' then
+    raise exception 'not_a_forecast: series % is %, its values go to series_values', new.series_id, k using errcode = 'check_violation';
+  elsif tg_table_name <> 'forecast_values' and k = 'forecast' then
+    raise exception 'forecast_values_required: series % is a forecast, its values go to forecast_values with their issue time', new.series_id using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger series_values_store before insert on series_values
+  for each row execute function series_store_check();
+create trigger forecast_values_store before insert on forecast_values
+  for each row execute function series_store_check();
+
+-- ---------------------------------------------------------------------------
 -- Reading series: one function.
 -- ---------------------------------------------------------------------------
 
@@ -140,15 +190,17 @@ $$;
 -- The one way series are read: resampled on a regular step, combined the
 -- way the quantity says (sum, mean or last). Steps shorter than a day are
 -- binned in absolute time, safe across daylight-saving changes; a day or
--- more is truncated in the site's time zone (or the one given). Security
--- definer: access is checked once on the series, the values carry no policy
--- cost on the hot path.
+-- more is truncated in the site's time zone (or the one given). A forecast
+-- series gives its latest issue, or the latest issued before a given time.
+-- Security definer: access is checked once on the series, the values carry
+-- no policy cost on the hot path.
 create or replace function resample(
-  p_series_id uuid,
-  p_from      timestamptz,
-  p_to        timestamptz,
-  p_step      interval,
-  p_time_zone text default null
+  p_series_id     uuid,
+  p_from          timestamptz,
+  p_to            timestamptz,
+  p_step          interval,
+  p_time_zone     text default null,
+  p_issued_before timestamptz default null
 )
 returns table (bucket timestamptz, value double precision, samples int)
 language plpgsql
@@ -170,6 +222,18 @@ begin
 
   if p_step < interval '1 day' then
     return query
+      with points as (
+        select v.at, v.value from series_values v
+         where s.kind <> 'forecast' and v.series_id = p_series_id
+           and v.at >= p_from and v.at < p_to and v.quality <> 3
+        union all
+        select latest.at, latest.value from (
+          select distinct on (f.at) f.at, f.value from forecast_values f
+           where s.kind = 'forecast' and f.series_id = p_series_id
+             and f.at >= p_from and f.at < p_to
+             and (p_issued_before is null or f.issued_at < p_issued_before)
+           order by f.at, f.issued_at desc) latest
+      )
       select date_bin(p_step, v.at, timestamptz '2000-01-01 00:00:00+00') as bucket,
              case
                when s.value_kind = 'cumulative' then (array_agg(v.value order by v.at desc))[1]
@@ -178,10 +242,7 @@ begin
                else (array_agg(v.value order by v.at desc))[1]
              end as value,
              count(*)::int as samples
-        from series_values v
-       where v.series_id = p_series_id
-         and v.at >= p_from and v.at < p_to
-         and v.quality <> 3
+        from points v
        group by 1
        order by 1;
     return;
@@ -198,6 +259,18 @@ begin
             else 'day'
           end;
   return query
+    with points as (
+      select v.at, v.value from series_values v
+       where s.kind <> 'forecast' and v.series_id = p_series_id
+         and v.at >= p_from and v.at < p_to and v.quality <> 3
+      union all
+      select latest.at, latest.value from (
+        select distinct on (f.at) f.at, f.value from forecast_values f
+         where s.kind = 'forecast' and f.series_id = p_series_id
+           and f.at >= p_from and f.at < p_to
+           and (p_issued_before is null or f.issued_at < p_issued_before)
+         order by f.at, f.issued_at desc) latest
+    )
     select date_trunc(unit, v.at, tz) as bucket,
            case
              when s.value_kind = 'cumulative' then (array_agg(v.value order by v.at desc))[1]
@@ -206,17 +279,14 @@ begin
              else (array_agg(v.value order by v.at desc))[1]
            end as value,
            count(*)::int as samples
-      from series_values v
-     where v.series_id = p_series_id
-       and v.at >= p_from and v.at < p_to
-       and v.quality <> 3
+      from points v
      group by 1
      order by 1;
 end;
 $$;
 
-comment on function resample(uuid, timestamptz, timestamptz, interval, text) is
-  'A series resampled on a regular step, combined by its quantity''s aggregation; a cumulative register gives its last index per step. Sub-day steps bin in absolute time; a day or more truncates in the site''s time zone. The one function pages and modules read series through.';
+comment on function resample(uuid, timestamptz, timestamptz, interval, text, timestamptz) is
+  'A series resampled on a regular step, combined by its quantity''s aggregation; a cumulative register gives its last index per step. Sub-day steps bin in absolute time; a day or more truncates in the site''s time zone. A forecast gives its latest issue, or the latest issued before p_issued_before. The one function pages and modules read series through.';
 
 -- ---------------------------------------------------------------------------
 -- Row level security
@@ -234,9 +304,19 @@ create policy series_values_write on series_values
   with check (series_id in (select id from series where can_write_organisation(organisation_id)));
 grant select, insert, update, delete on series_values to authenticated, service_role;
 
+alter table forecast_values enable row level security;
+create policy forecast_values_select on forecast_values
+  for select to authenticated
+  using (series_id in (select id from series where can_read_organisation(organisation_id)));
+create policy forecast_values_write on forecast_values
+  for all to authenticated
+  using (series_id in (select id from series where can_write_organisation(organisation_id)))
+  with check (series_id in (select id from series where can_write_organisation(organisation_id)));
+grant select, insert, update, delete on forecast_values to authenticated, service_role;
+
 alter table series_quality_codes enable row level security;
 create policy series_quality_codes_read on series_quality_codes for select to authenticated using (true);
 grant select on series_quality_codes to authenticated, service_role;
 
-grant execute on function resample(uuid, timestamptz, timestamptz, interval, text), series_time_zone(uuid),
+grant execute on function resample(uuid, timestamptz, timestamptz, interval, text, timestamptz), series_time_zone(uuid),
   series_values_partition(date) to authenticated, service_role;
