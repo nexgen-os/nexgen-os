@@ -43,6 +43,27 @@ describe('the series store', () => {
     expect(r.rows[1].value).toBe(92);
   });
 
+  it('keeps the two local 02:00 of the autumn change apart, 100 quarter-hours on the long day', async () => {
+    // 25 October 2026, 03:00 → 02:00 in Brussels: the local hour 02:00 happens twice; the instants stay unique.
+    const autumn = await insert(db, 'series', { organisation_id: org, object_id: meter, quantity_code: 'injection_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
+    await db.query(
+      `insert into series_values (series_id, at, value)
+       select $1, ts, 1 from generate_series('2026-10-24 00:00+02'::timestamptz, '2026-10-26 23:45+01', '15 minutes') ts`,
+      [autumn],
+    );
+    const r = await db.query<{ bucket: Date; value: number; samples: number }>(
+      `select bucket, value, samples from resample($1, '2026-10-24 00:00+02', '2026-10-27 00:00+01', '1 day')`,
+      [autumn],
+    );
+    expect(r.rows.map((x) => [new Date(x.bucket).toISOString(), x.samples])).toEqual([
+      ['2026-10-23T22:00:00.000Z', 96],
+      ['2026-10-24T22:00:00.000Z', 100],
+      ['2026-10-25T23:00:00.000Z', 96],
+    ]);
+    const twice = await one<{ n: number }>(db, `select count(*)::int n from series_values where series_id = $1 and (at at time zone 'Europe/Brussels')::time = '02:00'`, [autumn]);
+    expect(twice.n).toBe(4); // 02:00 on the 24th, the 26th, and twice on the 25th
+  });
+
   it('refuses a daily step for a site without a time zone, by name', async () => {
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'BE' });
     const s = await insert(db, 'series', { organisation_id: org, object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
