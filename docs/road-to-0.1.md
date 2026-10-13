@@ -36,7 +36,9 @@ change until 1.0, and every change is written down.
 - [x] A domain for the project's pages and schema identifiers: `nexgen-os.org`
   (decided 13/10/2026; `.io`, `.dev` and `.eu` held in defence), and the
   `@nexgen-os` scope on npm. The product keeps its own names (`nexgen.now`).
-- [ ] The domains registered and `nexgen-os.org` pointed at the project pages.
+- [x] `nexgen-os.org` registered (13/10/2026, Gandi); `nexgen.now` registered the
+  same day for the product. Still to do: point `nexgen-os.org` at the
+  project pages, hold `.io`, `.dev` and `.eu`.
 
 ### What a release needs
 
