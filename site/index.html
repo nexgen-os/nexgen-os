@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexgen OS</title>
+  <meta name="description" content="An open foundation for describing the built world — sites, buildings, roofs, meters, devices, sensors — in 3D and over time, so that architecture, energy and compliance tools share one model.">
+  <style>
+    :root { --ink: #1b2430; --muted: #5b6673; --line: #e3e8ee; --accent: #1f6f5f; --bg: #ffffff; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink: #e8edf2; --muted: #9aa6b2; --line: #2a3340; --accent: #6fcfb6; --bg: #0f141a; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 56px 16px 64px; }
+    h1 { font-size: 2rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+    h2 { font-size: 1.15rem; margin: 40px 0 8px; }
+    p { margin: 0 0 14px; }
+    .lead { font-size: 1.2rem; color: var(--muted); }
+    a { color: var(--accent); }
+    ul { padding-left: 20px; margin: 0 0 14px; }
+    li { margin: 4px 0; }
+    .status { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: var(--muted); font-size: 0.95rem; margin: 20px 0; }
+    footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Nexgen OS</h1>
+    <p class="lead">An open foundation for describing the built world — sites, buildings, roofs, meters, participants, devices, sensors — in 3D and over time, so that architecture, energy, operations and compliance tools share one model.</p>
+
+    <div class="status">Status: 0.0 — the core schema, the <code>architecture</code>, <code>weather</code> and <code>solar</code> modules, the Home Assistant, geocoding and CityJSON libraries, the Open-Meteo and PVGIS connectors, a first country pack and seven example datasets. Tested; nothing is stable until 0.1.</div>
+
+    <h2>The pact</h2>
+    <ul>
+      <li><strong>The data is yours</strong>: it sits in a Postgres database you control, in tables you can read, and leaves only when you say so.</li>
+      <li><strong>The words are plain</strong>: the best of the trades' standards — IFC, CityGML, Brick, SensorThings, QUDT — with names anyone can understand, the standard term written next to each.</li>
+      <li><strong>The rules are data</strong>: what a country, a grid operator or a market decides is a pack of files anyone can read, propose and prove.</li>
+    </ul>
+
+    <h2>What it is, and what it is not</h2>
+    <p>Nexgen OS is the open-source foundation and reference language, under AGPL-3.0 for the core and the modules and MIT for the format libraries and the connectors. <strong>Nexgen</strong>, the commercial platform of WeSmart, is built on it and remains WeSmart's product. The foundation is also made for research: a base that universities and research centres can start from, test a method on and publish a module for.</p>
+
+    <h2>Read, install, contribute</h2>
+    <ul>
+      <li>The repository, the manifesto and the decisions: <a href="https://github.com/nexgen-os/nexgen-os">github.com/nexgen-os/nexgen-os</a></li>
+      <li>For an AI agent helping somebody use it: <a href="https://github.com/nexgen-os/nexgen-os/blob/main/AGENTS.md">AGENTS.md</a></li>
+      <li>What the figures are and are not: <a href="https://github.com/nexgen-os/nexgen-os/blob/main/DISCLAIMER.md">DISCLAIMER.md</a></li>
+      <li>Where the open foundation stops and the product begins: <a href="https://github.com/nexgen-os/nexgen-os/blob/main/docs/nexgen-os-and-nexgen.md">docs/nexgen-os-and-nexgen.md</a></li>
+    </ul>
+
+    <footer>Built and maintained by WeSmart (Newide, Belgium; AI4Energy, France). Research partners: <a href="https://wesmart.com/research">wesmart.com/research</a>.</footer>
+  </main>
+</body>
+</html>
