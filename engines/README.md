@@ -1,6 +1,6 @@
 # `engines/` — computations written in another language
 
-Much of the open science of the built world and of renewables is written in
+Much of the open science of the world and of renewables is written in
 Python (pvlib, pandapower, EnergyPlus bindings, PySAM), some in R or Julia.
 Nexgen OS keeps its truth in Postgres and its logic in TypeScript, and calls
 such code without rewriting it: an **engine** is a program that reads one

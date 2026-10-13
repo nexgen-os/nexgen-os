@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nexgen OS</title>
-  <meta name="description" content="An open foundation for describing the built world — sites, buildings, roofs, meters, devices, sensors — in 3D and over time, so that architecture, energy and compliance tools share one model.">
+  <meta name="description" content="An open foundation for describing the world — sites, buildings, roofs, meters, devices, sensors — in 3D and over time, so that architecture, energy and compliance tools share one model.">
   <style>
     :root { --ink: #1b2430; --muted: #5b6673; --line: #e3e8ee; --accent: #1f6f5f; --bg: #ffffff; }
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink: #e8edf2; --muted: #9aa6b2; --line: #2a3340; --accent: #6fcfb6; --bg: #0f141a; } }
@@ -26,9 +26,9 @@
 <body>
   <main>
     <h1>Nexgen OS</h1>
-    <p class="lead">An open foundation for describing the built world — sites, buildings, roofs, meters, participants, devices, sensors — in 3D and over time, so that architecture, energy, operations and compliance tools share one model.</p>
+    <p class="lead">An open foundation for describing the world — sites, buildings, roofs, meters, participants, devices, sensors — in 3D and over time, so that architecture, energy, operations and compliance tools share one model.</p>
 
-    <div class="status">Status: 0.0 — the core schema, the <code>architecture</code>, <code>weather</code> and <code>solar</code> modules, the Home Assistant, geocoding and CityJSON libraries, the Open-Meteo and PVGIS connectors, a first country pack and seven example datasets. Tested; nothing is stable until 0.1.</div>
+    <div class="status">Status: 0.0 — the core schema, the <code>architecture</code>, <code>weather</code> and <code>solar</code> modules, the Home Assistant, geocoding, CityJSON and IFC libraries, the Open-Meteo and PVGIS connectors, external engines in any language with pvlib (Python) as the first, the <code>nexgen-os</code> installer, the <code>fr</code> and <code>be</code> country packs and seven example datasets. Tested; nothing is stable until 0.1.</div>
 
     <h2>The pact</h2>
     <ul>
@@ -38,7 +38,7 @@
     </ul>
 
     <h2>What it is, and what it is not</h2>
-    <p>Nexgen OS is the open-source foundation and reference language, under AGPL-3.0 for the core and the modules and MIT for the format libraries and the connectors. <strong>Nexgen</strong>, the commercial platform of WeSmart, is built on it and remains WeSmart's product. The foundation is also made for research: a base that universities and research centres can start from, test a method on and publish a module for.</p>
+    <p>Nexgen OS is the open-source foundation and reference language, under AGPL-3.0 for the core and the modules and MIT for the format libraries, the connectors and the engines. Computations can run outside the database, in any language: a Python engine such as pvlib receives one JSON request and answers one JSON result, and the core keeps the provenance. <strong>Nexgen</strong>, the commercial platform of WeSmart, is built on it and remains WeSmart's product. The foundation is also made for research: a base that universities and research centres can start from, test a method on and publish a module for.</p>
 
     <h2>Read, install, contribute</h2>
     <ul>

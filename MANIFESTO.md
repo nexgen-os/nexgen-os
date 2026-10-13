@@ -8,7 +8,7 @@ copy, in their own tool, in a format the next one cannot read. A roof is
 measured five times in its life and known by none of the people who need it
 next.
 
-We think the description of the built world should be done once, kept by the
+We think the description of the world should be done once, kept by the
 people it belongs to, and shared on their terms. **The model of a place
 belongs to whoever is responsible for it** — the owner, the project holder,
 the community that shares its energy — and not to the tool that happened to

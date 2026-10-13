@@ -1,6 +1,6 @@
 # Nexgen OS
 
-An open foundation for describing the built world — sites, buildings, roofs,
+An open foundation for describing the world — sites, buildings, roofs,
 meters, participants, devices, sensors — in 3D and over time, so that
 architecture, energy, operations and compliance tools share one model.
 
@@ -12,9 +12,11 @@ foundation, not the product. Why the foundation exists and what it promises:
 begins: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md). What the
 figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
-> Status: **0.0 — the core schema, the `architecture` module, the `solar` module schema, the Home
-> Assistant and geocoding libraries, the Open-Meteo connector and seven example
-> datasets, and a first country pack**. The core is tested; nothing here is stable until 0.1.
+> Status: **0.0 — the core schema, the `architecture`, `weather` and `solar` modules, the Home
+> Assistant, geocoding, CityJSON and IFC libraries, the Open-Meteo and PVGIS connectors,
+> external engines in any language with pvlib (Python) as the first, the `nexgen-os`
+> installer, the `fr` and `be` country packs and seven example datasets**. Tested; nothing
+> here is stable until 0.1.
 
 ## The model in one screen
 

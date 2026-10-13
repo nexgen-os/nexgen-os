@@ -6,7 +6,7 @@
 
 ## Context
 
-The best open science for the built world and for renewables is written
+The best open science for the world and for renewables is written
 in Python — pvlib for PV, pandapower for grids, the EnergyPlus bindings for
 buildings, PySAM for NREL's System Advisor Model, research code on pandas —
 and some in R or Julia. Nexgen OS keeps its truth in Postgres and its logic
