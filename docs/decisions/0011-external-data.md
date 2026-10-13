@@ -75,7 +75,7 @@ or an attribute the same way whichever connector wrote it.
 ### What the core does not do
 
 The database calls no API: no HTTP from a function, no job inside Postgres.
-Collection is a job of the application or the hosted edition, scheduled by
+Collection is a job of the application or Nexgen, WeSmart's commercial platform, scheduled by
 the `monitoring` module when it is installed, and it writes through
 `storeSeries()` and the ordinary tables.
 

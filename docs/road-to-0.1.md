@@ -20,10 +20,12 @@ change until 1.0, and every change is written down.
 - [x] A GitHub organisation of its own, `nexgen-os`, and the repository in it.
 - [x] Licences: AGPL-3.0 for the core and the modules, MIT for the format
   libraries and the connectors; DCO sign-off, no contributor agreement.
-- [x] The manifesto says who builds it (WeSmart: Newide, AI4Energy), who
-  operates the hosted edition, and that it is a research foundation.
-- [x] What is sold and what never will be: `docs/hosted-edition.md`; what
-  the figures are: `DISCLAIMER.md`; how to report a flaw: `SECURITY.md`.
+- [x] The manifesto says who builds it (WeSmart: Newide, AI4Energy), that
+  Nexgen is WeSmart's commercial product built on the foundation, and that
+  the foundation is also for research.
+- [x] Where the open foundation stops and the product begins:
+  `docs/nexgen-os-and-nexgen.md`; what the figures are: `DISCLAIMER.md`;
+  how to report a flaw: `SECURITY.md`.
 - [x] `AGENTS.md`: what an AI agent may do here, how, and what it never does.
 - [ ] **Commits and releases in the project's name.** A GitHub App of the
   organisation (as Ekwo does with its own app) signs and pushes every

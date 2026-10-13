@@ -2,7 +2,7 @@
 
 Research done on 12/10/2026 for decision [0008](../decisions/0008-3d-module.md). Sources are linked inline; versions are the ones read that day.
 
-On 13/10/2026 the decision was narrowed to the shape of what is built (models, drawings, tilesets). Sections 2 and 4 below (scenes, camera paths, captures) and the capture half of section 6 remain as research for the hosted edition, not a plan for this repository; section 3 (georeferencing of local models) is what `three_d.models` implements.
+On 13/10/2026 the decision was narrowed to the shape of what is built (models, drawings, tilesets). Sections 2 and 4 below (scenes, camera paths, captures) and the capture half of section 6 remain as research for Nexgen, WeSmart's commercial platform, not a plan for this repository; section 3 (georeferencing of local models) is what `three_d.models` implements.
 
 ---
 
@@ -57,7 +57,7 @@ Rule: tier A for every building in the viewport (cheap, cached, no WebGL custom 
 | fill-extrusion | yes | yes, incl. `fill-extrusion-rounded-corner-distance`, vertical gradient over terrain |
 | Free camera | `FreeCameraOptions` | same API (`setFreeCameraOptions`, `lookAtPoint`), also in MapLibre Native ([Mapbox API](https://docs.mapbox.com/mapbox-gl-js/api/properties), [MapLibre Native](https://maplibre.org/maplibre-native/cpp/api/structmbgl_1_1FreeCameraOptions.html)) |
 
-Consequence for Nexgen OS: everything in the open repo targets MapLibre (BSD) through `fill-extrusion`, custom layers and 3D Tiles; the Mapbox `model` layer, Standard style and Mapbox tokens are a Nexgen Cloud concern.
+Consequence for Nexgen OS: everything in the open repo targets MapLibre (BSD) through `fill-extrusion`, custom layers and 3D Tiles; the Mapbox `model` layer, Standard style and Mapbox tokens are a Nexgen (WeSmart's product) concern.
 
 ---
 
@@ -207,7 +207,7 @@ Reused from the core, not duplicated: `sites`, `buildings` (footprint, height), 
 
 ### The open / private line
 
-| Open (Nexgen OS, MIT/AGPL-clean) | Private (Nexgen Cloud) |
+| Open (Nexgen OS, MIT/AGPL-clean) | Private (Nexgen (WeSmart's product)) |
 |---|---|
 | Schema above, RLS, JSON Schemas (camera path, scene), SQL functions (`model_to_world`, `ST_AsMVT` tile functions, bbox/ENU helpers) | API keys and quotas: Google Solar, Mapbox tokens, Mapbox Standard style and `model` layer |
 | Importers (ST2): CityJSON 2.0 (+ CityJSONSeq), IFC `IfcMapConversion` reader, 3D Tiles tileset reader, glTF anchor reader, ODM/WebODM task ingest, STAC Item writer, EXIF/XMP pose reader | Rendering farm (headless Chromium/Puppeteer or Blender workers), queueing, `3d.renders` execution, watermarking, QR end cards, codec presets |

@@ -2,7 +2,7 @@
 
 **Proposed 12/10/2026, narrowed 13/10/2026.** Research:
 [docs/research/3d-geo.md](../research/3d-geo.md) — its sections on captures,
-scenes and video stay as research for the hosted edition.
+scenes and video stay as research for Nexgen, WeSmart's commercial platform,.
 
 ## Context
 
@@ -18,7 +18,7 @@ computation read the same object.
 The first draft of this decision went further: drone flights, images with
 their poses, point clouds, orthophotos, scenes, camera paths and rendered
 videos. Those describe how a place is photographed and shown, not what it
-is. They stay out of the open repository, in the hosted edition, as a module
+is. They stay out of the open repository, in Nexgen, WeSmart's commercial platform, as a module
 of its own there (working name `drone`: flights, photogrammetry, films).
 
 ## Decision
@@ -72,11 +72,11 @@ Three tiers, one rule:
 
 The open repository targets **MapLibre GL JS** (BSD-3): extrusions, custom
 layers, terrain, globe and the free camera all exist there. Mapbox GL JS v3's
-`model` layer, Standard style and tokens are the hosted edition's.
+`model` layer, Standard style and tokens are Nexgen's, WeSmart's product,.
 
-### The line with the hosted edition
+### The line with Nexgen, WeSmart's product
 
-| Open — this repository | Hosted edition |
+| Open — this repository | Nexgen, WeSmart's product |
 |---|---|
 | the schema, row level security, `model_to_world()`, the tile functions | drone flights, images and their poses, point clouds, orthophotos and surface models, photogrammetry jobs (OpenDroneMap as a service) |
 | format readers (ST2): CityJSON 2.0, IFC `IfcMapConversion`, 3D Tiles tilesets, glTF anchors | scenes, camera paths, renders: the generation of videos and stills, and the pipeline that makes them |

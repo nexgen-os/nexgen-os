@@ -58,7 +58,7 @@ a station). The module publishes the quantities it needs — `ghi`, `dni`,
 `dhi`, `poa_irradiance`, `module_temperature` — and reads them through the
 connectors of decision 0011. Choosing or downloading a weather model is
 therefore choosing a source and a connector, open by default (PVGIS,
-Open-Meteo under its terms), licensed in the hosted edition (Meteonorm,
+Open-Meteo under its terms), licensed in Nexgen, WeSmart's commercial platform (Meteonorm,
 Solargis), the installation's own station or model tomorrow.
 
 ### Conventions, written once
@@ -104,7 +104,7 @@ datasheet, price), shared or an organisation's. The modules derive the
 technical parameters — `solar.module_products` and `solar.inverter_products`
 here, batteries in `storage`, protocols and registers in `monitoring`. The
 data come from open readers (CEC tables, PAN/OND) for the physics, and
-from a curated dataset of the hosted edition for prices, installed costs
+from a curated dataset of Nexgen, WeSmart's commercial platform, for prices, installed costs
 and supplier references (`sources` row, not redistributable). The line
 between open and paid runs on prices, never on physics.
 
@@ -147,7 +147,7 @@ the site, and a `weather` module holds what several modules need:
   or a latitude), their licence and their retention. Open ones ship with
   the core (PVGIS SARAH3 in Europe and Africa, ERA5 everywhere through
   Open-Meteo); national services come with packs (a weather office's
-  reanalysis or forecast); licensed ones with the hosted edition.
+  reanalysis or forecast); licensed ones with Nexgen, WeSmart's commercial platform,.
 - `weather.source_for(site, purpose)` resolves the model to use for one
   site and one purpose (irradiance for a yield, temperature for heating,
   a forecast for dispatch), in this order: the project's explicit choice,

@@ -16,12 +16,13 @@ country decides, libraries read and write the formats of the trades, and
 connectors read the outside world (weather, registers, grid operators).
 
 Somebody who simply wants a study of their roof or their energy community
-uses **Nexgen**, the application WeSmart runs on this core. Installing Nexgen
+uses **Nexgen**, WeSmart's commercial platform, built on this foundation and
+not part of it. Installing Nexgen
 OS on their own Supabase project, the rest of this page, is for a technical
 team and for whoever wants to own every part of it.
 
 What Nexgen OS is, and its limits: [DISCLAIMER.md](DISCLAIMER.md). What is
-sold and what never will be: [docs/hosted-edition.md](docs/hosted-edition.md).
+open and what is WeSmart's: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md).
 
 ## You are a user of the model
 

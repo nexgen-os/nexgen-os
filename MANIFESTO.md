@@ -128,20 +128,22 @@ is the shared description they can all read from and write to.
 
 The core is free software under **AGPL-3.0**, so that what is built on it
 stays open. The format libraries and the connectors are **MIT**, so they can
-go anywhere, including into tools that will never use Nexgen OS. What is sold
-— the hosted edition, operated for you, with the data connections and the
-agents you configure — pays for the rest, and never gates it
-([docs/hosted-edition.md](docs/hosted-edition.md)).
+go anywhere, including into tools that will never use Nexgen OS. What
+WeSmart sells — Nexgen, its commercial platform built on this foundation,
+with the data connections, the studies and the agents it operates for you —
+pays for the rest, and never gates it
+([docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md)).
 
 ## Who builds it, who operates it, who it is for
 
 Nexgen OS is built and maintained by **WeSmart**, the energy-sharing and
 energy-management company behind the Nexgen platform, through its two
-companies: **Newide** in Belgium and **AI4Energy** in France. The hosted
-edition is Nexgen itself, the application WeSmart runs for project holders,
-installers and communities, which converges on this core. The project itself belongs to the organisation
-that carries it on GitHub, its decisions are public, and no single company
-can take it closed.
+companies: **Newide** in Belgium and **AI4Energy** in France. Nexgen OS is
+the foundation and the reference language; **Nexgen**, WeSmart's commercial
+platform for project holders, installers and communities, is built on it
+and remains WeSmart's product, with its own name, terms and roadmap. The
+foundation itself belongs to the organisation that carries it on GitHub,
+its decisions are public, and no single company can take it closed.
 
 It is also a research foundation. Describing places once, with their
 provenance and their rules, is what a research project on energy

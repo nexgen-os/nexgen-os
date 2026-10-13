@@ -28,7 +28,7 @@ not yet, so its tables can still move.
 reads contacts and creates invoices through Ekwo's machine access (MCP or
 REST, an API key kept as `sources.secret_ref`), and writes the ids back.
 No shared transaction; a contact's display name is copied. Works for every
-layout, including two hosted editions on different accounts.
+layout, including the two companies' platforms on different accounts.
 
 **B. One database, two schemas.** Nexgen OS's core moves from `public` to a
 schema of its own, `nexgen`, as its modules already are (`architecture`,

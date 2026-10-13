@@ -202,7 +202,7 @@ The core already provides what solar needs as foundations: `surfaces` (azimuth n
 ### 5.4 What to leave to the tools
 
 - 3D near-shading ray tracing, detailed string layout, cable sizing, bankable reports: PVsyst, PV*SOL, HelioScope remain the reference; Nexgen stores their outputs (PDF report as document, hourly CSV as a `simulated` run with `engine = 'pvsyst 8.1'`) and the inputs needed to explain gaps.
-- Licensed weather (Meteonorm, Solargis) is fetched by the hosted edition under its licence; the open core ships only open sources (PVGIS, Open-Meteo under its terms, NSRDB) and the formats.
+- Licensed weather (Meteonorm, Solargis) is fetched by Nexgen, WeSmart's commercial platform, under its licence; the open core ships only open sources (PVGIS, Open-Meteo under its terms, NSRDB) and the formats.
 - Engines run outside Postgres (pvlib in a worker, PVGIS by API); the database holds parameters, series, runs and their lineage.
 
 ### Borrow / Avoid / Lesson

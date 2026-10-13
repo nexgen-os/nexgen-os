@@ -9,7 +9,8 @@ it, using it or reading this repository does not make WeSmart, or anyone who
 contributed to it, your engineer or your adviser.
 
 *Version 1.0 — 13 October 2026. This page applies to Nexgen OS, the software
-of this repository. The hosted edition is governed by its own terms.*
+of this repository. Nexgen, WeSmart's commercial platform, is governed by its
+own terms.*
 
 ## What a figure here is
 

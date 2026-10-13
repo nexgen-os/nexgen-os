@@ -17,6 +17,6 @@ What it ships besides tables:
   3D Tiles from `surfaces` and `three_d.models` with pg2b3dm;
 - the format readers it needs, as libraries under `formats/`.
 
-What stays out, in the hosted edition: drone flights and their outputs
+What stays out, in Nexgen, WeSmart's commercial platform: drone flights and their outputs
 (images, point clouds, orthophotos), scenes, camera paths, videos and stills,
 API keys, the Mapbox `model` layer and Standard style.

@@ -27,7 +27,7 @@ will name you unless you ask otherwise.
 
 ## What is not
 
-- the services of the hosted edition, which have their own channel;
+- Nexgen, WeSmart's commercial platform, which has its own channel;
 - a weak password on an installation you run, or a key left in a client.
 
 ## How the schema defends itself
