@@ -27,7 +27,7 @@ change until 1.0, and every change is written down.
   `docs/nexgen-os-and-nexgen.md`; what the figures are: `DISCLAIMER.md`;
   how to report a flaw: `SECURITY.md`.
 - [x] `AGENTS.md`: what an AI agent may do here, how, and what it never does.
-- [ ] **Commits and releases in the project's name.** A GitHub App of the
+- [x] **Commits and releases in the project's name.** A GitHub App of the
   organisation (as Ekwo does with its own app) signs and pushes every
   commit, tag and release; the history is rewritten once, before the
   repository goes public, so that no personal account and no assistant
