@@ -24,6 +24,7 @@ change until 1.0, and every change is written down.
   operates the hosted edition, and that it is a research foundation.
 - [x] What is sold and what never will be: `docs/hosted-edition.md`; what
   the figures are: `DISCLAIMER.md`; how to report a flaw: `SECURITY.md`.
+- [x] `AGENTS.md`: what an AI agent may do here, how, and what it never does.
 - [ ] **Commits and releases in the project's name.** A GitHub App of the
   organisation (as Ekwo does with its own app) signs and pushes every
   commit, tag and release; the history is rewritten once, before the
@@ -43,8 +44,13 @@ change until 1.0, and every change is written down.
   says what is wrong. Ported from Ekwo's command line, which already does
   this for a schema, modules and packs.
 - [ ] **The packages** on npm under `@nexgen-os`: the format libraries and
-  the connectors, each usable without Nexgen OS; the installer; later the
-  core client and an MCP server.
+  the connectors, each usable without Nexgen OS; the installer; the core
+  client.
+- [ ] **An MCP server**, `@nexgen-os/mcp`, hosted and local, on the model
+  of Ekwo's: an agent describes a site, imports a file, runs a yield and
+  reads it back, as the user, under row level security. Agents are a first
+  audience of this project, not an afterthought: `AGENTS.md` is written
+  for them from 0.1.
 - [ ] **A changelog** per release, and a `docs/releasing.md` that lists what
   has to move, as Ekwo's does.
 - [ ] Continuous integration: the test suite on three Node versions, a

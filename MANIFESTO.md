@@ -80,9 +80,15 @@ means something else.
 
 Every installation stands on its own, with us or without us: the data sits
 in Postgres with PostGIS, under row level security, and the owner holds the
-keys. An agent built on the model you choose can read the model, attach a
-value, import a survey or run a study — as *you*, with your rights and your
-limits.
+keys. The schema comes with a REST API, and the model is designed for
+machines as much as for people: an agent built on the model you choose can
+read the model, attach a value, import a survey, run a study, prepare a
+permit file or answer a resident — as *you*, with your rights and your
+limits. The agent is a user of the model, with the same rights and the same
+limits as the human beside it, and it can be replaced by another one
+tomorrow. This is the way most places will be described and studied from
+now on, and the core is built so that it happens on your data, in your
+database, under your rules ([AGENTS.md](AGENTS.md)).
 
 **Nothing in the core calls a model.** A geometry, a value, a series, a
 computation is deterministic: a module hands its results back as a **run**,

@@ -45,8 +45,12 @@ objects: [docs/decisions/0006](docs/decisions/0006-named-objects.md).
 3. **One way to read.** `attributes_of()` for attributes, `resample()` for
    series, `site_of()` and `country_of()` for where, `building_volume()` for a
    derived 3D block.
-4. **Deterministic core.** Nothing in the core calls a model. Modules hand
-   results back through `record_run()`: same inputs, same engine, same run.
+4. **Deterministic core, operable by an agent.** Nothing in the core calls a
+   model; modules hand results back through `record_run()`: same inputs,
+   same engine, same run. On top of it, an AI agent works as a user of the
+   model — the same tables, the same rights, the same refusals by name — so
+   that describing and studying a place can be delegated without the data
+   leaving its owner ([AGENTS.md](AGENTS.md)).
 5. **Modules in their own schema, countries as data, formats by format,
    invoices in Ekwo.**
 

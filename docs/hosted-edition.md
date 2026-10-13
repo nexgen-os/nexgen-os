@@ -35,7 +35,7 @@ If no, it is a service, because something has to be kept alive or paid for:
 | a curated product catalogue | prices, installed costs, supplier references, verified datasheets — the physics of a product stays open |
 | surveys and media | drone flights, photogrammetry, 3D scenes and films, rendered on a farm |
 | fine yield studies | the engines of partners that model near shading in 3D, run as a profile whose results land here like any other |
-| agents and support | the hosted agents that read your places and prepare your studies, and the people who answer |
+| agents and support | the hosted agents WeSmart runs for you — the same agents anyone can run on their own installation with the model of their choice — and the people who answer |
 
 ## What comes back to the repository
 
