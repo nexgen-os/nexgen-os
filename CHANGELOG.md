@@ -19,6 +19,11 @@ release may break, and says how. How a release is cut:
   `nexgen.schema_migrations`, the record of every file applied with its
   scope (`core`, `module:<code>`, `pack:<cc>`).
 - `docs/releasing.md` and this changelog.
+- `formats/ifc`, the IFC reader: buildings, storeys, spaces and roof faces
+  of an IFC4 model land as buildings, floors, spaces and roof surfaces,
+  placed on the globe by `IfcMapConversion` or the site's coordinates, with
+  GlobalIds in `external_ids` and property sets in `metadata.ifc`. Parsed by
+  web-ifc (MPL-2.0), now a dependency.
 - The core, the `architecture`, `weather` and `solar` modules, the `fr` pack,
   the format libraries and the connectors of the first release (see
   `docs/road-to-0.1.md`).

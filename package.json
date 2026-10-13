@@ -21,5 +21,8 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "web-ifc": "0.0.78"
+  }
 }

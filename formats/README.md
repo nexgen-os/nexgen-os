@@ -16,3 +16,4 @@ rule — one adapter per service, usable without Nexgen OS.
 | [`homeassistant`](homeassistant/README.md) | floors, areas, devices, entities and recorder states ⇄ floors, spaces, devices, sensors, series | tested, no field lost |
 | [`geocoding`](geocoding/README.md) | an address ⇄ a point, with precision and source, on Nominatim and Photon; any other geocoder as an adapter of the same shape | tested on recorded answers |
 | [`cityjson`](cityjson/README.md) | CityJSON 2.0 buildings (3DBAG, UrbIS, converted CityGML) ⇄ buildings, footprints, roof and wall surfaces, identifiers, attributes | tested: the export lands the same way when imported again |
+| [`ifc`](ifc/README.md) | IFC4 and IFC2x3 buildings, storeys, spaces, roofs, GlobalIds, property sets → buildings, floors, spaces, roof surfaces, identifiers, `metadata.ifc`; placed by `IfcMapConversion` or the site's coordinates | import only; writing IFC is a later step |
