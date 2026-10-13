@@ -83,12 +83,12 @@ insert into devices (id, organisation_id, site_id, building_id, meter_id, name, 
 insert into attributes (object_id, property_code, value, scenario_id, source) values
   ('00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', '00000000-0000-4000-8000-000100000080', 'datasheet');
 
--- An estimate from PVGIS, recorded as a run of the energy module.
+-- An estimate from PVGIS, recorded as a run of the solar module.
 insert into modules (code, name, version, schema_name, requires_core_min) values
-  ('energy', 'Energy', '0.1.0', 'energy', '0.1.0')
+  ('solar', 'Solar', '0.1.0', 'solar', '0.1.0')
 on conflict (code) do nothing;
 
-select record_run('energy', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-000100000051', null,
+select record_run('solar', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-000100000051', null,
   '{"source": "pvgis", "peak_kw": 3.825, "tilt": 30, "azimuth": 180, "loss_pct": 14}',
   '{"annual_kwh": 6120, "monthly_kwh": [330, 390, 520, 580, 650, 690, 720, 680, 560, 450, 330, 300]}');
 

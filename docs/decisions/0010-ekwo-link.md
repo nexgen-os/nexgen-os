@@ -8,7 +8,7 @@ Ekwo OS is the open-source accounting core built on the same playbook:
 companies, contacts, products, documents (quotes, invoices, credit notes),
 entries, VAT, e-invoicing, with a pack per country. Nexgen OS already leans
 on it: an organisation keeps its `ekwo_company_id`, a contact its
-`ekwo_contact_id`, and the settlement lines a run of the `energy` module
+`ekwo_contact_id`, and the settlement lines a run of the `sharing` module
 hands over keep the Ekwo document ids they became ([0006](0006-named-objects.md)).
 
 What is not decided: whether the two cores share one database or run in
@@ -32,7 +32,7 @@ layout, including two hosted editions on different accounts.
 
 **B. One database, two schemas.** Nexgen OS's core moves from `public` to a
 schema of its own, `nexgen`, as its modules already are (`architecture`,
-`energy`…); Ekwo stays in `public`. Real foreign keys
+`solar`…); Ekwo stays in `public`. Real foreign keys
 (`ekwo_company_id references public.companies`), one row level security
 context, one transaction from settlement to invoice. The cost is the one
 every module already pays — the schema exposed on PostgREST and named in the

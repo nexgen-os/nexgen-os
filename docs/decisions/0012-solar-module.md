@@ -34,11 +34,13 @@ engine.
 
 ### One module, `solar`, for what is specific to photovoltaics
 
-The `solar` module takes the PV side out of the planned `energy` module:
-`energy` keeps what is shared between technologies — sharing and
-allocation keys, batteries and chargers, tariffs, settlement — and reads
-the production series `solar` produces. The seed moves the device types
-`solar` and `inverter` to the `solar` module.
+The `solar` module replaces the planned catch-all `energy` module, which is
+dissolved into modules named after what they add: `solar`, `storage`,
+`charging`, `consumption`, `sharing`, `weather`, and later `flexibility`
+and `generators`. Each reads the series the others produce. The seed moves
+the device types `solar` and `inverter` to the `solar` module, `battery` to
+`storage`, `charger` to `charging`, and wind, hydro, cogeneration and
+biomass to `generators`.
 
 | Table | What it is |
 |---|---|
@@ -100,7 +102,7 @@ Products follow three layers. The core `device_directory` is the identity
 of a product (manufacturer, model, type, unit power or capacity, surface,
 datasheet, price), shared or an organisation's. The modules derive the
 technical parameters — `solar.module_products` and `solar.inverter_products`
-here, batteries in `energy`, protocols and registers in `monitoring`. The
+here, batteries in `storage`, protocols and registers in `monitoring`. The
 data come from open readers (CEC tables, PAN/OND) for the physics, and
 from a curated dataset of the hosted edition for prices, installed costs
 and supplier references (`sources` row, not redistributable). The line
@@ -114,7 +116,8 @@ documents, compared on the same series.
 
 ## Consequences
 
-- `modules/README.md` lists `solar`; `energy` no longer owns PV systems.
+- `modules/README.md` lists `solar`, `storage`, `charging`, `consumption`,
+  `sharing`; the catch-all `energy` is gone.
 - The product's engine becomes the `pvwatts` yield profile on the
   `open_meteo_era5` and `pvgis_sarah3` sources, with its clock and typical
   year rules written as conventions; the Sunelis comparison becomes a test:
@@ -123,6 +126,36 @@ documents, compared on the same series.
 - ST2 gains the weather and product formats above; the first `solar`
   acceptance test is a PVGIS TMY and an Open-Meteo year on the same roof,
   run through the same profile, with the gap explained by the inputs.
-- Open questions: whether a shared weather grid point is an object of
-  `solar` or of a `weather` module shared with heating; which of the four
+- Weather is a module of its own, `weather`, shared with `heating` and
+  `thermal` (decided 13/10/2026, see below). Open: which of the four
   profiles ships first (`pvgis_like` is the cheapest to verify).
+
+## Weather: a module of its own, chosen per place (decided 13/10/2026)
+
+Weather belongs to a place, not to a device: two PV systems on one site
+share it, a heat pump on the same site reads the same temperature, and a
+participant is a role, not a location. So the data and the choice sit at
+the site, and a `weather` module holds what several modules need:
+
+- `weather.points` — the grid cell or the station a site reads: its
+  position, the model it belongs to and the model's resolution; sites are
+  linked to their nearest point, and the weather series hang on the point,
+  once, whatever the number of sites in the cell (ERA5 cells are 25 km;
+  SARAH 5 km). A site with its own station is its own point.
+- weather models are `sources` with their coverage (`countries`,
+  `regions`, and a coverage geometry when a dataset stops at a coastline
+  or a latitude), their licence and their retention. Open ones ship with
+  the core (PVGIS SARAH3 in Europe and Africa, ERA5 everywhere through
+  Open-Meteo); national services come with packs (a weather office's
+  reanalysis or forecast); licensed ones with the hosted edition.
+- `weather.source_for(site, purpose)` resolves the model to use for one
+  site and one purpose (irradiance for a yield, temperature for heating,
+  a forecast for dispatch), in this order: the project's explicit choice,
+  the organisation's connection, the pack's rule for the country or the
+  region, the core's default by coverage. A run always records which one
+  it read, so two sites of one project may read two models when their
+  locations call for it, and the result says so.
+
+The choice is therefore made per site through data, never per device; a
+project may pin a model for a study, and a run may be given one
+explicitly for a comparison.

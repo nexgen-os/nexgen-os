@@ -12,15 +12,15 @@ set search_path = nexgen, public, extensions;
 -- ---------------------------------------------------------------------------
 
 insert into device_types (code, name, parent_code, module_code, brick_class, ifc_class, description) values
-  ('generator',  'Generator',          null,        'energy',  'Electrical_Generation_Equipment', 'IfcElectricGenerator', 'Any electricity-producing device.'),
+  ('generator',  'Generator',          null,        'generators',  'Electrical_Generation_Equipment', 'IfcElectricGenerator', 'Any electricity-producing device.'),
   ('solar',      'PV system',          'generator', 'solar',   'PV_Array',            'IfcSolarDevice',          'Photovoltaic modules and their inverters.'),
-  ('wind',       'Wind turbine',       'generator', 'energy',  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
-  ('hydro',      'Hydro turbine',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
-  ('cogeneration',        'Combined heat and power', 'generator', 'energy', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
-  ('biomass',    'Biomass plant',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
+  ('wind',       'Wind turbine',       'generator', 'generators',  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
+  ('hydro',      'Hydro turbine',      'generator', 'generators',  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
+  ('cogeneration',        'Combined heat and power', 'generator', 'generators', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
+  ('biomass',    'Biomass plant',      'generator', 'generators',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
   ('inverter',   'Inverter',           null,        'solar',   'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
-  ('battery',    'Battery',            null,        'energy',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
-  ('charger',         'EV charging station', null,       'energy',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
+  ('battery',    'Battery',            null,        'storage',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
+  ('charger',         'EV charging station', null,       'charging',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
   ('heat_pump',   'Heat pump',          null,        'heating', 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
   ('boiler',     'Boiler',             null,        'heating', 'Boiler',              'IfcBoiler',               'A boiler.'),
   ('geothermal', 'Geothermal system',  null,        'heating', null,                  'IfcUnitaryEquipment',     'A ground-source heat exchange system.'),

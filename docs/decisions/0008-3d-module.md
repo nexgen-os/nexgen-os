@@ -51,7 +51,7 @@ The deterministic parts of the product's 3D — the parametric roof model
 (two slopes, one slope, several spans, tables on the ground, faces drawn by
 hand, in local metres), the layout of modules on a face and on the ground,
 the position of the sun — are TypeScript with no WebGL and already tested.
-They move into the open repository as functions of the `energy` module
+They move into the open repository as functions of the `solar` module
 (layouts) and of `3d` (roof model), and their result is persisted: one
 `three_d.models` row (glTF) per layout, produced by a run, so that a viewer,
 an export to PV\*SOL, IFC or CityJSON and the hosted film pipeline all read

@@ -69,10 +69,10 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
   ('00000000-0000-4000-8000-000400000052', 'Ground array layout', 'plan', 's3://nexgen-os-examples/farm/field-layout.geojson', 'application/geo+json', 'installer');
 
 insert into modules (code, name, version, schema_name, requires_core_min) values
-  ('energy', 'Energy', '0.1.0', 'energy', '0.1.0')
+  ('solar', 'Solar', '0.1.0', 'solar', '0.1.0')
 on conflict (code) do nothing;
 
-select record_run('energy', 'pvgis-5.3+core-0.1.0', d.id, null,
+select record_run('solar', 'pvgis-5.3+core-0.1.0', d.id, null,
   jsonb_build_object('source', 'pvgis', 'peak_kw', d.rated_power_kw, 'tilt', s.tilt_deg, 'azimuth', s.azimuth_deg, 'loss_pct', 14),
   jsonb_build_object('annual_kwh', round(d.rated_power_kw * case s.kind when 'ground' then 1010 when 'carport' then 980 else 1000 end)))
   from devices d join surfaces s on s.id = d.surface_id

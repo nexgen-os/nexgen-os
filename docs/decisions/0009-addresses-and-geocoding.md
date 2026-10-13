@@ -58,7 +58,7 @@ municipality. Three levels, all data:
 - **region** — `sites.region`, ISO 3166-2 (`BE-VLG`, `FR-75`, `NL-NH`);
   a pack row that applies to part of a country says so in `regions`
   (`sources.regions`, and the same column on the rows of the `grid`,
-  `energy` and `compliance` modules);
+  `sharing` and `compliance` modules);
 - **municipality** — `sites.municipality_code`, in the country's own code
   (INSEE, NIS, CBS), an `id_schemes` row of the pack; a grid operator, a
   planning rule or a dataset decided per municipality lists its codes;
