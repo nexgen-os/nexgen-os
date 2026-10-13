@@ -35,3 +35,12 @@ its `sources` rows with their licence and retention, and is listed in the
 installation's configuration. The core and the pages never import it; the
 data it writes says where it came from, so licence and attribution follow
 the data, and `sources.retention_days` says when a cache expires.
+
+## Planned: dashboards, warehouses and streams
+
+Grafana, Power BI, Spark, InfluxDB, Kafka and MQTT come through three doors
+— SQL, Parquet files, one message shape over a stream — and none of them gets
+a copy of the model. The pieces and their order are in
+[decision 0014](../docs/decisions/0014-integrations-dashboards-warehouses-streams.md):
+`formats/parquet`, `formats/influx-line-protocol`, `formats/grafana`,
+`connectors/mqtt`, `connectors/kafka`, and two flat views for BI tools.
