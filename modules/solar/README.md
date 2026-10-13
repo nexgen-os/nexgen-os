@@ -114,6 +114,32 @@ hourly shape (PVGIS's horizon only reaches the annual, through the
 anchoring), and the rear side of a bifacial array: no gain is applied, and
 the run records `bifacial: 'not modelled'` for each bifacial array.
 
+## Yield runs computed by an engine
+
+A profile and an engine are two axes. The profile chooses the weather,
+the models and the losses; the engine computes them. With `engine: { name:
+'pvlib', command? }` (decision [0013](../../docs/decisions/0013-external-engines.md),
+[`engines/pvlib`](../../engines/pvlib/README.md)), `runYield` runs any
+profile whose models the engine has, and needs `profileCode`
+(`profile_required` otherwise) and the site's time zone:
+
+| Read from | Sent to the engine |
+|---|---|
+| the system, its arrays and their products (the same rows as the other runs) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several) |
+| the profile | decomposition, transposition, incidence (`iam_model`, `no_loss` when null), spectral, temperature model and parameters, the ordered losses as fractions |
+| the weather connector (Open-Meteo's ERA5 archive), the years in the site's local calendar | a profile with a transposition: `ghi`, `dni`, `dhi` once for the site (`ghi` alone when it names a decomposition); without one: each array's `poa_irradiance`, as `pvwatts` reads it; temperature and wind speed |
+
+What the engine answers is stored as it comes, in series named
+`<engine> <from>-<to>`: `production_energy` on the system,
+`poa_irradiance` and `module_temperature` on each array (on the system for
+a system without arrays). The run's `engine_version` is the engine's string
+from `describe` (`pvlib 0.16.1`); its inputs keep the profile, the engine
+with its dependencies, the weather read and the models as the engine
+resolved them (`model`); its results the annual (the mean over the years
+covered, as for real years), the specific yield and the series. The typical
+year and the anchoring on PVGIS belong to `pvwatts` and are not applied to
+an engine's run.
+
 ## Quantities
 
 `ghi`, `dni`, `dhi`, `poa_irradiance` (W/m², mean), `module_temperature`

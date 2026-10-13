@@ -68,6 +68,9 @@ npx nexgen-os init                      # the core and every module; --packs <cc
 npx nexgen-os doctor                    # what is wrong, by name
 ```
 
+Engines are optional: a yield computed by pvlib needs Python and
+`engines/pvlib` installed, as [`engines/README.md`](engines/README.md) says.
+
 The installer and its commands: [`packages/cli/README.md`](packages/cli/README.md).
 How a release is cut: [`docs/releasing.md`](docs/releasing.md).
 
@@ -99,6 +102,7 @@ modules/               one Postgres schema per module (architecture and solar sh
 packs/                 one folder per country (fr: identifiers, sources, the BAN geocoder)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo)
+engines/               external computations in any language, JSON in and out (pvlib, optional)
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status

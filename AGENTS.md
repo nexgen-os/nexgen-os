@@ -35,6 +35,12 @@ the countries they named (`--packs`; there is no default country), then
 the line the command printed. [`packages/cli/README.md`](packages/cli/README.md)
 has the rest.
 
+Engines are optional: everything installs and runs without them. A yield
+computed by pvlib needs Python and the `pvlib` engine on the machine that
+runs it ([`engines/README.md`](engines/README.md)); check it with
+`echo '{"engine":"pvlib","contract":1,"request":{"describe":true}}' | $NEXGEN_ENGINE_PVLIB`,
+and report `engine_not_found` with the install line it prints.
+
 ## You are a user of the model
 
 You act as the person who asked you, with their rights and their limits:

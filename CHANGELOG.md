@@ -24,6 +24,16 @@ release may break, and says how. How a release is cut:
   placed on the globe by `IfcMapConversion` or the site's coordinates, with
   GlobalIds in `external_ids` and property sets in `metadata.ifc`. Parsed by
   web-ifc (MPL-2.0), now a dependency.
+- External engines (decision 0013): a program in any language that reads
+  one JSON request on stdin and answers one JSON result on stdout. The
+  runner (`engines/runner.ts`) starts it from the caller's command or
+  `NEXGEN_ENGINE_<NAME>`, checks the contract and names every failure
+  (`engine_not_found`, `engine_failed`, `engine_contract_mismatch`,
+  `engine_timeout`). The first engine, `engines/pvlib`, answers `pv_yield`
+  with pvlib's `ModelChain`; `runYield` runs any yield profile through it
+  with `engine: { name: 'pvlib' }`.
+- The Open-Meteo connector reads the horizontal components `ghi`, `dni` and
+  `dhi` from the ERA5 archive.
 - The core, the `architecture`, `weather` and `solar` modules, the `fr` pack,
   the format libraries and the connectors of the first release (see
   `docs/road-to-0.1.md`).
