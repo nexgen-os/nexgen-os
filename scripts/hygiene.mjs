@@ -18,7 +18,7 @@ const problems = [];
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
-    if (['node_modules', '.git', 'dist', 'fixtures'].includes(name)) continue;
+    if (['node_modules', '.git', 'dist', 'assets', 'fixtures'].includes(name)) continue;
     const path = join(dir, name);
     if (statSync(path).isDirectory()) walk(path, out);
     else out.push(path);

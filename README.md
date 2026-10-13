@@ -56,6 +56,21 @@ objects: [docs/decisions/0006](docs/decisions/0006-named-objects.md).
 5. **Modules in their own schema, countries as data, formats by format,
    invoices in Ekwo.**
 
+## Install
+
+On an empty Supabase project with PostGIS enabled
+(`create extension if not exists postgis with schema extensions;`):
+
+```bash
+export NEXGEN_DB_URL='postgresql://…'   # the project's connection string
+npx nexgen-os init --dry-run            # what would be applied
+npx nexgen-os init                      # the core and every module; --packs <cc> for a country
+npx nexgen-os doctor                    # what is wrong, by name
+```
+
+The installer and its commands: [`packages/cli/README.md`](packages/cli/README.md).
+How a release is cut: [`docs/releasing.md`](docs/releasing.md).
+
 ## Run the tests
 
 ```bash
@@ -86,6 +101,7 @@ formats/               one MIT library per format or geocoder (homeassistant, ge
 connectors/            the interfaces to the outside world and the open connectors (open-meteo)
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research
+packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 tests/                 the core's tests, the examples, the format round trips
 ```
 

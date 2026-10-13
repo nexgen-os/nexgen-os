@@ -24,6 +24,17 @@ team and for whoever wants to own every part of it.
 What Nexgen OS is, and its limits: [DISCLAIMER.md](DISCLAIMER.md). What is
 open and what is WeSmart's: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md).
 
+## Installing it
+
+On the person's own Supabase project, with PostGIS enabled, from their
+connection string (`NEXGEN_DB_URL`, never written to a file):
+`npx nexgen-os init --dry-run`, then `npx nexgen-os init` with the packs of
+the countries they named (`--packs`; there is no default country), then
+`npx nexgen-os doctor`. Every refusal and every problem starts with a name
+(`postgis_required`, `rls_disabled`, `migrations_pending`…); report it with
+the line the command printed. [`packages/cli/README.md`](packages/cli/README.md)
+has the rest.
+
 ## You are a user of the model
 
 You act as the person who asked you, with their rights and their limits:

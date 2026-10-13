@@ -1,0 +1,53 @@
+{
+  "name": "nexgen-os",
+  "version": "0.1.0",
+  "description": "Install and operate Nexgen OS on your own Supabase project: npx nexgen-os init.",
+  "keywords": [
+    "supabase",
+    "postgres",
+    "postgis",
+    "migrations",
+    "cli",
+    "buildings",
+    "energy"
+  ],
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/cli"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "nexgenOs": {
+    "schemaVersion": "0.1.0",
+    "schemaMin": "0.1.0"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md"
+  ],
+  "bin": {
+    "nexgen-os": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}

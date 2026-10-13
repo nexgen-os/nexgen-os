@@ -1,34 +1,46 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { postgis } from '@electric-sql/pglite-postgis';
+import { install, type SqlClient } from '../../packages/cli/src/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const repoRoot = join(here, '..', '..');
 
-async function sqlFiles(dir: string): Promise<string[]> {
-  const names = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort();
-  return Promise.all(names.map((n) => readFile(join(dir, n), 'utf8')));
+/** A PGlite seen as the installer sees a database. Closing it is the caller's business. */
+export function sqlClient(db: PGlite): SqlClient {
+  return {
+    async exec(sql) {
+      await db.exec(sql);
+    },
+    async query<T>(sql: string, params: unknown[] = []) {
+      return (await db.query<T>(sql, params)).rows;
+    },
+    async close() {},
+  };
 }
 
 /**
- * A database built the way an installation is: the Supabase shim (test only),
- * every core migration in order, the core vocabularies, then the modules
- * asked for (each one's migrations in order).
+ * An empty database as a Supabase project is before `nexgen-os init`: the
+ * Supabase shim (test only) and, unless told otherwise, PostGIS enabled.
  */
-export async function freshDatabase(modules: string[] = [], packs: string[] = []): Promise<PGlite> {
+export async function emptyDatabase(options: { postgis?: boolean } = {}): Promise<PGlite> {
   const db = await PGlite.create({ extensions: { postgis } });
   await db.exec(await readFile(join(here, 'supabase-shim.sql'), 'utf8'));
-  for (const sql of await sqlFiles(join(repoRoot, 'supabase', 'migrations'))) await db.exec(sql);
-  for (const sql of await sqlFiles(join(repoRoot, 'supabase', 'seed'))) await db.exec(sql);
+  if (options.postgis ?? true) await db.exec('create extension if not exists postgis');
+  return db;
+}
+
+/**
+ * A database built the way an installation is, by the installer's own
+ * engine: the core's migrations and seed in order, then the modules asked
+ * for, then the packs, each recorded in `nexgen.schema_migrations`.
+ */
+export async function freshDatabase(modules: string[] = [], packs: string[] = []): Promise<PGlite> {
+  const db = await emptyDatabase();
+  await install(sqlClient(db), { root: repoRoot, modules, packs });
   await db.exec('set search_path = nexgen, public');
-  for (const m of modules) {
-    for (const sql of await sqlFiles(join(repoRoot, 'modules', m, 'migrations'))) await db.exec(sql);
-  }
-  for (const p of packs) {
-    for (const sql of await sqlFiles(join(repoRoot, 'packs', p, 'seed'))) await db.exec(sql);
-  }
   return db;
 }
 

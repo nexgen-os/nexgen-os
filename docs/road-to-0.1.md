@@ -42,9 +42,9 @@ change until 1.0, and every change is written down.
 
 ### What a release needs
 
-- [ ] **A schema version function**, `nexgen_schema_version()`, bumped by a
+- [x] **A schema version function**, `nexgen_schema_version()`, bumped by a
   migration of its own when a release adds anything a package reads.
-- [ ] **One installer**: `npx nexgen-os init` applies the core, the modules
+- [x] **One installer**: `npx nexgen-os init` applies the core, the modules
   and the packs asked for on an empty Supabase project (PostGIS enabled),
   `nexgen-os migrate` brings an installation up to date, `nexgen-os doctor`
   says what is wrong. Ported from Ekwo's command line, which already does
@@ -57,7 +57,7 @@ change until 1.0, and every change is written down.
   reads it back, as the user, under row level security. Agents are a first
   audience of this project, not an afterthought: `AGENTS.md` is written
   for them from 0.1.
-- [ ] **A changelog** per release, and a `docs/releasing.md` that lists what
+- [x] **A changelog** per release, and a `docs/releasing.md` that lists what
   has to move, as Ekwo's does.
 - [ ] Continuous integration: the test suite on three Node versions, a
   hygiene check (no country literal in code, no secret, English only), the
