@@ -2,7 +2,7 @@
 --
 -- A farmer's site with a barn and a stable, a field and a car park, PV on
 -- the barn roof, a ground array on the field and a carport on the car park,
--- an import meter and an export meter, the annual consumption known from
+-- an offtake meter and an injection meter, the annual consumption known from
 -- invoices, the product rows the devices are instances of, and a PVGIS
 -- estimate for each array as a run.
 
@@ -30,7 +30,7 @@ update surfaces set geometry = ST_GeomFromText('POLYGON((2.7232 50.7706, 2.7248 
 
 insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000400000041', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Farm supply', '301000000000000987', 'gs1_gsrn', 'electricity', 'both'),
-  ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field export point', '301000000000000988', 'gs1_gsrn', 'electricity', 'export');
+  ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field injection point', '301000000000000988', 'gs1_gsrn', 'electricity', 'injection');
 
 insert into device_directory (id, organisation_id, device_type, manufacturer, model_ref, unit_power_kw, unit_surface_m2, unit_price, currency) values
   ('00000000-0000-4000-8000-000400000090', null, 'solar', 'Longi', 'Hi-MO 6 545', 0.545, 2.56, null, null),

@@ -39,8 +39,8 @@ insert into links (subject_id, type_code, object_id) values
 
 insert into sensors (id, organisation_id, host_id, name, quantity_code, kind, external_ref) values
   ('00000000-0000-4000-8000-000100000061', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000052', 'AC power', 'power', 'sensor', 'sunspec://192.168.1.20/40083'),
-  ('00000000-0000-4000-8000-000100000062', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'Import register', 'energy_import', 'sensor', 'p1://meter/1.8.0'),
-  ('00000000-0000-4000-8000-000100000063', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'Export register', 'energy_export', 'sensor', 'p1://meter/2.8.0');
+  ('00000000-0000-4000-8000-000100000062', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'Import register', 'energy_offtake', 'sensor', 'p1://meter/1.8.0'),
+  ('00000000-0000-4000-8000-000100000063', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'Export register', 'energy_injection', 'sensor', 'p1://meter/2.8.0');
 
 -- A sunny day of production, every quarter-hour, in kWh per interval.
 insert into series (id, organisation_id, object_id, quantity_code, sensor_id, kind, value_kind, step, source) values
@@ -51,9 +51,9 @@ select '00000000-0000-4000-8000-000100000071', ts,
        round(greatest(0, 3.6 * sin(pi() * (extract(epoch from ts - '2026-06-21 06:30+02'::timestamptz) / 3600) / 13.5))::numeric / 4, 3)
   from generate_series('2026-06-21 00:00+02'::timestamptz, '2026-06-21 23:45+02', '15 minutes') ts;
 
--- The import register, read daily, as an ever-rising index.
+-- The offtake register, read daily, as an ever-rising index.
 insert into series (id, organisation_id, object_id, quantity_code, sensor_id, kind, value_kind, step, source) values
-  ('00000000-0000-4000-8000-000100000072', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'energy_import', '00000000-0000-4000-8000-000100000062', 'measured', 'cumulative', '1 day', 'meter');
+  ('00000000-0000-4000-8000-000100000072', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', 'energy_offtake', '00000000-0000-4000-8000-000100000062', 'measured', 'cumulative', '1 day', 'meter');
 
 insert into series_values (series_id, at, value)
 select '00000000-0000-4000-8000-000100000072', d, 48210 + 6.2 * (extract(epoch from d - '2026-06-01'::timestamptz) / 86400)
@@ -98,7 +98,7 @@ select record_run('energy', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-000
 --    where b.id = '00000000-0000-4000-8000-000100000020';
 -- Hourly production on the sunny day:
 --   select * from resample('00000000-0000-4000-8000-000100000071', '2026-06-21', '2026-06-22', '1 hour');
--- Daily import from the register:
+-- Daily offtake from the register:
 --   select bucket, value - lag(value) over (order by bucket) kwh
 --     from resample('00000000-0000-4000-8000-000100000072', '2026-06-01', '2026-07-01', '1 day');
 -- What the scenario adds:

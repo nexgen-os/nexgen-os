@@ -7,8 +7,8 @@ architecture, energy, operations and compliance tools share one model.
 Why it exists and what it promises: [MANIFESTO.md](MANIFESTO.md).
 
 > Status: **0.0 — the core schema, the `architecture` module, the Home
-> Assistant format library and seven example datasets**. No pack is published
-> yet. The core is tested; nothing here is stable until 0.1.
+> Assistant and geocoding libraries, the Open-Meteo connector and seven example
+> datasets**. No pack is published yet. The core is tested; nothing here is stable until 0.1.
 
 ## The model in one screen
 
@@ -22,7 +22,7 @@ what a trade knows beyond its columns is attached to it.
 | `sites`, `buildings`, `surfaces` | places: an address in the fields every country has, a point or a parcel with its precision and its source, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
 | `meters`, `participants` | connection points, and a site's role in a project behind them | IEC CIM UsagePoint, Nexgen participants |
 | `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
-| `series`, `series_values` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
+| `series`, `series_values`, `forecast_values` | measured, simulated and setpoint series in one store, forecasts with every issue in another | OGC SensorThings |
 | `attributes`, `external_ids`, `links`, `successors`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
 | `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations, the module registry, an organisation's use of a source | — |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |

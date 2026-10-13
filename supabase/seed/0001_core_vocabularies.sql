@@ -68,8 +68,8 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
 
 insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) values
   ('energy',              'Energy',                       'KiloW-HR',   'sum',  'Energy'),
-  ('energy_import',       'Energy imported from the grid','KiloW-HR',   'sum',  'Energy'),
-  ('energy_export',       'Energy exported to the grid',  'KiloW-HR',   'sum',  'Energy'),
+  ('energy_offtake',       'Energy taken from the grid','KiloW-HR',   'sum',  'Energy'),
+  ('energy_injection',       'Energy injected into the grid',  'KiloW-HR',   'sum',  'Energy'),
   ('power',               'Power',                        'KiloW',      'mean', 'Power'),
   ('temperature',         'Temperature',                  'DEG_C',      'mean', 'Temperature'),
   ('relative_humidity',   'Relative humidity',            'PERCENT',    'mean', 'RelativeHumidity'),

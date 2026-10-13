@@ -37,7 +37,7 @@ create table meters (
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   constraint meters_resource check (resource in ('electricity', 'gas', 'heat', 'water')),
-  constraint meters_direction check (direction in ('import', 'export', 'both')),
+  constraint meters_direction check (direction in ('offtake', 'injection', 'both')),
   constraint meters_period check (valid_to is null or valid_from is null or valid_to > valid_from),
   constraint meters_tags_known check (tags_known(tags))
 );
