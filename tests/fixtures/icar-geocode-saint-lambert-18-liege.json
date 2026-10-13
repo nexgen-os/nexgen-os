@@ -1,0 +1,55 @@
+{
+    "address": {
+        "city": {
+            "name": "Li\u00e8ge"
+        },
+        "zone": {
+            "ident": "4000"
+        },
+        "street": {
+            "resolvedNames": {
+                "fr": "Place Saint-Lambert"
+            },
+            "name": "Place Saint-Lambert"
+        },
+        "house": {
+            "name": "18"
+        }
+    },
+    "candidates": [
+        {
+            "score": 111,
+            "city": {
+                "ident": "62063",
+                "name": "Li\u00e8ge",
+                "lang": "F"
+            },
+            "zone": {
+                "ident": "4000",
+                "name": "Li\u00e8ge"
+            },
+            "street": {
+                "ident": 7730055,
+                "name": "Place Saint-Lambert"
+            },
+            "house": {
+                "ident": 1872629,
+                "name": "18",
+                "rrn": "1086",
+                "geometry": {
+                    "type": "Point",
+                    "crs": {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+                    },
+                    "coordinates": [
+                        5.573204421686962,
+                        50.64586863066784
+                    ]
+                }
+            }
+        }
+    ]
+}

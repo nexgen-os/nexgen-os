@@ -1,0 +1,43 @@
+{
+    "result": [
+        {
+            "language": "nl",
+            "address": {
+                "street": {
+                    "name": "Wetstraat",
+                    "postCode": "1000",
+                    "municipality": "Brussel",
+                    "id": "2976"
+                },
+                "number": "16"
+            },
+            "adNc": "10001053  16",
+            "score": 80,
+            "point": {
+                "x": 4.366528492796624,
+                "y": 50.84616245008757
+            },
+            "extent": {
+                "xmin": 4.362462056863015,
+                "ymin": 50.84561612351136,
+                "xmax": 4.368340453194877,
+                "ymax": 50.846838830719044
+            },
+            "qualificationText": {
+                "policeNumber": "Found",
+                "postCode": "Found",
+                "municipality": "Not found ",
+                "streetName": "Found"
+            },
+            "qualificationCode": {
+                "policeNumber": "1",
+                "postCode": "1",
+                "municipality": "2",
+                "streetName": "1"
+            }
+        }
+    ],
+    "error": false,
+    "status": "success",
+    "version": "2.0.4"
+}

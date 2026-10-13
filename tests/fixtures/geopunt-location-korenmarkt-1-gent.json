@@ -1,0 +1,109 @@
+{
+    "LocationResult": [
+        {
+            "Municipality": "Gent",
+            "Zipcode": "9000",
+            "Thoroughfarename": "Korenmarkt",
+            "Housenumber": "10",
+            "ID": 602422,
+            "FormattedAddress": "Korenmarkt 10, 9000 Gent",
+            "Location": {
+                "Lat_WGS84": 51.054580343102984,
+                "Lon_WGS84": 3.7223118900001535,
+                "X_Lambert72": 104675.59,
+                "Y_Lambert72": 194021.92,
+                "X_Lambert2008": 604672.78,
+                "Y_Lambert2008": 694016.74
+            },
+            "LocationType": "basisregisters_huisnummer_aangeduidDoorBeheerder",
+            "BoundingBox": {
+                "LowerLeft": {
+                    "Lat_WGS84": 51.054580343102984,
+                    "Lon_WGS84": 3.7223118900001535,
+                    "X_Lambert72": 104675.59,
+                    "Y_Lambert72": 194021.92,
+                    "X_Lambert2008": 604672.78,
+                    "Y_Lambert2008": 694016.74
+                },
+                "UpperRight": {
+                    "Lat_WGS84": 51.054580343102984,
+                    "Lon_WGS84": 3.7223118900001535,
+                    "X_Lambert72": 104675.59,
+                    "Y_Lambert72": 194021.92,
+                    "X_Lambert2008": 604672.78,
+                    "Y_Lambert2008": 694016.74
+                }
+            }
+        },
+        {
+            "Municipality": "Gent",
+            "Zipcode": "9000",
+            "Thoroughfarename": "Korenmarkt",
+            "Housenumber": "11",
+            "ID": 1705406,
+            "FormattedAddress": "Korenmarkt 11, 9000 Gent",
+            "Location": {
+                "Lat_WGS84": 51.054514707583124,
+                "Lon_WGS84": 3.722292970244559,
+                "X_Lambert72": 104674.2,
+                "Y_Lambert72": 194014.63,
+                "X_Lambert2008": 604671.39,
+                "Y_Lambert2008": 694009.45
+            },
+            "LocationType": "basisregisters_huisnummer_aangeduidDoorBeheerder",
+            "BoundingBox": {
+                "LowerLeft": {
+                    "Lat_WGS84": 51.054514707583124,
+                    "Lon_WGS84": 3.722292970244559,
+                    "X_Lambert72": 104674.2,
+                    "Y_Lambert72": 194014.63,
+                    "X_Lambert2008": 604671.39,
+                    "Y_Lambert2008": 694009.45
+                },
+                "UpperRight": {
+                    "Lat_WGS84": 51.054514707583124,
+                    "Lon_WGS84": 3.722292970244559,
+                    "X_Lambert72": 104674.2,
+                    "Y_Lambert72": 194014.63,
+                    "X_Lambert2008": 604671.39,
+                    "Y_Lambert2008": 694009.45
+                }
+            }
+        },
+        {
+            "Municipality": "Gent",
+            "Zipcode": "9000",
+            "Thoroughfarename": "Korenmarkt",
+            "Housenumber": "12",
+            "ID": 1115100,
+            "FormattedAddress": "Korenmarkt 12, 9000 Gent",
+            "Location": {
+                "Lat_WGS84": 51.05444887821475,
+                "Lon_WGS84": 3.7222714858935313,
+                "X_Lambert72": 104672.63,
+                "Y_Lambert72": 194007.32,
+                "X_Lambert2008": 604669.82,
+                "Y_Lambert2008": 694002.14
+            },
+            "LocationType": "basisregisters_huisnummer_aangeduidDoorBeheerder",
+            "BoundingBox": {
+                "LowerLeft": {
+                    "Lat_WGS84": 51.05444887821475,
+                    "Lon_WGS84": 3.7222714858935313,
+                    "X_Lambert72": 104672.63,
+                    "Y_Lambert72": 194007.32,
+                    "X_Lambert2008": 604669.82,
+                    "Y_Lambert2008": 694002.14
+                },
+                "UpperRight": {
+                    "Lat_WGS84": 51.05444887821475,
+                    "Lon_WGS84": 3.7222714858935313,
+                    "X_Lambert72": 104672.63,
+                    "Y_Lambert72": 194007.32,
+                    "X_Lambert2008": 604669.82,
+                    "Y_Lambert2008": 694002.14
+                }
+            }
+        }
+    ]
+}

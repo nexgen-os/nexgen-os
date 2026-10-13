@@ -41,4 +41,5 @@ and anything of one installation (keys, private connectors).
 
 | Pack | Sections | Checked by |
 |---|---|---|
+| [`be`](be/README.md) | identifiers, sources, geocoding per region (Geopunt `BE-VLG`, UrbIS `BE-BRU`, ICAR `BE-WAL`) | — |
 | [`fr`](fr/README.md) | identifiers, sources, geocoding (BAN) | — |

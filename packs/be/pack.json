@@ -1,0 +1,8 @@
+{
+  "country": "BE",
+  "name": "Belgium",
+  "version": "0.1.0",
+  "sections": ["identifiers", "sources", "geocoding"],
+  "regions": ["BE-VLG", "BE-BRU", "BE-WAL"],
+  "requires_core_min": "20261012200000"
+}
