@@ -148,6 +148,7 @@ insert into sources (code, name, kind, base_url, docs_url, auth, license, attrib
 
 insert into id_schemes (code, name, pattern, url_template, source_code, description) values
   ('ifc_guid',      'IFC GlobalId',               '^[0-9A-Za-z_$]{22}$', null, null, 'The compressed GUID of an IFC object.'),
+  ('cityjson',      'CityJSON object',            '^.+$', null, null, 'The id of a CityObject in a CityJSON file: a national building identifier in 3DBAG or UrbIS.'),
   ('osm',           'OpenStreetMap',              '^(node|way|relation)/[0-9]+$', 'https://www.openstreetmap.org/{value}', 'openstreetmap', 'An OpenStreetMap element.'),
   ('overture_gers', 'Overture GERS',              '^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$', null, 'overture', 'Global Entity Reference System identifier of Overture Maps.'),
   ('wikidata',      'Wikidata',                   '^Q[0-9]+$', 'https://www.wikidata.org/wiki/{value}', 'wikidata', 'A Wikidata item.'),

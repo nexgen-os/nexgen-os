@@ -72,7 +72,7 @@ supabase/migrations/   the core, in the schema `nexgen` (`public` stays the inst
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture shipped)
 packs/                 one folder per country (none yet)
-formats/               one MIT library per format or geocoder (homeassistant, geocoding)
+formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo)
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research

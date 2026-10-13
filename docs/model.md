@@ -57,7 +57,8 @@ pages read the named tables.
   point and back is the `geocoding` library, on any geocoder declared as a
   source ([0009](decisions/0009-addresses-and-geocoding.md)).
 - **buildings** — footprint, elevation, height, floors, year, profile,
-  lifecycle. `building_volume()` extrudes the footprint.
+  lifecycle, the source it was described from and, in `metadata`, what that
+  source said beyond the columns. `building_volume()` extrudes the footprint.
 - **surfaces** — a roof face, a facade, a ground area or a carport, on a
   building or a site, with azimuth and tilt.
 
