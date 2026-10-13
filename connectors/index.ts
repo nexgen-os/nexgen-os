@@ -45,8 +45,25 @@ export interface WeatherProvider {
   readonly source_code: string;
   /** The forecast from now on, at the hourly step the model gives, with the time it was issued. */
   forecast(where: Point, options?: { hours?: number; quantities?: string[] }): Promise<{ issued_at: string; series: CollectedSeries[] }>;
-  /** Past weather, when the source has it (an archive, a reanalysis). */
-  history?(where: Point, from: string, to: string, options?: { quantities?: string[] }): Promise<CollectedSeries[]>;
+  /**
+   * Past weather, when the source has it (an archive, a reanalysis), for the
+   * days `from` to `to` included (`YYYY-MM-DD`, UTC). Irradiance on a plane
+   * (`poa_irradiance`) needs the plane: `tilt_deg` from horizontal and
+   * `azimuth_deg` clockwise from true north. `model` names one of the
+   * source's datasets (a reanalysis, a station network) when it has several.
+   */
+  history?(where: Point, from: string, to: string, options?: { quantities?: string[]; tilt_deg?: number; azimuth_deg?: number; model?: string }): Promise<CollectedSeries[]>;
+}
+
+/**
+ * The core's azimuth (degrees clockwise from true north) counted from south,
+ * west positive, in (-180, 180]: the convention of PVGIS (`aspect`),
+ * Open-Meteo (`azimuth`) and PVsyst.
+ */
+export function azimuthFromSouth(azimuthDeg: number): number {
+  let a = ((azimuthDeg - 180) % 360 + 360) % 360;
+  if (a > 180) a -= 360;
+  return a === -0 ? 0 : a;
 }
 
 /** Readings of a meter from the grid operator's hub or a data hub. */
@@ -82,11 +99,17 @@ export interface SeriesTarget {
   sourceCode: string;
   kind: 'measured' | 'simulated' | 'forecast' | 'setpoint';
   scenarioId?: string | null;
+  /**
+   * Tells apart two series of the same object, quantity, kind and source:
+   * a typical year next to the real years it was made from. Unnamed by
+   * default.
+   */
+  name?: string | null;
 }
 
 /**
  * Writes what a connector brought back: finds or creates the series of that
- * object, quantity, kind and source, then inserts the values — into
+ * object, quantity, kind, source, scenario and name, then inserts the values — into
  * `forecast_values` with their issue time for a forecast, into
  * `series_values` otherwise, where a value already present is replaced.
  */
@@ -102,16 +125,16 @@ export async function storeSeries(
   const found = await db.query<{ id: string }>(
     `select id from series
       where object_id = $1 and quantity_code = $2 and kind = $3 and source_code = $4
-        and scenario_id is not distinct from $5
+        and scenario_id is not distinct from $5 and name is not distinct from $6
       limit 1`,
-    [target.objectId, series.quantity_code, target.kind, target.sourceCode, target.scenarioId ?? null],
+    [target.objectId, series.quantity_code, target.kind, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
   );
   let seriesId = found.rows[0]?.id;
   if (!seriesId) {
     const created = await db.query<{ id: string }>(
-      `insert into series (organisation_id, object_id, quantity_code, kind, value_kind, step, source_code, scenario_id)
-       values ($1, $2, $3, $4, $5, $6::interval, $7, $8) returning id`,
-      [target.organisationId, target.objectId, series.quantity_code, target.kind, series.value_kind, series.step, target.sourceCode, target.scenarioId ?? null],
+      `insert into series (organisation_id, object_id, quantity_code, kind, value_kind, step, source_code, scenario_id, name)
+       values ($1, $2, $3, $4, $5, $6::interval, $7, $8, $9) returning id`,
+      [target.organisationId, target.objectId, series.quantity_code, target.kind, series.value_kind, series.step, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
     );
     seriesId = created.rows[0].id;
   }

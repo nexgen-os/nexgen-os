@@ -25,10 +25,9 @@ beforeAll(async () => {
   const east = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'East pitch', kind: 'roof', azimuth_deg: 90, tilt_deg: 30 });
   system = await insert(db, 'devices', { organisation_id: org, site_id: site, building_id: building, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
-  await db.query(
-    `insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'South', 'roof_parallel', 20), ($1, $2, $4, 'East', 'roof_parallel', 10)`,
-    [org, system, south, east],
-  );
+  // One statement each: arrays are read in the order they were created, and one statement gives both the same time.
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'South', 'roof_parallel', 20)`, [org, system, south]);
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'East', 'roof_parallel', 10)`, [org, system, east]);
 });
 
 afterAll(async () => {
