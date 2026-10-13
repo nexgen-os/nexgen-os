@@ -33,8 +33,10 @@ change until 1.0, and every change is written down.
   repository goes public, so that no personal account and no assistant
   appears as an author. A ruleset on `main`: linear history, pull request
   and green checks for everyone, the app alone merging fast-forward.
-- [ ] A domain for the project's pages and schema identifiers, and the
-  `@nexgen-os` scope on npm.
+- [x] A domain for the project's pages and schema identifiers: `nexgen-os.org`
+  (decided 13/10/2026; `.io`, `.dev` and `.eu` held in defence), and the
+  `@nexgen-os` scope on npm. The product keeps its own names (`nexgen.now`).
+- [ ] The domains registered and `nexgen-os.org` pointed at the project pages.
 
 ### What a release needs
 
