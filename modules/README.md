@@ -29,7 +29,7 @@ is specific to a trade lives here, one folder and one schema per module.
 |---|---|---|
 | `architecture` (shipped) | floors, spaces (rooms, zones, units) | the inside of a building after IFC and CityGML; BIM import and export through the format libraries |
 | `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are the hosted edition's |
-| `solar` (proposed, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles | PV yield as a run that says its weather, period, conventions, models and losses; IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
+| `solar` (schema shipped, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles | PV yield as a run that says its weather, period, conventions, models and losses; IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
 | `storage` | batteries and their product physics (usable capacity, cycles, round-trip efficiency), hydrogen later | charge and discharge dispatch on the series `solar` and `consumption` produce |
 | `charging` | EV chargers, charging sessions | charging load and its steering |
 | `consumption` | load profiles, typical weeks, activity hours | a site's consumption curve: measured, reconstructed from a bill and activity hours, or typical |
