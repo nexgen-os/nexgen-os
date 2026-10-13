@@ -192,8 +192,15 @@ begin
     g := ST_Transform(g, 4326);
   end if;
   -- Polyhedral surfaces and TINs are 3D solids and surfaces whose validity
-  -- needs SFCGAL; the others are checked on their plan projection.
-  if GeometryType(g) not in ('POLYHEDRALSURFACE', 'TIN', 'TRIANGLE') and not ST_IsValid(ST_Force2D(g)) then
+  -- needs SFCGAL. The others are checked in the plane they lie in: a flat
+  -- polygon on its plan projection, a vertical one — a facade, a gable —
+  -- on a side projection, where its plan projection would be a line. A
+  -- planar polygon that is valid in its own plane is valid in at least one
+  -- of the three; an invalid one is invalid in all three.
+  if GeometryType(g) not in ('POLYHEDRALSURFACE', 'TIN', 'TRIANGLE')
+     and not (ST_IsValid(ST_Force2D(g))
+              or ST_IsValid(ST_Force2D(ST_RotateX(g, pi() / 2)))
+              or ST_IsValid(ST_Force2D(ST_RotateY(g, pi() / 2)))) then
     raise exception 'invalid_geometry: %', ST_IsValidReason(ST_Force2D(g))
       using errcode = 'check_violation';
   end if;

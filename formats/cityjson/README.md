@@ -33,7 +33,9 @@ The export is a CityJSON 2.0 document with one `Building` per row: a LoD 1
 `MultiSurface` from the roof and wall surfaces with their semantics, the
 CityGML attributes from the columns and the file's own attributes back.
 Importing it again gives the same building: same height, same footprint
-area, same roof azimuths and tilts, same identifier and attributes.
+area, same roof azimuths and tilts, same identifier and attributes. A
+building already known to the organisation by its CityObject id is refused
+by name (`already_imported`), never duplicated.
 
 Left alone: CityObjects of other types (vegetation, roads, bridges —
 reported in `skipped`), textures and materials, extensions.

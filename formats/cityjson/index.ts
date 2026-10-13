@@ -107,6 +107,13 @@ export async function importCityJson(db: Db, target: ImportTarget, doc: CityJson
       if (object.type !== 'BuildingPart') result.skipped.push(id);
       continue;
     }
+    const already = await db.query<{ object_id: string }>(
+      `select object_id from external_ids where organisation_id = $1 and scheme = 'cityjson' and value = $2`,
+      [target.organisationId, id],
+    );
+    if (already.rows.length) {
+      throw new Error(`already_imported: ${id} is building ${already.rows[0].object_id} of this organisation`);
+    }
     const parts = (object.children ?? []).filter((c) => doc.CityObjects[c]?.type === 'BuildingPart');
     const faces = [object, ...parts.map((p) => doc.CityObjects[p])].flatMap((o) => facesOf(o, vertices));
     const attributes = { ...(object.attributes ?? {}) };
@@ -156,16 +163,27 @@ export async function importCityJson(db: Db, target: ImportTarget, doc: CityJson
       const kind = SURFACE_KINDS[face.semantic.type];
       if (!kind) continue;
       n += 1;
-      const { azimuth, tilt } = orientation(face.rings[0]);
+      const { normal, tilt } = orientation(face.rings[0]);
       const { type, ...semanticAttributes } = face.semantic;
+      // The azimuth is measured against true north, not the grid's: a point
+      // ten metres down the slope from the face's centre, both taken to
+      // WGS 84, give the bearing whatever the projection's convergence.
+      const centre = face.rings[0].reduce((acc, p) => [acc[0] + p[0] / face.rings[0].length, acc[1] + p[1] / face.rings[0].length], [0, 0]);
+      const horizontal = Math.hypot(normal[0], normal[1]);
+      const sloped = tilt !== null && tilt >= 1 && horizontal > 0;
       await db.query(
         `insert into surfaces (organisation_id, building_id, scenario_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata)
-         values ($1, $2, $3, $4, $5, ST_Transform(ST_SetSRID(ST_GeomFromText($6), $7), 4326), $8, $9, $10, $11)`,
+         values ($1, $2, $3, $4, $5, ST_Transform(ST_SetSRID(ST_GeomFromText($6), $7), 4326),
+                 case when $8::boolean then round(degrees(ST_Azimuth(
+                   ST_Transform(ST_SetSRID(ST_MakePoint($9, $10), $7), 4326)::geography,
+                   ST_Transform(ST_SetSRID(ST_MakePoint($11, $12), $7), 4326)::geography))::numeric, 2) end,
+                 $13, $14, $15)`,
         [
           target.organisationId, buildingId, target.scenarioId ?? null,
           stringOrNull(semanticAttributes.name) ?? `${type} ${n}`, kind,
           polygonWkt(face.rings), srid,
-          tilt !== null && tilt >= 1 ? round(azimuth, 2) : null, tilt !== null ? round(tilt, 2) : null,
+          sloped, centre[0], centre[1], centre[0] + (10 * normal[0]) / (horizontal || 1), centre[1] + (10 * normal[1]) / (horizontal || 1),
+          tilt !== null ? round(tilt, 2) : null,
           options.sourceCode,
           JSON.stringify({ cityjson: { lod: face.lod, type, attributes: semanticAttributes } }),
         ],
@@ -234,11 +252,14 @@ function closed(ring: Point[]): Point[] {
 }
 
 /**
- * Azimuth (degrees clockwise from north) and tilt (degrees from horizontal)
- * of a face from its outward normal, by Newell's method; CityJSON rings
- * are counter-clockwise seen from outside, in a projected CRS in metres.
+ * The outward unit normal of a face by Newell's method, its tilt (degrees
+ * from horizontal) and its azimuth in the grid of the face's CRS (degrees
+ * clockwise from grid north). CityJSON rings are counter-clockwise seen from
+ * outside, in a projected CRS in metres. The import measures the azimuth
+ * against true north instead, since grid north drifts from it away from a
+ * projection's central meridian.
  */
-export function orientation(ring: Point[]): { azimuth: number; tilt: number | null } {
+export function orientation(ring: Point[]): { azimuth: number; tilt: number | null; normal: [number, number, number] } {
   let nx = 0;
   let ny = 0;
   let nz = 0;
@@ -250,10 +271,10 @@ export function orientation(ring: Point[]): { azimuth: number; tilt: number | nu
     nz += (a[0] - b[0]) * (a[1] + b[1]);
   }
   const length = Math.hypot(nx, ny, nz);
-  if (length === 0) return { azimuth: 0, tilt: null };
+  if (length === 0) return { azimuth: 0, tilt: null, normal: [0, 0, 0] };
   const tilt = (Math.acos(nz / length) * 180) / Math.PI;
   const azimuth = ((Math.atan2(nx, ny) * 180) / Math.PI + 360) % 360;
-  return { azimuth, tilt };
+  return { azimuth, tilt, normal: [nx / length, ny / length, nz / length] };
 }
 
 // ---------------------------------------------------------------------------

@@ -122,7 +122,9 @@ describe('a CityJSON building', () => {
          from surfaces where building_id = $1 order by kind, azimuth_deg nulls first, name`,
       [buildingId],
     );
-    expect(r.rows.filter((x) => x.kind === 'roof').map((x) => [x.azimuth, Math.round(x.tilt), x.zmax])).toEqual([[0, 49, 11.5], [180, 49, 11.5]]);
+    // Against true north: RD New's grid north is 0.4° off at Amsterdam, so the pitches read 179.6° and 359.6°.
+    const roofs = r.rows.filter((x) => x.kind === 'roof').map((x) => [Math.round(x.azimuth ?? 0) % 360, Math.round(x.tilt), x.zmax]).sort((a, b) => a[0] - b[0]);
+    expect(roofs).toEqual([[0, 49, 11.5], [180, 49, 11.5]]);
     expect(r.rows.filter((x) => x.kind === 'facade')).toHaveLength(6);
     expect(r.rows.filter((x) => x.kind === 'facade').every((x) => Math.round(x.tilt) === 90)).toBe(true);
     expect(r.rows.some((x) => x.type === 'GroundSurface')).toBe(false);
@@ -140,15 +142,17 @@ describe('a CityJSON building', () => {
     expect(object.geometry?.[1].semantics?.surfaces.map((s) => s.type).sort()).toEqual(['GroundSurface', 'RoofSurface', 'RoofSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface']);
     expect(out.vertices.every((v) => v.every(Number.isInteger))).toBe(true);
 
-    const again = await insert(db, 'sites', { organisation_id: org, name: 'Canal house, again', country: 'NL', time_zone: 'Europe/Amsterdam' });
-    const r = await importCityJson(db, { organisationId: org, siteId: again }, out, { sourceCode: 'city_model' });
+    await expect(importCityJson(db, { organisationId: org, siteId: site }, out, { sourceCode: 'city_model' })).rejects.toThrow(/already_imported/);
+    const other = await organisation(db, 'Another city', USER_A);
+    const again = await insert(db, 'sites', { organisation_id: other, name: 'Canal house, again', country: 'NL', time_zone: 'Europe/Amsterdam' });
+    const r = await importCityJson(db, { organisationId: other, siteId: again }, out, { sourceCode: 'city_model' });
     expect(r.surfaces).toBe(8);
     const b = await one<{ height: number; area: number; ext: string; dak: string; roofs: string }>(
       db,
       `select b.height_m::float height, area_m2(b.footprint)::float area,
               (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
               b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
-              (select string_agg(azimuth_deg::int::text || '/' || round(tilt_deg)::int::text, ',' order by azimuth_deg) from surfaces where building_id = b.id and kind = 'roof') roofs
+              (select string_agg((round(azimuth_deg)::int % 360)::text || '/' || round(tilt_deg)::int::text, ',' order by round(azimuth_deg)::int % 360) from surfaces where building_id = b.id and kind = 'roof') roofs
          from buildings b where b.id = $1`,
       [r.buildings[0].id],
     );
