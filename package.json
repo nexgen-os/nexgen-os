@@ -10,7 +10,10 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build --workspaces --if-present",
+    "release:check": "node scripts/check-trusted-publishing.mjs",
+    "release:publish": "node scripts/publish.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

@@ -19,6 +19,10 @@ release may break, and says how. How a release is cut:
   `nexgen.schema_migrations`, the record of every file applied with its
   scope (`core`, `module:<code>`, `pack:<cc>`).
 - `docs/releasing.md` and this changelog.
+- The Release workflow: a `v*` tag publishes every public package to npm
+  through trusted publishing (GitHub OIDC, no token) with provenance, after
+  `npm run release:check` has confirmed each package can be published that
+  way; `npm run release:publish` shows the plan as a dry run.
 - `formats/ifc`, the IFC reader: buildings, storeys, spaces and roof faces
   of an IFC4 model land as buildings, floors, spaces and roof surfaces,
   placed on the globe by `IfcMapConversion` or the site's coordinates, with

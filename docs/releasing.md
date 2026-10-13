@@ -86,7 +86,8 @@ worse than one not cut.
    git push origin v<x.y.z>
    ```
 
-   A tag is never moved and never deleted.
+   A tag is never moved and never deleted. It starts the **Release**
+   workflow, see *npm* below.
 4. Publish a GitHub Release on that tag, with the changelog section as its
    body.
 
@@ -94,12 +95,43 @@ worse than one not cut.
 
 The installer is published as `nexgen-os` (its binary is `nexgen-os`); the
 format libraries, the connectors and the core client will be published under
-`@nexgen-os/*`. `npm run build -w packages/cli` copies the release's
-migrations, seeds and packs into `packages/cli/assets/`, which the published
-package carries and records by the same paths as the repository. Publishing
-comes with the tag, from the CI, with npm provenance, so that every version
-on npm is a version whose source can be read; until that workflow exists, a
-release is published by hand from the tag, on a clean tree.
+`@nexgen-os/*`, the scope of the npm organisation `nexgen-os`.
+`npm run build -w packages/cli` copies the release's migrations, seeds and
+packs into `packages/cli/assets/`, which the published package carries and
+records by the same paths as the repository.
+
+Publishing comes with the tag, so that every version on npm is a version
+whose source can be read. The workflow `.github/workflows/release.yml`
+publishes through npm **trusted publishing** (GitHub OIDC, no npm token
+anywhere), with a **provenance** statement linking each tarball to the commit
+and the run that built it. What is published is read from the workspaces:
+every package that is not `private`, after the packages of this repository
+it depends on (`scripts/publish.mjs`).
+
+### One-time setup, on npmjs.com
+
+For each public package (the list is `npm run release:publish`;
+`npm run release:check` names the ones still missing): open
+`https://www.npmjs.com/package/<name>/access`, add a *Trusted Publisher*
+of type **GitHub Actions** naming the repository `nexgen-os/nexgen-os` and
+the workflow file `release.yml`, with no environment. A package never
+published before is published once by hand, by a maintainer logged in to
+npm (`npm login --auth-type=web`), with
+`npm run release:publish -- --for-real` on the tag, before its trusted
+publisher can be set.
+
+### Releasing
+
+Pushing the tag runs `npm ci`, `npm run release:check`, the typecheck, the
+tests, the build and `npm run release:publish -- --for-real`. A version the
+registry already holds is skipped, so a run that stopped half way is simply
+re-run. A package's npm page then shows *Built and signed on GitHub
+Actions*, and `npm audit signatures` verifies it.
+
+**Dry run, on any branch**: *Actions → Release → Run workflow* with *Publish
+for real* unticked, or locally `npm run build && npm run release:publish`. A
+real publish needs a `v*` tag; the script refuses one from a pull request, a
+dirty tree or an untagged HEAD.
 
 ## After a release
 

@@ -1,0 +1,64 @@
+name: Release
+
+# Publishes every public package of the monorepo to npm, with provenance, using
+# npm trusted publishing: the run proves its identity to npm through GitHub OIDC
+# and npm hands back a short-lived credential for each package. No npm token is
+# stored in this repository. Setup, once per package: docs/releasing.md.
+#
+# - A tag `v*` publishes for real.
+# - A manual run publishes for real only when `publish` is ticked and the run is
+#   on a tag; otherwise it is a dry run (`npm publish --dry-run`) on any branch.
+# - A pull request never starts it.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (the run must be on a v* tag). Unticked: dry run.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Trusted publishing names this workflow file; the environment is optional
+    # on npmjs.com and can carry a required reviewer if a human gate is wanted.
+    permissions:
+      contents: read
+      id-token: write # the OIDC identity npm exchanges for a publish credential
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the publish script reads the tag that names HEAD
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later; pinned so a release is
+      # reproducible.
+      - run: npm install -g npm@11.21.0
+      - run: npm ci
+      # Every package must be one this run can publish: a package without a
+      # trusted publisher would stop the run half way, after the packages
+      # before it are already on the registry. See docs/releasing.md.
+      - name: Trusted publishing of every package
+        run: npm run release:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Dry run
+        if: ${{ !(startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish)) }}
+        run: npm run release:publish
+      - name: Publish
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish) }}
+        run: npm run release:publish -- --for-real
