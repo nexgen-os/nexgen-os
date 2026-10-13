@@ -4,7 +4,11 @@ An open foundation for describing the built world — sites, buildings, roofs,
 meters, participants, devices, sensors — in 3D and over time, so that
 architecture, energy, operations and compliance tools share one model.
 
-Why it exists and what it promises: [MANIFESTO.md](MANIFESTO.md).
+Built and maintained by **WeSmart** (Newide, Belgium; AI4Energy, France), whose
+application Nexgen is the hosted edition. Why it exists and what it promises:
+[MANIFESTO.md](MANIFESTO.md). What is sold and what never will be:
+[docs/hosted-edition.md](docs/hosted-edition.md). What the figures are and are
+not: [DISCLAIMER.md](DISCLAIMER.md).
 
 > Status: **0.0 — the core schema, the `architecture` module, the `solar` module schema, the Home
 > Assistant and geocoding libraries, the Open-Meteo connector and seven example

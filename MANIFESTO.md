@@ -10,9 +10,23 @@ next.
 
 We think the description of the built world should be done once, kept by the
 people it belongs to, and shared on their terms. **The model of a place
-belongs to whoever is responsible for it.** The rules that turn it into a
-permit, an energy study, a sharing key or a renovation plan belong to everyone
-who has to follow them.
+belongs to whoever is responsible for it** — the owner, the project holder,
+the community that shares its energy — and not to the tool that happened to
+draw it, nor to the company that happened to compute it. The rules that turn
+it into a permit, an energy study, a sharing key or a renovation plan belong
+to everyone who has to follow them.
+
+Three things follow, and they are the pact of this project:
+
+- **the data is yours**: it sits in a database you control, in tables you
+  can read, and leaves only when you say so;
+- **the words are plain**: the trades have excellent standards and
+  impossible vocabularies, so we took the best of the standards and gave
+  every table, column and function a name anyone can understand, in the
+  English of the trade, with the standard term written next to it;
+- **the rules are data**: what a country, a grid operator or a market
+  decides is a pack of files anyone can read, propose and prove, never a
+  line of code with a country in it.
 
 Two things are changing at once. The tools that describe places have become
 cheap and everywhere: a phone scans a room, a drone flies a roof in ten
@@ -107,10 +121,30 @@ and building automation platforms, the energy management systems. Nexgen OS
 is the shared description they can all read from and write to.
 
 The core is free software under **AGPL-3.0**, so that what is built on it
-stays open. The format libraries are **MIT**, so they can go anywhere,
-including into tools that will never use Nexgen OS. What is sold — the hosted
-edition, operated for you, with the data connections and the agents you
-configure — pays for the rest, and never gates it.
+stays open. The format libraries and the connectors are **MIT**, so they can
+go anywhere, including into tools that will never use Nexgen OS. What is sold
+— the hosted edition, operated for you, with the data connections and the
+agents you configure — pays for the rest, and never gates it
+([docs/hosted-edition.md](docs/hosted-edition.md)).
+
+## Who builds it, who operates it, who it is for
+
+Nexgen OS is built and maintained by **WeSmart**, the energy-sharing and
+energy-management company behind the Nexgen platform, through its two
+companies: **Newide** in Belgium and **AI4Energy** in France. The hosted
+edition is Nexgen itself, the application WeSmart runs for project holders,
+installers and communities, which converges on this core. The project itself belongs to the organisation
+that carries it on GitHub, its decisions are public, and no single company
+can take it closed.
+
+It is also a research foundation. Describing places once, with their
+provenance and their rules, is what a research project on energy
+communities, on building renovation, on grid flexibility or on digital
+twins spends its first months rebuilding. Nexgen OS is that base, open, so
+that universities, research centres and companies can start from it, test a
+method on real descriptions and publish a module. WeSmart builds its own
+research projects on it and welcomes partners who want to:
+[wesmart.com/research](https://wesmart.com/research).
 
 Nexgen OS is built by the people who know places: **architects and BIM
 modellers** who map their models, **engineers** who write a module,
