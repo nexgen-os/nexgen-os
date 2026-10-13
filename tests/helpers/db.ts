@@ -17,7 +17,7 @@ async function sqlFiles(dir: string): Promise<string[]> {
  * every core migration in order, the core vocabularies, then the modules
  * asked for (each one's migrations in order).
  */
-export async function freshDatabase(modules: string[] = []): Promise<PGlite> {
+export async function freshDatabase(modules: string[] = [], packs: string[] = []): Promise<PGlite> {
   const db = await PGlite.create({ extensions: { postgis } });
   await db.exec(await readFile(join(here, 'supabase-shim.sql'), 'utf8'));
   for (const sql of await sqlFiles(join(repoRoot, 'supabase', 'migrations'))) await db.exec(sql);
@@ -25,6 +25,9 @@ export async function freshDatabase(modules: string[] = []): Promise<PGlite> {
   await db.exec('set search_path = nexgen, public');
   for (const m of modules) {
     for (const sql of await sqlFiles(join(repoRoot, 'modules', m, 'migrations'))) await db.exec(sql);
+  }
+  for (const p of packs) {
+    for (const sql of await sqlFiles(join(repoRoot, 'packs', p, 'seed'))) await db.exec(sql);
   }
   return db;
 }

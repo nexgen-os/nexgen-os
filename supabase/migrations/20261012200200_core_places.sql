@@ -326,6 +326,9 @@ create table sites (
   city             text,
   -- ISO 3166-2 subdivision, when the country's rules vary by region.
   region           text,
+  -- The municipality, in the country's own code (INSEE, NIS, CBS…), when
+  -- a rule, an operator or a dataset is decided at that level.
+  municipality_code text,
   -- IANA time zone (Europe/Brussels). Daily and monthly readings of the
   -- site's series are cut in it; a site without one has no daily readings.
   time_zone        text,

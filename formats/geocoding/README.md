@@ -13,8 +13,14 @@ like every library here; no database, no framework.
 | `photon(...)` | OpenStreetMap, worldwide, search as you type, both ways | ODbL; no country filter on the server, applied on the answers |
 
 A country pack adds its national address register as an adapter of the same
-shape; an installation adds a commercial geocoder with its own key, and
-honours that geocoder's terms on what may be stored.
+shape — one per region when the country keeps one per region, keyed
+`BE-VLG`, `BE-BRU`, `BE-WAL`; an installation adds a commercial geocoder with
+its own key, and honours that geocoder's terms on what may be stored.
+`geocoderFor({ national, fallback, commercial })` chains them: the register
+of the country or its regions first, the open fallback next, the commercial
+one last. Each place says which one answered, and gives the region and the
+municipality code when the register knows them. Measured against each
+other: [docs/research/geocoders-compared.md](../../docs/research/geocoders-compared.md).
 
 ```ts
 import { nominatim, siteFields } from './formats/geocoding/index.js';

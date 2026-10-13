@@ -50,8 +50,9 @@ pages read the named tables.
   district plan) with a country, a lifecycle (`simulation`, `creation`,
   `active`, `inactive`, `archived`) and, when it has one, a perimeter.
 - **sites** — an address in the fields every country has (street, extra
-  line, postal code, city, region, country), a parcel or a point with how
-  precisely and by whom it was placed (`location_precision`,
+  line, postal code, city, region, country), the municipality in the
+  country's own code when rules are decided there, a parcel or a point with
+  how precisely and by whom it was placed (`location_precision`,
   `location_source_code`), a time zone, a profile (what it is used for).
   Everything on a site inherits its country: `country_of()`. Address to
   point and back is the `geocoding` library, on any geocoder declared as a

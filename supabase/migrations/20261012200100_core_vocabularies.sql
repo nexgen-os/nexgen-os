@@ -205,6 +205,9 @@ create table sources (
   secret_ref      text,
   -- ISO 3166-1 alpha-2 codes the source covers; empty = worldwide.
   countries       text[] not null default '{}',
+  -- ISO 3166-2 codes the source is limited to inside those countries;
+  -- empty = the whole country. A regional register, a regional 3D model.
+  regions         text[] not null default '{}',
   license         text,
   attribution     text,
   -- What the licence allows an installation to do with what it fetched:

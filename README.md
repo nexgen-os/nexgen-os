@@ -8,7 +8,7 @@ Why it exists and what it promises: [MANIFESTO.md](MANIFESTO.md).
 
 > Status: **0.0 — the core schema, the `architecture` module, the Home
 > Assistant and geocoding libraries, the Open-Meteo connector and seven example
-> datasets**. No pack is published yet. The core is tested; nothing here is stable until 0.1.
+> datasets, and a first country pack**. The core is tested; nothing here is stable until 0.1.
 
 ## The model in one screen
 
@@ -71,7 +71,7 @@ the Home Assistant library goes in and out without losing a field.
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture shipped)
-packs/                 one folder per country (none yet)
+packs/                 one folder per country (fr: identifiers, sources, the BAN geocoder)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo)
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)

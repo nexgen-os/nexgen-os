@@ -21,6 +21,8 @@ export interface Address {
   city?: string | null;
   /** ISO 3166-2 subdivision when the geocoder knows it. */
   region?: string | null;
+  /** The municipality in the country's own code (INSEE, NIS, CBS) when the geocoder gives it. */
+  municipality_code?: string | null;
   /** ISO 3166-1 alpha-2, upper case. */
   country: string;
 }
@@ -75,6 +77,7 @@ export function siteFields(place: Place) {
     postal_code: place.address.postal_code ?? null,
     city: place.address.city ?? null,
     region: place.address.region ?? null,
+    municipality_code: place.address.municipality_code ?? null,
     country: place.address.country,
     geometry: { type: 'Point', coordinates: [place.lon, place.lat, 0] } as const,
     location_precision: place.precision,
@@ -295,4 +298,59 @@ async function getJson(doFetch: Fetch, url: string, headers: Record<string, stri
 
 function trimSlash(url: string): string {
   return url.replace(/\/+$/, '');
+}
+
+// ---------------------------------------------------------------------------
+// Choosing a geocoder: the country's register first, then the open fallback,
+// then whatever commercial service the installation pays for.
+// ---------------------------------------------------------------------------
+
+export interface GeocoderChoice {
+  /**
+   * The address registers packs bring, keyed by country (`FR`) or by region
+   * (`BE-VLG`, `BE-BRU`, `BE-WAL`) when a country keeps one per region. A
+   * search in a country asks its country-wide register, then each regional
+   * one in the order given, until one answers.
+   */
+  national?: Record<string, Geocoder>;
+  /** Worldwide and open: Nominatim or Photon. */
+  fallback: Geocoder;
+  /** The installation's own commercial geocoder, when it has one and the others found nothing. */
+  commercial?: Geocoder;
+}
+
+/**
+ * One geocoder that asks the national register of the country (when the
+ * search names one and a pack brought it), then the open fallback, then the
+ * commercial service, stopping at the first that answers. The source code
+ * of each place says which one did.
+ */
+export function geocoderFor(choice: GeocoderChoice): Geocoder {
+  const chain = (country?: string): Geocoder[] => {
+    const cc = country?.toUpperCase();
+    const national = cc
+      ? Object.entries(choice.national ?? {})
+          .filter(([key]) => key === cc || key.startsWith(`${cc}-`))
+          .sort(([a], [b]) => a.length - b.length)
+          .map(([, g]) => g)
+      : [];
+    return [...national, choice.fallback, choice.commercial].filter((g): g is Geocoder => g !== undefined);
+  };
+  return {
+    source_code: 'chain',
+    async search(text, options = {}) {
+      for (const g of chain(options.country)) {
+        const places = await g.search(text, options);
+        if (places.length) return places;
+      }
+      return [];
+    },
+    async reverse(lon, lat, options = {}) {
+      for (const g of [...new Set([...Object.values(choice.national ?? {}), choice.fallback, ...(choice.commercial ? [choice.commercial] : [])])]) {
+        const place = await g.reverse(lon, lat, options);
+        if (place) return place;
+      }
+      return null;
+    },
+  };
 }
