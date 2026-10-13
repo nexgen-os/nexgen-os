@@ -5,7 +5,7 @@
 --   external_ids  the identifiers an object is known by elsewhere
 --   links         a typed link between two objects that is not a column
 --                 of either (feeds, serves, shades, owns, occupies…)
---   lineage       what became of an object that was split, merged or replaced
+--   successors       what became of an object that was split, merged or replaced
 --   documents     files about an object: a permit, a datasheet, a report, a
 --                 photo, a video
 --
@@ -286,27 +286,27 @@ create trigger links_check
   for each row execute function links_check();
 
 -- ---------------------------------------------------------------------------
--- lineage — what became of an object that was split, merged or replaced.
+-- successors — what became of an object that was split, merged or replaced.
 -- Identifiers never encode anything and are never reused; when a parcel is
 -- split or two buildings are merged, the old and new objects are linked here
 -- so that history and external references stay traceable.
 -- ---------------------------------------------------------------------------
 
-create table lineage (
+create table successors (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   from_id          uuid not null references objects(id) on delete cascade,
   to_id            uuid not null references objects(id) on delete cascade,
   kind             text not null,
   at               timestamptz not null default now(),
   primary key (from_id, to_id),
-  constraint lineage_kind check (kind in ('split', 'merge', 'replace')),
-  constraint lineage_not_reflexive check (from_id <> to_id)
+  constraint successors_kind check (kind in ('split', 'merge', 'replace')),
+  constraint successors_not_reflexive check (from_id <> to_id)
 );
 
-comment on table lineage is
+comment on table successors is
   'Splits, merges and replacements between objects, so that history and external references survive a change of identity.';
 
-create or replace function lineage_attach()
+create or replace function successors_attach()
 returns trigger
 language plpgsql
 as $$
@@ -317,16 +317,16 @@ begin
   select organisation_id into a from objects where id = new.from_id;
   select organisation_id into b from objects where id = new.to_id;
   if a <> b then
-    raise exception 'lineage_across_organisations' using errcode = 'check_violation';
+    raise exception 'successors_across_organisations' using errcode = 'check_violation';
   end if;
   new.organisation_id := a;
   return new;
 end;
 $$;
 
-create trigger lineage_attach
-  before insert or update on lineage
-  for each row execute function lineage_attach();
+create trigger successors_attach
+  before insert or update on successors
+  for each row execute function successors_attach();
 
 -- ---------------------------------------------------------------------------
 -- documents
@@ -371,7 +371,7 @@ create trigger documents_attach
 call secure_table('attributes');
 call secure_table('external_ids');
 call secure_table('links');
-call secure_table('lineage');
+call secure_table('successors');
 call secure_table('documents');
 
 grant execute on function attributes_of(uuid, timestamptz, uuid) to authenticated, service_role;

@@ -30,7 +30,7 @@ beforeAll(async () => {
     participants.push(participant);
   }
   const plant = await insert(db, 'sites', { organisation_id: org, name: 'Roof plant', country: 'NL', profile: 'plant' });
-  const plantMeter = await insert(db, 'meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
+  const plantMeter = await insert(db, 'meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'export' });
   await insert(db, 'devices', { organisation_id: org, site_id: plant, meter_id: plantMeter, name: 'Shared roof array', device_type: 'solar', power_kw: 250 });
   await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
 });

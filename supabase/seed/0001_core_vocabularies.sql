@@ -14,7 +14,7 @@ insert into device_types (code, name, parent_code, module_code, brick_class, ifc
   ('solar',      'PV system',          'generator', 'energy',  'PV_Array',            'IfcSolarDevice',          'Photovoltaic modules and their inverters.'),
   ('wind',       'Wind turbine',       'generator', 'energy',  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
   ('hydro',      'Hydro turbine',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
-  ('chp',        'Combined heat and power', 'generator', 'energy', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
+  ('cogeneration',        'Combined heat and power', 'generator', 'energy', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
   ('biomass',    'Biomass plant',      'generator', 'energy',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
   ('inverter',   'Inverter',           null,        'energy',  'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
   ('battery',    'Battery',            null,        'energy',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
@@ -31,7 +31,7 @@ insert into device_types (code, name, parent_code, module_code, brick_class, ifc
 -- Profiles: what a building or a site is used for.
 -- ---------------------------------------------------------------------------
 
-insert into profiles (code, name, nature, ifc_occupancy, citygml_function, description) values
+insert into profiles (code, name, applies_to, ifc_occupancy, citygml_function, description) values
   ('residential', 'Residential',        'building', 'Residential',  'residential', 'Dwellings: a house, a flat, a block.'),
   ('office',      'Office',             'building', 'Office',       'office',      'Office space.'),
   ('school',      'School',             'building', 'Education',    'school',      'A school, a nursery, a training centre.'),
@@ -126,7 +126,12 @@ insert into sources (code, name, kind, base_url, docs_url, auth, license, attrib
   ('wikidata',      'Wikidata',             'api',  'https://www.wikidata.org/w/api.php',   'https://www.wikidata.org/wiki/Wikidata:Data_access', 'none', 'CC0-1.0', null, 'Named places and organisations.'),
   ('copernicus_dem','Copernicus DEM GLO-30','file', 'https://dataspace.copernicus.eu/',     'https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model', 'none', 'Copernicus license', '© European Union, Copernicus', 'Ground elevation at 30 m, worldwide.'),
   ('pvgis',         'PVGIS',                'api',  'https://re.jrc.ec.europa.eu/api/v5_3/', 'https://joint-research-centre.ec.europa.eu/pvgis-online-tool_en', 'none', 'CC-BY-4.0', '© European Union, JRC', 'Solar irradiation and PV production estimates, worldwide.'),
-  ('open_meteo',    'Open-Meteo',           'api',  'https://api.open-meteo.com/v1/',       'https://open-meteo.com/en/docs', 'none', 'CC-BY-4.0', '© Open-Meteo', 'Weather history and forecasts, worldwide.');
+  ('open_meteo',    'Open-Meteo',           'api',  'https://api.open-meteo.com/v1/',       'https://open-meteo.com/en/docs', 'none', 'CC-BY-4.0', '© Open-Meteo', 'Weather history and forecasts, worldwide.'),
+  -- Geocoders: an address to a point, a point to an address. Both are read
+  -- by the `geocoding` library; national geocoders come with country packs,
+  -- commercial ones with the installation that holds their key.
+  ('nominatim',     'Nominatim',            'api',  'https://nominatim.openstreetmap.org/', 'https://nominatim.org/release-docs/latest/api/Overview/', 'none', 'ODbL-1.0', '© OpenStreetMap contributors', 'Addresses and places of OpenStreetMap, both ways, worldwide. The public instance asks for one request per second and a named user agent.'),
+  ('photon',        'Photon',               'api',  'https://photon.komoot.io/',            'https://github.com/komoot/photon', 'none', 'ODbL-1.0', '© OpenStreetMap contributors', 'Search-as-you-type on OpenStreetMap addresses and places, and reverse lookup, worldwide.');
 
 -- ---------------------------------------------------------------------------
 -- Identifier schemes that are global. National ones come with country packs.

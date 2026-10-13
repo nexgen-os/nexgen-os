@@ -22,7 +22,7 @@ insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg,
   ('00000000-0000-4000-8000-000100000031', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'South roof face', 'roof', 180, 30, 'tiles'),
   ('00000000-0000-4000-8000-000100000032', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'North roof face', 'roof', 0, 30, 'tiles');
 
-insert into meters (id, organisation_id, site_id, name, identifier, scheme, commodity, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000100000040', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', 'Supply point', '843000000000000123', 'gs1_gsrn', 'electricity', 'both');
 
 insert into devices (id, organisation_id, site_id, building_id, surface_id, meter_id, name, device_type, manufacturer, model, power_kw, unit_count, installation_date, tags) values
@@ -94,7 +94,7 @@ select record_run('energy', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-000
 
 -- Queries a page would run
 -- The house as a card:
---   select b.name, b.height_m, plan_area_m2(b.footprint) area, attributes_of(b.id) from buildings b
+--   select b.name, b.height_m, area_m2(b.footprint) area, attributes_of(b.id) from buildings b
 --    where b.id = '00000000-0000-4000-8000-000100000020';
 -- Hourly production on the sunny day:
 --   select * from resample('00000000-0000-4000-8000-000100000071', '2026-06-21', '2026-06-22', '1 hour');

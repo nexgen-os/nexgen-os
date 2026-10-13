@@ -31,9 +31,9 @@ insert into attributes (object_id, property_code, value, source) values
   ('00000000-0000-4000-8000-000700000020', 'gross_floor_area', '5400', 'as-built drawings'),
   ('00000000-0000-4000-8000-000700000020', 'energy_label', '"F"', 'energy certificate 2022');
 
-insert into meters (id, organisation_id, site_id, name, identifier, scheme, commodity, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
-  ('00000000-0000-4000-8000-000700000042', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Gas', '400000000000000312', 'gs1_gsrn', 'gas', 'offtake');
+  ('00000000-0000-4000-8000-000700000042', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Gas', '400000000000000312', 'gs1_gsrn', 'gas', 'import');
 
 insert into devices (id, organisation_id, site_id, building_id, meter_id, name, device_type, manufacturer, model, power_kw, status, installation_date) values
   ('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000042',

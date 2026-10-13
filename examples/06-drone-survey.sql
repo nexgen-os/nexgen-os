@@ -3,7 +3,7 @@
 -- A surveyor's organisation, a client's site with a factory hall, a drone
 -- flight whose outputs are documents (orthophoto, photos, video), the roof
 -- faces measured on the orthophoto with the survey as their source, a
--- point cloud announced for the `3d` module, and the identifiers the
+-- point cloud kept as a document, and the identifiers the
 -- building is known by.
 
 insert into organisations (id, name) values
@@ -34,8 +34,8 @@ insert into documents (object_id, name, kind, uri, media_type, source_code, sour
    '{"count": 96, "exif_pose": true}'),
   ('00000000-0000-4000-8000-000600000020', 'Roof inspection video', 'video', 's3://nexgen-os-examples/bologna/hall-a-roof.mp4', 'video/mp4', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
    '{"duration_s": 214, "camera": "nadir sweep"}'),
-  ('00000000-0000-4000-8000-000600000020', 'Point cloud (for the 3d module)', 'document', 's3://nexgen-os-examples/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
-   '{"points": 48200000, "density_per_m2": 850, "note": "becomes a row of 3d.point_clouds once the module is installed"}');
+  ('00000000-0000-4000-8000-000600000020', 'Point cloud', 'document', 's3://nexgen-os-examples/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
+   '{"points": 48200000, "density_per_m2": 850, "note": "a survey output kept as a document; the hosted capture tools read it"}');
 
 -- Roof faces measured on the orthophoto: two pitches of a sawtooth roof and a flat annex.
 insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg, material, geometry) values
@@ -62,7 +62,7 @@ insert into participants (organisation_id, project_id, site_id, name, role, cont
 -- What the flight produced:
 --   select name, kind, media_type, captured_at, metadata from documents where source_code = 'rae_drone_survey' order by name;
 -- The roof faces, with the area measured and the plan area of their outline:
---   select s.name, s.azimuth_deg, s.tilt_deg, attributes_of(s.id)->>'roof_area' measured_m2, plan_area_m2(s.geometry) plan_m2
+--   select s.name, s.azimuth_deg, s.tilt_deg, attributes_of(s.id)->>'roof_area' measured_m2, area_m2(s.geometry) plan_m2
 --     from surfaces s where s.building_id = '00000000-0000-4000-8000-000600000020' order by s.name;
 -- Where the building's data came from, with license and attribution:
 --   select distinct src.name, src.license, src.attribution from attributes a join sources src on src.code = a.source_code

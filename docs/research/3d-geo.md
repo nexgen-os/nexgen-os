@@ -2,6 +2,8 @@
 
 Research done on 12/10/2026 for decision [0008](../decisions/0008-3d-module.md). Sources are linked inline; versions are the ones read that day.
 
+On 13/10/2026 the decision was narrowed to the shape of what is built (models, drawings, tilesets). Sections 2 and 4 below (scenes, camera paths, captures) and the capture half of section 6 remain as research for the hosted edition, not a plan for this repository; section 3 (georeferencing of local models) is what `three_d.models` implements.
+
 ---
 
 ## 1. Serving 3D from PostGIS to Mapbox GL JS / MapLibre / deck.gl / three.js

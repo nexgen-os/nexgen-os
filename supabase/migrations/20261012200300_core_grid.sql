@@ -22,7 +22,7 @@ create table meters (
   -- EAN, PRM, MPAN, MaLo… published by the country packs.
   identifier        text not null,
   scheme            text not null references id_schemes(code),
-  commodity         text not null default 'electricity',
+  resource         text not null default 'electricity',
   -- What the point can do: take from the grid, inject into it, both.
   direction         text not null default 'both',
   -- The grid operator, as a contact.
@@ -34,8 +34,8 @@ create table meters (
   scenario_id       uuid references scenarios(id) on delete cascade,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
-  constraint meters_commodity check (commodity in ('electricity', 'gas', 'heat', 'water')),
-  constraint meters_direction check (direction in ('offtake', 'injection', 'both')),
+  constraint meters_resource check (resource in ('electricity', 'gas', 'heat', 'water')),
+  constraint meters_direction check (direction in ('import', 'export', 'both')),
   constraint meters_period check (valid_to is null or valid_from is null or valid_to > valid_from),
   constraint meters_tags_known check (tags_known(tags))
 );

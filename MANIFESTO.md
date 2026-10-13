@@ -33,7 +33,7 @@ once, in a table that says what it always has. What we know beyond that is
 **attached** to it: attributes with the period they hold for, measurements
 over time, tags, the identifiers other systems know it by, its links to
 other objects, its documents — and, through the modules, its floors and
-rooms, its 3D models, point clouds, orthophotos and videos.
+rooms, its 3D models and its drawings.
 
 That is the whole core, and it is deliberately small and concrete. An
 architect, an energy engineer, a facility manager, a city planner and a

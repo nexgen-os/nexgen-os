@@ -49,8 +49,8 @@ a specialised one, and the **packs** that hold what varies by country.
 | `projects` | a working perimeter: an energy community, a portfolio, a study, a district plan; a country, a lifecycle | Nexgen `projects` |
 | `sites` | a place with an address and a parcel: the unit a person owns, rents or operates, and the thing behind a meter | CityGML LandUse, cadastral parcel |
 | `buildings` | footprint, elevation, height, floors, use, lifecycle; the LoD 1 block derives from it | CityGML Building, IfcBuilding |
-| `surfaces` | a roof face, a facade, a ground area, a canopy: what a device is mounted on, with azimuth and tilt | CityGML RoofSurface, Nexgen orientation segments |
-| `meters` | a connection point: identifier and scheme, commodity, direction, grid operator, validity | IEC CIM UsagePoint |
+| `surfaces` | a roof face, a facade, a ground area, a carport: what a device is mounted on, with azimuth and tilt | CityGML RoofSurface, Nexgen orientation segments |
+| `meters` | a connection point: identifier and scheme, resource, direction, grid operator, validity | IEC CIM UsagePoint |
 | `participants` | a site's role in a project — producer, consumer, prosumer — behind its meters, with its contact, its group and its period | Nexgen `participants`, CIM Customer |
 | `devices` | what every device has: type, site, building, surface, meter, catalogue product, rated power, status; derived per type by a module table with the same id | Nexgen `devices`, Brick Equipment |
 | `device_directory` | the products: manufacturer, model, unit power, capacity, price | Nexgen `device_directory` |
@@ -59,7 +59,7 @@ a specialised one, and the **packs** that hold what varies by country.
 | `attributes` | a typed value a trade attaches to any object, with validity and provenance | IFC property sets, bSDD |
 | `external_ids` | the identifiers an object is known by elsewhere | IFC GlobalId, OSM, Overture GERS, GS1 |
 | `links` | a typed, dated link that is not a column of either side: serves, shades, occupies, owns | Brick, IFC relationships |
-| `lineage` | splits, merges, replacements | Overture GERS changelog |
+| `successors` | splits, merges, replacements | Overture GERS changelog |
 | `documents` | files about an object: permit, datasheet, report, photo, video | Nexgen `documents` |
 | `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | [0004](0004-deterministic-runs.md) |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data | Brick, IFC, CityGML, QUDT, Haystack |

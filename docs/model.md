@@ -49,17 +49,22 @@ pages read the named tables.
 - **projects** — a working perimeter (energy community, portfolio, study,
   district plan) with a country, a lifecycle (`simulation`, `creation`,
   `active`, `inactive`, `archived`) and, when it has one, a perimeter.
-- **sites** — an address, a country, a parcel or a point, a profile (what it
-  is used for). Everything on a site inherits its country: `country_of()`.
+- **sites** — an address in the fields every country has (street, extra
+  line, postal code, city, region, country), a parcel or a point with how
+  precisely and by whom it was placed (`location_precision`,
+  `location_source_code`), a time zone, a profile (what it is used for).
+  Everything on a site inherits its country: `country_of()`. Address to
+  point and back is the `geocoding` library, on any geocoder declared as a
+  source ([0009](decisions/0009-addresses-and-geocoding.md)).
 - **buildings** — footprint, elevation, height, floors, year, profile,
-  lifecycle. `lod1_block()` extrudes the footprint.
-- **surfaces** — a roof face, a facade, a ground area or a canopy, on a
+  lifecycle. `building_volume()` extrudes the footprint.
+- **surfaces** — a roof face, a facade, a ground area or a carport, on a
   building or a site, with azimuth and tilt.
 
 ## The grid side
 
 - **meters** — a connection point: identifier and scheme (checked against
-  the scheme's pattern), commodity, direction, grid operator, validity. The
+  the scheme's pattern), resource, direction, grid operator, validity. The
   physical meter is a device of type `meter` on it and can be swapped.
 - **participants** — a site's role in a project: `producer`, `consumer` or
   `prosumer`, with the contact who answers for it, a status, a join and
@@ -91,11 +96,11 @@ pages read the named tables.
   the scheme's pattern, with validity.
 - **links** — typed and dated (`serves`, `shades`, `occupies`, `owns`…); the
   link type may require kinds on either side.
-- **lineage** — splits, merges, replacements. Identifiers never encode
+- **successors** — splits, merges, replacements. Identifiers never encode
   anything and are never reused.
 - **documents** — permit, datasheet, report, photo, video, plan: a URI, a
   media type, a source, a capture date. Heavy files stay in object storage.
-  3D models and point clouds are the `3d` module's.
+  Georeferenced 3D models and drawings are the `3d` module's.
 - **tags** — marker tags from `tags`, checked on write.
 
 ## Over time
@@ -129,7 +134,7 @@ seeds, modules and packs.
 Stored in EPSG:4326, always in three dimensions, Z in metres above sea
 level. Any CRS is accepted on the way in, through GeoJSON `crs` or an SRID.
 `to_core_geometry()` transforms, validates and lifts the shape to 3D;
-`metric_srid()` gives the UTM zone of any shape, so `plan_area_m2()` and
+`metric_srid()` gives the UTM zone of any shape, so `area_m2()` and
 distances are in metres anywhere, without a national grid.
 
 ## Security

@@ -48,7 +48,7 @@ describe('a district from open data', () => {
   it('normalises a projected footprint to WGS 84 3D and keeps its area in metres', async () => {
     const r = await one<{ srid: number; dims: number; area: string }>(
       db,
-      `select ST_SRID(footprint) srid, ST_NDims(footprint) dims, plan_area_m2(footprint) area from buildings where name = 'Building 1'`,
+      `select ST_SRID(footprint) srid, ST_NDims(footprint) dims, area_m2(footprint) area from buildings where name = 'Building 1'`,
     );
     expect(r.srid).toBe(4326);
     expect(r.dims).toBe(3);
@@ -93,9 +93,9 @@ describe('a district from open data', () => {
     const p = await one<{ id: string }>(db, `select id from sites where name = 'Plot 1'`);
     const a = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1a', country: 'SN' });
     const b = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1b', country: 'SN' });
-    await db.query(`insert into lineage (from_id, to_id, kind) values ($1, $2, 'split'), ($1, $3, 'split')`, [p.id, a, b]);
+    await db.query(`insert into successors (from_id, to_id, kind) values ($1, $2, 'split'), ($1, $3, 'split')`, [p.id, a, b]);
     const r = await db.query<{ name: string }>(
-      `select s.name from lineage l join sites s on s.id = l.to_id where l.from_id = $1 order by s.name`,
+      `select s.name from successors l join sites s on s.id = l.to_id where l.from_id = $1 order by s.name`,
       [p.id],
     );
     expect(r.rows.map((x) => x.name)).toEqual(['Plot 1a', 'Plot 1b']);

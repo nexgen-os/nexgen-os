@@ -17,13 +17,13 @@ what a trade knows beyond its columns is attached to it.
 
 | Table | Holds | Standard it follows |
 |---|---|---|
-| `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; legal identity and invoicing are referenced from Ekwo OS | Ekwo companies and contacts |
+| `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; legal identity and invoicing are referenced from Ekwo OS ([0010](docs/decisions/0010-ekwo-link.md)) | Ekwo companies and contacts |
 | `projects` | a working perimeter: energy community, portfolio, study, district plan | Nexgen projects |
-| `sites`, `buildings`, `surfaces` | places: an address and a parcel, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
+| `sites`, `buildings`, `surfaces` | places: an address in the fields every country has, a point or a parcel with its precision and its source, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
 | `meters`, `participants` | connection points, and a site's role in a project behind them | IEC CIM UsagePoint, Nexgen participants |
 | `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
 | `series`, `series_values` | measured, simulated, forecast series and setpoints, in one store | OGC SensorThings |
-| `attributes`, `external_ids`, `links`, `lineage`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
+| `attributes`, `external_ids`, `links`, `successors`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
 | `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | — |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |
 
@@ -39,7 +39,7 @@ objects: [docs/decisions/0006](docs/decisions/0006-named-objects.md).
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
    falls in, anywhere on earth.
 3. **One way to read.** `attributes_of()` for attributes, `resample()` for
-   series, `site_of()` and `country_of()` for where, `lod1_block()` for a
+   series, `site_of()` and `country_of()` for where, `building_volume()` for a
    derived 3D block.
 4. **Deterministic core.** Nothing in the core calls a model. Modules hand
    results back through `record_run()`: same inputs, same engine, same run.

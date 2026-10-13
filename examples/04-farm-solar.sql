@@ -1,8 +1,8 @@
 -- Example 4 — a farm with PV on the roof, on the ground and over the car park, in the Nord.
 --
 -- A farmer's site with a barn and a stable, a field and a car park, PV on
--- the barn roof, a ground array on the field and a canopy over the car park,
--- an offtake meter and an injection meter, the annual consumption known from
+-- the barn roof, a ground array on the field and a carport on the car park,
+-- an import meter and an export meter, the annual consumption known from
 -- invoices, the product rows the devices are instances of, and a PVGIS
 -- estimate for each array as a run.
 
@@ -23,14 +23,14 @@ insert into surfaces (id, organisation_id, building_id, site_id, name, kind, azi
   ('00000000-0000-4000-8000-000400000031', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000021', null, 'Barn roof, south', 'roof', 175, 15, 'fibre cement'),
   ('00000000-0000-4000-8000-000400000032', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000021', null, 'Barn roof, north', 'roof', 355, 15, 'fibre cement'),
   ('00000000-0000-4000-8000-000400000033', '00000000-0000-4000-8000-000400000001', null, '00000000-0000-4000-8000-000400000010', 'Lower field', 'ground', 180, 0, 'grass'),
-  ('00000000-0000-4000-8000-000400000034', '00000000-0000-4000-8000-000400000001', null, '00000000-0000-4000-8000-000400000010', 'Visitor car park', 'canopy', 180, 10, 'steel structure');
+  ('00000000-0000-4000-8000-000400000034', '00000000-0000-4000-8000-000400000001', null, '00000000-0000-4000-8000-000400000010', 'Visitor car park', 'carport', 180, 10, 'steel structure');
 
 update surfaces set geometry = ST_GeomFromText('POLYGON((2.7232 50.7706, 2.7248 50.7706, 2.7248 50.7716, 2.7232 50.7716, 2.7232 50.7706))', 4326)
  where id = '00000000-0000-4000-8000-000400000033';
 
-insert into meters (id, organisation_id, site_id, name, identifier, scheme, commodity, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000400000041', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Farm supply', '301000000000000987', 'gs1_gsrn', 'electricity', 'both'),
-  ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field injection point', '301000000000000988', 'gs1_gsrn', 'electricity', 'injection');
+  ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field export point', '301000000000000988', 'gs1_gsrn', 'electricity', 'export');
 
 insert into device_directory (id, organisation_id, device_type, manufacturer, model_ref, unit_power_kw, unit_surface_m2, unit_price, currency) values
   ('00000000-0000-4000-8000-000400000090', null, 'solar', 'Longi', 'Hi-MO 6 545', 0.545, 2.56, null, null),
@@ -42,7 +42,7 @@ insert into devices (id, organisation_id, site_id, building_id, surface_id, mete
   ('00000000-0000-4000-8000-000400000052', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', null, '00000000-0000-4000-8000-000400000033', '00000000-0000-4000-8000-000400000042',
    'Lower field ground array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 498.6, 915, 'planned', null, '{solar,elec}'),
   ('00000000-0000-4000-8000-000400000053', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', null, '00000000-0000-4000-8000-000400000034', '00000000-0000-4000-8000-000400000041',
-   'Car park canopy array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 36.0, 66, 'planned', null, '{solar,elec}'),
+   'Car park array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 36.0, 66, 'planned', null, '{solar,elec}'),
   ('00000000-0000-4000-8000-000400000054', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000021', null, '00000000-0000-4000-8000-000400000041',
    'Barn inverters', 'inverter', '00000000-0000-4000-8000-000400000091', 'SMA', 'Sunny Tripower X 25', 100, 4, 'in_service', '2023-06-20', '{elec}'),
   ('00000000-0000-4000-8000-000400000055', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000022', null, '00000000-0000-4000-8000-000400000041',
@@ -74,7 +74,7 @@ on conflict (code) do nothing;
 
 select record_run('energy', 'pvgis-5.3+core-0.1.0', d.id, null,
   jsonb_build_object('source', 'pvgis', 'peak_kw', d.power_kw, 'tilt', s.tilt_deg, 'azimuth', s.azimuth_deg, 'loss_pct', 14),
-  jsonb_build_object('annual_kwh', round(d.power_kw * case s.kind when 'ground' then 1010 when 'canopy' then 980 else 1000 end)))
+  jsonb_build_object('annual_kwh', round(d.power_kw * case s.kind when 'ground' then 1010 when 'carport' then 980 else 1000 end)))
   from devices d join surfaces s on s.id = d.surface_id
  where d.organisation_id = '00000000-0000-4000-8000-000400000001' and d.device_type = 'solar';
 
@@ -84,7 +84,7 @@ select record_run('energy', 'pvgis-5.3+core-0.1.0', d.id, null,
 --     from devices d join surfaces s on s.id = d.surface_id left join runs r on r.subject_id = d.id
 --    where d.device_type = 'solar' and d.organisation_id = '00000000-0000-4000-8000-000400000001' order by d.name;
 -- Area available on the field, in m², from its outline:
---   select plan_area_m2(geometry) from surfaces where id = '00000000-0000-4000-8000-000400000033';
+--   select area_m2(geometry) from surfaces where id = '00000000-0000-4000-8000-000400000033';
 -- What is behind each meter:
 --   select m.name, d.name device from meters m join devices d on d.meter_id = m.id where m.site_id = '00000000-0000-4000-8000-000400000010' order by 1, 2;
 

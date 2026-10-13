@@ -20,6 +20,6 @@ Still open:
   example to avoid.
 - **Revised forecasts.** Forecast revisions (the "belief time" of
   FlexMeasures) as a column of `series_values`.
-- **Scale of series.** Partitioning, rollups and tiering of `series_values`
-  for hundreds of thousands of meters and sensors: a decision of its own once
-  the research in `docs/research/` is in.
+- **Scale of series.** Settled in [0007](0007-series-at-scale.md).
+- **Where Ekwo OS runs.** Same database or its own, and what the bridge is:
+  [0010](0010-ekwo-link.md), proposed.

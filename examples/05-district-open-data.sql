@@ -55,19 +55,19 @@ select '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-00050000
 insert into sites (id, organisation_id, name, country, city, profile) values
   ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', 'Plot 6a', 'SN', 'Dakar', 'mixed'),
   ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', 'Plot 6b', 'SN', 'Dakar', 'mixed');
-insert into lineage (from_id, to_id, kind, at) values
+insert into successors (from_id, to_id, kind, at) values
   ('00000000-0000-4000-8000-000500000036', '00000000-0000-4000-8000-000500000037', 'split', '2026-02-01'),
   ('00000000-0000-4000-8000-000500000036', '00000000-0000-4000-8000-000500000038', 'split', '2026-02-01');
 
 -- Queries a page would run
 -- Buildings inside the perimeter, with their roof area:
---   select b.name, b.height_m, plan_area_m2(b.footprint) roof_m2
+--   select b.name, b.height_m, area_m2(b.footprint) roof_m2
 --     from buildings b, projects p
 --    where p.id = '00000000-0000-4000-8000-000500000020' and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry)) order by b.name;
 -- Which roofs are shaded:
 --   select s.name, b.name shaded_by from links l join surfaces s on s.id = l.object_id join buildings b on b.id = l.subject_id where l.type_code = 'shades';
 -- What plot 6 became:
---   select s.name, l.kind, l.at from lineage l join sites s on s.id = l.to_id where l.from_id = '00000000-0000-4000-8000-000500000036';
+--   select s.name, l.kind, l.at from successors l join sites s on s.id = l.to_id where l.from_id = '00000000-0000-4000-8000-000500000036';
 
 -- Daily readings are cut in the site's time zone.
 update sites set time_zone = 'Africa/Dakar' where organisation_id = '00000000-0000-4000-8000-000500000001';

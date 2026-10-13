@@ -156,7 +156,7 @@ $$;
 comment on function metric_srid(geometry) is
   'EPSG code of the UTM zone a WGS 84 geometry falls in, for areas, lengths and distances in metres anywhere.';
 
-create or replace function plan_area_m2(p_geom geometry)
+create or replace function area_m2(p_geom geometry)
 returns numeric
 language sql
 immutable
@@ -164,7 +164,7 @@ as $$
   select round(ST_Area(ST_Transform(ST_Force2D(p_geom), metric_srid(p_geom)))::numeric, 2);
 $$;
 
-comment on function plan_area_m2(geometry) is
+comment on function area_m2(geometry) is
   'Horizontal (plan) area in square metres of a WGS 84 polygon.';
 
 create or replace function to_core_geometry(p_geom geometry)
@@ -215,7 +215,7 @@ $$;
 
 -- Vertical faces of a footprint between two heights, plus floor and roof:
 -- the level-of-detail 1 block. Derived, never stored.
-create or replace function extrude_block(p_footprint geometry, p_base numeric, p_top numeric)
+create or replace function footprint_volume(p_footprint geometry, p_base numeric, p_top numeric)
 returns geometry
 language plpgsql
 immutable
@@ -299,7 +299,12 @@ create table sites (
   name             text not null,
   -- ISO 3166-1 alpha-2. Everything on the site inherits it.
   country          char(2) not null,
+  -- The address, in the fields every country has (the postal address of
+  -- schema.org): the street with its number, a second line for the
+  -- building, floor or unit, the postal code, the city. How a country lays
+  -- them out on an envelope is the country pack's business.
   street           text,
+  address_extra    text,
   postal_code      text,
   city             text,
   -- ISO 3166-2 subdivision, when the country's rules vary by region.
@@ -309,6 +314,12 @@ create table sites (
   time_zone        text,
   -- The parcel or the plot as a polygon, or just a point.
   geometry         geometry,
+  -- How close the geometry is to the real place, and who placed it: a
+  -- geocoder (a source), a GPS reading, a person on a map. `rooftop` is the
+  -- building itself, `parcel` its plot, then the street, the postal code
+  -- area, the city, the region. Null when nobody said.
+  location_precision   text,
+  location_source_code text references sources(code),
   profile          text references profiles(code),
   tags             text[] not null default '{}',
   scenario_id      uuid references scenarios(id) on delete cascade,
@@ -317,6 +328,7 @@ create table sites (
   constraint sites_name_not_blank check (btrim(name) <> ''),
   constraint sites_country_format check (country ~ '^[A-Z]{2}$'),
   constraint sites_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
+  constraint sites_location_precision check (location_precision is null or location_precision in ('rooftop', 'parcel', 'street', 'postal_code', 'city', 'region')),
   constraint sites_tags_known check (tags_known(tags))
 );
 
@@ -339,7 +351,7 @@ create table buildings (
   name                 text not null,
   profile              text references profiles(code),
   -- The outline on the ground. With elevation and height it gives the
-  -- level-of-detail 1 block (`lod1_block`).
+  -- level-of-detail 1 block (`building_volume`).
   footprint            geometry,
   elevation_m          numeric(9, 3),
   height_m             numeric(9, 3),
@@ -369,16 +381,16 @@ create trigger buildings_normalize before insert or update of footprint on build
   for each row execute function normalize_geometry('footprint');
 call declare_object('buildings', 'building', '{site_id}');
 
-create or replace function lod1_block(p_building_id uuid)
+create or replace function building_volume(p_building_id uuid)
 returns geometry
 language sql
 stable
 as $$
-  select extrude_block(b.footprint, coalesce(b.elevation_m, 0), coalesce(b.elevation_m, 0) + b.height_m)
+  select footprint_volume(b.footprint, coalesce(b.elevation_m, 0), coalesce(b.elevation_m, 0) + b.height_m)
     from buildings b where b.id = p_building_id;
 $$;
 
-comment on function lod1_block(uuid) is
+comment on function building_volume(uuid) is
   'Level-of-detail 1 block of a building: its footprint extruded from its elevation by its height. Derived, never stored.';
 
 -- ---------------------------------------------------------------------------
@@ -406,7 +418,7 @@ create table surfaces (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint surfaces_name_not_blank check (btrim(name) <> ''),
-  constraint surfaces_kind check (kind in ('roof', 'facade', 'ground', 'canopy')),
+  constraint surfaces_kind check (kind in ('roof', 'facade', 'ground', 'carport')),
   constraint surfaces_one_host check ((building_id is null) <> (site_id is null)),
   constraint surfaces_azimuth_range check (azimuth_deg is null or (azimuth_deg >= 0 and azimuth_deg < 360)),
   constraint surfaces_tilt_range check (tilt_deg is null or (tilt_deg >= 0 and tilt_deg <= 180)),
@@ -415,7 +427,7 @@ create table surfaces (
 );
 
 comment on table surfaces is
-  'A roof face, a facade, a ground area or a canopy: the planar thing a device is mounted on, with its azimuth and tilt (CityGML RoofSurface / WallSurface, Nexgen orientation segments).';
+  'A roof face, a facade, a ground area or a carport: the planar thing a device is mounted on, with its azimuth and tilt (CityGML RoofSurface / WallSurface, Nexgen orientation segments).';
 
 create index surfaces_building_idx on surfaces (building_id);
 create index surfaces_site_idx on surfaces (site_id);
@@ -482,6 +494,6 @@ create policy objects_write on objects
   with check (can_write_organisation(organisation_id));
 grant select, insert, update, delete on objects to authenticated, service_role;
 
-grant execute on function metric_srid(geometry), plan_area_m2(geometry), to_core_geometry(geometry),
-  extrude_block(geometry, numeric, numeric), lod1_block(uuid), site_of(uuid), country_of(uuid)
+grant execute on function metric_srid(geometry), area_m2(geometry), to_core_geometry(geometry),
+  footprint_volume(geometry, numeric, numeric), building_volume(uuid), site_of(uuid), country_of(uuid)
   to authenticated, service_role;

@@ -69,12 +69,12 @@ create table profiles (
   description     text,
   -- building: a use of a building (office, school, dwelling); site: a use of
   -- a site without a building to speak of (a field, a car park, a plant).
-  nature          text not null default 'building',
+  applies_to          text not null default 'building',
   ifc_occupancy   text,
   citygml_function text,
   published_by    text not null default 'core',
   constraint profiles_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
-  constraint profiles_nature check (nature in ('building', 'site'))
+  constraint profiles_applies_to check (applies_to in ('building', 'site'))
 );
 
 comment on table profiles is

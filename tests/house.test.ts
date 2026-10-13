@@ -43,7 +43,7 @@ describe('a house', () => {
   it('stores its footprint in 3D WGS 84 and measures it in metres anywhere', async () => {
     const r = await one<{ dims: number; srid: number; area: string; utm: number }>(
       db,
-      `select ST_NDims(footprint) dims, ST_SRID(footprint) srid, plan_area_m2(footprint) area, metric_srid(footprint) utm
+      `select ST_NDims(footprint) dims, ST_SRID(footprint) srid, area_m2(footprint) area, metric_srid(footprint) utm
          from buildings where id = $1`,
       [house],
     );
@@ -56,7 +56,7 @@ describe('a house', () => {
   it('derives a level-of-detail 1 block from footprint, elevation and height', async () => {
     const r = await one<{ type: string; zmin: number; zmax: number }>(
       db,
-      `select GeometryType(g) type, ST_ZMin(g) zmin, ST_ZMax(g) zmax from (select lod1_block($1) g) b`,
+      `select GeometryType(g) type, ST_ZMin(g) zmin, ST_ZMax(g) zmax from (select building_volume($1) g) b`,
       [house],
     );
     expect(r.type).toBe('POLYHEDRALSURFACE');
