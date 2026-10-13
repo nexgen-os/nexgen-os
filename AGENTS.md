@@ -7,7 +7,7 @@ need to do that without guessing. Humans are welcome to read it too.
 ## What Nexgen OS is
 
 Nexgen OS is **open source software** (AGPL-3.0 for the core and the modules,
-MIT for the format libraries and the connectors): a description of the built
+MIT for the format libraries and the connectors): a description of the
 world — sites, buildings, roof faces, meters, participants, devices, sensors,
 series over time — in a Postgres database the user owns, on their own
 [Supabase](https://supabase.com) project, with PostGIS. Modules add what a

@@ -88,7 +88,7 @@ and final yield, performance ratio, energy performance index) compare the
 two. Engines run outside Postgres (a worker, an API); the database holds
 parameters, series, runs and their lineage.
 
-### Formats (ST2) and products
+### Formats and products
 
 Read: PVGIS and Open-Meteo (connectors), EPW and TMY3 weather files,
 PVsyst and PV\*SOL hourly CSV results as `simulated` runs, PAN and OND
@@ -120,10 +120,10 @@ documents, compared on the same series.
   `sharing`; the catch-all `energy` is gone.
 - The product's engine becomes the `pvwatts` yield profile on the
   `open_meteo_era5` and `pvgis_sarah3` sources, with its clock and typical
-  year rules written as conventions; the Sunelis comparison becomes a test:
+  year rules written as conventions; a comparison with a PV*SOL study becomes a test:
   a PV\*SOL study imported as a run, its weather exported as EPW, the
   `pvsol_like` profile within a stated tolerance.
-- ST2 gains the weather and product formats above; the first `solar`
+- The format libraries gain the weather and product formats above; the first `solar`
   acceptance test is a PVGIS TMY and an Open-Meteo year on the same roof,
   run through the same profile, with the gap explained by the inputs.
 - Weather is a module of its own, `weather`, shared with `heating` and
@@ -147,7 +147,7 @@ the site, and a `weather` module holds what several modules need:
   or a latitude), their licence and their retention. Open ones ship with
   the core (PVGIS SARAH3 in Europe and Africa, ERA5 everywhere through
   Open-Meteo); national services come with packs (a weather office's
-  reanalysis or forecast); licensed ones with Nexgen, WeSmart's commercial platform,.
+  reanalysis or forecast); licensed ones with Nexgen, WeSmart's commercial platform.
 - `weather.source_for(site, purpose)` resolves the model to use for one
   site and one purpose (irradiance for a yield, temperature for heating,
   a forecast for dispatch), in this order: the project's explicit choice,

@@ -6,3 +6,4 @@ packages/cli/assets/
 .venv-pvlib/
 __pycache__/
 *.egg-info/
+packages/cli/LICENSE

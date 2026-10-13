@@ -3,10 +3,11 @@
 // same layout as the repository, so that the published package carries the
 // files it records by path.
 
-import { cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const pkg = new URL('..', import.meta.url).pathname;
+const pkg = fileURLToPath(new URL('..', import.meta.url));
 const repo = join(pkg, '..', '..');
 const out = join(pkg, 'assets');
 
@@ -22,4 +23,6 @@ for (const p of readdirSync(join(repo, 'packs'))) {
   copy(`packs/${p}/seed`);
   copy(`packs/${p}/pack.json`);
 }
+// The package is AGPL-3.0 like the core: npm ships a LICENSE found at the package root.
+copyFileSync(join(repo, 'LICENSE'), join(pkg, 'LICENSE'));
 console.log(`assets copied to ${out}`);

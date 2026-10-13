@@ -12,7 +12,7 @@ foundation, not the product. Why the foundation exists and what it promises:
 begins: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md). What the
 figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
-> Status: **0.0 — the core schema, the `architecture`, `weather` and `solar` modules, the Home
+> Status: **0.1 in preparation — the core schema, the `architecture`, `weather` and `solar` modules, the Home
 > Assistant, geocoding, CityJSON and IFC libraries, the Open-Meteo and PVGIS connectors,
 > external engines in any language with pvlib (Python) as the first, the `nexgen-os`
 > installer, the `fr` and `be` country packs and seven example datasets**. Tested; nothing
@@ -84,33 +84,64 @@ npm test        # PGlite + PostGIS in WebAssembly, no server needed
 npm run typecheck
 ```
 
-The tests describe five cases end to end: a house (site, building, roof
+The tests describe real cases end to end: a house (site, building, roof
 face, PV system derived by a module, attributes over time, documents,
 scenario), a school with the `architecture` module (floors, rooms, sensors
 for several quantities, setpoints, a heat pump serving the building), an
 energy community (project, participants behind their meters, contacts,
 groups, meter swap, cumulative register, a site in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries, shading,
-plot split) and security (row level security, viewers, run immutability,
-vocabulary hygiene). Every example in `examples/` loads and is checked, and
-the Home Assistant library goes in and out without losing a field.
+plot split), security (row level security, viewers, run immutability,
+vocabulary hygiene), the series store across a clock change, the weather
+and solar modules with a yield run on PVGIS, on `pvwatts.ts` and on the
+pvlib engine, the format libraries in and out without losing a field, the
+two country packs and the installer. Every example in `examples/` loads and
+is checked.
+
+## Five minutes, from an empty project to a building
+
+1. On an empty [Supabase](https://supabase.com) project, enable PostGIS in
+   the SQL editor: `create extension if not exists postgis with schema extensions;`
+2. Keep the connection string in the environment, never in a file:
+   `export NEXGEN_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'`
+3. Install the core, every module and the pack of the country you work in:
+   `npx nexgen-os init --packs <country code>` (`--dry-run` first shows what
+   would be applied and rolls it back).
+4. Check it: `npx nexgen-os doctor` names every problem, or none.
+5. Load a dataset: `psql "$NEXGEN_DB_URL" -c 'set search_path = nexgen' -f examples/01-house-pv-battery.sql`,
+   then ask it something:
+
+   ```sql
+   set search_path = nexgen;
+   select b.name, s.name, s.azimuth_deg, s.tilt_deg, s.material
+   from surfaces s join buildings b on b.id = s.building_id
+   where s.kind = 'roof';
+   ```
+
+The installer's page ([packages/cli/README.md](packages/cli/README.md))
+says what each command does and how to reach a remote host over TLS. Every
+example in `examples/` is a complete, loadable dataset.
 
 ## Layout
 
 ```
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (architecture and solar shipped)
-packs/                 one folder per country (fr: identifiers, sources, the BAN geocoder)
-formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson)
-connectors/            the interfaces to the outside world and the open connectors (open-meteo)
-engines/               external computations in any language, JSON in and out (pvlib, optional)
+modules/               one Postgres schema per module (architecture, weather and solar shipped)
+packs/                 one folder per country (fr, be: identifiers, sources, the address register as a geocoder)
+formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson, ifc)
+connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT
+engines/               external computations in any language, JSON in and out (pvlib, optional), MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
-docs/                  model, decisions, research
+docs/                  model, decisions, research, how a release is cut
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
-tests/                 the core's tests, the examples, the format round trips
+scripts/               hygiene, and what a release publishes
+tests/                 the core's tests, the examples, the modules, the formats, the packs, the engines
 ```
 
 ## Licence
 
-The core is AGPL-3.0 ([LICENSE](LICENSE)). Format libraries will be MIT.
+The core, the modules, the packs and the installer are AGPL-3.0
+([LICENSE](LICENSE)). The format libraries, the connectors and the engines
+are MIT, each folder with its own `LICENSE`, so that a reader or a connector
+can live inside any product.

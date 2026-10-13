@@ -2,7 +2,7 @@
 
 **Proposed 12/10/2026, narrowed 13/10/2026.** Research:
 [docs/research/3d-geo.md](../research/3d-geo.md) — its sections on captures,
-scenes and video stay as research for Nexgen, WeSmart's commercial platform,.
+scenes and video stay as research for Nexgen, WeSmart's commercial platform.
 
 ## Context
 
@@ -72,14 +72,14 @@ Three tiers, one rule:
 
 The open repository targets **MapLibre GL JS** (BSD-3): extrusions, custom
 layers, terrain, globe and the free camera all exist there. Mapbox GL JS v3's
-`model` layer, Standard style and tokens are Nexgen's, WeSmart's product,.
+`model` layer, Standard style and tokens are Nexgen's, WeSmart's product.
 
 ### The line with Nexgen, WeSmart's product
 
 | Open — this repository | Nexgen, WeSmart's product |
 |---|---|
 | the schema, row level security, `model_to_world()`, the tile functions | drone flights, images and their poses, point clouds, orthophotos and surface models, photogrammetry jobs (OpenDroneMap as a service) |
-| format readers (ST2): CityJSON 2.0, IFC `IfcMapConversion`, 3D Tiles tilesets, glTF anchors | scenes, camera paths, renders: the generation of videos and stills, and the pipeline that makes them |
+| format readers: CityJSON 2.0, IFC `IfcMapConversion`, 3D Tiles tilesets, glTF anchors | scenes, camera paths, renders: the generation of videos and stills, and the pipeline that makes them |
 | derivations that are pure functions of open inputs: extrusion, roof shapes from Overture, roof planes from a surface model, 3D Tiles builds | the generation of 3D objects from surveys |
 | MapLibre bricks: extrusion style fragment, three.js custom layer, tiles renderer wrapper | API keys and quotas (solar API, Mapbox tokens), the Mapbox `model` layer and Standard style |
 | adapters for open reference data: 3DBAG (CC BY), UrbIS, German LoD2 (CityGML), Overture | paid or restricted datasets |
@@ -87,7 +87,7 @@ layers, terrain, globe and the free camera all exist there. Mapbox GL JS v3's
 ## Consequences
 
 - The module stays small: three tables, one function, the readers.
-- ST2 (format libraries) starts with the readers the module needs:
+- The format libraries start with the readers the module needs:
   CityJSON, IFC georeferencing, 3D Tiles, glTF anchors.
 - The acceptance test of the module: an IFC and a CityJSON of the same
   building land as two `three_d.models` rows and `model_to_world()` puts

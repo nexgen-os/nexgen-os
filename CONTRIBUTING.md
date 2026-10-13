@@ -1,6 +1,7 @@
 # Contributing
 
-Nexgen OS is at 0.0: the core schema is being settled. The most useful
+Nexgen OS is preparing its 0.1: the core schema is settled and its names may
+still move. The most useful
 contributions right now are reviews of the model ([docs/model.md](docs/model.md))
 by people who describe places for a living: architects, BIM modellers,
 engineers, surveyors, facility managers and public bodies.

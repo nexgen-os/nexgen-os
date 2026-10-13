@@ -1,4 +1,4 @@
--- Example 2 — a school, inside and out, in Lasne. Needs the `architecture` module.
+-- Example 2 — a school, inside and out, in a small municipality. Needs the `architecture` module.
 --
 -- A municipality's site, the main building with two floors and five rooms,
 -- a temperature, a CO2 and a presence sensor per classroom, a heating
@@ -7,13 +7,13 @@
 -- by the module.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000200000001', 'Commune de Lasne');
+  ('00000000-0000-4000-8000-000200000001', 'Commune de Valbrisée');
 
 insert into contacts (id, organisation_id, name, kind, email) values
-  ('00000000-0000-4000-8000-000200000005', '00000000-0000-4000-8000-000200000001', 'Service des bâtiments', 'company', 'batiments@lasne.example');
+  ('00000000-0000-4000-8000-000200000005', '00000000-0000-4000-8000-000200000001', 'Service des bâtiments', 'company', 'batiments@valbrisee.example');
 
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
-  ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', 'École du Centre', 'BE', 'Rue de l''École 12', '1380', 'Lasne', 'BE-WBR', 'school');
+  ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', 'École du Centre', 'BE', 'Rue de l''École 12', '1380', 'Valbrisée', 'BE-WBR', 'school');
 
 insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, year_built) values
   ('00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', 'Main building', 'school',

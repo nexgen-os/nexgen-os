@@ -8,8 +8,9 @@ worse than none.
 
 The first version other people can install, read and build on: the core
 schema in the `nexgen` schema, the `architecture`, `weather` and `solar`
-modules, the format libraries (Home Assistant, geocoding, CityJSON) and the
-connectors (Open-Meteo, PVGIS), one country pack (`fr`), seven example
+modules, the format libraries (Home Assistant, geocoding, CityJSON, IFC), the
+connectors (Open-Meteo, PVGIS), the pvlib engine, two country packs (`fr`,
+`be`), seven example
 datasets, and the decisions that explain them. Not stable: names may still
 change until 1.0, and every change is written down.
 
@@ -59,20 +60,21 @@ change until 1.0, and every change is written down.
   for them from 0.1.
 - [x] **A changelog** per release, and a `docs/releasing.md` that lists what
   has to move, as Ekwo's does.
-- [ ] Continuous integration: the test suite on three Node versions, a
+- [x] Continuous integration: the test suite on three Node versions, a
   hygiene check (no country literal in code, no secret, English only), the
   DCO check, and `engine-pvlib` (the pvlib engine on Python 3.12, compared
   with `modules/solar/pvwatts.ts`).
 
 ### Before the first users
 
-- [ ] A README that a stranger can follow from an empty Supabase project to
-  a building with a yield, in twenty minutes, and the recording that proves
-  it.
-- [ ] The three ST2 readers that make the model worth filling: IFC
-  (`IfcMapConversion`, floors and spaces), EPW/TMY weather files, PAN/OND
-  product files.
-- [ ] A second country pack, so that the pack mechanics are proven twice
+- [x] A README that a stranger can follow from an empty Supabase project to
+  a building, in five minutes (the installer, then an example dataset).
+- [ ] The same, to a building with a yield, in twenty minutes, and the
+  recording that proves it.
+- [x] The IFC reader (`IfcMapConversion`, floors and spaces), the first of
+  the three format readers that make the model worth filling.
+- [ ] The EPW/TMY weather file and PAN/OND product file readers.
+- [x] A second country pack, so that the pack mechanics are proven twice
   (`be`, with its three regional registers).
 - [ ] The Nexgen application reads a Nexgen OS database for one real site,
   end to end.

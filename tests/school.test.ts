@@ -18,7 +18,7 @@ beforeAll(async () => {
   db = await freshDatabase(['architecture']);
   org = await organisation(db, 'A municipality');
   site = await insert(db, 'sites', {
-    organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Lasne', profile: 'school',
+    organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Valbrisée', profile: 'school',
   });
   school = await insert(db, 'buildings', {
     organisation_id: org, site_id: site, name: 'Main building', profile: 'school',

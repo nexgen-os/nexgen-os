@@ -21,7 +21,7 @@ packs/fr/
 | `sources` | national APIs and datasets — cadastre, address register, 3D city model, LiDAR, grid operators' hubs, company register — with licence, attribution, retention | `sources`, and the adapters that read them |
 | `addresses` | the fields a country requires, the postal code pattern, the regions that matter for its rules | decision 0009 |
 | `grid` | distribution and transmission operators and their areas, market and balancing zones, tariff components, what a data mandate requires | `grid` module |
-| `energy_sharing` | the legal forms of a community, the allowed perimeter, the admitted allocation keys, settlement steps and roles | `energy` module |
+| `energy_sharing` | the legal forms of a community, the allowed perimeter, the admitted allocation keys, settlement steps and roles | `sharing` module |
 | `compliance` | solar obligations, permit thresholds, protected zones and heritage, energy labels and their thresholds | `compliance` module |
 | `mappings` | the attributes of the national 3D model or cadastre to the core's properties and profiles | `property_defs`, `attributes`, format libraries |
 | `series` | the hub's quality codes to the core's four, raw retention, the standard reading step, time zones when there are several | `series`, decision 0007 |

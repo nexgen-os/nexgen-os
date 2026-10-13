@@ -38,8 +38,9 @@ release may break, and says how. How a release is cut:
   with `engine: { name: 'pvlib' }`.
 - The Open-Meteo connector reads the horizontal components `ghi`, `dni` and
   `dhi` from the ERA5 archive.
-- The core, the `architecture`, `weather` and `solar` modules, the `fr` pack,
-  the format libraries and the connectors of the first release (see
+- The core, the `architecture`, `weather` and `solar` modules, the `fr` and
+  `be` packs, the format libraries, the connectors and the pvlib engine of
+  the first release (see
   `docs/road-to-0.1.md`).
 
 ### Fixed
