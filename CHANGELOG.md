@@ -47,6 +47,12 @@ release may break, and says how. How a release is cut:
   typical year laid on one calendar year as a `simulated` series named after
   its years; a file whose hours are off from its longitude's solar noon is
   reported as `time_offset_suspect`; a place's weather written back as EPW.
+- A yield run through an engine runs an inverter of model `ond` as the
+  Sandia model, fitted on the OND file's efficiency curves at their three
+  voltages exactly as pvlib's `inverter.fit_sandia` fits a test report
+  (`modules/solar/inverter.ts`), and records the inverter it sent in the
+  run's inputs. A Sandia, ADR or OND inverter on arrays without a module
+  model that gives the DC voltage is refused (`inverter_needs_voltage`).
 - The Open-Meteo connector reads the horizontal components `ghi`, `dni` and
   `dhi` from the ERA5 archive.
 - The core, the `architecture`, `weather` and `solar` modules, the `fr` and

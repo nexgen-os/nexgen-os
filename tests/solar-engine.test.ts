@@ -3,9 +3,11 @@
 // weather, the models and the losses, the engine computes, and what it
 // answers lands as simulated series on the system and its arrays, with the
 // engine's version on the run.
+import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { openMeteo } from '../connectors/open-meteo/index.js';
+import { sandiaFromOnd } from '../modules/solar/inverter.js';
 import { runYield } from '../modules/solar/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
@@ -87,6 +89,28 @@ describe('a yield run computed by an engine', () => {
     // `pvsol_like` decomposes (Hofmann): only ghi is read. Its losses have no values; the fake engine does not check them.
     await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsol_like', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, asked) }) });
     expect(asked.map((u) => [new URL(u).searchParams.get('hourly'), new URL(u).searchParams.has('tilt')])).toEqual([['shortwave_radiation,temperature_2m,wind_speed_10m', false]]);
+  });
+
+  it('sends an inverter known by its OND file as the Sandia model fitted on its curves, and records it with the run', async () => {
+    const ond = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/ond-inverter-10kw.json`, 'utf8'));
+    const inverter = await insert(db, 'device_directory', { organisation_id: org, device_type: 'inverter', manufacturer: 'Example Power', model_ref: 'EP-10K', unit_power_kw: 10 });
+    await db.query(`insert into solar.inverter_products (id, model, parameters) values ($1, 'ond', $2)`, [inverter, JSON.stringify(ond)]);
+    const module = await insert(db, 'device_directory', { organisation_id: org, device_type: 'solar', manufacturer: 'Example Solar', model_ref: 'ES-M108-430', unit_power_kw: 0.43 });
+    await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvsyst', $2)`, [module, JSON.stringify({ gamma_ref: 1, mu_gamma: -0.0002, I_L_ref: 13.90531675, I_o_ref: 9.1907963e-12, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 })]);
+    const run = (over: { pvSystemId: string }) => runYield(db, { ...over, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
+    await db.query('update solar.pv_arrays set inverter_product_id = $1 where pv_system_id = $2', [inverter, system]);
+    try {
+      // Sandia reads the DC voltage: the PVWatts module model of the arrays gives none.
+      await expect(run({ pvSystemId: system })).rejects.toThrow(/^inverter_needs_voltage: the ond inverter reads the DC voltage/);
+
+      await db.query('update solar.pv_arrays set module_product_id = $1, modules_per_string = 23, strings = 1 where pv_system_id = $2', [module, system]);
+      const result = await run({ pvSystemId: system });
+      const recorded = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [result.runId]);
+      expect(recorded.inputs.inverter).toEqual({ model: 'sandia', fitted_from: 'ond', parameters: sandiaFromOnd(ond) });
+      expect(recorded.inputs.arrays.map((a: { module_model: string }) => a.module_model)).toEqual(['pvsyst', 'pvsyst']);
+    } finally {
+      await db.query('update solar.pv_arrays set inverter_product_id = null, module_product_id = null, modules_per_string = null, strings = null where pv_system_id = $1', [system]);
+    }
   });
 
   it('names its refusals: no profile, an engine it cannot start', async () => {

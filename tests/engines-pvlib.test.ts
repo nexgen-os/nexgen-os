@@ -4,6 +4,7 @@
 // named refusals; and a yield run through it. Without the engine, every test
 // is skipped and says how to install it.
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import type { CollectedSeries, SeriesPoint } from '../connectors/index.js';
@@ -11,6 +12,7 @@ import { openMeteo } from '../connectors/open-meteo/index.js';
 import { hourStart } from '../connectors/pvgis/index.js';
 import { PVLIB_ENGINE, type PvYieldRequest, type PvYieldResult } from '../engines/pvlib/index.js';
 import { describeEngine, runEngine, type EngineSpec } from '../engines/runner.js';
+import { sandiaFromOnd } from '../modules/solar/inverter.js';
 import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '../modules/solar/pvwatts.js';
 import { runYield } from '../modules/solar/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
@@ -100,6 +102,26 @@ describe(`the pvlib engine${installed ? ` (${installed.version}, Python ${instal
     expect(gaps[1]).toBeLessThan(gaps[0]);
     // Incidence needs the beam on the plane, which the plane-of-array total does not give.
     await expect(runEngine(spec, request(weather, { models: { temperature: 'faiman', temperature_parameters: FAIMAN, aoi: 'physical', spectral: 'no_loss' } }))).rejects.toThrow(/^weather_incomplete: aoi model physical needs the beam/);
+  });
+
+  it.skipIf(!installed)(`with the Sandia model fitted on an OND file's curves, loses what the curves say${skipped}`, async () => {
+    const weather = await pvgisWeather();
+    const ond = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/ond-inverter-10kw.json`, 'utf8'));
+    // 23 modules of 430 W (PVsyst one-diode model) on the 11 kW inverter of the fixture, against the same array without an inverter:
+    // Sandia reads the DC voltage, which only a one-diode or Sandia module model gives.
+    const module = { gamma_ref: 1, mu_gamma: -0.0002, I_L_ref: 13.90531675, I_o_ref: 9.1907963e-12, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 };
+    const arrays: PvYieldRequest['arrays'] = [{ name: 'South', azimuth_deg: 180, tilt_deg: 35, mounting: 'roof_parallel', module: { model: 'pvsyst', parameters: module }, modules_per_string: 23, strings: 1 }];
+    const dc = daily(energyOf((await runEngine<PvYieldRequest, PvYieldResult>(spec, request(weather, { arrays }))).result));
+    const ac = daily(energyOf((await runEngine<PvYieldRequest, PvYieldResult>(spec, request(weather, { arrays, inverter: { model: 'sandia', parameters: { ...sandiaFromOnd(ond) } } }))).result));
+    const gaps = dc.map(([day, kwh], i) => {
+      console.info(`OND inverter (Sandia fit) — ${day}: no inverter ${kwh.toFixed(3)} kWh, Sandia ${ac[i][1].toFixed(3)} kWh (${pct(ac[i][1], kwh)})`);
+      return (ac[i][1] - kwh) / kwh;
+    });
+    // The curves give 97–98 % near the rating and less at low load, the night draw on top.
+    for (const gap of gaps) {
+      expect(gap).toBeLessThan(-0.015);
+      expect(gap).toBeGreaterThan(-0.1);
+    }
   });
 
   it.skipIf(!installed)(`transposes the ERA5 horizontal components with Hay-Davies, against Open-Meteo's own plane-of-array irradiance${skipped}`, async () => {

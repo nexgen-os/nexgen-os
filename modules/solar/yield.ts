@@ -46,6 +46,7 @@ import {
   typicalYear,
   withinLocalYears,
 } from './pvwatts.js';
+import { sandiaFromOnd } from './inverter.js';
 
 export const ENGINE_VERSION = 'pvgis-5.3+solar-0.1.0';
 export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.1.0';
@@ -451,7 +452,15 @@ function engineInverter(arrays: PvArray[]): PvYieldRequest['inverter'] {
     if (a.inverter_model !== 'pvwatts') throw new Error(`inverter_count_not_runnable: ${count} ${a.inverter_model} inverters; only a pvwatts inverter scales by its count`);
     parameters.pdc0 = Number(parameters.pdc0) * count;
   }
-  return { model: a.inverter_model as PvYieldRequest['inverter']['model'], parameters };
+  // An OND file's curves become the Sandia model, fitted as pvlib fits it.
+  const model = a.inverter_model === 'ond' ? 'sandia' : (a.inverter_model as PvYieldRequest['inverter']['model']);
+  // Sandia and ADR read the DC voltage, which only a one-diode or Sandia module model gives.
+  const flat = arrays.find((x) => x.module_model === null || x.module_model === 'pvwatts');
+  if ((model === 'sandia' || model === 'adr') && flat) {
+    throw new Error(`inverter_needs_voltage: the ${a.inverter_model} inverter reads the DC voltage, which the pvwatts module model of ${flat.name} does not give; name a module product with cec, pvsyst or sapm parameters`);
+  }
+  if (a.inverter_model === 'ond') return { model, parameters: { ...sandiaFromOnd(parameters) } };
+  return { model, parameters };
 }
 
 async function runWithEngine(db: Db, request: YieldRequest, profileCode: string, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider): Promise<YieldResult> {
@@ -541,6 +550,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
         name: a.name, kwp: a.kwp, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: a.mounting,
         module_model: engineRequest.arrays[i].module.model, ...(a.bifacial ? { bifacial: 'not modelled' } : {}),
       })),
+      inverter: { ...engineRequest.inverter, ...(arrays[0].inverter_model === 'ond' ? { fitted_from: 'ond' } : {}) },
       model: answer.result.meta,
       losses: profile.losses,
       conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the site\'s time zone' },

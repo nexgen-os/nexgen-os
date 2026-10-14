@@ -1,0 +1,168 @@
+{
+ "_type": "pvGInverter",
+ "Converter": {
+  "_type": "TConverter",
+  "PNomConv": 10,
+  "PMaxOUT": 11,
+  "VMppMin": 160,
+  "VMPPMax": 950,
+  "ProfilPIO": {
+   "_type": "TCubicProfile",
+   "NPtsMax": 11,
+   "NPtsEff": 9,
+   "Point_1": [
+    40,
+    0
+   ],
+   "Point_2": [
+    1020,
+    990
+   ],
+   "Point_3": [
+    2035,
+    2000
+   ],
+   "Point_4": [
+    3060,
+    3010
+   ],
+   "Point_5": [
+    5085,
+    5000
+   ],
+   "Point_6": [
+    7640,
+    7500
+   ],
+   "Point_7": [
+    10200,
+    10000
+   ],
+   "Point_8": [
+    11220,
+    11000
+   ],
+   "Point_9": [
+    0,
+    0
+   ]
+  },
+  "VNomEff": [
+   300,
+   600,
+   850
+  ],
+  "ProfilPIOV1": {
+   "_type": "TCubicProfile",
+   "NPtsMax": 11,
+   "NPtsEff": 8,
+   "Point_1": [
+    40,
+    0
+   ],
+   "Point_2": [
+    1030,
+    990
+   ],
+   "Point_3": [
+    2050,
+    2000
+   ],
+   "Point_4": [
+    3080,
+    3010
+   ],
+   "Point_5": [
+    5110,
+    5000
+   ],
+   "Point_6": [
+    7680,
+    7500
+   ],
+   "Point_7": [
+    10260,
+    10000
+   ],
+   "Point_8": [
+    11300,
+    11000
+   ]
+  },
+  "ProfilPIOV2": {
+   "_type": "TCubicProfile",
+   "NPtsMax": 11,
+   "NPtsEff": 8,
+   "Point_1": [
+    40,
+    0
+   ],
+   "Point_2": [
+    1020,
+    990
+   ],
+   "Point_3": [
+    2035,
+    2000
+   ],
+   "Point_4": [
+    3060,
+    3010
+   ],
+   "Point_5": [
+    5085,
+    5000
+   ],
+   "Point_6": [
+    7640,
+    7500
+   ],
+   "Point_7": [
+    10200,
+    10000
+   ],
+   "Point_8": [
+    11220,
+    11000
+   ]
+  },
+  "ProfilPIOV3": {
+   "_type": "TCubicProfile",
+   "NPtsMax": 11,
+   "NPtsEff": 8,
+   "Point_1": [
+    40,
+    0
+   ],
+   "Point_2": [
+    1028,
+    990
+   ],
+   "Point_3": [
+    2045,
+    2000
+   ],
+   "Point_4": [
+    3072,
+    3010
+   ],
+   "Point_5": [
+    5100,
+    5000
+   ],
+   "Point_6": [
+    7665,
+    7500
+   ],
+   "Point_7": [
+    10240,
+    10000
+   ],
+   "Point_8": [
+    11265,
+    11000
+   ]
+  }
+ },
+ "Night_Loss": 1.5
+}
