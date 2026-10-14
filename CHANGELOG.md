@@ -20,6 +20,13 @@ release may break, and says how. How a release is cut:
   published with its sha256, withdrawn but never changed; anyone reads the
   ones not withdrawn through `participation_public.publications`, the only
   schema the anonymous role is given (decision 0015).
+- The `construction` module: milestones of works on a project, a site, a
+  building, a surface or a device, in phases read from a vocabulary
+  (design to handover), with planned and actual dates, a status kept
+  consistent with them and the contact who answers for each; each
+  milestone is an object, so photos and reports attach to it.
+  `construction.progress()` says where the works of a site or a project
+  stand on a given day.
 - `exceedance()` in the `solar` module: P50, P75, P90 and P99 of a yield run
   on real years, from its yearly totals, their interannual spread over the
   horizon asked and the uncertainty components the caller names, recorded

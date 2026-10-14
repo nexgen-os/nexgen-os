@@ -127,7 +127,7 @@ example in `examples/` is a complete, loadable dataset.
 ```
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (architecture, weather, solar and participation shipped)
+modules/               one Postgres schema per module (architecture, weather, solar, participation and construction shipped)
 packs/                 one folder per country (fr, be: identifiers, sources, the address register as a geocoder)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT
