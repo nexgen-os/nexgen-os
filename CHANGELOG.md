@@ -15,6 +15,11 @@ release may break, and says how. How a release is cut:
   attributes, identifiers and runs of each object and the sources it owes;
   `open: true` leaves out street lines, serial numbers, metadata and
   whatever came from a source that may not be passed on.
+- `nexgen.publications`, what an organisation shows the public: an open
+  GeoJSON export of a site or a project, published by an owner with its
+  licence, kept as published with its sha256, withdrawn but never changed;
+  anyone reads the ones not withdrawn through `nexgen_public.publications`,
+  the only schema the anonymous role is given (decision 0015).
 - `exceedance()` in the `solar` module: P50, P75, P90 and P99 of a yield run
   on real years, from its yearly totals, their interannual spread over the
   horizon asked and the uncertainty components the caller names, recorded
