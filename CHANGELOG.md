@@ -28,6 +28,12 @@ release may break, and says how. How a release is cut:
   placed on the globe by `IfcMapConversion` or the site's coordinates, with
   GlobalIds in `external_ids` and property sets in `metadata.ifc`. Parsed by
   web-ifc (MPL-2.0), now a dependency.
+- `formats/panond`, the PAN and OND reader: a PVsyst module or inverter file
+  becomes a product of the directory with its physics — the `pvsyst`
+  one-diode model in pvlib's keys, its light and saturation currents solved
+  from the file's Isc and Voc, or the inverter's keys and efficiency curves.
+  Prices in a file are left out; a product already imported is refused
+  (`already_imported`).
 - External engines (decision 0013): a program in any language that reads
   one JSON request on stdin and answers one JSON result on stdout. The
   runner (`engines/runner.ts`) starts it from the caller's command or

@@ -1,0 +1,64 @@
+﻿PVObject_=pvGInverter
+  Comment=Example Power	EP-10K	Manufacturer 2025
+  Version=7.4
+  Flags=$00381562
+
+  PVObject_Commercial=pvCommercial
+    Comment=Example Power
+    Flags=$0041
+    Manufacturer=Example Power
+    Model=EP-10K
+    DataSource=Manufacturer 2025
+    YearBeg=2025
+    Width=0.480
+    Height=0.420
+    Depth=0.180
+    Weight=21.000
+    Currency=EUR
+    Remarks, Count=2
+      Str_1=Protection: -25 - +60, IP 65
+      Str_2
+    End of Remarks
+  End of PVObject pvCommercial
+  Transfo=Without
+
+  Converter=TConverter
+    PNomConv=10.000
+    PMaxOUT=11.000
+    VOutConv=400.0
+    VMppMin=160
+    VMPPMax=950
+    VAbsMax=1100
+    PSeuil=40.0
+    EfficMax=98.20
+    EfficEuro=97.60
+    ModeOper=MPPT
+    MonoTri=Tri
+    PNomDC=10.300
+    PMaxDC=15.000
+    IMaxDC=26.0
+    INomAC=14.5
+    IMaxAC=16.0
+    PInEffMax =5000.000
+
+    ProfilPIO=TCubicProfile
+      NPtsMax=11
+      NPtsEff=7
+      LastCompile=$8085
+      Mode=1
+      Point_1=40,0
+      Point_2=520,488
+      Point_3=1030,1000
+      Point_4=2050,2006
+      Point_5=5080,4990
+      Point_6=10200,10000
+      Point_7=11220,11000
+      Point_8=0,0
+    End of TCubicProfile
+    VNomEff=300.0,600.0,850.0,
+    EfficMaxV=97.800,98.200,97.900,
+  End of TConverter
+  NbInputs=4
+  NbMPPT=2
+  Night_Loss=1.50
+End of PVObject pvGInverter
