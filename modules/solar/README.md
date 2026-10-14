@@ -146,6 +146,30 @@ an engine's run.
 (°C, mean) and `wind_speed` (m/s, mean; the cell temperature depends on it).
 Production power and energy and the generic `irradiance` are the core's.
 
+## Performance against the measurement
+
+`performanceIndicators(db, { pvSystemId, from, to, yieldRunId? })`
+([`performance.ts`](performance.ts)) gives the indicators of IEC 61724-1
+for whole days in the site's time zone, in total and by month:
+
+| Indicator | |
+|---|---|
+| final yield `final_yield_h` | measured `production_energy` of the system ÷ its `kwp_dc` |
+| reference yield `reference_yield_h` | in-plane irradiation ÷ 1 kW/m² |
+| performance ratio | final ÷ reference yield |
+| energy performance index | measured ÷ expected energy, the expected energy being the yield run's `production_energy` (with `yieldRunId`) |
+
+Only the hours where every series read has a value count, and their number
+is given: a missing reading is never a dark hour. The in-plane irradiance is
+a `measured` `poa_irradiance` on the system, or on its one array; without
+a sensor, the yield run's simulated irradiance of each array, weighted by
+power, and the answer says `irradiance: 'simulated'`. The result is a run
+of `solar` (`solar-iec61724-0.1.0`) whose inputs name each series read with
+its number of hours and its total, so the same readings give the same run
+and a new reading a new one. Named errors: `pv_system_not_found`,
+`time_zone_required`, `series_not_found`, `irradiance_required`,
+`run_not_of_system`, `period_not_covered`.
+
 ## Not here yet
 
 - The run summary beyond the annual and specific yield (performance ratio,
@@ -153,6 +177,10 @@ Production power and energy and the generic `irradiance` are the core's.
   `pvsol_like` engines, and the format readers (PAN / OND, PVsyst and
   PV\*SOL CSV). Weather files (EPW, TMY3) are read and written by
   [`formats/weather-files`](../../formats/weather-files/README.md).
+- The run summary beyond the annual and specific yield (P50 / P90), the
+  `pvsyst_like` and
+  `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
+  PV\*SOL CSV).
 - `site_of()` does not know `pv_array` yet: modules extend it by replacing
   the whole function, which would drop another module's kinds. An array's
   site is its system's (`devices.site_id`).

@@ -19,6 +19,10 @@ release may break, and says how. How a release is cut:
   `nexgen.schema_migrations`, the record of every file applied with its
   scope (`core`, `module:<code>`, `pack:<cc>`).
 - `docs/releasing.md` and this changelog.
+- `performanceIndicators()` in the `solar` module: the IEC 61724-1 final
+  and reference yields, performance ratio and energy performance index of a
+  PV system against a sensor or a yield run, by month in the site's time
+  zone, on the hours every series has, recorded as a run.
 - The Release workflow: a `v*` tag publishes every public package to npm
   through trusted publishing (GitHub OIDC, no token) with provenance, after
   `npm run release:check` has confirmed each package can be published that
