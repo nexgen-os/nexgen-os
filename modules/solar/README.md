@@ -140,6 +140,29 @@ covered, as for real years), the specific yield and the series. The typical
 year and the anchoring on PVGIS belong to `pvwatts` and are not applied to
 an engine's run.
 
+## P50 and P90 of a yield run
+
+`exceedance(db, { yieldRunId, uncertainties?, probabilities?, horizonYears? })`
+([`exceedance.ts`](exceedance.ts)) reads a yield run on real years — an
+engine run or `pvwatts` with `typicalYear: false` — and gives the energy a
+year exceeds with each probability asked (75, 90 and 99 % by default):
+
+- the yearly totals of the run's `production_energy`, in the site's local
+  standard time, a year counting with 95 % of its hours (as the runs count
+  them); their mean is the P50;
+- the interannual variability, their sample standard deviation relative to
+  the P50, divided by √`horizonYears` (1: any one year; 10: the mean of ten);
+- the components the years do not measure (irradiance dataset,
+  transposition, models, soiling, availability), named by the caller as
+  standard deviations in percent and added in quadrature;
+- `P_x = P50 · (1 − z_x · σ)`, the annual energy taken as normal.
+
+The result is a run of `solar` (`solar-exceedance-0.1.0`) naming the yield
+run, the yearly totals, the components and the horizon. Named errors:
+`run_not_found`, `real_years_required` (a typical year, or fewer than two
+complete years), `time_zone_required`, `probability_invalid`,
+`uncertainty_invalid`, `horizon_invalid`.
+
 ## Quantities
 
 `ghi`, `dni`, `dhi`, `poa_irradiance` (W/m², mean), `module_temperature`

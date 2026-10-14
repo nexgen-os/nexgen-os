@@ -458,6 +458,23 @@ export function meanAnnualOverCoveredYears(
   years: { from: number; to: number },
   minCoverage = 0.95,
 ): { annual: number; yearsCovered: number[] } {
+  const totals = annualTotals(points, timeZone, years, minCoverage);
+  if (totals.length === 0) {
+    throw new Error(`period_not_covered: no year from ${years.from} to ${years.to} has ${minCoverage * 100} % of its hours`);
+  }
+  return { annual: totals.reduce((s, t) => s + t.total, 0) / totals.length, yearsCovered: totals.map((t) => t.year) };
+}
+
+/**
+ * The total of each year of `years` (local standard time) that has at least
+ * `minCoverage` of its hours, in order; the others are left out.
+ */
+export function annualTotals(
+  points: SeriesPoint[],
+  timeZone: string,
+  years: { from: number; to: number },
+  minCoverage = 0.95,
+): { year: number; total: number }[] {
   const byYear = new Map<number, { hours: number; sum: number }>();
   for (const p of points) {
     const { year } = hourOfYear(p.at, timeZone);
@@ -466,20 +483,13 @@ export function meanAnnualOverCoveredYears(
     y.sum += p.value;
     byYear.set(year, y);
   }
-  const yearsCovered: number[] = [];
-  let sum = 0;
+  const out: { year: number; total: number }[] = [];
   for (let year = years.from; year <= years.to; year++) {
     const hoursInYear = (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / HOUR_MS;
     const y = byYear.get(year);
-    if (y && y.hours >= minCoverage * hoursInYear) {
-      yearsCovered.push(year);
-      sum += y.sum;
-    }
+    if (y && y.hours >= minCoverage * hoursInYear) out.push({ year, total: y.sum });
   }
-  if (yearsCovered.length === 0) {
-    throw new Error(`period_not_covered: no year from ${years.from} to ${years.to} has ${minCoverage * 100} % of its hours`);
-  }
-  return { annual: sum / yearsCovered.length, yearsCovered };
+  return out;
 }
 
 // ---------------------------------------------------------------------------

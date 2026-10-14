@@ -10,6 +10,10 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- `exceedance()` in the `solar` module: P50, P75, P90 and P99 of a yield run
+  on real years, from its yearly totals, their interannual spread over the
+  horizon asked and the uncertainty components the caller names, recorded
+  as a run.
 - The installer, `npx nexgen-os`: `init` installs the core, the modules and
   the packs asked for on an empty Supabase project with PostGIS, `migrate`
   applies what is missing, `doctor` names every problem, `status` sums an
