@@ -150,8 +150,9 @@ Production power and energy and the generic `irradiance` are the core's.
 
 - The run summary beyond the annual and specific yield (performance ratio,
   P50 / P90), the IEC 61724-1 indicators, the `pvsyst_like` and
-  `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
-  PV\*SOL CSV).
+  `pvsol_like` engines, and the format readers (PAN / OND, PVsyst and
+  PV\*SOL CSV). Weather files (EPW, TMY3) are read and written by
+  [`formats/weather-files`](../../formats/weather-files/README.md).
 - `site_of()` does not know `pv_array` yet: modules extend it by replacing
   the whole function, which would drop another module's kinds. An array's
   site is its system's (`devices.site_id`).

@@ -36,6 +36,11 @@ release may break, and says how. How a release is cut:
   `engine_timeout`). The first engine, `engines/pvlib`, answers `pv_yield`
   with pvlib's `ModelChain`; `runYield` runs any yield profile through it
   with `engine: { name: 'pvlib' }`.
+- `formats/weather-files`: EPW and TMY3 files read into `ghi`, `dni`, `dhi`,
+  `temperature` and `wind_speed` series dated at their start in UTC, a
+  typical year laid on one calendar year as a `simulated` series named after
+  its years; a file whose hours are off from its longitude's solar noon is
+  reported as `time_offset_suspect`; a place's weather written back as EPW.
 - The Open-Meteo connector reads the horizontal components `ghi`, `dni` and
   `dhi` from the ERA5 archive.
 - The core, the `architecture`, `weather` and `solar` modules, the `fr` and

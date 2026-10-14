@@ -73,7 +73,9 @@ change until 1.0, and every change is written down.
   recording that proves it.
 - [x] The IFC reader (`IfcMapConversion`, floors and spaces), the first of
   the three format readers that make the model worth filling.
-- [ ] The EPW/TMY weather file and PAN/OND product file readers.
+- [x] The EPW and TMY3 weather file reader, and the EPW writer
+  (`formats/weather-files`).
+- [ ] The PAN/OND product file reader.
 - [x] A second country pack, so that the pack mechanics are proven twice
   (`be`, with its three regional registers).
 - [ ] The Nexgen application reads a Nexgen OS database for one real site,
