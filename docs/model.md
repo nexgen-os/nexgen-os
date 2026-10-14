@@ -126,14 +126,6 @@ pages read the named tables.
 - **runs** — `record_run(module, engine_version, subject, scenario, inputs,
   results)`: same identity, same run; a finished run never changes.
 
-## Shown to the public
-
-- **publications** — a document an owner made public: an open GeoJSON
-  export of a site or a project, with its title, licence, publisher, date
-  and sha256, kept as published; withdrawn, never changed. Anyone reads
-  the ones not withdrawn through `nexgen_public.publications`, the one
-  view the anonymous role is given. Decision [0015](decisions/0015-publications.md).
-
 ## Vocabularies
 
 `device_types` (with the module that derives each), `profiles` (uses of a

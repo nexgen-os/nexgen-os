@@ -75,7 +75,8 @@ Four things only you do here:
 - store an azimuth in another convention than degrees clockwise from true
   north, or a series value dated at the end of its interval;
 - send the data anywhere the person did not configure, or publish it
-  (`publications`) without the person asking for that publication.
+  (`participation.publications`) without the person asking for that
+  publication.
 
 ## A first session, in five steps
 

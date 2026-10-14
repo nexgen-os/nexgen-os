@@ -64,7 +64,7 @@ describe('plan', () => {
     const names = c.core.map((s) => s.name);
     expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_1_0.sql');
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['architecture', 'solar', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['architecture', 'participation', 'solar', 'weather']);
     expect([...c.packs.keys()]).toEqual(['be', 'fr']);
   });
 });
@@ -80,7 +80,7 @@ describe('install on a database', () => {
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 13 },
+      { scope: 'core', n: 12 },
       { scope: 'module:architecture', n: 1 },
       { scope: 'pack:fr', n: 1 },
     ]);

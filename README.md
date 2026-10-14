@@ -33,7 +33,6 @@ what a trade knows beyond its columns is attached to it.
 | `series`, `series_values`, `forecast_values` | measured, simulated and setpoint series in one store, forecasts with every issue in another | OGC SensorThings |
 | `attributes`, `external_ids`, `links`, `successors`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
 | `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations, the module registry, an organisation's use of a source | — |
-| `publications` | what an organisation shows the public: an open GeoJSON export of a site or a project, kept as published, read without an account through `nexgen_public` ([0015](docs/decisions/0015-publications.md)) | GeoJSON (RFC 7946), SPDX licences |
 | `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |
 
 Details, diagram and rules: [docs/model.md](docs/model.md). Why named
@@ -128,7 +127,7 @@ example in `examples/` is a complete, loadable dataset.
 ```
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (architecture, weather and solar shipped)
+modules/               one Postgres schema per module (architecture, weather, solar and participation shipped)
 packs/                 one folder per country (fr, be: identifiers, sources, the address register as a geocoder)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT

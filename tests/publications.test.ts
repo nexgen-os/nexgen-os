@@ -1,7 +1,7 @@
 // What an organisation shows the public: an owner publishes an open export
 // of a site or a project, anyone reads it without signing in, nobody can
 // change it, the owner withdraws it. The anonymous role reaches the one
-// view it is given and nothing of the `nexgen` schema.
+// view it is given and nothing of the `nexgen` or `participation` schemas.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
@@ -32,13 +32,13 @@ async function asAnonymous<T>(fn: () => Promise<T>): Promise<T> {
 
 const publish = (fields: Record<string, unknown>) =>
   db.query<{ id: string }>(
-    `insert into publications (subject_id, scenario_id, title, license, document, organisation_id)
+    `insert into participation.publications (subject_id, scenario_id, title, license, document, organisation_id)
      values ($1, $2, $3, $4, $5, $6) returning id`,
     [fields.subject_id, fields.scenario_id ?? null, fields.title, fields.license, JSON.stringify(fields.document), fields.organisation_id ?? orgA],
   );
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['participation']);
   orgA = await organisation(db, 'Ville de Namur', USER_A);
   await organisation(db, 'Somebody else', USER_B);
   await db.query('insert into auth.users (id) values ($1)', [EDITOR]);
@@ -58,7 +58,7 @@ describe('publishing', () => {
     const r = await asUser(db, USER_A, () => publish({ subject_id: site, title: 'Town hall — solar study', license: 'CC-BY-4.0', document: openDocument('Town hall') }));
     id = r.rows[0].id;
     const p = await one<{ publisher: string; subject_kind: string; document_hash: string; published_by: string; organisation_id: string }>(
-      db, 'select publisher, subject_kind, document_hash, published_by, organisation_id from publications where id = $1', [id],
+      db, 'select publisher, subject_kind, document_hash, published_by, organisation_id from participation.publications where id = $1', [id],
     );
     expect(p).toMatchObject({ publisher: 'Ville de Namur', subject_kind: 'site', published_by: USER_A, organisation_id: orgA });
     const expected = await one<{ h: string }>(db, `select encode(sha256(convert_to($1::jsonb::text, 'UTF8')), 'hex') h`, [JSON.stringify(openDocument('Town hall'))]);
@@ -86,7 +86,7 @@ describe('publishing', () => {
 
   it('cannot be backdated nor signed for somebody else', async () => {
     const r = await asUser(db, USER_A, () => db.query<{ published_at: Date; published_by: string }>(
-      `insert into publications (subject_id, title, license, document, organisation_id, published_at, published_by, document_hash)
+      `insert into participation.publications (subject_id, title, license, document, organisation_id, published_at, published_by, document_hash)
        values ($1, 'Backdated', 'CC0-1.0', $2, $3, '2001-01-01', $4, 'forged') returning published_at, published_by`,
       [site, JSON.stringify(openDocument('Town hall')), orgA, USER_B],
     ));
@@ -95,16 +95,16 @@ describe('publishing', () => {
   });
 
   it('never changes once published: only its withdrawal does', async () => {
-    await expect(asUser(db, USER_A, () => db.query(`update publications set title = 'Rewritten' where id = $1`, [id])))
+    await expect(asUser(db, USER_A, () => db.query(`update participation.publications set title = 'Rewritten' where id = $1`, [id])))
       .rejects.toThrow(/^publication_is_final/);
-    await expect(asUser(db, USER_A, () => db.query(`update publications set document = $2 where id = $1`, [id, JSON.stringify(openDocument('Other'))])))
+    await expect(asUser(db, USER_A, () => db.query(`update participation.publications set document = $2 where id = $1`, [id, JSON.stringify(openDocument('Other'))])))
       .rejects.toThrow(/^publication_is_final/);
   });
 });
 
 describe('what anyone reads', () => {
   it('reads the publications not withdrawn, without signing in, through one view', async () => {
-    const rows = await asAnonymous(() => db.query<Record<string, unknown>>('select * from nexgen_public.publications order by published_at, title'));
+    const rows = await asAnonymous(() => db.query<Record<string, unknown>>('select * from participation_public.publications order by published_at, title'));
     expect(rows.rows.map((r) => r.title)).toEqual(['Town hall — solar study', 'Backdated']);
     expect(Object.keys(rows.rows[0]).sort()).toEqual(
       ['description', 'document', 'document_hash', 'id', 'license', 'media_type', 'published_at', 'publisher', 'subject_kind', 'title'],
@@ -113,35 +113,35 @@ describe('what anyone reads', () => {
     expect((rows.rows[0].document as { features: unknown[] }).features).toHaveLength(1);
   });
 
-  it('reaches nothing of the nexgen schema: no table, no function', async () => {
+  it('reaches nothing of the nexgen and participation schemas: no table, no function', async () => {
     await expect(asAnonymous(() => db.query('select * from nexgen.sites'))).rejects.toThrow(/permission denied/);
-    await expect(asAnonymous(() => db.query('select * from nexgen.publications'))).rejects.toThrow(/permission denied/);
+    await expect(asAnonymous(() => db.query('select * from participation.publications'))).rejects.toThrow(/permission denied/);
     await expect(asAnonymous(() => db.query(`select nexgen.attributes_of($1)`, [site]))).rejects.toThrow(/permission denied/);
-    await expect(asAnonymous(() => db.query(`insert into nexgen_public.publications (title) values ('x')`))).rejects.toThrow(/permission denied/);
+    await expect(asAnonymous(() => db.query(`insert into participation_public.publications (title) values ('x')`))).rejects.toThrow(/permission denied/);
   });
 
   it('is the same for a stranger signed in: the view, not the organisation\'s rows', async () => {
-    const theirs = await asUser(db, USER_B, () => db.query('select id from publications'));
+    const theirs = await asUser(db, USER_B, () => db.query('select id from participation.publications'));
     expect(theirs.rows).toEqual([]);
-    const pub = await asUser(db, USER_B, () => db.query('select title from nexgen_public.publications'));
+    const pub = await asUser(db, USER_B, () => db.query('select title from participation_public.publications'));
     expect(pub.rows).toHaveLength(2);
   });
 });
 
 describe('withdrawing', () => {
   it('is an owner\'s act, once, and the public no longer sees it', async () => {
-    const { id } = await one<{ id: string }>(db, `select id from publications where title = 'Backdated'`);
-    const byEditor = await asUser(db, EDITOR, () => db.query(`update publications set withdrawn_at = now() where id = $1 returning id`, [id]));
+    const { id } = await one<{ id: string }>(db, `select id from participation.publications where title = 'Backdated'`);
+    const byEditor = await asUser(db, EDITOR, () => db.query(`update participation.publications set withdrawn_at = now() where id = $1 returning id`, [id]));
     expect(byEditor.rows).toEqual([]);
-    await asUser(db, USER_A, () => db.query(`update publications set withdrawn_at = now() where id = $1`, [id]));
-    await expect(asUser(db, USER_A, () => db.query(`update publications set withdrawn_at = null where id = $1`, [id])))
+    await asUser(db, USER_A, () => db.query(`update participation.publications set withdrawn_at = now() where id = $1`, [id]));
+    await expect(asUser(db, USER_A, () => db.query(`update participation.publications set withdrawn_at = null where id = $1`, [id])))
       .rejects.toThrow(/^publication_is_final/);
-    const rows = await asAnonymous(() => db.query<{ title: string }>('select title from nexgen_public.publications'));
+    const rows = await asAnonymous(() => db.query<{ title: string }>('select title from participation_public.publications'));
     expect(rows.rows.map((r) => r.title)).toEqual(['Town hall — solar study']);
     // The organisation still sees what it withdrew, and may delete it.
-    const mine = await asUser(db, EDITOR, () => db.query('select id from publications'));
+    const mine = await asUser(db, EDITOR, () => db.query('select id from participation.publications'));
     expect(mine.rows).toHaveLength(2);
-    await asUser(db, USER_A, () => db.query('delete from publications where id = $1', [id]));
-    expect((await db.query('select id from publications')).rows).toHaveLength(1);
+    await asUser(db, USER_A, () => db.query('delete from participation.publications where id = $1', [id]));
+    expect((await db.query('select id from participation.publications')).rows).toHaveLength(1);
   });
 });

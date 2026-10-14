@@ -1,18 +1,27 @@
--- Nexgen OS — publications: what an organisation shows the public.
+-- Nexgen OS — module `participation`: what an organisation shows the public.
 --
--- A publication is a document an owner of the organisation chose to make
--- public — an open GeoJSON export of a site or a project, with its runs —
--- kept as it was published: the same bytes for whoever cites it, a hash to
--- prove it, a licence, a date. Nothing is published by default and nothing
--- else becomes public with it. It can be withdrawn, and deleted.
+-- Decision 0015. A publication is a document an owner of the organisation
+-- chose to make public — an open GeoJSON export of a site or a project,
+-- with its runs (`formats/geojson`, `open: true`) — kept as it was
+-- published: the same bytes for whoever cites it, a hash to prove it, a
+-- licence, a date. Nothing is published by default and nothing else
+-- becomes public with it. It can be withdrawn, and deleted.
 --
 -- The public reads it without signing in through one view in a schema of
--- its own, `nexgen_public`, the only thing the `anon` role is given: it does
--- not reach the `nexgen` schema, its tables or its functions.
+-- its own, `participation_public`, the only thing this module gives the
+-- `anon` role: it reaches no table and no function of `nexgen` or of
+-- `participation`.
 
 set search_path = nexgen, public, extensions;
 
-create table publications (
+create schema participation;
+grant usage on schema participation to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- publications
+-- ---------------------------------------------------------------------------
+
+create table participation.publications (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- What is published: a site or a project, and the scenario shown, if any.
@@ -24,8 +33,8 @@ create table publications (
   title            text not null,
   description      text,
   -- The licence the organisation publishes under, as an SPDX identifier
-  -- (CC-BY-4.0, ODbL-1.0, etc.). The sources the document draws on are
-  -- listed inside it, with their own licences.
+  -- (CC-BY-4.0, ODbL-1.0…). The sources the document draws on are listed
+  -- inside it, with their own licences.
   license          text not null,
   media_type       text not null default 'application/geo+json',
   document         jsonb not null,
@@ -44,20 +53,20 @@ create table publications (
   constraint publications_withdrawn_after check (withdrawn_at is null or withdrawn_at >= published_at)
 );
 
-comment on table publications is
-  'Documents an owner of the organisation made public: an open GeoJSON export of a site or a project, kept as published, with its licence and hash. Read by anyone through nexgen_public.publications until withdrawn.';
+comment on table participation.publications is
+  'Documents an owner of the organisation made public: an open GeoJSON export of a site or a project, kept as published, with its licence and hash. Read by anyone through participation_public.publications until withdrawn.';
 
-create index publications_organisation_idx on publications (organisation_id);
-create index publications_subject_idx on publications (subject_id);
+create index publications_organisation_idx on participation.publications (organisation_id);
+create index publications_subject_idx on participation.publications (subject_id);
 
 create trigger publications_attach
-  before insert on publications
+  before insert on participation.publications
   for each row execute function attach('subject_id');
 
 -- A publication is about a site or a project. Its kind, publisher, hash,
 -- author and date are written here, never given; once published, only its
 -- withdrawal changes it, once.
-create or replace function publications_check()
+create or replace function participation.publications_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -87,44 +96,50 @@ end;
 $$;
 
 create trigger publications_check
-  before insert or update on publications
-  for each row execute function publications_check();
+  before insert or update on participation.publications
+  for each row execute function participation.publications_check();
 
 -- Members read their organisation's publications; owners alone publish,
 -- withdraw and delete: showing something to the world is theirs to decide.
-alter table publications enable row level security;
-create policy publications_select on publications
+-- This is why the table does not go through `secure_table()`, which lets
+-- editors write.
+alter table participation.publications enable row level security;
+create policy publications_select on participation.publications
   for select to authenticated using (can_read_organisation(organisation_id));
-create policy publications_insert on publications
+create policy publications_insert on participation.publications
   for insert to authenticated with check (is_organisation_owner(organisation_id));
-create policy publications_update on publications
+create policy publications_update on participation.publications
   for update to authenticated using (is_organisation_owner(organisation_id)) with check (is_organisation_owner(organisation_id));
-create policy publications_delete on publications
+create policy publications_delete on participation.publications
   for delete to authenticated using (is_organisation_owner(organisation_id));
-grant select, insert, update, delete on publications to authenticated, service_role;
+grant select, insert, update, delete on participation.publications to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
--- nexgen_public — what anyone may read, signed in or not.
+-- participation_public — what anyone may read, signed in or not.
 -- ---------------------------------------------------------------------------
 
-create schema nexgen_public;
+create schema participation_public;
 
-comment on schema nexgen_public is
+comment on schema participation_public is
   'What the public reads without signing in: the publications not withdrawn. The only schema the anon role is given.';
 
 -- On purpose a view with its owner's rights (the role that installs the
--- schema, owner of the table): it reads one table past its row level
+-- module, owner of the table): it reads one table past its row level
 -- security and gives only what is published and not withdrawn, without
 -- the organisation's internal identifiers. A database linter reporting a
 -- security definer view here reports this choice.
-create view nexgen_public.publications with (security_barrier) as
+create view participation_public.publications with (security_barrier) as
   select p.id, p.title, p.description, p.license, p.publisher, p.subject_kind,
          p.media_type, p.document, p.document_hash, p.published_at
-    from nexgen.publications p
+    from participation.publications p
    where p.withdrawn_at is null;
 
-comment on view nexgen_public.publications is
+comment on view participation_public.publications is
   'The publications not withdrawn, for anyone: title, licence, publisher, the document and its sha256.';
 
-grant usage on schema nexgen_public to anon, authenticated, service_role;
-grant select on nexgen_public.publications to anon, authenticated, service_role;
+grant usage on schema participation_public to anon, authenticated, service_role;
+grant select on participation_public.publications to anon, authenticated, service_role;
+
+insert into modules (code, name, version, schema_name, requires_core_min, description)
+values ('participation', 'Participation', '0.1.0', 'participation', '0.1.0',
+        'What an organisation shows the public: open exports of a site or a project, published by an owner, kept as published, read without an account.');

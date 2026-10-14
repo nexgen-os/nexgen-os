@@ -19,7 +19,9 @@ re-reads, and would follow every later change of the rows.
 **What the public reads is a publication: a document an owner chose to
 publish, kept as it was published.**
 
-- `nexgen.publications` holds one document per row: today an open GeoJSON
+- The `participation` module holds them, the module the plan of
+  `modules/README.md` gives public consultation to: the core does not
+  change. `participation.publications` holds one document per row: today an open GeoJSON
   export of a site or a project (`formats/geojson`, `open: true`), with its
   title, its licence (SPDX), its publisher and its date. The database
   writes the publisher, the kind of subject, the author, the date and the
@@ -29,14 +31,17 @@ publish, kept as it was published.**
   may not be passed on. The sources it does draw on are listed inside it,
   with their licences.
 - Owners publish, withdraw and delete. Editors and viewers read their
-  organisation's publications. A publication never changes; its
+  organisation's publications. The table has its own policies for that,
+  rather than `secure_table()`, which lets editors write. A publication never changes; its
   withdrawal is the one change, made once.
-- The public reads one view, `nexgen_public.publications`: the
+- The public reads one view, `participation_public.publications`: the
   publications not withdrawn, without the organisation's internal
-  identifiers. `nexgen_public` is the only schema the `anon` role is given;
-  it reaches no table and no function of `nexgen`. Through the API:
+  identifiers. `participation_public` is the only schema the `anon` role is
+  given; it reaches no table and no function of `nexgen` or of
+  `participation`. Through the API:
   `GET /rest/v1/publications?id=eq.<id>&select=document` with the
-  `Accept-Profile: nexgen_public` header and the project's anonymous key.
+  `Accept-Profile: participation_public` header and the project's anonymous
+  key.
 
 ## Why
 
