@@ -129,7 +129,7 @@ supabase/migrations/   the core, in the schema `nexgen` (`public` stays the inst
 supabase/seed/         the core vocabularies
 modules/               one Postgres schema per module (architecture, weather and solar shipped)
 packs/                 one folder per country (fr, be: identifiers, sources, the address register as a geocoder)
-formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson, ifc)
+formats/               one MIT library per format or geocoder (homeassistant, geocoding, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT
 engines/               external computations in any language, JSON in and out (pvlib, optional), MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)

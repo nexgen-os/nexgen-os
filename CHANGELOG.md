@@ -10,6 +10,11 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- `formats/geojson`, the GeoJSON export: a site, or every site of a
+  project with its perimeter, as one RFC 7946 FeatureCollection with the
+  attributes, identifiers and runs of each object and the sources it owes;
+  `open: true` leaves out street lines, serial numbers, metadata and
+  whatever came from a source that may not be passed on.
 - `exceedance()` in the `solar` module: P50, P75, P90 and P99 of a yield run
   on real years, from its yearly totals, their interannual spread over the
   horizon asked and the uncertainty components the caller names, recorded
