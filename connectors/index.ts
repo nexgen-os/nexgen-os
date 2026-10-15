@@ -96,7 +96,10 @@ export interface SeriesTarget {
   organisationId: string;
   /** The object the series is about: a site, a meter, a building, a zone. */
   objectId: string;
-  sourceCode: string;
+  /** The source of the vocabulary the values come from; null when none is one (a bill typed in). */
+  sourceCode: string | null;
+  /** A free note on where the values come from, written when the series is created. */
+  source?: string | null;
   kind: 'measured' | 'simulated' | 'forecast' | 'setpoint';
   scenarioId?: string | null;
   /**
@@ -124,7 +127,7 @@ export async function storeSeries(
   }
   const found = await db.query<{ id: string }>(
     `select id from series
-      where object_id = $1 and quantity_code = $2 and kind = $3 and source_code = $4
+      where object_id = $1 and quantity_code = $2 and kind = $3 and source_code is not distinct from $4
         and scenario_id is not distinct from $5 and name is not distinct from $6
       limit 1`,
     [target.objectId, series.quantity_code, target.kind, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
@@ -132,9 +135,9 @@ export async function storeSeries(
   let seriesId = found.rows[0]?.id;
   if (!seriesId) {
     const created = await db.query<{ id: string }>(
-      `insert into series (organisation_id, object_id, quantity_code, kind, value_kind, step, source_code, scenario_id, name)
-       values ($1, $2, $3, $4, $5, $6::interval, $7, $8, $9) returning id`,
-      [target.organisationId, target.objectId, series.quantity_code, target.kind, series.value_kind, series.step, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
+      `insert into series (organisation_id, object_id, quantity_code, kind, value_kind, step, source_code, scenario_id, name, source)
+       values ($1, $2, $3, $4, $5, $6::interval, $7, $8, $9, $10) returning id`,
+      [target.organisationId, target.objectId, series.quantity_code, target.kind, series.value_kind, series.step, target.sourceCode, target.scenarioId ?? null, target.name ?? null, target.source ?? null],
     );
     seriesId = created.rows[0].id;
   }
