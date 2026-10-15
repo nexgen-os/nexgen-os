@@ -10,6 +10,19 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- The `energy_sharing` engine kind (`engines/energy-sharing.ts`): the
+  participants' offtake and injection on one grid of steps, an allocation
+  key as data and the rules of a country or a project passed as they are;
+  back, what each participant received from the sharing and gave to it,
+  and what is left. `engines/sharing-example`, a pure Python engine sharing
+  in proportion to offtake, to copy and replace with one's own key.
+- The `sharing` module: allocation keys of a project as data, with their
+  period and source; `runSharing()` hands a project's metered offtake and
+  injection to an `energy_sharing` engine, stores its answer as series on
+  the participants and records the run with the engine's version. Two
+  quantities, `shared_offtake_energy` and `shared_injection_energy`.
+- `storeSeries()` takes a series whose values come from no source of the
+  vocabulary, with a free note.
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's

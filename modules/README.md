@@ -37,7 +37,7 @@ a program in any language, JSON in and out, that never reads the database.
 | `storage` | batteries and their product physics (usable capacity, cycles, round-trip efficiency), hydrogen later | charge and discharge dispatch on the series `solar` and `consumption` produce |
 | `charging` | EV chargers, charging sessions | charging load and its steering |
 | `consumption` | load profiles, typical weeks, activity hours | a site's consumption curve: measured, reconstructed from a bill and activity hours, or typical |
-| `sharing` | allocation keys, settlement lines | self-consumption on a site, energy sharing in a community, settlement handed to Ekwo for invoicing |
+| `sharing` (keys and runs shipped) | allocation keys as data; settlement lines later | energy sharing computed by an engine of the `energy_sharing` kind ([0013](../docs/decisions/0013-external-engines.md)), whose key is its author's, recorded as a run with series on the participants; settlement handed to Ekwo for invoicing later |
 | `flexibility` (later) | flexible loads, offers, activations | demand response, aggregation, dispatch across sites |
 | `weather` | weather points (grid cells, stations) sites are linked to, weather models as sources with their coverage, the rule that picks one per place | the weather series every other module reads: observed, typical year, forecast; the choice of model resolved per site from the installation, the pack, the organisation, the project |
 | `generators` (later) | wind turbines, hydro, cogeneration, biomass and their curves | their yield, like `solar` for PV |

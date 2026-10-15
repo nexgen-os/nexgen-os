@@ -11,6 +11,7 @@ database. Decision [0013](../docs/decisions/0013-external-engines.md).
 | Engine | Request kinds | Language | Licence |
 |---|---|---|---|
 | [`pvlib`](pvlib/README.md) | `pv_yield` | Python 3.9+ with pvlib, pandas, numpy | MIT (pvlib itself is BSD-3) |
+| [`sharing_example`](sharing-example/README.md) | `energy_sharing` | Python 3.9+, no dependency | MIT |
 
 Engines are optional. An installation without any runs everything else;
 a run that asks for an engine that is not installed is refused by name
@@ -77,6 +78,29 @@ south); tilt in degrees from horizontal; energy in kWh per interval;
 power in kW; irradiance in W/m²; temperature in °C; wind speed in m/s at
 the height the series says (10 m unless told otherwise); losses as
 fractions, in order, each applying to what the previous ones left.
+
+## Request kinds
+
+A request kind is a shape, written once in TypeScript beside the runner,
+that any engine accepting it answers in.
+
+- `pv_yield` ([`pvlib/index.ts`](pvlib/index.ts)): a PV system's arrays,
+  models, losses and weather in; its production, plane-of-array irradiance
+  and module temperature out.
+- `energy_sharing` ([`energy-sharing.ts`](energy-sharing.ts)): the
+  participants of a sharing, each with its `offtake_energy` and
+  `injection_energy` on one grid of steps (`from`, `to`, `step`), the
+  allocation key as data (`key`: a `method` and its `parameters`, as the
+  project holds them) and the rules of the country or the project passed as
+  they are (`rules`); out, for each participant and each step,
+  `shared_offtake_energy` (received from the sharing),
+  `shared_injection_energy` (given to it), and the `offtake_energy` and
+  `injection_energy` left for its supplier and the grid, with their totals
+  and `meta`, what the engine applied. How it shares is the engine's own:
+  whoever runs a community writes their key in their engine.
+  [`sharing-example`](sharing-example/README.md) is one to copy. An engine
+  refuses by name a key or a rule it does not know (`key_unknown`,
+  `rule_unknown`), never applies a default the request did not ask for.
 
 ## Finding an engine
 
