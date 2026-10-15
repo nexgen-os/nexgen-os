@@ -57,3 +57,14 @@ other installation of Nexgen OS; it has no private schema in your database.
 - your data, your descriptions or your series, to anyone;
 - the physics: how a yield, a loss, a sharing key or an indicator is
   computed is in this repository, with its decision and its test.
+
+## Help and services
+
+The foundation is free to install and to own. The team that writes it is
+WeSmart's, and its time is for sale: an account on Nexgen
+([nexgen.wesmart.com](https://nexgen.wesmart.com)) gives the platform built on
+this base, and WeSmart ([wesmart.com/nexgen](https://wesmart.com/nexgen), a call
+at [cal.com/fpbordes/30min](https://cal.com/fpbordes/30min)) installs,
+extends and integrates the foundation, writes a module or a pack for a
+country, and trains a team. That is how the foundation is paid for; nothing
+in it is held back to make it necessary.

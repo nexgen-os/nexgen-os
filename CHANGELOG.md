@@ -10,6 +10,11 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- Where to get help, said in one place of each door: the README, the site,
+  `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
+  `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's
+  platform; an account on Nexgen gives the platform, WeSmart's services
+  cover the foundation itself.
 - Decision [0016](docs/decisions/0016-naming-third-party-methods.md): where a
   third party's name goes (connectors, engines, formats), which methods are
   rewritten (published ones, under the name the literature cites) and the

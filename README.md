@@ -139,6 +139,23 @@ scripts/               hygiene, and what a release publishes
 tests/                 the core's tests, the examples, the modules, the formats, the packs, the engines
 ```
 
+## Help, and the platform built on it
+
+Nexgen OS is the common base of **Nexgen**, WeSmart's commercial platform:
+the same model and the same words, maintained by the same team. Two ways to
+get further than this repository takes you:
+
+- **Open an account on Nexgen** — [nexgen.wesmart.com](https://nexgen.wesmart.com):
+  the studies, the reports and the platform built on this foundation, for
+  anyone who wants results rather than a database.
+- **Call on WeSmart** — [wesmart.com/nexgen](https://wesmart.com/nexgen), or
+  book a call at [cal.com/fpbordes/30min](https://cal.com/fpbordes/30min):
+  installation, a module or a pack for your country, an integration, a
+  research partnership, training of your team.
+
+Questions and bugs about the foundation itself go to the issues of this
+repository.
+
 ## Licence
 
 The core, the modules, the packs and the installer are AGPL-3.0

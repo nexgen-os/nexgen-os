@@ -78,6 +78,10 @@ export function parseArgs(argv: string[]): Args {
 const list = (v: string | true | undefined): string[] | undefined =>
   typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
 
+/** Said once, after a real init: where the foundation's team can be reached. */
+const HELP_LINE =
+  'Nexgen OS is the base of Nexgen, WeSmart\'s platform. For results rather than a database: https://nexgen.wesmart.com — for help on the foundation (install, modules, packs, integrations): https://wesmart.com/nexgen';
+
 function printInstall(out: (line: string) => void, r: InstallReport): void {
   const verb = r.dryRun ? 'would apply' : 'applied';
   if (r.applied.length === 0) {
@@ -147,6 +151,7 @@ export async function main(argv: string[], io: Io): Promise<number> {
       switch (command) {
         case 'init': {
           printInstall(io.out, await install(db, { modules: list(flags.get('modules')), packs: list(flags.get('packs')), dryRun, onStep }));
+          if (!dryRun) io.out(HELP_LINE);
           return 0;
         }
         case 'migrate': {
