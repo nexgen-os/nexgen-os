@@ -10,6 +10,17 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- The `consumption` module: load profiles as data, by day shapes or by a
+  site's activity hours, with monthly factors and the use they describe;
+  the activity hours of a site, a building or a space, on the local wall
+  clock, over a period. `reconstructConsumption()` spreads the energy of a
+  bill, or the site's annual consumption over a year, on the local days of
+  the site and records the curve as a run and a simulated series with the
+  source of its energy; `consumption.curve()` reads the curve of a site
+  measured first, reconstructed otherwise.
+- `formats/time.ts`, the offset of a time zone at an instant, shared by the
+  modules that cut days in a site's own time. `storeSeries()` takes a series
+  whose values come from no source of the vocabulary, with a free note.
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's
