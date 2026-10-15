@@ -78,7 +78,7 @@ export function parseArgs(argv: string[]): Args {
 const list = (v: string | true | undefined): string[] | undefined =>
   typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
 
-/** Said once, after a real init: where the foundation's team can be reached. */
+/** Said once, after an init that installed something: where the foundation's team can be reached. */
 const HELP_LINE =
   'Nexgen OS is the base of Nexgen, WeSmart\'s platform. For results rather than a database: https://nexgen.wesmart.com — for help on the foundation (install, modules, packs, integrations): https://wesmart.com/nexgen';
 
@@ -150,8 +150,9 @@ export async function main(argv: string[], io: Io): Promise<number> {
       const onStep = (s: Step): void => io.out(`  ${dryRun ? 'would apply' : 'applied'} ${s.name}`);
       switch (command) {
         case 'init': {
-          printInstall(io.out, await install(db, { modules: list(flags.get('modules')), packs: list(flags.get('packs')), dryRun, onStep }));
-          if (!dryRun) io.out(HELP_LINE);
+          const r = await install(db, { modules: list(flags.get('modules')), packs: list(flags.get('packs')), dryRun, onStep });
+          printInstall(io.out, r);
+          if (!dryRun && r.applied.length > 0) io.out(HELP_LINE);
           return 0;
         }
         case 'migrate': {
