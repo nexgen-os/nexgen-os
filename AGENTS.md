@@ -109,3 +109,8 @@ Read `CONTRIBUTING.md` (DCO sign-off, English, no country in code),
 are as they are, including the ones taken back). Run only the test file you
 touch while you work, the whole suite once at the end; never two suites at
 once. Commits and pull requests are made in the project's name.
+A third party's name goes in `connectors/` (its data), `engines/` (its
+computation) or `formats/` (its files), and a published method keeps the
+name the literature cites it by; every function of ours says what it
+computes and takes the model as data (`profile`, `key`, `model`), and no
+name carries a country or a product ([0016](docs/decisions/0016-naming-third-party-methods.md)).

@@ -10,6 +10,11 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- Decision [0016](docs/decisions/0016-naming-third-party-methods.md): where a
+  third party's name goes (connectors, engines, formats), which methods are
+  rewritten (published ones, under the name the literature cites) and the
+  rule for every function of ours: generic name, model as data, source
+  cited. Restated for code agents in `AGENTS.md`.
 - `formats/geojson`, the GeoJSON export: a site, or every site of a
   project with its perimeter, as one RFC 7946 FeatureCollection with the
   attributes, identifiers and runs of each object and the sources it owes;
