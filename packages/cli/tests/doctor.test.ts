@@ -97,7 +97,7 @@ describe('status and the command line', () => {
       expect(dry.code).toBe(0);
       expect(dry.out).toMatch(/would apply 13 step\(s\), 0 already recorded — dry run, rolled back$/);
       const real = await run(['init', '--modules=architecture'], empty);
-      expect(real.out).toMatch(/applied 13 step\(s\), 0 already recorded$/);
+      expect(real.out).toMatch(/applied 13 step\(s\), 0 already recorded\n.*https:\/\/nexgen\.wesmart\.com.*$/);
       const again = await run(['init', '--modules=architecture'], empty);
       expect(again.out).toBe('nothing to apply: 13 step(s) already recorded');
       expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 13 step(s) already recorded');
