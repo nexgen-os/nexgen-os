@@ -64,7 +64,7 @@ describe('plan', () => {
     const names = c.core.map((s) => s.name);
     expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_1_0.sql');
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['architecture', 'construction', 'participation', 'solar', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['architecture', 'construction', 'consumption', 'participation', 'solar', 'weather']);
     expect([...c.packs.keys()]).toEqual(['be', 'fr']);
   });
 });
