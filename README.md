@@ -12,11 +12,12 @@ foundation, not the product. Why the foundation exists and what it promises:
 begins: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md). What the
 figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
-> Status: **0.1 in preparation — the core schema, the `architecture`, `weather` and `solar` modules, the Home
-> Assistant, geocoding, CityJSON and IFC libraries, the Open-Meteo and PVGIS connectors,
+> Status: **0.1, the first release** — the core schema, the `architecture`, `weather`,
+> `solar` and `tasks` modules, the format libraries, the Open-Meteo and PVGIS connectors,
 > external engines in any language with pvlib (Python) as the first, the `nexgen-os`
-> installer, the `fr` and `be` country packs and seven example datasets**. Tested; nothing
-> here is stable until 0.1.
+> installer, the `fr` and `be` country packs and seven example datasets; each is described
+> in the [changelog](CHANGELOG.md). Tested; names may still change until 1.0, and every
+> change is written down.
 
 ## The model in one screen
 

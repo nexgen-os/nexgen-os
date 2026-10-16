@@ -86,6 +86,24 @@ describe('the release workflow', () => {
   });
 });
 
+describe('the changelog', () => {
+  const changelog = readFileSync(new URL('../CHANGELOG.md', import.meta.url), 'utf8');
+  const sections = [...changelog.matchAll(/^## \[([^\]]+)\](.*)$/gm)].map(([, name, rest]) => ({ name, rest }));
+
+  it('opens on an [Unreleased] section, above every release', () => {
+    expect(sections[0]?.name).toBe('Unreleased');
+    expect(sections.filter((section) => section.name === 'Unreleased')).toHaveLength(1);
+  });
+
+  it('has a dated section for the version every published package carries', () => {
+    const released = new Map(sections.slice(1).map((section) => [section.name, section.rest]));
+    for (const { pkg } of workspaces() as { pkg: { name: string; version: string; private?: boolean } }[]) {
+      if (pkg.private === true) continue;
+      expect(released.get(pkg.version), `${pkg.name}@${pkg.version}`).toMatch(/^ — \d{4}-\d{2}-\d{2}$/);
+    }
+  });
+});
+
 // A fake `npm view`: the answer for each package name, or a thrower.
 const attested = (version: string) =>
   JSON.stringify({

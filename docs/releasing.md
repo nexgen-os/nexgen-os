@@ -75,7 +75,7 @@ worse than one not cut.
 
    **The last run:** `0.1.0`, 16 October 2026, on a throwaway Supabase
    project in `eu-west-3` (Paris), Postgres 17.11, PostGIS 3.3.7, through
-   the session pooler (port 5432), Node 22. `0.1.0` is the first release,
+   the session pooler (port 5432), Node 24. `0.1.0` is the first release,
    so there was no earlier one to install first: the package was built,
    packed (`npm pack -w packages/cli`) and installed from its tarball, as
    npm will hand it to a user. On the empty project `doctor` named
