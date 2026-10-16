@@ -25,13 +25,17 @@ release may break, and says how. How a release is cut:
   attributes, identifiers and runs of each object and the sources it owes;
   `open: true` leaves out street lines, serial numbers, metadata and
   whatever came from a source that may not be passed on.
-- The `construction` module: milestones of works on a project, a site, a
-  building, a surface or a device, in phases read from a vocabulary
-  (design to handover), with planned and actual dates, a status kept
-  consistent with them and the contact who answers for each; each
-  milestone is an object, so photos and reports attach to it.
-  `construction.progress()` says where the works of a site or a project
-  stand on a given day.
+- The `tasks` module (decision 0017): what has to be done on a project
+  and where it stands. Phases from study to decommissioning and the roles
+  that carry a task, as vocabularies; task templates per country and kind
+  of project, with their legal reference, expected documents and
+  condition, published by the packs and the installation; `tasks.plan()`
+  creates a project's tasks from them, once, and says what it could not
+  decide; tasks on a project, a site, a building, a surface or a device
+  with planned and actual dates, a status kept consistent with them, a
+  role, a contact, a dependency and a source; each task is an object, so
+  photos, reports and certificates attach to it. `tasks.progress()` says
+  where a site or a project stands on a given day.
 - `exceedance()` in the `solar` module: P50, P75, P90 and P99 of a yield run
   on real years, from its yearly totals, their interannual spread over the
   horizon asked and the uncertainty components the caller names, recorded
