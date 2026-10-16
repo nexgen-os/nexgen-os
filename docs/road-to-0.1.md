@@ -7,12 +7,17 @@ worse than none.
 ## What 0.1 is
 
 The first version other people can install, read and build on: the core
-schema in the `nexgen` schema, the `architecture`, `weather` and `solar`
-modules, the format libraries (Home Assistant, geocoding, CityJSON, IFC), the
-connectors (Open-Meteo, PVGIS), the pvlib engine, two country packs (`fr`,
-`be`), seven example
-datasets, and the decisions that explain them. Not stable: names may still
-change until 1.0, and every change is written down.
+schema in the `nexgen` schema, the `architecture`, `weather`, `solar` and
+`tasks` modules, the format libraries (Home Assistant, geocoding, CityJSON,
+GeoJSON, IFC, EPW and TMY3, PAN and OND), the connectors (Open-Meteo, PVGIS),
+the pvlib engine, two country packs (`fr`, `be`), seven example datasets,
+and the decisions that explain them. What each brings is in the
+[changelog](../CHANGELOG.md). Not stable: names may still change until 1.0,
+and every change is written down.
+
+Two steps planned for 0.1 move to 0.2, so that 0.1 ships what is ready:
+the MCP server and the Nexgen application reading a Nexgen OS database
+(see *After 0.1* below).
 
 ## The steps
 
@@ -53,11 +58,6 @@ change until 1.0, and every change is written down.
 - [ ] **The packages** on npm under `@nexgen-os`: the format libraries and
   the connectors, each usable without Nexgen OS; the installer; the core
   client.
-- [ ] **An MCP server**, `@nexgen-os/mcp`, hosted and local, on the model
-  of Ekwo's: an agent describes a site, imports a file, runs a yield and
-  reads it back, as the user, under row level security. Agents are a first
-  audience of this project, not an afterthought: `AGENTS.md` is written
-  for them from 0.1.
 - [x] **A changelog** per release, and a `docs/releasing.md` that lists what
   has to move, as Ekwo's does.
 - [x] Continuous integration: the test suite on three Node versions, a
@@ -75,9 +75,21 @@ change until 1.0, and every change is written down.
   the three format readers that make the model worth filling.
 - [x] The EPW and TMY3 weather file reader, and the EPW writer
   (`formats/weather-files`).
-- [ ] The PAN/OND product file reader.
+- [x] The PAN/OND product file reader (`formats/panond`).
 - [x] A second country pack, so that the pack mechanics are proven twice
   (`be`, with its three regional registers).
+- [x] The installer run against a real Supabase project, as a user runs it
+  (`docs/releasing.md`, *The last run*).
+
+## After 0.1
+
+Planned for 0.2:
+
+- [ ] **An MCP server**, `@nexgen-os/mcp`, hosted and local, on the model
+  of Ekwo's: an agent describes a site, imports a file, runs a yield and
+  reads it back, as the user, under row level security. Agents are a first
+  audience of this project, not an afterthought: `AGENTS.md` is written
+  for them from 0.1.
 - [ ] The Nexgen application reads a Nexgen OS database for one real site,
   end to end.
 
