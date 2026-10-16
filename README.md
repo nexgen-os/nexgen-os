@@ -122,6 +122,39 @@ The installer's page ([packages/cli/README.md](packages/cli/README.md))
 says what each command does and how to reach a remote host over TLS. Every
 example in `examples/` is a complete, loadable dataset.
 
+## Twenty minutes, to the same building with its yield
+
+From the house loaded above, in a clone of this repository (`npm ci` once):
+
+6. Describe its PV system in the `solar` module. The device already stands
+   on the south roof face, which gives the array its azimuth and tilt:
+
+   ```sql
+   set search_path = nexgen;
+   insert into solar.pv_systems (id, kwp_dc, grid_connection) values ('00000000-0000-4000-8000-000100000051', 3.825, 'self_consumption');
+   ```
+
+7. Compute its yield for a year, as a run: PVGIS computes the energy (no
+   key), the run records the weather, the period, the array, the losses and
+   the conventions, and the hourly energy is read back by month through
+   `resample()`:
+
+   ```bash
+   npx tsx examples/yield.ts 00000000-0000-4000-8000-000100000051 2023
+   ```
+
+8. Read what the run says it was computed from. Run step 7 again: the same
+   inputs give back the same run and the same figure.
+
+   ```sql
+   select engine_version, inputs->'weather', inputs->'arrays', results
+     from nexgen.runs where subject_id = '00000000-0000-4000-8000-000100000051'
+    order by started_at desc limit 1;
+   ```
+
+The yield profiles, the other ways to run one (`pvwatts`, the pvlib engine)
+and what each run records: [modules/solar/README.md](modules/solar/README.md).
+
 ## Layout
 
 ```

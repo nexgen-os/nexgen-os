@@ -69,8 +69,9 @@ change until 1.0, and every change is written down.
 
 - [x] A README that a stranger can follow from an empty Supabase project to
   a building, in five minutes (the installer, then an example dataset).
-- [ ] The same, to a building with a yield, in twenty minutes, and the
-  recording that proves it.
+- [x] The same, to a building with a yield, in twenty minutes
+  (`examples/yield.ts`, kept true by `tests/yield-example.test.ts`).
+- [ ] The recording that proves it.
 - [x] The IFC reader (`IfcMapConversion`, floors and spaces), the first of
   the three format readers that make the model worth filling.
 - [x] The EPW and TMY3 weather file reader, and the EPW writer
