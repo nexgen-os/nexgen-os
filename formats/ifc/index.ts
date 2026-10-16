@@ -8,7 +8,11 @@
 // model is placed on the globe by its IfcMapConversion, else by its site's
 // latitude and longitude. Property sets and quantities the core has no
 // column for travel in `metadata.ifc`, so that nothing the file says about
-// a building, a floor or a space is lost. The file is parsed by web-ifc
+// a building, a floor or a space is lost. Equipment whose IFC class a
+// device type names (`device_types.ifc_class`: IfcSolarDevice, IfcBoiler,
+// IfcFlowMeter…) becomes a device on the site, in the building that
+// contains it, with its manufacturer, model and serial number when the file
+// gives them. The file is parsed by web-ifc
 // (MPL-2.0, WebAssembly). MIT, like every format library.
 
 import * as WebIFC from 'web-ifc';
@@ -48,7 +52,7 @@ export interface ImportResult {
   siteUpdated: boolean;
   schema: string;
   buildings: { id: string; globalId: string; footprint: FootprintSource }[];
-  counts: { buildings: number; floors: number; spaces: number; roofs: number };
+  counts: { buildings: number; floors: number; spaces: number; roofs: number; devices: number };
   /** Products of the file that did not become rows, by entity type and reason. */
   skipped: { entity: string; count: number; reason: string }[];
 }
@@ -140,7 +144,7 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     siteUpdated: false,
     schema,
     buildings: [],
-    counts: { buildings: 0, floors: 0, spaces: 0, roofs: 0 },
+    counts: { buildings: 0, floors: 0, spaces: 0, roofs: 0, devices: 0 },
     skipped: [],
   };
   const seen = new Set<number>([projectId]);
@@ -175,6 +179,7 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     result.siteUpdated = site.rows.length > 0;
   }
 
+  const buildingRows = new Map<number, string>();
   for (const buildingId of m.ids(WebIFC.IFCBUILDING)) {
     seen.add(buildingId);
     const b = m.line(buildingId);
@@ -265,6 +270,7 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     const id = row.rows[0].id;
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'ifc_guid', $2)`, [id, globalId]);
     result.buildings.push({ id, globalId, footprint });
+    buildingRows.set(buildingId, id);
     result.counts.buildings += 1;
     for (const s of floorSlabs) skip(s, 'read for the footprint only');
     if (footprint === 'walls') for (const w of footprintWalls) skip(w, 'read for the footprint only');
@@ -385,6 +391,66 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
         }
       }
     }
+  }
+
+  // Equipment: the device type is the vocabulary's, read by IFC class. A
+  // class several types share is told apart by the element's predefined
+  // type when it names one (BATTERY), else it takes the most specific type
+  // they all refine (an IfcElectricGenerator is a generator); with none in
+  // common, the element is skipped and says why.
+  const vocabulary = (await db.query<{ code: string; parent_code: string | null; ifc_class: string | null }>(
+    `select code, parent_code, ifc_class from device_types order by code`,
+  )).rows;
+  const parentOf = new Map(vocabulary.map((t) => [t.code, t.parent_code]));
+  const lineage = (code: string): string[] => {
+    const out: string[] = [];
+    for (let c: string | null | undefined = code; c && !out.includes(c); c = parentOf.get(c)) out.push(c);
+    return out;
+  };
+  const deviceTypeOf = (entity: string, predefined: string | null): string | null | 'ambiguous' => {
+    const candidates = vocabulary.filter((t) => t.ifc_class?.toLowerCase() === entity.toLowerCase()).map((t) => t.code);
+    if (candidates.length === 0) return null;
+    const named = predefined ? candidates.find((c) => c === predefined.toLowerCase()) : undefined;
+    if (named) return named;
+    if (candidates.length === 1) return candidates[0];
+    const lineages = candidates.map(lineage);
+    return lineages[0].find((c) => lineages.every((l) => l.includes(c))) ?? 'ambiguous';
+  };
+  const buildingOf = (id: number): string | null => {
+    for (const [ifcId, rowId] of buildingRows) if (relations.descendantsOf(ifcId).has(id)) return rowId;
+    return null;
+  };
+  for (const id of m.ids(WebIFC.IFCPRODUCT, true)) {
+    if (seen.has(id)) continue;
+    const line = m.line(id);
+    const deviceType = deviceTypeOf(m.typeName(id), enumOf(line.PredefinedType));
+    if (deviceType === null) continue;
+    if (deviceType === 'ambiguous') {
+      skip(id, 'several device types share this IFC class');
+      continue;
+    }
+    seen.add(id);
+    const pset = properties.get(id)?.psets ?? {};
+    const product = pset.Pset_ManufacturerTypeInformation ?? {};
+    const occurrence = pset.Pset_ManufacturerOccurrence ?? {};
+    const at = placement.precision ? placement.toTarget(frameOf(m, line.ObjectPlacement, units.length).o) : null;
+    const device = await db.query<{ id: string }>(
+      `insert into devices (organisation_id, site_id, building_id, scenario_id, name, device_type,
+                            manufacturer, model, serial_number, geometry, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+               case when $10::float8 is null then null else ST_Force3D(${to4326('ST_MakePoint($10, $11, $12)', 13, 14)}) end, $15)
+       returning id`,
+      [
+        target.organisationId, target.siteId, buildingOf(id), target.scenarioId ?? null,
+        text(line.Name) ?? text(line.ObjectType) ?? m.typeName(id), deviceType,
+        text(product.Manufacturer), text(product.ModelLabel) ?? text(product.ModelReference), text(occurrence.SerialNumber),
+        at?.[0] ?? null, at?.[1] ?? null, at?.[2] ?? null, placement.srid, placement.proj,
+        // Devices have no source column: the file they came from travels with the rest of what it said.
+        JSON.stringify({ ifc: { ...describe(id), header, source_code: options.sourceCode } }),
+      ],
+    );
+    await externalId(db, device.rows[0].id, line);
+    result.counts.devices += 1;
   }
 
   // Everything else the file holds, by type.

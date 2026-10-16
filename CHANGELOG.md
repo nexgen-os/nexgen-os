@@ -28,6 +28,14 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   `NexgenError` with its name; statements are simple queries, served by a
   pooler in transaction mode. Tested against a fresh installation in the
   `sdk-python` job of CI.
+||||||| parent of 8b5b200 (feat(ifc): the equipment of a model becomes devices, typed by the vocabulary)
+- `formats/ifc` reads the equipment of a model: each product whose IFC
+  class a device type names (`device_types.ifc_class`) becomes a device on
+  the site, in the building that contains it, with its maker, model and
+  serial number from the manufacturer property sets and a point from its
+  placement. A class several device types share is told apart by its
+  predefined type, else by the type they all refine, else skipped with its
+  reason. `counts.devices` in the result.
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's

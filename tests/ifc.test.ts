@@ -16,6 +16,11 @@
 //   conversion: IfcSite's RefLatitude and RefLongitude name the point RD New
 //   calls (121000, 487000), the context's TrueNorth turns the model by the
 //   same 30°, and four exterior walls stand where the base slab was.
+// - ifc-house-equipment.ifc: the house of the map conversion under another
+//   GlobalId, with its equipment: a PV array on the roof, a battery with its
+//   maker, model and serial number, an electricity meter, an air handler
+//   (IfcUnitaryEquipment, a class three device types share) and a turbine
+//   in the garden, on the site and in no building.
 // Facing the model's −Y with its X axis 30° counter-clockwise from east,
 // the roof faces 150° (south-south-east).
 import { readFile } from 'node:fs/promises';
@@ -105,7 +110,7 @@ describe('an IFC4 model with an IfcMapConversion', () => {
     expect(r.locationPrecision).toBe('rooftop');
     expect(r.siteUpdated).toBe(true);
     expect(r.schema).toBe('IFC4');
-    expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1 });
+    expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1, devices: 0 });
     expect(r.buildings).toEqual([{ id: expect.any(String), globalId: '0K7w7JWBL5QOdBzu3Yz7Ts', footprint: 'slabs' }]);
     id = r.buildings[0].id;
 
@@ -179,6 +184,42 @@ describe('an IFC4 model with an IfcMapConversion', () => {
   });
 });
 
+describe('an IFC4 model with its equipment', () => {
+  it('lands each piece of equipment as a device of the type its IFC class names, in the building that contains it', async () => {
+    const installer = await organisation(db, 'An installer', USER_A);
+    const site = await newSite(installer, 'Canal house with its equipment');
+    const r = await importIfc(db, { organisationId: installer, siteId: site }, await fixture('ifc-house-equipment.ifc'), { sourceCode: 'architect_model' });
+    expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1, devices: 4 });
+    expect(r.skipped).toEqual([
+      { entity: 'IfcGeographicElement', count: 1, reason: 'no place in the core for this entity type' },
+      { entity: 'IfcSlab', count: 1, reason: 'read for the footprint only' },
+      { entity: 'IfcUnitaryEquipment', count: 1, reason: 'several device types share this IFC class' },
+    ]);
+    const devices = await db.query<{
+      name: string; device_type: string; in_building: boolean; manufacturer: string | null; model: string | null; serial: string | null;
+      guid: string; source: string; predefined: string; lon: number; lat: number;
+    }>(
+      `select d.name, d.device_type, d.building_id = $2 in_building, d.manufacturer, d.model, d.serial_number serial,
+              (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
+              d.metadata->'ifc'->>'source_code' source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
+              ST_X(d.geometry)::float lon, ST_Y(d.geometry)::float lat
+         from devices d where d.site_id = $1 order by d.name`,
+      [site, r.buildings[0].id],
+    );
+    expect(devices.rows.map(({ lon, lat, predefined, ...d }) => d)).toEqual([
+      { name: 'Electricity meter', device_type: 'meter', in_building: true, manufacturer: null, model: null, serial: null, guid: '0Eq1Mt2Ab3Cd4Ef5Gh6Ij7', source: 'architect_model' },
+      { name: 'Garden turbine', device_type: 'generator', in_building: null, manufacturer: null, model: null, serial: null, guid: '0Eq1Wt2Ab3Cd4Ef5Gh6Ij7', source: 'architect_model' },
+      { name: 'Home battery', device_type: 'battery', in_building: true, manufacturer: 'Acme Storage', model: 'AS-10', serial: 'SN-0001', guid: '0Eq1Bt2Ab3Cd4Ef5Gh6Ij7', source: 'architect_model' },
+      { name: 'Roof array', device_type: 'solar', in_building: true, manufacturer: null, model: null, serial: null, guid: '0Eq1Pv2Ab3Cd4Ef5Gh6Ij7', source: 'architect_model' },
+    ]);
+    // Placed on the globe by the map conversion, around the house (4.89° E, 52.37° N).
+    for (const d of devices.rows) {
+      expect(d.lon).toBeCloseTo(4.89, 1);
+      expect(d.lat).toBeCloseTo(52.37, 1);
+    }
+  });
+});
+
 describe('an IFC4 model in millimetres placed by its site’s coordinates', () => {
   let id: string;
   let mapBuilding: BuildingRow;
@@ -190,7 +231,7 @@ describe('an IFC4 model in millimetres placed by its site’s coordinates', () =
     expect(r.georeference).toBe('site_coordinates');
     expect(r.crs).toMatch(/^\+proj=tmerc \+lat_0=52\.369826/);
     expect(r.locationPrecision).toBe('parcel');
-    expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1 });
+    expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1, devices: 0 });
     expect(r.buildings[0].footprint).toBe('walls');
     expect(r.skipped).toEqual([
       { entity: 'IfcGeographicElement', count: 1, reason: 'no place in the core for this entity type' },
