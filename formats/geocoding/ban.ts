@@ -57,7 +57,7 @@ export function ban(options: { baseUrl?: string; fetch?: Fetch } = {}): Geocoder
 function fromBan(f: BanFeature): Place {
   const p = f.properties;
   const street = [p.street ?? (p.type === 'street' ? p.name : undefined), p.housenumber].filter(Boolean).join(' ') || null;
-  // The context reads "75, Paris, Île-de-France": the department code is the ISO 3166-2 subdivision.
+  // The context reads "<department code>, <department>, <region>": the department code is the ISO 3166-2 subdivision.
   const department = p.context?.split(',')[0]?.trim();
   const place: Place = {
     address: { street, address_extra: null, postal_code: p.postcode ?? null, city: p.city ?? null, region: department ? `FR-${department}` : null, municipality_code: p.citycode ?? null, country: 'FR' },
