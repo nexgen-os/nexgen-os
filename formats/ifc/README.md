@@ -18,18 +18,20 @@ shares the attributes read here but has not been tested on a file yet.
 | `IfcBuildingStorey` | `architecture.floors` | `level` 0 at the storey closest to the building's 0.00, `elevation_m`, `height_m` to the next storey |
 | `IfcSpace` | `architecture.spaces`, kind `room` | name from `LongName`, else `Name`; `area_m2` from `Qto_SpaceBaseQuantities.NetFloorArea`, else `GrossFloorArea` |
 | `IfcRoof`, `IfcSlab` `ROOF` | `surfaces` of kind `roof`, one per face that looks up | 3D polygon, azimuth against true north and tilt by `orientation()` of [`../geometry.ts`](../geometry.ts), shared with CityJSON |
+| equipment whose class a device type names (`device_types.ifc_class`: `IfcSolarDevice`, `IfcElectricFlowStorageDevice`, `IfcFlowMeter`, `IfcBoiler`…) | one row of `devices` on the site | the type is the vocabulary's: a class several types share is told apart by `PredefinedType` when it names one (`BATTERY` → `battery`), else it takes the type they all refine (`IfcElectricGenerator` → `generator`), else it is skipped; `building_id` from the building that contains it, `manufacturer` and `model` from `Pset_ManufacturerTypeInformation` (`ModelLabel`, else `ModelReference`), `serial_number` from `Pset_ManufacturerOccurrence`, a point from its placement when the model is georeferenced |
 | GlobalId | `external_ids`, scheme `ifc_guid` | on every row; a roof element with several faces names its first face |
-| attributes, property sets, quantity sets | `metadata.ifc` of buildings, floors, spaces and surfaces | the building also keeps the file header, the units, the georeferencing block and the site |
+| attributes, property sets, quantity sets | `metadata.ifc` of buildings, floors, spaces, surfaces and devices | the building also keeps the file header, the units, the georeferencing block and the site |
 
 Every row carries `source_code`: the model the file comes from, a `sources`
-row with its licence and attribution.
+row with its licence and attribution. Devices have no such column; theirs
+is in `metadata.ifc.source_code`.
 
 ```ts
 import { importIfc } from './formats/ifc/index.js';
 
 const r = await importIfc(db, { organisationId, siteId }, bytes, { sourceCode: 'architect_model' });
 // r.georeference: 'map_conversion' | 'site_coordinates' | 'none'
-// r.counts: { buildings, floors, spaces, roofs }; r.skipped: [{ entity, count, reason }]
+// r.counts: { buildings, floors, spaces, roofs, devices }; r.skipped: [{ entity, count, reason }]
 ```
 
 A building already known to the organisation by its GlobalId is refused by
@@ -37,7 +39,8 @@ name (`already_imported`), never duplicated. Floors and spaces need the
 `architecture` module; without it they are reported in `skipped`.
 
 Left alone, and reported in `skipped` by entity type: every other product
-(walls, doors, windows, furniture, vegetation, MEP…), type objects and
+(walls, doors, windows, furniture, vegetation, the MEP no device type
+names…), type objects and
 their property sets, materials, IFC2x3's `ePset_MapConversion`, and the
 geometry of spaces.
 
