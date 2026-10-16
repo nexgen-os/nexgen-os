@@ -114,5 +114,8 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
 
 ### Fixed
 
+- The README's five-minute path loads its dataset on a Supabase project,
+  where PostGIS lives in the schema `extensions`, and stops at the first
+  error.
 - `nexgen.object_kinds` has row level security, read by everyone signed in,
   like the other vocabularies.

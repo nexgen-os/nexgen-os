@@ -84,7 +84,9 @@ worse than one not cut.
    `create extension if not exists postgis with schema extensions;`,
    `init --packs fr,be` applied 26 steps (13 core, 5 module, 8 pack) in
    five seconds; `doctor` then found no problem, and `init --dry-run` and
-   `migrate` had nothing to apply. A session pooler string whose host is
+   `migrate` had nothing to apply. The README's first dataset then loaded
+   once the schema `extensions`, where Supabase keeps PostGIS, was on the
+   search path. A session pooler string whose host is
    not the project's (`aws-0-…` for a project on `aws-1-…`) is refused by
    the pooler with `tenant/user … not found`: copy the string from the
    project's *Connect* panel.
