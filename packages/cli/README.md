@@ -42,10 +42,8 @@ for, in order, each file in its own transaction, and records every file in
    ```
 
 Then expose the schema `nexgen` (and one schema per module) to the API in
-*Project settings → Data API → Exposed schemas*, and `participation_public`
-too when organisations publish to people without an account (module
-`participation`): it holds one view, the publications not withdrawn, and is
-the only schema the anonymous role is given.
+*Project settings → Data API → Exposed schemas*. No schema is given to the
+anonymous role: everything is read signed in, under row level security.
 
 ## Commands
 
