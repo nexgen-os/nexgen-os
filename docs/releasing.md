@@ -73,7 +73,21 @@ worse than one not cut.
    run*. It is not in the CI: it costs money, and two releases installing
    into one shared project would test nothing.
 
-   **The last run:** none yet — `0.1.0` is the first release.
+   **The last run:** `0.1.0`, 16 October 2026, on a throwaway Supabase
+   project in `eu-west-3` (Paris), Postgres 17.11, PostGIS 3.3.7, through
+   the session pooler (port 5432), Node 22. `0.1.0` is the first release,
+   so there was no earlier one to install first: the package was built,
+   packed (`npm pack -w packages/cli`) and installed from its tarball, as
+   npm will hand it to a user. On the empty project `doctor` named
+   `postgis_required` and `not_installed`, and `init --dry-run` refused
+   with `postgis_required`; after
+   `create extension if not exists postgis with schema extensions;`,
+   `init --packs fr,be` applied 26 steps (13 core, 5 module, 8 pack) in
+   five seconds; `doctor` then found no problem, and `init --dry-run` and
+   `migrate` had nothing to apply. A session pooler string whose host is
+   not the project's (`aws-0-…` for a project on `aws-1-…`) is refused by
+   the pooler with `tenant/user … not found`: copy the string from the
+   project's *Connect* panel.
 
 ## Cutting it
 
