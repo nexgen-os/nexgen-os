@@ -60,7 +60,8 @@ nothing of the model depends on you.
 Four things only you do here:
 
 - **read**: the tables of the core and the modules, through SQL or the REST
-  API Supabase gives the schema (`nexgen`, and one schema per module);
+  API Supabase gives the schema (`nexgen`, and one schema per module), or
+  from Python through the client in `sdk/python`;
   `attributes_of()`, `resample()`, `site_of()`, `country_of()` are the one
   way to read attributes, series and places;
 - **attach**: an attribute with its period, a document, an identifier, a
