@@ -47,6 +47,14 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   and an energy community. The address-register adapters (`ban()`, the
   Belgian registers) moved from the packs to `formats/geocoding`: a pack
   holds rows, never code (decision 0009, amended).
+- The `be` pack says what has to be done in Belgium, region by region: 11
+  texts (the federal electrical regulation and the grid operators'
+  prescription for production, the energy-sharing and planning texts of
+  Flanders, Brussels and Wallonia) and 23 task templates for a roof
+  installation and an energy community. A task template carries its
+  regions (ISO 3166-2), as a rule does; `tasks.plan()` keeps those of the
+  regions of the sites taking part in the project and says which regional
+  templates it skipped for want of a region (`region_missing`).
 - The `tasks` module (decision 0017): what has to be done on a project
   and where it stands. Phases from study to decommissioning and the roles
   that carry a task, as vocabularies; task templates per country and kind
