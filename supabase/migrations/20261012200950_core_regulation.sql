@@ -30,7 +30,7 @@ set search_path = nexgen, public, extensions;
 create table legal_sources (
   code          text primary key,
   name          text not null,
-  -- code, law, decree, order (an arrêté), deliberation (a regulator's),
+  -- code, law, decree, order (a ministerial order), deliberation (a regulator's),
   -- regulation and directive (the Union's), standard, guide, contract_model.
   kind          text not null default 'law',
   -- The official citation, as the country writes it.
