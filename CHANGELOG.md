@@ -25,11 +25,6 @@ release may break, and says how. How a release is cut:
   attributes, identifiers and runs of each object and the sources it owes;
   `open: true` leaves out street lines, serial numbers, metadata and
   whatever came from a source that may not be passed on.
-- The `participation` module and its publications: an open GeoJSON export
-  of a site or a project, published by an owner with its licence, kept as
-  published with its sha256, withdrawn but never changed; anyone reads the
-  ones not withdrawn through `participation_public.publications`, the only
-  schema the anonymous role is given (decision 0015).
 - The `construction` module: milestones of works on a project, a site, a
   building, a surface or a device, in phases read from a vocabulary
   (design to handover), with planned and actual dates, a status kept

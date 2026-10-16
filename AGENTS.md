@@ -82,9 +82,8 @@ Four things only you do here:
   the site, the project and the pack;
 - store an azimuth in another convention than degrees clockwise from true
   north, or a series value dated at the end of its interval;
-- send the data anywhere the person did not configure, or publish it
-  (`participation.publications`) without the person asking for that
-  publication.
+- send the data anywhere the person did not configure, or make any of it
+  public without the person asking for that.
 
 ## A first session, in five steps
 

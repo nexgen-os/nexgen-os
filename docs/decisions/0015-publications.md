@@ -1,6 +1,10 @@
 # 0015 — Publications: what the public reads, and how
 
-**Decided 14/10/2026.** Builds on [0004](0004-deterministic-runs.md)
+**Decided 14/10/2026. Withdrawn 16/10/2026**: the module shipped under the
+name `participation` is removed before 0.1, as it is not a priority of the
+foundation; the design below stays as the reference for a `publications`
+module when it comes back (the participants of a project are a core table,
+`participants`, and were never this module's subject). Builds on [0004](0004-deterministic-runs.md)
 (deterministic runs) and [0011](0011-external-data.md) (sources and their
 licences).
 
