@@ -109,7 +109,8 @@ is checked.
    `npx nexgen-os init --packs <country code>` (`--dry-run` first shows what
    would be applied and rolls it back).
 4. Check it: `npx nexgen-os doctor` names every problem, or none.
-5. Load a dataset: `psql "$NEXGEN_DB_URL" -c 'set search_path = nexgen' -f examples/01-house-pv-battery.sql`,
+5. Load a dataset: `psql -v ON_ERROR_STOP=1 "$NEXGEN_DB_URL" -c 'set search_path = nexgen, extensions' -f examples/01-house-pv-battery.sql`
+   (PostGIS lives in the schema `extensions` on Supabase),
    then ask it something:
 
    ```sql
