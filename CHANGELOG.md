@@ -8,8 +8,19 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-10-17
+
+The first release: what other people can install, read and build on.
+Names may still change until 1.0, and every change is written down here.
+What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.md).
+
 ### Added
 
+- The core in the schema `nexgen`, the `architecture`, `weather`, `solar`
+  and `tasks` modules, the `fr` and `be` packs, the format libraries
+  (Home Assistant, geocoding, CityJSON, GeoJSON, IFC, EPW and TMY3, PAN and
+  OND), the Open-Meteo and PVGIS connectors, the pvlib engine and seven
+  example datasets. The entries below say what each brings.
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's
@@ -100,10 +111,6 @@ release may break, and says how. How a release is cut:
   model that gives the DC voltage is refused (`inverter_needs_voltage`).
 - The Open-Meteo connector reads the horizontal components `ghi`, `dni` and
   `dhi` from the ERA5 archive.
-- The core, the `architecture`, `weather` and `solar` modules, the `fr` and
-  `be` packs, the format libraries, the connectors and the pvlib engine of
-  the first release (see
-  `docs/road-to-0.1.md`).
 
 ### Fixed
 
