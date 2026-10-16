@@ -19,6 +19,10 @@ so that the queries at the end of each file can be copied as they are.
 | `06-drone-survey.sql` | capture, 3D | IT | a site surveyed by drone: orthophoto, video and photos as documents, roof faces measured from the survey with their source, a point cloud announced for the `3d` module |
 | `07-office-heating.sql` | heating, thermal | DE | an office with its facades' U-values, a boiler and a heat pump, setpoints, a scenario replacing the boiler |
 
+`yield.ts` is not a dataset: it runs the yield of a PV system as a run and
+reads it back by month, the twenty-minute path of the
+[README](../README.md#twenty-minutes-to-the-same-building-with-its-yield).
+
 Run one by hand with PGlite from the repo root:
 
 ```bash
