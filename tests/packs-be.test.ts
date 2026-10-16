@@ -1,5 +1,6 @@
 // The Belgian pack: its rows load on the core with the three regions said,
-// each regional register answers as a geocoder of the core's shape on a
+// the task templates of a roof installation and of an energy community give
+// a project those of the region of its sites, each regional register answers as a geocoder of the core's shape on a
 // recorded answer, and the chain asks Brussels, Flanders and Wallonia in
 // turn before the open fallback.
 import { readFile } from 'node:fs/promises';
@@ -7,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
 import { belgium, geopunt, urbis, walloon } from '../formats/geocoding/belgium.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const recorded = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8')) as unknown;
 /** Answers each URL with the first recorded body whose key it contains; an empty answer otherwise. */
@@ -36,7 +37,7 @@ let icarElsewhere: unknown;
 let icarReverse: unknown;
 
 beforeAll(async () => {
-  db = await freshDatabase([], ['be']);
+  db = await freshDatabase(['tasks'], ['be']);
   geopuntKorenmarkt = await recorded('geopunt-location-korenmarkt-1-gent.json');
   urbisWetstraat = await recorded('urbis-getaddresses-nl-wetstraat-16.json');
   urbisElsewhere = await recorded('urbis-getaddresses-fr-korenmarkt-1-gent.json');
@@ -74,6 +75,76 @@ describe('the be pack', () => {
       `select v as value, v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );
     expect(nis.rows.map((r) => r.ok)).toEqual([true, true, true, false, false]);
+  });
+});
+
+interface Plan {
+  created: number;
+  existing: number;
+  skipped: { code: string; reason: string; regions?: string[] }[];
+}
+
+describe('the tasks of the be pack', () => {
+  const plan = async (project: string) => (await asUser(db, USER_A, () => one<{ p: Plan }>(db, 'select tasks.plan($1) p', [project]))).p;
+  const codes = async (project: string) =>
+    (await db.query<{ code: string }>(`select tp.code from tasks.tasks t join tasks.templates tp on tp.id = t.template_id where t.subject_id = $1 order by tp.position, tp.code`, [project])).rows.map((r) => r.code);
+  const projectOn = async (org: string, kind: string, region: string | null) => {
+    const project = await insert(db, 'projects', { organisation_id: org, name: `A ${kind} project`, country: 'BE', kind, status: 'creation' });
+    if (region) {
+      const site = await insert(db, 'sites', { organisation_id: org, name: `A site in ${region}`, country: 'BE', region });
+      await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: site, name: 'The site', role: 'prosumer' });
+    }
+    return project;
+  };
+
+  it('answers texts of the pack only, each regional template in a region of Belgium', async () => {
+    const unknown = await db.query(`select code from tasks.templates where published_by = 'pack:be' and legal_source_code is not null and legal_source_code not in (select code from legal_sources where published_by = 'pack:be')`);
+    expect(unknown.rows).toEqual([]);
+    const orphans = await db.query(`select code from legal_sources where published_by = 'pack:be' and code not in (select legal_source_code from tasks.templates where legal_source_code is not null)`);
+    expect(orphans.rows).toEqual([]);
+    const regions = await db.query<{ region: string }>(`select distinct unnest(regions) region from tasks.templates where published_by = 'pack:be' order by 1`);
+    expect(regions.rows.map((r) => r.region)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
+  });
+
+  it('plans a Walloon roof installation with the Walloon permit and the federal inspection', async () => {
+    const org = await organisation(db, 'Une commune wallonne', USER_A);
+    const roof = await projectOn(org, 'pv_roof', 'BE-WAL');
+    expect(await plan(roof)).toMatchObject({ created: 9, skipped: [] });
+    expect(await codes(roof)).toEqual([
+      'pv_roof_feasibility', 'pv_roof_design', 'pv_roof_permit_wal', 'pv_roof_grid_notification', 'pv_roof_procurement',
+      'pv_roof_installation', 'pv_roof_conformity', 'pv_roof_operator_registered', 'pv_roof_handover',
+    ]);
+    const permit = await one<{ legal_reference: string; depends: string }>(db,
+      `select tp.legal_reference, d.name depends from tasks.tasks t join tasks.templates tp on tp.id = t.template_id left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 and tp.code = 'pv_roof_permit_wal'`, [roof]);
+    expect(permit).toEqual({ legal_reference: 'R.IV.1-1', depends: 'Feasibility study: yield, self-consumption share, budget' });
+  });
+
+  it('says which regional tasks it could not decide when no site of the project says its region', async () => {
+    const org = await organisation(db, 'Een coöperatie', USER_A);
+    const roof = await projectOn(org, 'pv_roof', null);
+    const first = await plan(roof);
+    expect(first.created).toBe(8);
+    expect(first.skipped.map((s) => [s.code, s.reason, s.regions])).toEqual([
+      ['pv_roof_permit_bru', 'region_missing', ['BE-BRU']],
+      ['pv_roof_permit_vlg', 'region_missing', ['BE-VLG']],
+      ['pv_roof_permit_wal', 'region_missing', ['BE-WAL']],
+    ]);
+    const site = await insert(db, 'sites', { organisation_id: org, name: 'Loods', country: 'BE', region: 'BE-VLG' });
+    await insert(db, 'participants', { organisation_id: org, project_id: roof, site_id: site, name: 'Loods', role: 'producer' });
+    expect(await plan(roof)).toMatchObject({ created: 1, existing: 8, skipped: [] });
+    expect(await codes(roof)).toContain('pv_roof_permit_vlg');
+  });
+
+  it('plans a Brussels energy community with the authorisation of its regulator', async () => {
+    const org = await organisation(db, 'Une communauté bruxelloise', USER_A);
+    const community = await projectOn(org, 'energy_community', 'BE-BRU');
+    expect(await plan(community)).toMatchObject({ created: 6, skipped: [] });
+    expect(await codes(community)).toEqual([
+      'ec_perimeter_check', 'ec_bru_legal_entity', 'ec_bru_authorisation', 'ec_participant_consents', 'ec_bru_operator_registered', 'ec_monthly_settlement',
+    ]);
+    const authorisation = await one<{ role: string; legal_reference: string }>(db,
+      `select t.role, tp.legal_reference from tasks.tasks t join tasks.templates tp on tp.id = t.template_id where t.subject_id = $1 and tp.code = 'ec_bru_authorisation'`, [community]);
+    expect(authorisation).toEqual({ role: 'regulator', legal_reference: 'Article 28sexiesdecies' });
   });
 });
 
