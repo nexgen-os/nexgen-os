@@ -12,7 +12,6 @@ geocoders return the region of each place they find
 | identifiers | `nis`: the 5-digit municipality code of Statbel (also INS or REFNIS), the level at which a distribution operator, local planning rules and most datasets are decided; `vlaanderen_address` and `vlaanderen_building` (the `gebouwID`): the persistent identifiers of the Flemish address and building registers (Flanders); `urbis_building`: a building of UrbIS-Adm (Brussels); `icar_address`: a house number in ICAR (Wallonia, which keeps no building register) | Statbel; Basisregisters Vlaanderen; UrbIS; ICAR |
 | identifiers — metering point | A Belgian **EAN** (the 18-digit code on an energy bill, starting with `54`, the GS1 Belgium & Luxembourg prefix) is a GS1 Global Service Relation Number: it uses the core `gs1_gsrn` scheme. The pack adds no scheme of its own for it. | GS1 |
 | sources | `geopunt` (`BE-VLG`, `BE-BRU`), `basisregisters_vlaanderen` (`BE-VLG`), `urbis` (`BE-BRU`), `icar` (`BE-WAL`), `rmi_aws` (whole country) — see below | |
-| geocoding | `geopunt()`, `urbis()`, `walloon()`, and `belgium()`, the three keyed by region for `geocoderFor`, tried in the order Brussels, Flanders, Wallonia | [`geocoding.ts`](geocoding.ts) |
 
 ## Sources
 
@@ -46,3 +45,8 @@ reason to prefer it, which a later version of the pack can bring.
 - Building identifiers from the geocoders: none of the three returns one.
 
 Checked by: nobody yet.
+
+The three regional address registers answer as geocoders in
+[`formats/geocoding/belgium.ts`](../../formats/geocoding/belgium.ts)
+(`geopunt()` BE-VLG, `urbis()` BE-BRU, `walloon()` BE-WAL, `belgium()` keyed
+by region); the pack names them as sources.

@@ -185,7 +185,6 @@ describe('what has to be done, from the templates of a country and a kind of pro
   beforeAll(async () => {
     // Templates as a pack would publish them: two countries, two kinds, one
     // condition, one dependency.
-    await db.query(`insert into property_defs (code, name, datatype, quantity_code, minimum, applies_to) values ('installed_power', 'Installed power', 'number', 'power', 0, '{project}')`);
     await db.query(`
       insert into tasks.templates (code, published_by, country, project_kind, phase, role, name, legal_reference, documents, applies_when, depends_on_code, position) values
         ('prior_declaration',  'pack:fr', 'FR', 'pv_roof',          'permitting',      'owner',        'Prior declaration of works filed with the municipality', 'Code de l''urbanisme, R. 421-17', '{"Cerfa 13703"}', null, null, 10),

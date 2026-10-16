@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
-import { belgium, geopunt, urbis, walloon } from '../packs/be/geocoding.js';
+import { belgium, geopunt, urbis, walloon } from '../formats/geocoding/belgium.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const recorded = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8')) as unknown;
