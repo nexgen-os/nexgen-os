@@ -17,7 +17,7 @@ itself (`projects`: kind, status, country, dates) and its participants.
 |---|---|
 | `tasks.phases` | the phases a project goes through, in their usual order: `study`, `design`, `permitting`, `financing`, `procurement`, `site_preparation`, `installation`, `grid_connection`, `commissioning`, `handover`, `operation`, `decommissioning`. A vocabulary: read by everyone signed in, written by migrations, modules and packs. |
 | `tasks.roles` | who carries a task: `owner`, `installer`, `grid_operator`, `municipality`, `regulator`, `financer`, `notary`, `community_manager`. Distinct from the roles of an organisation's members and from a participant's role in the energy flows. A vocabulary, extended by packs. |
-| `tasks.templates` | what has to be done, as data: for a country (or every country) and a kind of project (or every kind), one task of one phase carried by one role, with the legal source (one of the core's `legal_sources`) and reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. Published by the country packs (`published_by = 'pack:fr'`) and by the installation; the module ships none, so no country is written in it. |
+| `tasks.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the legal source (one of the core's `legal_sources`) and reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. Published by the country packs (`published_by = 'pack:fr'`) and by the installation; the module ships none, so no country is written in it. |
 | `tasks.tasks` | an object (`task`): one thing to do about a project, a site, a building, a surface or a device (`subject_id`), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos, reports and certificates attach to it as documents and attributes. |
 
 A task in progress has its actual start; one done has its actual end, and
@@ -32,12 +32,13 @@ select tasks.plan(:project);
 --  "skipped": [{"code": "building_permit", "published_by": "pack:fr", "reason": "attribute_missing", "property": "installed_power"}]}
 ```
 
-`plan()` reads the project's country and kind, takes every template that
-matches them, checks each condition against the project's attributes and
+`plan()` reads the project's country and kind, and the regions of the
+sites taking part in it, takes every template that matches them, checks each condition against the project's attributes and
 creates one task per template, once: calling it again creates nothing
 twice, and a scenario gets its own plan. A template whose condition names
 an attribute the project does not have is skipped and said so, rather than
-decided in the dark. Dependencies between templates become dependencies
+decided in the dark; so is a regional template on a project none of whose
+sites says its region (`region_missing`). Dependencies between templates become dependencies
 between the tasks. It writes under the caller's row level security.
 
 ## Where a project stands
