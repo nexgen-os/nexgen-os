@@ -45,6 +45,24 @@ jobs:
         env:
           NEXGEN_ENGINE_PVLIB: python -m nexgen_pvlib
 
+  sdk-python:
+    name: sdk-python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install -e "sdk/python[binary]"
+      - run: npx vitest run tests/sdk-python.test.ts
+        env:
+          NEXGEN_SDK_PYTHON: python
+
   hygiene:
     name: hygiene
     runs-on: ubuntu-latest

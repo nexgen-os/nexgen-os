@@ -7,3 +7,4 @@ packages/cli/assets/
 __pycache__/
 *.egg-info/
 packages/cli/LICENSE
+.venv-sdk/

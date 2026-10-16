@@ -74,6 +74,9 @@ npx nexgen-os doctor                    # what is wrong, by name
 Engines are optional: a yield computed by pvlib needs Python and
 `engines/pvlib` installed, as [`engines/README.md`](engines/README.md) says.
 
+From Python, the client reads the model and attaches with a source:
+[`sdk/python/README.md`](sdk/python/README.md).
+
 The installer and its commands: [`packages/cli/README.md`](packages/cli/README.md).
 How a release is cut: [`docs/releasing.md`](docs/releasing.md).
 
@@ -167,6 +170,7 @@ packs/                 one folder per country, data only (fr: the law as rules w
 formats/               one MIT library per format or geocoder (homeassistant, geocoding with the national registers, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT
 engines/               external computations in any language, JSON in and out (pvlib, optional), MIT
+sdk/python/            the Python client: the readers of the model, attributes attached with their source, MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research, how a release is cut
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
@@ -194,6 +198,6 @@ repository.
 ## Licence
 
 The core, the modules, the packs and the installer are AGPL-3.0
-([LICENSE](LICENSE)). The format libraries, the connectors and the engines
-are MIT, each folder with its own `LICENSE`, so that a reader or a connector
+([LICENSE](LICENSE)). The format libraries, the connectors, the engines and the
+Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
 can live inside any product.

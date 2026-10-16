@@ -21,6 +21,13 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   (Home Assistant, geocoding, CityJSON, GeoJSON, IFC, EPW and TMY3, PAN and
   OND), the Open-Meteo and PVGIS connectors, the pvlib engine and seven
   example datasets. The entries below say what each brings.
+- `sdk/python`, the Python client `nexgen-os` (MIT): the readers of the
+  model (`attributes_of`, `resample`, `site_of`, `country_of`), the
+  organisations and sites a connection may read, and `attach()` for an
+  attribute with its period and its source. Every refusal comes back as a
+  `NexgenError` with its name; statements are simple queries, served by a
+  pooler in transaction mode. Tested against a fresh installation in the
+  `sdk-python` job of CI.
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's
