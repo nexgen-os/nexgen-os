@@ -137,6 +137,17 @@ attribution, countries, retention). An organisation's use of a source is a
 `connectors/` ([0011](decisions/0011-external-data.md)). Read by everyone signed in, written by migrations,
 seeds, modules and packs.
 
+## The law of a country
+
+`legal_sources` (the texts: codes, laws, decrees, orders, a regulator's
+deliberations, standards, with their official reference and the consolidated
+text online), `rules` (what a text sets, in plain words and in numbers, for a
+section — addresses, grid, energy sharing, compliance, support, data — a
+country and its regions, with the article and the dates it holds between;
+`rules_on(country, section, day)` gives those of a day) and `grid_operators`
+(who runs the grid and what they cover). Published by the country packs;
+read by the modules that check, share or plan.
+
 ## Geometry
 
 Stored in EPSG:4326, always in three dimensions, Z in metres above sea

@@ -1,11 +1,13 @@
-// The first country pack: its rows load on the core, its address register
-// answers as a geocoder of the core's shape, and the chain asks it first for
-// a French search, the open fallback otherwise.
+// The French pack: its rows load on the core — identifiers, sources, the
+// texts of the law and the rules they set, the grid operators, the task
+// templates of a roof installation and of an energy community — and the
+// national address register, kept as code in formats/geocoding, answers as a
+// geocoder of the core's shape, first in the chain for a French search.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
-import { ban } from '../packs/fr/geocoding.js';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { ban } from '../formats/geocoding/ban.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 const banAnswer = {
   type: 'FeatureCollection',
@@ -27,7 +29,7 @@ const somewhere = (code: string): Place => ({ address: { country: 'FR' }, lon: 0
 let db: PGlite;
 
 beforeAll(async () => {
-  db = await freshDatabase([], ['fr']);
+  db = await freshDatabase(['tasks'], ['fr']);
 });
 
 afterAll(async () => {
@@ -37,14 +39,70 @@ afterAll(async () => {
 describe('the fr pack', () => {
   it('brings its identifier schemes and sources, and the schemes check their patterns', async () => {
     const rows = await db.query<{ code: string; published_by: string }>(`select code, published_by from sources where published_by = 'pack:fr' order by code`);
-    expect(rows.rows.map((r) => r.code)).toEqual(['ban', 'geo_api_gouv']);
+    expect(rows.rows.map((r) => r.code)).toEqual(['ban', 'bd_topo', 'cadastre', 'enedis_data_connect', 'enedis_open_data', 'geo_api_gouv', 'legifrance', 'odre', 'operat', 'rnb', 'sirene']);
     const org = await organisation(db, 'Une commune', USER_A);
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Mairie', country: 'FR' });
     const meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' });
     expect(meter).toBeTruthy();
     await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
-    const n = await one<{ n: number }>(db, `select count(*)::int n from id_schemes where code in ('prm', 'ban_address', 'insee')`);
-    expect(n.n).toBe(3);
+    const n = await one<{ n: number }>(db, `select count(*)::int n from id_schemes where published_by = 'pack:fr'`);
+    expect(n.n).toBe(7);
+    const siret = await one<{ ok: boolean; ko: boolean }>(db, `select '12345678901234' ~ pattern ok, '123' ~ pattern ko from id_schemes where code = 'siret'`);
+    expect(siret).toEqual({ ok: true, ko: false });
+    const parcel = await one<{ ok: boolean }>(db, `select '75108000AB0012' ~ pattern ok from id_schemes where code = 'parcelle'`);
+    expect(parcel.ok).toBe(true);
+  });
+
+  it('says what the law of France sets, section by section, each rule from a text that is online', async () => {
+    const sections = await db.query<{ section: string; n: number }>(`select section, count(*)::int n from rules where country = 'FR' group by section order by section`);
+    expect(sections.rows).toEqual([
+      { section: 'addresses', n: 1 }, { section: 'compliance', n: 14 }, { section: 'data', n: 1 },
+      { section: 'energy_sharing', n: 12 }, { section: 'grid', n: 5 }, { section: 'support', n: 3 },
+    ]);
+    const unsourced = await db.query(`select r.code from rules r join legal_sources s on s.code = r.legal_source_code where s.url is null or s.reference = ''`);
+    expect(unsourced.rows).toEqual([]);
+    const orphans = await db.query(`select code from legal_sources where published_by = 'pack:fr' and code not in (select legal_source_code from rules union select legal_source_code from tasks.templates where legal_source_code is not null)`);
+    expect(orphans.rows).toEqual([]);
+  });
+
+  it('keeps the rules of a day apart: the 3 MW ceiling of a community before 22 February 2025, 5 MW since', async () => {
+    const before = await db.query<{ code: string; parameters: { max_power_kw_mainland: number } }>(`select code, parameters from rules_on('FR', 'energy_sharing', '2024-06-01') where code like 'fr_acc_power_cap%'`);
+    expect(before.rows).toEqual([{ code: 'fr_acc_power_cap_3mw', parameters: expect.objectContaining({ max_power_kw_mainland: 3000 }) }]);
+    const now = await db.query<{ code: string; parameters: { max_power_kw_mainland: number } }>(`select code, parameters from rules_on('FR', 'energy_sharing', '2026-10-16') where code like 'fr_acc_power_cap%'`);
+    expect(now.rows).toEqual([{ code: 'fr_acc_power_cap_5mw', parameters: expect.objectContaining({ max_power_kw_mainland: 5000 }) }]);
+    const perimeter = await one<{ parameters: { max_distance_m: number } }>(db, `select parameters from rules where code = 'fr_acc_perimeter_standard'`);
+    expect(perimeter.parameters.max_distance_m).toBe(2000);
+    const permits = await db.query<{ code: string }>(`select code from rules_on('FR', 'compliance', '2026-10-16') where code like 'fr_pv_ground_%' order by code`);
+    expect(permits.rows.map((r) => r.code)).toEqual(['fr_pv_ground_building_permit', 'fr_pv_ground_exempt', 'fr_pv_ground_prior_declaration']);
+  });
+
+  it('names the grid operators and what they cover', async () => {
+    const ops = await db.query<{ code: string; kind: string; regions: string[] }>(`select code, kind, regions from grid_operators where country = 'FR' order by kind, code`);
+    expect(ops.rows.map((o) => [o.code, o.kind])).toEqual([
+      ['enedis', 'dso'], ['es_reseaux', 'dso'], ['geg_reseaux', 'dso'], ['geredis', 'dso'], ['srd', 'dso'], ['urm', 'dso'], ['edf_sei', 'island'], ['rte', 'tso'],
+    ]);
+    expect(ops.rows.find((o) => o.code === 'edf_sei')?.regions).toContain('FR-20R');
+  });
+
+  it('plans the tasks of a French roof installation and of a French energy community from its templates', async () => {
+    const org = await organisation(db, 'Une coopérative', USER_A);
+    const roof = await insert(db, 'projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
+    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'installed_power', '36'::jsonb, 'design')`, [roof]);
+    const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
+    expect(plan.p).toMatchObject({ created: 10, skipped: [] });
+    const names = await db.query<{ name: string; phase: string; role: string }>(`select t.name, t.phase, t.role from tasks.tasks t join tasks.phases p on p.code = t.phase where subject_id = $1 order by p.position, t.name`, [roof]);
+    expect(names.rows.map((r) => r.phase)).toEqual(['study', 'design', 'permitting', 'financing', 'procurement', 'installation', 'grid_connection', 'grid_connection', 'commissioning', 'handover']);
+    expect(names.rows.some((r) => r.name.startsWith('Purchase-obligation contract'))).toBe(true);
+    expect(names.rows.some((r) => r.name.startsWith('Bid in the simplified'))).toBe(false);
+    const consuel = await one<{ legal_reference: string; depends: string }>(db, `select tp.legal_reference, d.name depends from tasks.tasks t join tasks.templates tp on tp.id = t.template_id left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 and tp.code = 'pv_roof_consuel'`, [roof]);
+    expect(consuel).toEqual({ legal_reference: 'D. 342-16 à D. 342-21', depends: 'Arrays mounted and wired' });
+
+    const community = await insert(db, 'projects', { organisation_id: org, name: 'Énergie partagée du bourg', country: 'FR', kind: 'energy_community', status: 'creation' });
+    const first = await one<{ p: { created: number; skipped: { code: string }[] } }>(db, 'select tasks.plan($1) p', [community]);
+    expect(first.p.created).toBe(9);
+    expect(first.p.skipped.map((s) => s.code)).toEqual(['acc_power_over_cap']);
+    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'installed_power', '6200'::jsonb, 'study')`, [community]);
+    expect((await one<{ p: { created: number } }>(db, 'select tasks.plan($1) p', [community])).p.created).toBe(1);
   });
 
   it('reads the national address register with house-number precision and the department as region', async () => {

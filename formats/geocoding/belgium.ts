@@ -8,10 +8,12 @@
 //   walloon()  Wallonia — the ICAR geocoding service of the Service public
 //              de Wallonie
 //
-// All three are open and need no key. `belgium()` gives them to
+// All three are open and need no key. The `be` pack names the registers as
+// sources; the adapters live here with the other geocoders, as code never
+// belongs in a pack. `belgium()` gives them to
 // `geocoderFor` keyed by region, in the order a search should try them.
 
-import type { Fetch, Geocoder, Place, Precision } from '../../formats/geocoding/index.js';
+import type { Fetch, Geocoder, Place, Precision } from './index.js';
 
 interface Common {
   baseUrl?: string;

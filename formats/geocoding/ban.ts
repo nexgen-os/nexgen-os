@@ -1,8 +1,10 @@
 // Base Adresse Nationale — https://adresse.data.gouv.fr, the French address
 // register, as a Geocoder of the core's shape. Open (Licence Ouverte 2.0),
-// no key, house-number precision, search as you type.
+// no key, house-number precision, search as you type. The `fr` pack names
+// the register as a source (`ban`); the adapter lives here with the other
+// geocoders, as code never belongs in a pack.
 
-import type { Fetch, Geocoder, Place, Precision } from '../../formats/geocoding/index.js';
+import type { Fetch, Geocoder, Place, Precision } from './index.js';
 
 export const SOURCE_CODE = 'ban';
 

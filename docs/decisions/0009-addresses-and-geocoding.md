@@ -2,6 +2,12 @@
 
 **Decided 13/10/2026.**
 
+
+**Amended 16/10/2026.** The adapter of a national address register is code,
+and code never belongs in a pack: `ban()` and the Belgian adapters moved to
+`formats/geocoding/`. A pack names its register as a `sources` row and
+keeps only data: identifiers, sources, legal sources, rules, task templates.
+
 ## Context
 
 A site is found by its address in one country and by its coordinates in

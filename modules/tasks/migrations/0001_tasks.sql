@@ -105,7 +105,9 @@ create table tasks.templates (
   role             text references tasks.roles(code),
   name             text not null,
   description      text,
-  -- The article, decree or regulation the task answers.
+  -- The text the task answers: one of the core's `legal_sources`, and the
+  -- article or the citation in words.
+  legal_source_code text references legal_sources(code),
   legal_reference  text,
   -- The documents the task is expected to produce or collect.
   documents        text[] not null default '{}',

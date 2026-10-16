@@ -25,6 +25,17 @@ release may break, and says how. How a release is cut:
   attributes, identifiers and runs of each object and the sources it owes;
   `open: true` leaves out street lines, serial numbers, metadata and
   whatever came from a source that may not be passed on.
+- The law of a country as data: `legal_sources` (the texts, with their
+  official reference and the consolidated text online), `rules` (what a
+  text sets, in plain words and in numbers, by section, country and
+  regions, with the dates it holds between; `rules_on()` gives those of a
+  day) and `grid_operators`. The `fr` pack fills them: 15 texts, 36 rules
+  on the grid, self-consumption, planning, environmental assessment, solar
+  obligations, tertiary energy, energy labels, support schemes and meter
+  data, 8 grid operators, and 21 task templates for a roof installation
+  and an energy community. The address-register adapters (`ban()`, the
+  Belgian registers) moved from the packs to `formats/geocoding`: a pack
+  holds rows, never code (decision 0009, amended).
 - The `tasks` module (decision 0017): what has to be done on a project
   and where it stands. Phases from study to decommissioning and the roles
   that carry a task, as vocabularies; task templates per country and kind

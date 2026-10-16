@@ -11,11 +11,15 @@ like every library here; no database, no framework.
 |---|---|---|
 | `nominatim(...)` | OpenStreetMap, worldwide, both ways, ISO 3166-2 regions | ODbL; the public instance wants a named user agent and one request per second |
 | `photon(...)` | OpenStreetMap, worldwide, search as you type, both ways | ODbL; no country filter on the server, applied on the answers |
+| `ban(...)` ([ban.ts](ban.ts)) | Base Adresse Nationale, France, both ways, house-number precision, the department as region | Licence Ouverte 2.0; no key |
+| `geopunt(...)`, `urbis(...)`, `walloon(...)`, `belgium()` ([belgium.ts](belgium.ts)) | the Flemish, Brussels and Walloon address registers, one adapter each, `belgium()` keyed by region for `geocoderFor` | open; no key |
 
-A country pack adds its national address register as an adapter of the same
-shape — one per region when the country keeps one per region, keyed
-`BE-VLG`, `BE-BRU`, `BE-WAL`; an installation adds a commercial geocoder with
-its own key, and honours that geocoder's terms on what may be stored.
+A national address register is an adapter of the same shape, kept here with
+the others: a country pack names the register as a source and never holds
+code. One adapter per region when the country keeps one register per
+region, keyed `BE-VLG`, `BE-BRU`, `BE-WAL`; an installation adds a commercial
+geocoder with its own key, and honours that geocoder's terms on what may be
+stored.
 `geocoderFor({ national, fallback, commercial })` chains them: the register
 of the country or its regions first, the open fallback next, the commercial
 one last. Each place says which one answered, and gives the region and the

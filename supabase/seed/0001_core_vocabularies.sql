@@ -106,6 +106,7 @@ insert into property_defs (code, name, datatype, quantity_code, minimum, maximum
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
   ('commissioning_date',   'Commissioning date',    'date',    null,     null, null, null, '{device}',            'Pset_ManufacturerOccurrence', 'AcquisitionDate'),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
+  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site,device}',       null,              null),
   ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
 
 -- ---------------------------------------------------------------------------
