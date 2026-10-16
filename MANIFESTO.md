@@ -104,7 +104,7 @@ arithmetic stays in code anybody can read.
 Energy is the first thing we compute — production, self-consumption,
 batteries, charging, flexibility, energy sharing — and it is a **module**,
 like thermal simulation, real-time energy management, permitting and
-compliance, construction follow-up and public participation. Each module
+compliance, the tasks of a project and public participation. Each module
 lives in its own Postgres schema, with its own migrations and its own tests,
 reads the core, and writes back through one function. A module the core has
 never heard of can be written by the people who need it, without asking us.
