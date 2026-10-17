@@ -165,7 +165,7 @@ and what each run records: [modules/solar/README.md](modules/solar/README.md).
 ```
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (architecture, weather, solar and tasks shipped)
+modules/               one Postgres schema per module (architecture, weather, solar, tasks and contracts shipped)
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding with the national registers, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT

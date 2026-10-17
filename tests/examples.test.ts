@@ -13,6 +13,7 @@ const EXPECTED: Record<string, { kinds: Record<string, number>; series: number; 
   '05-district-open-data.sql': { kinds: { project: 1, site: 8, building: 6, surface: 6, participant: 6 }, series: 0, runs: 0 },
   '06-drone-survey.sql':       { kinds: { project: 1, site: 1, building: 1, surface: 3, participant: 1 }, series: 0, runs: 0 },
   '07-office-heating.sql':     { kinds: { site: 1, building: 1, surface: 5, meter: 2, device: 4, sensor: 3 }, series: 2, runs: 2 },
+  '08-ppa-and-community-tariff.sql': { kinds: { project: 1, site: 2, meter: 3, participant: 2, contract: 7 }, series: 0, runs: 0 },
 };
 
 const dir = join(repoRoot, 'examples');
@@ -25,7 +26,7 @@ describe('the examples', () => {
 
   for (const file of files) {
     it(`${file} loads and holds what it says`, async () => {
-      const db = await freshDatabase(['architecture']);
+      const db = await freshDatabase(['architecture', 'contracts']);
       try {
         await db.exec(await readFile(join(dir, file), 'utf8'));
         const kinds = await db.query<{ kind: string; n: number }>('select kind, count(*)::int n from objects group by kind');
