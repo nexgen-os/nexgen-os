@@ -14,7 +14,6 @@ geocoders return the region of each place they find
 | sources | `geopunt` (`BE-VLG`, `BE-BRU`), `basisregisters_vlaanderen` (`BE-VLG`), `urbis` (`BE-BRU`), `icar` (`BE-WAL`), `rmi_aws` (whole country) — see below | |
 | legal | 11 texts: federal (the electrical regulation, AREI / RGIE Livre 1; the Synergrid C10/11 prescription), Flemish (Energiedecreet, the exemption order for planning permits, the government's page on energy communities), Brussels (the electricity ordinance, the regulator's guide, the order on works of minor importance), Walloon (the electricity decree, the 2023 order on energy communities, the CoDT) | see below |
 | tasks | 23 templates — see below | |
-||||||| parent of 968669a (docs(packs): the grid section of the be pack, and what it does not cover yet)
 | grid | 8 operators: `elia`, the transmission operator of the whole country (30 kV to 380 kV); `fluvius` (`BE-VLG`), `sibelga` (`BE-BRU`); in Wallonia, where each municipality is served by the operator it designated, `ores`, `resa`, `aieg`, `aiesh` and `rew` (`BE-WAL`). Every distribution operator issues GSRN metering points. No `rules` row yet — see below | The operators' websites |
 
 ## Sources

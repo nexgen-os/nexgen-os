@@ -28,7 +28,6 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   `NexgenError` with its name; statements are simple queries, served by a
   pooler in transaction mode. Tested against a fresh installation in the
   `sdk-python` job of CI.
-||||||| parent of 8b5b200 (feat(ifc): the equipment of a model becomes devices, typed by the vocabulary)
 - `formats/ifc` reads the equipment of a model: each product whose IFC
   class a device type names (`device_types.ifc_class`) becomes a device on
   the site, in the building that contains it, with its maker, model and
@@ -36,8 +35,6 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   placement. A class several device types share is told apart by its
   predefined type, else by the type they all refine, else skipped with its
   reason. `counts.devices` in the result.
-||||||| parent of 40a2b2f (docs(packs): the grid section of the be pack, and what it does not cover yet)
-||||||| parent of 968669a (docs(packs): the grid section of the be pack, and what it does not cover yet)
 - The `be` pack names who runs the grid: Elia for the transmission of the
   whole country, Fluvius in Flanders, Sibelga in Brussels, and ORES, RESA,
   AIEG, AIESH and REW in Wallonia, each with its region and the GSRN
