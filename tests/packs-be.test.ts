@@ -1,5 +1,6 @@
 // The Belgian pack: its rows load on the core with the three regions said,
 // the task templates of a roof installation and of an energy community give
+// the grid operators of each region are named,
 // a project those of the region of its sites, each regional register answers as a geocoder of the core's shape on a
 // recorded answer, and the chain asks Brussels, Flanders and Wallonia in
 // turn before the open fallback.
@@ -75,6 +76,22 @@ describe('the be pack', () => {
       `select v as value, v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );
     expect(nis.rows.map((r) => r.ok)).toEqual([true, true, true, false, false]);
+  });
+
+  it('names who runs the grid, each distribution operator in its region', async () => {
+    const ops = await db.query<{ code: string; kind: string; regions: string[]; identifier_scheme: string | null }>(
+      `select code, kind, regions, identifier_scheme from grid_operators where country = 'BE' order by kind, code`,
+    );
+    expect(ops.rows.map((o) => [o.code, o.kind, o.regions])).toEqual([
+      ['aieg', 'dso', ['BE-WAL']], ['aiesh', 'dso', ['BE-WAL']], ['fluvius', 'dso', ['BE-VLG']], ['ores', 'dso', ['BE-WAL']],
+      ['resa', 'dso', ['BE-WAL']], ['rew', 'dso', ['BE-WAL']], ['sibelga', 'dso', ['BE-BRU']], ['elia', 'tso', []],
+    ]);
+    // Every region of the pack has a distribution operator, and each issues GSRN metering points.
+    const pack = JSON.parse(await readFile(`${repoRoot}/packs/be/pack.json`, 'utf8')) as { regions: string[]; sections: string[] };
+    expect(pack.sections).toContain('grid');
+    const dsos = ops.rows.filter((o) => o.kind === 'dso');
+    expect(pack.regions.every((region) => dsos.some((o) => o.regions.includes(region)))).toBe(true);
+    expect(dsos.every((o) => o.regions.length === 1 && o.identifier_scheme === 'gs1_gsrn')).toBe(true);
   });
 });
 
