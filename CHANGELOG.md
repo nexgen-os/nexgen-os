@@ -8,6 +8,20 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- The `contracts` module: the contracts energy is bought and sold under —
+  supply, injection, physical and virtual PPAs, a community's tariff, the
+  market — with their two parties, what they cover (a meter, a
+  participant, a project), how their volume is counted (as consumed, as
+  produced, an allocated power), their priority and their dates; and the
+  prices they set as signals on intervals of time, fixed or indexed on a
+  named market index, with a cap or a floor, in the currency and per the
+  unit of energy of the row. `contracts.in_force()` gives the contracts of
+  a point on a day in the order they apply, `contracts.prices_at()` what a
+  contract sets at an instant. No amount is computed in the module.
+  Example 8, the community of a business park in Sweden, shows each kind.
+
 ## [0.1.0] — 2026-10-17
 
 The first release: what other people can install, read and build on.
