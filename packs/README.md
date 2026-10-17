@@ -51,4 +51,7 @@ or a change is announced: a pack says what it knows and what it doubts.
 | Pack | Sections | Checked by |
 |---|---|---|
 | [`be`](be/README.md) | identifiers, sources, legal (11 texts), tasks (23 templates: roof PV, energy community, by region) | — |
+||||||| parent of 968669a (docs(packs): the grid section of the be pack, and what it does not cover yet)
+| [`be`](be/README.md) | identifiers, sources | — |
+| [`be`](be/README.md) | identifiers, sources, grid (8 operators: Elia, one distribution operator in Flanders and in Brussels, five in Wallonia) | — |
 | [`fr`](fr/README.md) | identifiers, sources, addresses, legal (15 texts), grid (8 operators, 5 rules), energy_sharing (12 rules), compliance (14 rules), support (3), data (1), tasks (21 templates: roof PV, energy community) | — |

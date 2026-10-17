@@ -36,6 +36,12 @@ What 0.1 holds and what moves to 0.2: [`docs/road-to-0.1.md`](docs/road-to-0.1.m
   placement. A class several device types share is told apart by its
   predefined type, else by the type they all refine, else skipped with its
   reason. `counts.devices` in the result.
+||||||| parent of 40a2b2f (docs(packs): the grid section of the be pack, and what it does not cover yet)
+||||||| parent of 968669a (docs(packs): the grid section of the be pack, and what it does not cover yet)
+- The `be` pack names who runs the grid: Elia for the transmission of the
+  whole country, Fluvius in Flanders, Sibelga in Brussels, and ORES, RESA,
+  AIEG, AIESH and REW in Wallonia, each with its region and the GSRN
+  metering points it issues (`grid_operators`, section `grid`).
 - Where to get help, said in one place of each door: the README, the site,
   `AGENTS.md`, `docs/nexgen-os-and-nexgen.md` and the last line of a real
   `nexgen-os init`. Nexgen OS is the common base of Nexgen, WeSmart's

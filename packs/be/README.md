@@ -14,6 +14,8 @@ geocoders return the region of each place they find
 | sources | `geopunt` (`BE-VLG`, `BE-BRU`), `basisregisters_vlaanderen` (`BE-VLG`), `urbis` (`BE-BRU`), `icar` (`BE-WAL`), `rmi_aws` (whole country) — see below | |
 | legal | 11 texts: federal (the electrical regulation, AREI / RGIE Livre 1; the Synergrid C10/11 prescription), Flemish (Energiedecreet, the exemption order for planning permits, the government's page on energy communities), Brussels (the electricity ordinance, the regulator's guide, the order on works of minor importance), Walloon (the electricity decree, the 2023 order on energy communities, the CoDT) | see below |
 | tasks | 23 templates — see below | |
+||||||| parent of 968669a (docs(packs): the grid section of the be pack, and what it does not cover yet)
+| grid | 8 operators: `elia`, the transmission operator of the whole country (30 kV to 380 kV); `fluvius` (`BE-VLG`), `sibelga` (`BE-BRU`); in Wallonia, where each municipality is served by the operator it designated, `ores`, `resa`, `aieg`, `aiesh` and `rew` (`BE-WAL`). Every distribution operator issues GSRN metering points. No `rules` row yet — see below | The operators' websites |
 
 ## Sources
 
@@ -63,6 +65,13 @@ reason to prefer it, which a later version of the pack can bring.
 
 ## Not covered yet
 
+- The municipalities each Walloon operator serves: the pack says the region,
+  not the municipality list, so the operator of a Walloon site is one of six
+  until the NIS codes of each operator are added (`regions` takes ISO 3166-2
+  codes only, so they would go in a table of their own or a geometry).
+- The rules of the grid — the bidding zone `BE` (EIC `10YBE----------2`),
+  the 15-minute metering step, the regional network tariffs, the connection
+  prescription Synergrid C10/11 — each needing its legal source.
 - The NIS code of a Flemish or Brussels place: neither Geopunt nor UrbIS
   gives it. Basisregisters gives it for Flemish addresses; the 19 Brussels
   municipalities (codes `21001` to `21019`) would need a table from the
