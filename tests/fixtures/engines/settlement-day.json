@@ -1,0 +1,288 @@
+{
+  "_comment": "Six hours of a cold store with a roof plant: a supply whose price changes at 13:00 local time (11:00 UTC), a sale of its surplus, a physical PPA paid as produced. The expected lines are worked out by hand: 4+3+2 kWh at 1200 SEK/MWh = 10.8; 1+2+5 kWh at 950 = 7.6; 8 kWh at 0.35 SEK/kWh = 2.8; 49 kWh at 600 SEK/MWh = 29.4.",
+  "request": {
+    "kind": "settlement",
+    "from": "2026-06-20T08:00:00Z",
+    "to": "2026-06-20T14:00:00Z",
+    "step": "1 hour",
+    "contracts": [
+      {
+        "id": "supply",
+        "name": "Cold store supply",
+        "type": "supply",
+        "direction": "offtake",
+        "physical": true,
+        "seller": {
+          "contact_id": "00000000-0000-4000-8000-000800000011",
+          "name": "Supplier"
+        },
+        "buyer": {
+          "contact_id": null,
+          "name": "Cold store cooperative"
+        },
+        "volume_basis": "pay_as_consumed",
+        "allocated_power_kw": null,
+        "priority": 3,
+        "volume": {
+          "point": "meter",
+          "quantity_code": "offtake_energy"
+        },
+        "signals": [
+          {
+            "kind": "fixed",
+            "starts_at": "2026-01-01T00:00:00+01:00",
+            "ends_at": "2026-06-20T13:00:00+02:00",
+            "price": 1200,
+            "currency": "SEK",
+            "per_unit": "MegaW-HR"
+          },
+          {
+            "kind": "fixed",
+            "starts_at": "2026-06-20T13:00:00+02:00",
+            "ends_at": null,
+            "price": 950,
+            "currency": "SEK",
+            "per_unit": "MegaW-HR"
+          }
+        ]
+      },
+      {
+        "id": "injection",
+        "name": "Surplus sale",
+        "type": "injection",
+        "direction": "injection",
+        "physical": true,
+        "seller": {
+          "contact_id": null,
+          "name": "Cold store cooperative"
+        },
+        "buyer": {
+          "contact_id": "00000000-0000-4000-8000-000800000012",
+          "name": "Surplus buyer"
+        },
+        "volume_basis": "pay_as_consumed",
+        "allocated_power_kw": null,
+        "priority": null,
+        "volume": {
+          "point": "meter",
+          "quantity_code": "injection_energy"
+        },
+        "signals": [
+          {
+            "kind": "fixed",
+            "starts_at": "2026-01-01T00:00:00Z",
+            "ends_at": null,
+            "price": 0.35,
+            "currency": "SEK",
+            "per_unit": "KiloW-HR"
+          }
+        ]
+      },
+      {
+        "id": "ppa",
+        "name": "Roof plant PPA",
+        "type": "ppa_physical",
+        "direction": "offtake",
+        "physical": true,
+        "seller": {
+          "contact_id": "00000000-0000-4000-8000-000800000013",
+          "name": "Roof producer"
+        },
+        "buyer": {
+          "contact_id": null,
+          "name": "Cold store cooperative"
+        },
+        "volume_basis": "pay_as_produced",
+        "allocated_power_kw": null,
+        "priority": 1,
+        "volume": {
+          "point": "plant",
+          "quantity_code": "production_energy"
+        },
+        "signals": [
+          {
+            "kind": "fixed",
+            "starts_at": "2026-01-01T00:00:00Z",
+            "ends_at": "2027-01-01T00:00:00Z",
+            "price": 600,
+            "currency": "SEK",
+            "per_unit": "MegaW-HR"
+          }
+        ]
+      }
+    ],
+    "points": [
+      {
+        "id": "meter",
+        "series": [
+          {
+            "quantity_code": "offtake_energy",
+            "value_kind": "interval",
+            "step": "1 hour",
+            "unit": "kWh",
+            "values": [
+              {
+                "at": "2026-06-20T08:00:00Z",
+                "value": 4
+              },
+              {
+                "at": "2026-06-20T09:00:00Z",
+                "value": 3
+              },
+              {
+                "at": "2026-06-20T10:00:00Z",
+                "value": 2
+              },
+              {
+                "at": "2026-06-20T11:00:00Z",
+                "value": 1
+              },
+              {
+                "at": "2026-06-20T12:00:00Z",
+                "value": 2
+              },
+              {
+                "at": "2026-06-20T13:00:00Z",
+                "value": 5
+              }
+            ]
+          },
+          {
+            "quantity_code": "injection_energy",
+            "value_kind": "interval",
+            "step": "1 hour",
+            "unit": "kWh",
+            "values": [
+              {
+                "at": "2026-06-20T08:00:00Z",
+                "value": 0
+              },
+              {
+                "at": "2026-06-20T09:00:00Z",
+                "value": 1
+              },
+              {
+                "at": "2026-06-20T10:00:00Z",
+                "value": 2.5
+              },
+              {
+                "at": "2026-06-20T11:00:00Z",
+                "value": 3
+              },
+              {
+                "at": "2026-06-20T12:00:00Z",
+                "value": 1.5
+              },
+              {
+                "at": "2026-06-20T13:00:00Z",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "plant",
+        "series": [
+          {
+            "quantity_code": "production_energy",
+            "value_kind": "interval",
+            "step": "1 hour",
+            "unit": "kWh",
+            "values": [
+              {
+                "at": "2026-06-20T08:00:00Z",
+                "value": 6
+              },
+              {
+                "at": "2026-06-20T09:00:00Z",
+                "value": 8
+              },
+              {
+                "at": "2026-06-20T10:00:00Z",
+                "value": 10
+              },
+              {
+                "at": "2026-06-20T11:00:00Z",
+                "value": 11
+              },
+              {
+                "at": "2026-06-20T12:00:00Z",
+                "value": 9
+              },
+              {
+                "at": "2026-06-20T13:00:00Z",
+                "value": 5
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": {}
+  },
+  "expected": {
+    "lines": [
+      {
+        "contract_id": "supply",
+        "from": "2026-06-20T08:00:00Z",
+        "to": "2026-06-20T11:00:00Z",
+        "energy_kwh": 9,
+        "price": 1200,
+        "per_unit": "MegaW-HR",
+        "currency": "SEK",
+        "amount": 10.8
+      },
+      {
+        "contract_id": "supply",
+        "from": "2026-06-20T11:00:00Z",
+        "to": "2026-06-20T14:00:00Z",
+        "energy_kwh": 8,
+        "price": 950,
+        "per_unit": "MegaW-HR",
+        "currency": "SEK",
+        "amount": 7.6
+      },
+      {
+        "contract_id": "injection",
+        "from": "2026-06-20T08:00:00Z",
+        "to": "2026-06-20T14:00:00Z",
+        "energy_kwh": 8,
+        "price": 0.35,
+        "per_unit": "KiloW-HR",
+        "currency": "SEK",
+        "amount": 2.8
+      },
+      {
+        "contract_id": "ppa",
+        "from": "2026-06-20T08:00:00Z",
+        "to": "2026-06-20T14:00:00Z",
+        "energy_kwh": 49,
+        "price": 600,
+        "per_unit": "MegaW-HR",
+        "currency": "SEK",
+        "amount": 29.4
+      }
+    ],
+    "contracts": [
+      {
+        "id": "supply",
+        "energy_kwh": 17,
+        "amount": 18.4,
+        "currency": "SEK"
+      },
+      {
+        "id": "injection",
+        "energy_kwh": 8,
+        "amount": 2.8,
+        "currency": "SEK"
+      },
+      {
+        "id": "ppa",
+        "energy_kwh": 49,
+        "amount": 29.4,
+        "currency": "SEK"
+      }
+    ]
+  }
+}
