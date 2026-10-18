@@ -11,6 +11,7 @@ database. Decision [0013](../docs/decisions/0013-external-engines.md).
 | Engine | Request kinds | Language | Licence |
 |---|---|---|---|
 | [`pvlib`](pvlib/README.md) | `pv_yield` | Python 3.9+ with pvlib, pandas, numpy | MIT (pvlib itself is BSD-3) |
+| [`settlement_example`](settlement-example/README.md) | `settlement` | Python 3.9+, no dependency | MIT |
 
 Engines are optional. An installation without any runs everything else;
 a run that asks for an engine that is not installed is refused by name
@@ -77,6 +78,31 @@ south); tilt in degrees from horizontal; energy in kWh per interval;
 power in kW; irradiance in W/m²; temperature in °C; wind speed in m/s at
 the height the series says (10 m unless told otherwise); losses as
 fractions, in order, each applying to what the previous ones left.
+
+## Request kinds
+
+A request kind is a shape, written once in TypeScript beside the runner,
+that any engine accepting it answers in.
+
+- `pv_yield` ([`pvlib/index.ts`](pvlib/index.ts)): a PV system's arrays,
+  models, losses and weather in; its production, plane-of-array irradiance
+  and module temperature out.
+- `settlement` ([`settlement.ts`](settlement.ts)): the contracts in force
+  over a period (`from`, `to`, `step`), each with its parties, its type,
+  its volume basis, its priority, its price signals in the shape of
+  `contracts.price_signals` and the series its volume is read from (a
+  point of the request and one of its quantities, kWh per step); the
+  values of the indices a price follows (`indices`) and the rules of the
+  country or the project passed as they are (`rules`). Out, the settlement
+  lines of each contract: over each interval a price holds, the energy,
+  the price, its currency and unit, the amount and who pays whom; the
+  totals of each contract and `meta`, what the engine applied. How energy
+  is matched with contracts — pay as consumed, pay as produced, a cascade
+  by priority — and how an index, a cap or a floor are read are the
+  engine's own. Amounts are not rounded to a currency's minor unit, and
+  no invoice comes out of an engine: a line goes to Ekwo (decision
+  [0010](../docs/decisions/0010-ekwo-link.md)).
+  [`settlement-example`](settlement-example/README.md) is one to copy.
 
 ## Finding an engine
 

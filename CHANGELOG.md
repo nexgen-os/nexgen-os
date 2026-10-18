@@ -8,6 +8,19 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- The `settlement` request kind of the engines (`engines/settlement.ts`):
+  contracts with their price signals and the series their volume is read
+  from in, settlement lines out — energy, price and amount over each
+  interval a price holds, who pays whom, in the contract's currency. How
+  energy is matched with contracts stays the engine's own.
+  `engines/settlement-example`, pure Python, settles at a fixed price and
+  is meant to be copied; it refuses by name a price it cannot read
+  (`price_missing`, `price_kind_unsupported`, `signal_misaligned`,
+  `signals_overlap`, `currency_mixed`) and a volume counted twice
+  (`volume_counted_twice`).
+
 ## [0.1.0] — 2026-10-17
 
 The first release: what other people can install, read and build on.
