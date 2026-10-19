@@ -16,7 +16,7 @@ packs/xa/
 ├── grid.json         grid.operators; voltage levels and connection thresholds as defaults
 ├── defaults.json     defaults: property, value, unit, region, validity, source, reference
 └── README.md         what is decided, what is null and why, who checked it
-supabase/seed/10_pack_xa.sql   compiled by `nexgen-os pack build xa`, committed
+core/seed/10_pack_xa.sql   compiled by `nexgen-os pack build xa`, committed
 ```
 
 | Section | Fills | Required |
@@ -38,7 +38,7 @@ identity. A value that depends on the company, a contract or an option is
 ## Build and check
 
 `nexgen-os pack build <cc>` validates the pack, compiles it into
-`supabase/seed/<seed_sequence>_pack_<cc>.sql` and writes its checksum into
+`core/seed/<seed_sequence>_pack_<cc>.sql` and writes its checksum into
 `pack.json`. The seed upserts every row by its natural key, so applying it
 again changes nothing and a new version reaches an installation that holds an
 older one; `countries` records the version, the checksum and the
@@ -72,5 +72,5 @@ professional of the country read it, written with the day in `pack.json`.
 
 | Pack | State |
 |---|---|
-| [`be`](be/README.md) | 0.2.0, `community`: compiled into `supabase/seed/11_pack_be.sql` |
-| [`fr`](fr/README.md) | 0.2.0, `community`: compiled into `supabase/seed/10_pack_fr.sql` |
+| [`be`](be/README.md) | 0.2.0, `community`: compiled into `core/seed/11_pack_be.sql` |
+| [`fr`](fr/README.md) | 0.2.0, `community`: compiled into `core/seed/10_pack_fr.sql` |

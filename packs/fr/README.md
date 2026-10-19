@@ -2,7 +2,7 @@
 
 The values France decides that a function of the model reads, compiled by
 `nexgen-os pack build fr` into
-[`supabase/seed/10_pack_fr.sql`](../../supabase/seed/10_pack_fr.sql).
+[`core/seed/10_pack_fr.sql`](../../core/seed/10_pack_fr.sql).
 Version 0.2.0, certification `community`: checked by the toolchain, read by
 no French professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; the national address register answers in

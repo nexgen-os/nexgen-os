@@ -38,7 +38,7 @@ describe('pack check', () => {
     const root = await checkout();
     const r = await checkPacks(root, { all: true });
     expect(r.problems).toEqual([]);
-    expect(r.packs).toEqual([{ pack: 'xa', version: '0.1.0', file: 'supabase/seed/10_pack_xa.sql', state: 'up_to_date' }]);
+    expect(r.packs).toEqual([{ pack: 'xa', version: '0.1.0', file: 'core/seed/10_pack_xa.sql', state: 'up_to_date' }]);
   });
 
   it('reads JSON, not its layout: a pack indented otherwise has the same checksum', async () => {
@@ -58,8 +58,8 @@ describe('pack check', () => {
 
   it('refuses a seed that is missing, and one that belongs to no pack', async () => {
     const root = await checkout();
-    await rm(join(root, 'supabase/seed/10_pack_xa.sql'));
-    await writeFile(join(root, 'supabase/seed/11_pack_xz.sql'), '-- left behind\n');
+    await rm(join(root, 'core/seed/10_pack_xa.sql'));
+    await writeFile(join(root, 'core/seed/11_pack_xz.sql'), '-- left behind\n');
     expect(codes(await checkPacks(root, { all: true }))).toEqual(['seed_missing', 'seed_orphan']);
   });
 
@@ -175,7 +175,7 @@ describe('pack build', () => {
     const root = await checkout();
     const r = await buildPacks(root, { pack: 'xa' });
     expect(r.packs[0]!.state).toBe('unchanged');
-    expect(await readFile(join(root, 'supabase/seed/10_pack_xa.sql'), 'utf8')).toBe(await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8'));
+    expect(await readFile(join(root, 'core/seed/10_pack_xa.sql'), 'utf8')).toBe(await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8'));
     expect(await readFile(join(root, 'packs/xa/pack.json'), 'utf8')).toBe(await readFile(join(FIXTURE, 'packs/xa/pack.json'), 'utf8'));
   });
 
@@ -189,7 +189,7 @@ describe('pack build', () => {
     expect((await buildPacks(root, { pack: 'xa' })).packs[0]!.state).toBe('written');
     const after = JSON.parse(await readFile(join(root, 'packs/xa/pack.json'), 'utf8')).checksum;
     expect(after).not.toBe(before);
-    const seed = await readFile(join(root, 'supabase/seed/10_pack_xa.sql'), 'utf8');
+    const seed = await readFile(join(root, 'core/seed/10_pack_xa.sql'), 'utf8');
     expect(seed).toContain(`-- checksum       ${after}`);
     expect(seed).toContain(`'2026-01-01'::date, '2027-01-01'::date`);
     expect(seed).toContain(`('grid_co2_factor'::text, null::text, '0.1'::jsonb`);
@@ -201,7 +201,7 @@ describe('pack build', () => {
     await edit(root, 'defaults.json', (j) => { j.defaults[0].region = 'XA-E'; });
     const r = await buildPacks(root, { pack: 'xa' });
     expect(codes(r)).toEqual(['region_undeclared']);
-    expect(await readFile(join(root, 'supabase/seed/10_pack_xa.sql'), 'utf8')).toBe(await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8'));
+    expect(await readFile(join(root, 'core/seed/10_pack_xa.sql'), 'utf8')).toBe(await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8'));
   });
 });
 
@@ -209,7 +209,7 @@ describe('the installer', () => {
   it('applies a compiled seed as its pack, never as the core, with the modules the pack names', async () => {
     const catalogue = await readCatalogue(FIXTURE);
     expect(catalogue.core).toEqual([]);
-    expect(catalogue.packs.get('xa')).toEqual({ code: 'xa', modules: ['grid'], steps: [{ name: 'supabase/seed/10_pack_xa.sql', scope: 'pack:xa' }] });
+    expect(catalogue.packs.get('xa')).toEqual({ code: 'xa', modules: ['grid'], steps: [{ name: 'core/seed/10_pack_xa.sql', scope: 'pack:xa' }] });
   });
 });
 
@@ -218,7 +218,7 @@ describe('the command line', () => {
     const root = await checkout();
     const ok = await cli(['pack', 'check', '--all', '--root', root]);
     expect(ok.code).toBe(0);
-    expect(ok.out).toEqual(['  xa  0.1.0  supabase/seed/10_pack_xa.sql  the output of its pack', 'no problem found']);
+    expect(ok.out).toEqual(['  xa  0.1.0  core/seed/10_pack_xa.sql  the output of its pack', 'no problem found']);
     await edit(root, 'grid.json', (j) => { j.operators[0].name = 'Transmission operator'; });
     const stale = await cli(['pack', 'check', '--all', '--root', root]);
     expect(stale.code).toBe(1);
