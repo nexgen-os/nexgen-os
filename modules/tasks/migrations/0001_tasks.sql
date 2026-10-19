@@ -12,8 +12,8 @@
 --
 -- What has to be done is data. A template says, for a country, a kind of
 -- project and a role, one task of one phase, with the reference it answers
--- and the documents it expects; the module ships none, the country packs
--- and the installation publish theirs. `tasks.plan()` reads the templates
+-- and the documents it expects; the module publishes the generic ones
+-- (0003), the installation and private overlays add theirs. `tasks.plan()` reads the templates
 -- that match a project and creates its tasks, once. `tasks.progress()` sums
 -- the tasks of a site or a project up on a day.
 --
@@ -106,7 +106,7 @@ grant select, insert, update, delete on tasks.roles to service_role;
 create table tasks.templates (
   id               uuid primary key default gen_random_uuid(),
   code             text not null,
-  -- Who published it: 'pack:fr', 'pack:be', or the installation's own name.
+  -- Who published it: 'tasks' for the generic ones, or the installation's own name.
   published_by     text not null,
   -- The country whose rules ask for it (ISO 3166-1 alpha-2); null: every country.
   country          char(2),
@@ -141,7 +141,7 @@ create table tasks.templates (
 );
 
 comment on table tasks.templates is
-  'What has to be done on a project, as data: for a country and a kind of project, one task of one phase carried by one role, with the legal reference it answers, the documents it expects, the condition under which it applies and the template it waits for. Published by the country packs and the installation; the module ships none.';
+  'What has to be done on a project, as data: for a country and a kind of project, one task of one phase carried by one role, with the legal reference it answers, the documents it expects, the condition under which it applies and the template it waits for. Published by the module (generic, for every country), by the installation and by private overlays; never by a country pack.';
 
 create index templates_country_kind_idx on tasks.templates (country, project_kind);
 

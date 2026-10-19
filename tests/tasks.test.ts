@@ -177,21 +177,40 @@ describe('where a project stands', () => {
   });
 });
 
+describe('the generic templates the module publishes, for every country', () => {
+  it('plan a roof installation in any country, steps in order, each waiting for the one before', async () => {
+    const n = await one<{ n: number; countries: number }>(db, `select count(*)::int n, count(country)::int countries from tasks.templates where published_by = 'tasks'`);
+    expect(n).toEqual({ n: 15, countries: 0 });
+    const roof = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Generic roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
+    expect(await plan(roof)).toMatchObject({ created: 9, existing: 0, skipped: [] });
+    const first = await one<{ name: string; depends: string | null }>(db,
+      `select t.name, d.name depends from tasks.tasks t left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 and t.phase = 'handover'`, [roof]);
+    expect(first).toEqual({ name: 'Installation handed over with its file', depends: 'Connection energised and meter set for injection' });
+    const community = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Generic community', country: 'FR', kind: 'energy_community', status: 'creation' });
+    expect(await plan(community)).toMatchObject({ created: 6, skipped: [] });
+  });
+
+  afterAll(async () => {
+    // Set aside, so that the cases below count only the templates they write.
+    await db.query(`delete from tasks.templates where published_by = 'tasks'`);
+  });
+});
+
 describe('what has to be done, from the templates of a country and a kind of project', () => {
   let roofFr: string;
   let roofBe: string;
   let community: string;
 
   beforeAll(async () => {
-    // Templates as a pack would publish them: two countries, two kinds, one
-    // condition, one dependency.
+    // Templates as an installation or a country overlay would publish them:
+    // two countries, two kinds, one condition, one dependency.
     await db.query(`
       insert into tasks.templates (code, published_by, country, project_kind, phase, role, name, legal_reference, documents, applies_when, depends_on_code, position) values
-        ('prior_declaration',  'pack:fr', 'FR', 'pv_roof',          'permitting',      'owner',        'Prior declaration of works filed with the municipality', 'Code de l''urbanisme, R. 421-17', '{"Cerfa 13703"}', null, null, 10),
-        ('consuel',            'pack:fr', 'FR', 'pv_roof',          'commissioning',   'installer',    'Electrical conformity certificate obtained',             'Décret 72-1120',                  '{"Attestation de conformité"}', null, 'prior_declaration', 20),
-        ('building_permit',    'pack:fr', 'FR', 'pv_roof',          'permitting',      'municipality', 'Building permit granted',                                 'Code de l''urbanisme, R. 421-1',  '{}', '{"property": "installed_power", "op": ">", "value": 250}', null, 15),
-        ('statutes',           'pack:fr', 'FR', 'energy_community', 'design',          'notary',       'Statutes of the community signed',                        'Code de l''énergie, L. 291-1',    '{"Statuts"}', null, null, 10),
-        ('dso_notification',   'pack:be', 'BE', 'pv_roof',          'grid_connection', 'owner',        'Installation notified to the grid operator',              'Règlement technique',             '{}', null, null, 10),
+        ('prior_declaration',  'overlay:fr', 'FR', 'pv_roof',          'permitting',      'owner',        'Prior declaration of works filed with the municipality', 'Code de l''urbanisme, R. 421-17', '{"Cerfa 13703"}', null, null, 10),
+        ('consuel',            'overlay:fr', 'FR', 'pv_roof',          'commissioning',   'installer',    'Electrical conformity certificate obtained',             'Décret 72-1120',                  '{"Attestation de conformité"}', null, 'prior_declaration', 20),
+        ('building_permit',    'overlay:fr', 'FR', 'pv_roof',          'permitting',      'municipality', 'Building permit granted',                                 'Code de l''urbanisme, R. 421-1',  '{}', '{"property": "installed_power", "op": ">", "value": 250}', null, 15),
+        ('statutes',           'overlay:fr', 'FR', 'energy_community', 'design',          'notary',       'Statutes of the community signed',                        'Code de l''énergie, L. 291-1',    '{"Statuts"}', null, null, 10),
+        ('dso_notification',   'overlay:be', 'BE', 'pv_roof',          'grid_connection', 'owner',        'Installation notified to the grid operator',              'Règlement technique',             '{}', null, null, 10),
         ('yearly_inspection',  'farm',    null, null,               'operation',       'installer',    'Yearly inspection of the arrays',                         null,                              '{"Inspection report"}', null, null, 10)
     `);
     roofFr = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Barn roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
@@ -205,7 +224,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
       .rejects.toThrow(/templates_applies_when_shape/);
     await expect(db.query(`insert into tasks.templates (code, published_by, phase, name, applies_when) values ('z', 'farm', 'design', 'Bad condition', '{"property": "installed_power", "op": ">", "value": "ten"}')`))
       .rejects.toThrow(/templates_applies_when_shape/);
-    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name) values ('prior_declaration', 'pack:fr', 'design', 'Twice')`)).rejects.toThrow(/templates_once_per_publisher/);
+    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name) values ('prior_declaration', 'overlay:fr', 'design', 'Twice')`)).rejects.toThrow(/templates_once_per_publisher/);
   });
 
   it('plan the tasks of a project from the templates of its country and kind, once', async () => {
@@ -214,7 +233,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
       project_id: roofFr,
       created: 3,
       existing: 0,
-      skipped: [{ code: 'building_permit', published_by: 'pack:fr', reason: 'attribute_missing', property: 'installed_power' }],
+      skipped: [{ code: 'building_permit', published_by: 'overlay:fr', reason: 'attribute_missing', property: 'installed_power' }],
     });
     const rows = await db.query<{ name: string; phase: string; role: string; source: string; depends: string | null }>(
       `select t.name, t.phase, t.role, t.source, d.name depends from tasks.tasks t left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 order by t.phase, t.name`, [roofFr]);
