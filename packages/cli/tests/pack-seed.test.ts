@@ -35,15 +35,13 @@ create table countries (
 create table regions (
   code text primary key, country char(2) not null references countries(code), name text not null,
   parent text references regions(code), time_zone text, published_by text not null);
-create table organisations (id uuid primary key);
 create table defaults (
   id uuid primary key default gen_random_uuid(),
   property_code text not null references property_defs(code),
-  country char(2) references countries(code), region text references regions(code),
-  organisation_id uuid references organisations(id), value jsonb, valid_from date, valid_to date,
-  source_code text references sources(code), reference text, published_by text not null,
-  check ((country is null) <> (organisation_id is null)),
-  unique nulls not distinct (country, region, organisation_id, property_code, valid_from));
+  country char(2) not null references countries(code), region text references regions(code),
+  value jsonb, valid_from date, valid_to date,
+  source_code text not null references sources(code), reference text, published_by text not null,
+  unique nulls not distinct (country, region, property_code, valid_from));
 create table grid.operators (
   code text primary key, name text not null, kind text not null, country char(2) not null,
   regions text[] not null, coverage text, website text, data_hub_url text,

@@ -13,14 +13,7 @@ let seed: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['grid']);
-  const compiled = await readFile(join(repoRoot, 'tests/fixtures/pack-checkout/supabase/seed/10_pack_xa.sql'), 'utf8');
-  // The compiled seed still names an organisation level in `defaults`; the
-  // core has none, since an organisation's defaults are its attributes
-  // (decisions 0021 and 0023). The two mentions are taken out here until
-  // the compiler drops them; everything else runs as compiled.
-  seed = compiled
-    .replace(' and x.organisation_id is null', '')
-    .replace('on conflict (country, region, organisation_id, property_code, valid_from)', 'on conflict (country, region, property_code, valid_from)');
+  seed = await readFile(join(repoRoot, 'tests/fixtures/pack-checkout/supabase/seed/10_pack_xa.sql'), 'utf8');
   expect(seed).not.toContain('organisation_id');
 });
 
