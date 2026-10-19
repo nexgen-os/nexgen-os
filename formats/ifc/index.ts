@@ -2,17 +2,18 @@
 //
 // IFC (ISO 16739, buildingSMART) is how architects and engineers hand over
 // a building model. Each IfcBuilding becomes a row of `buildings`, each
-// IfcBuildingStorey a floor and each IfcSpace a space of the `architecture`
-// module, each roof face a `surfaces` row with its azimuth and tilt — every
-// row with the source it came from and the GlobalId it is known by. The
-// model is placed on the globe by its IfcMapConversion, else by its site's
-// latitude and longitude. Property sets and quantities the core has no
-// column for travel in `metadata.ifc`, so that nothing the file says about
-// a building, a floor or a space is lost. Equipment whose IFC class a
-// device type names (`device_types.ifc_class`: IfcSolarDevice, IfcBoiler,
-// IfcFlowMeter…) becomes a device on the site, in the building that
-// contains it, with its manufacturer, model and serial number when the file
-// gives them. The file is parsed by web-ifc
+// IfcBuildingStorey a space of kind `floor` and each IfcSpace a space of
+// kind `room` under it, each roof face a `surfaces` row with its azimuth and
+// tilt — every row with the source it came from and the GlobalId it is
+// known by. The year of construction and the area of a room are attributes,
+// with that source. The model is placed on the globe by its
+// IfcMapConversion, else by its site's latitude and longitude. Property sets
+// and quantities the core has no column for travel in `metadata.ifc`, so
+// that nothing the file says about a building, a floor or a room is lost.
+// Equipment whose IFC class a device type names (`device_types.ifc_class`:
+// IfcSolarDevice, IfcBoiler, IfcFlowMeter…) becomes a device on the site, in
+// the building and the room that contain it, with its manufacturer, model
+// and serial number when the file gives them. The file is parsed by web-ifc
 // (MPL-2.0, WebAssembly). MIT, like every format library.
 
 import * as WebIFC from 'web-ifc';
@@ -131,7 +132,6 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
   const units = unitsOf(m, m.line(projectId));
   const placement = await placementOf(db, m, units, options);
 
-  const architecture = (await db.query<{ t: string | null }>(`select to_regclass('architecture.floors')::text t`)).rows[0].t !== null;
   const relations = relationsOf(m);
   const properties = propertiesOf(m);
   const meshes = meshesOf(m);
@@ -180,6 +180,7 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
   }
 
   const buildingRows = new Map<number, string>();
+  const spaceRows = new Map<number, string>();
   for (const buildingId of m.ids(WebIFC.IFCBUILDING)) {
     seen.add(buildingId);
     const b = m.line(buildingId);
@@ -244,16 +245,15 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
       },
     };
     const row = await db.query<{ id: string }>(
-      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m,
-                              floors_above_ground, floors_below_ground, year_built, source_code, metadata)
+      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m, source_code, metadata)
        select $1, $2, $3, $4, $5,
               case when g.u is null then null else
                 ST_Force3D(${to4326('ST_CollectionExtract(ST_MakeValid(g.u), 3)', 8, 9)}, coalesce($7, 0)) end,
-              $7, $10, $11, $12, $13, $14, $15
-         from (select case when $16::boolean
+              $7, $10, $11, $12
+         from (select case when $13::boolean
                         then (select ST_Buffer(ST_Collect(ST_MakePolygon(ST_ExteriorRing(d.geom))), -0.05, 'join=mitre') from ST_Dump(x.u) d)
                         else x.u end u
-                 from (select ST_Union(case when $16::boolean then ST_Buffer(ST_GeomFromText(w), 0.05, 'join=mitre')
+                 from (select ST_Union(case when $13::boolean then ST_Buffer(ST_GeomFromText(w), 0.05, 'join=mitre')
                                             else ST_SnapToGrid(ST_GeomFromText(w), 0.001) end) u
                          from unnest($6::text[]) w) x) g
        returning id`,
@@ -262,68 +262,67 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
         text(b.Name) ?? text(b.LongName) ?? globalId, options.profile ?? null,
         pieces, elevation !== null ? round(elevation, 3) : null, placement.srid, placement.proj,
         height !== null && height >= 0 ? round(height, 3) : null,
-        storeys.length ? storeys.length - ground : null, storeys.length ? ground : null,
-        year !== null && year >= 1000 && year <= 2200 ? year : null,
         options.sourceCode, JSON.stringify(metadata), footprint === 'walls',
       ],
     );
     const id = row.rows[0].id;
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'ifc_guid', $2)`, [id, globalId]);
+    // The year the file says the building was built, as an attribute with
+    // its source; its floors are described as spaces below.
+    if (year !== null && year >= 1000 && year <= 2200) {
+      await attribute(db, id, 'year_built', year, target.scenarioId ?? null, options.sourceCode);
+    }
     result.buildings.push({ id, globalId, footprint });
     buildingRows.set(buildingId, id);
     result.counts.buildings += 1;
     for (const s of floorSlabs) skip(s, 'read for the footprint only');
     if (footprint === 'walls') for (const w of footprintWalls) skip(w, 'read for the footprint only');
 
-    // Floors and the spaces on them; spaces that are on no floor (an
-    // atrium, a hall across floors) stay in the building.
-    const insertSpace = async (spaceId: number, host: { floor_id: string } | { building_id: string }) => {
+    // Floors and the rooms on them, one tree of spaces; rooms that are on
+    // no floor (an atrium, a hall across floors) stay at the top of the
+    // building. A room's area is an attribute, with the file as its source.
+    const insertSpace = async (spaceId: number, floorId: string | null) => {
       seen.add(spaceId);
       const sp = m.line(spaceId);
       const qto = properties.get(spaceId)?.quantities.Qto_SpaceBaseQuantities ?? {};
       const area = num(qto.NetFloorArea) ?? num(qto.GrossFloorArea);
       const spaceHeight = num(qto.Height);
       const space = await db.query<{ id: string }>(
-        `insert into architecture.spaces (organisation_id, floor_id, building_id, scenario_id, name, kind, area_m2, height_m, metadata)
-         values ($1, $2, $3, $4, $5, 'room', $6, $7, $8) returning id`,
+        `insert into spaces (organisation_id, building_id, parent_id, scenario_id, kind, name, height_m, source_code, metadata)
+         values ($1, $2, $3, $4, 'room', $5, $6, $7, $8) returning id`,
         [
-          target.organisationId, 'floor_id' in host ? host.floor_id : null, 'building_id' in host ? host.building_id : null,
-          target.scenarioId ?? null, text(sp.LongName) ?? text(sp.Name) ?? 'Space',
-          area !== null ? round(area * units.area, 2) : null,
+          target.organisationId, id, floorId, target.scenarioId ?? null, text(sp.LongName) ?? text(sp.Name) ?? 'Space',
           spaceHeight !== null ? round(spaceHeight * units.length, 3) : null,
-          JSON.stringify({ ifc: describe(spaceId) }),
+          options.sourceCode, JSON.stringify({ ifc: describe(spaceId) }),
         ],
       );
+      if (area !== null) await attribute(db, space.rows[0].id, 'floor_area', round(area * units.area, 2), target.scenarioId ?? null, options.sourceCode);
       await externalId(db, space.rows[0].id, sp);
+      spaceRows.set(spaceId, space.rows[0].id);
       result.counts.spaces += 1;
     };
     for (const [i, storey] of storeys.entries()) {
       const spaces = [...relations.descendantsOf(storey.id)].filter((x) => m.typeName(x) === 'IfcSpace');
-      if (!architecture) {
-        for (const x of [storey.id, ...spaces]) skip(x, 'the architecture module is not installed');
-        continue;
-      }
       seen.add(storey.id);
       const s = m.line(storey.id);
       const next = storeys[i + 1]?.elevation ?? top;
       const floor = await db.query<{ id: string }>(
-        `insert into architecture.floors (organisation_id, building_id, scenario_id, name, level, elevation_m, height_m, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
+        `insert into spaces (organisation_id, building_id, scenario_id, kind, name, level, elevation_m, height_m, source_code, metadata)
+         values ($1, $2, $3, 'floor', $4, $5, $6, $7, $8, $9) returning id`,
         [
           target.organisationId, id, target.scenarioId ?? null,
           text(s.Name) ?? text(s.LongName) ?? `Level ${i - ground}`, i - ground, round(storey.elevation, 3),
           next !== null && next > storey.elevation ? round(next - storey.elevation, 3) : null,
-          JSON.stringify({ ifc: describe(storey.id) }),
+          options.sourceCode, JSON.stringify({ ifc: describe(storey.id) }),
         ],
       );
       await externalId(db, floor.rows[0].id, s);
       result.counts.floors += 1;
-      for (const spaceId of spaces) await insertSpace(spaceId, { floor_id: floor.rows[0].id });
+      for (const spaceId of spaces) await insertSpace(spaceId, floor.rows[0].id);
     }
     for (const spaceId of relations.descendantsOf(buildingId)) {
       if (m.typeName(spaceId) !== 'IfcSpace' || seen.has(spaceId)) continue;
-      if (architecture) await insertSpace(spaceId, { building_id: id });
-      else skip(spaceId, 'the architecture module is not installed');
+      await insertSpace(spaceId, null);
     }
 
     // Roofs: an IfcRoof's own faces, else those of its parts, and every
@@ -420,6 +419,10 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     for (const [ifcId, rowId] of buildingRows) if (relations.descendantsOf(ifcId).has(id)) return rowId;
     return null;
   };
+  const spaceOf = (id: number): string | null => {
+    for (const [ifcId, rowId] of spaceRows) if (relations.descendantsOf(ifcId).has(id)) return rowId;
+    return null;
+  };
   for (const id of m.ids(WebIFC.IFCPRODUCT, true)) {
     if (seen.has(id)) continue;
     const line = m.line(id);
@@ -435,18 +438,17 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     const occurrence = pset.Pset_ManufacturerOccurrence ?? {};
     const at = placement.precision ? placement.toTarget(frameOf(m, line.ObjectPlacement, units.length).o) : null;
     const device = await db.query<{ id: string }>(
-      `insert into devices (organisation_id, site_id, building_id, scenario_id, name, device_type,
-                            manufacturer, model, serial_number, geometry, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9,
-               case when $10::float8 is null then null else ST_Force3D(${to4326('ST_MakePoint($10, $11, $12)', 13, 14)}) end, $15)
+      `insert into devices (organisation_id, site_id, building_id, space_id, scenario_id, name, device_type,
+                            manufacturer, model, serial_number, geometry, source_code, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+               case when $11::float8 is null then null else ST_Force3D(${to4326('ST_MakePoint($11, $12, $13)', 14, 15)}) end, $16, $17)
        returning id`,
       [
-        target.organisationId, target.siteId, buildingOf(id), target.scenarioId ?? null,
+        target.organisationId, target.siteId, buildingOf(id), spaceOf(id), target.scenarioId ?? null,
         text(line.Name) ?? text(line.ObjectType) ?? m.typeName(id), deviceType,
         text(product.Manufacturer), text(product.ModelLabel) ?? text(product.ModelReference), text(occurrence.SerialNumber),
         at?.[0] ?? null, at?.[1] ?? null, at?.[2] ?? null, placement.srid, placement.proj,
-        // Devices have no source column: the file they came from travels with the rest of what it said.
-        JSON.stringify({ ifc: { ...describe(id), header, source_code: options.sourceCode } }),
+        options.sourceCode, JSON.stringify({ ifc: { ...describe(id), header } }),
       ],
     );
     await externalId(db, device.rows[0].id, line);
@@ -463,6 +465,14 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
   }
   result.skipped.sort((p, q) => p.entity.localeCompare(q.entity) || p.reason.localeCompare(q.reason));
   return result;
+}
+
+/** An attribute read from the file, with the file's source; history starts with it. */
+async function attribute(db: Db, objectId: string, property: string, value: number, scenarioId: string | null, sourceCode: string): Promise<void> {
+  await db.query(
+    `insert into attributes (object_id, property_code, value, scenario_id, source_code) values ($1, $2, $3::jsonb, $4, $5)`,
+    [objectId, property, JSON.stringify(value), scenarioId, sourceCode],
+  );
 }
 
 async function externalId(db: Db, objectId: string, line: Line): Promise<void> {

@@ -4,11 +4,11 @@
 // and national 3D models publish buildings: 3DBAG for the Netherlands, UrbIS
 // for Brussels, the CityGML LoD2 datasets of German states once converted.
 // A Building and its BuildingParts become one row of `buildings` — footprint,
-// elevation, height, floors, year — and its roof and wall faces become rows
-// of `surfaces` with their azimuth and tilt, each with the source it came
-// from and the CityObject id it is known by. Attributes the core has no
-// column for travel in `metadata.cityjson`, so that the export gives them
-// back. MIT, like every format library.
+// elevation, height — with its floors and year as attributes, and its roof
+// and wall faces become rows of `surfaces` with their azimuth and tilt, each
+// with the source it came from and the CityObject id it is known by.
+// Attributes the core has no place for travel in `metadata.cityjson`, so
+// that the export gives them back. MIT, like every format library.
 
 import type { Db } from '../db.js';
 import { orientation, polygonWkt, sridOf, type Point } from '../geometry.js';
@@ -134,25 +134,36 @@ export async function importCityJson(db: Db, target: ImportTarget, doc: CityJson
     const lods = [...new Set(faces.map((f) => f.lod))].sort((a, b) => a - b);
 
     const building = await db.query<{ id: string }>(
-      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m,
-                              floors_above_ground, floors_below_ground, year_built, source_code, metadata)
+      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m, source_code, metadata)
        select $1, $2, $3, $4, $5,
               case when g.u is null then null else
                 ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($7, 0)), $8), 4326) end,
-              $7, $9, $10, $11, $12, $13, $14
+              $7, $9, $10, $11
          from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($6::text[]) w) g
        returning id`,
       [
         target.organisationId, target.siteId, target.scenarioId ?? null,
         stringOrNull(attributes.name) ?? id, options.profile ?? null,
         footprintWkts, elevation, srid, height,
-        integerOrNull(attributes.storeysAboveGround), integerOrNull(attributes.storeysBelowGround), integerOrNull(attributes.yearOfConstruction),
         options.sourceCode,
         JSON.stringify({ cityjson: { id, type: object.type, parts, lods, attributes: extra } }),
       ],
     );
     const buildingId = building.rows[0].id;
     result.buildings.push({ id: buildingId, cityObjectId: id });
+
+    // Floors and year, as the file says them: attributes with their source.
+    for (const [property, value] of [
+      ['floors_above_ground', integerOrNull(attributes.storeysAboveGround)],
+      ['floors_below_ground', integerOrNull(attributes.storeysBelowGround)],
+      ['year_built', integerOrNull(attributes.yearOfConstruction)],
+    ] as const) {
+      if (value === null) continue;
+      await db.query(
+        `insert into attributes (object_id, property_code, value, scenario_id, source_code) values ($1, $2, $3::jsonb, $4, $5)`,
+        [buildingId, property, JSON.stringify(value), target.scenarioId ?? null, options.sourceCode],
+      );
+    }
 
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'cityjson', $2)`, [buildingId, id]);
 
@@ -250,9 +261,7 @@ interface BuildingRow {
   name: string;
   elevation_m: string | null;
   height_m: string | null;
-  floors_above_ground: number | null;
-  floors_below_ground: number | null;
-  year_built: number | null;
+  attributes: { floors_above_ground?: number; floors_below_ground?: number; year_built?: number };
   metadata: { cityjson?: { id?: string; attributes?: Record<string, unknown> } };
   city_id: string | null;
   srid: number;
@@ -271,13 +280,13 @@ interface SurfaceRow {
 /**
  * The buildings of a site as a CityJSON 2.0 document: LoD 1 solid from the
  * footprint and height, LoD 2 surfaces from `surfaces` when there are any,
- * CityGML attributes from the columns and the file's own attributes back
- * from `metadata.cityjson`.
+ * CityGML attributes from the columns and the attributes, and the file's own
+ * attributes back from `metadata.cityjson`.
  */
 export async function exportCityJson(db: Db, where: { siteId: string }, options: ExportOptions = {}): Promise<CityJsonDocument> {
   const buildings = await db.query<BuildingRow>(
     `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from buildings where site_id = $1)) srid)
-     select b.id, b.name, b.elevation_m, b.height_m, b.floors_above_ground, b.floors_below_ground, b.year_built, b.metadata,
+     select b.id, b.name, b.elevation_m, b.height_m, attributes_of(b.id) attributes, b.metadata,
             (select value from external_ids e where e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
             s.srid,
             ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
@@ -321,9 +330,9 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
     const attributes: Record<string, unknown> = { ...(b.metadata.cityjson?.attributes ?? {}) };
     if (b.name !== id) attributes.name = b.name;
     if (b.height_m !== null) attributes.measuredHeight = Number(b.height_m);
-    if (b.floors_above_ground !== null) attributes.storeysAboveGround = b.floors_above_ground;
-    if (b.floors_below_ground !== null) attributes.storeysBelowGround = b.floors_below_ground;
-    if (b.year_built !== null) attributes.yearOfConstruction = b.year_built;
+    if (b.attributes.floors_above_ground !== undefined) attributes.storeysAboveGround = b.attributes.floors_above_ground;
+    if (b.attributes.floors_below_ground !== undefined) attributes.storeysBelowGround = b.attributes.floors_below_ground;
+    if (b.attributes.year_built !== undefined) attributes.yearOfConstruction = b.attributes.year_built;
 
     const geometry: CityJsonGeometry[] = [];
     if (b.volume && b.volume.length) {

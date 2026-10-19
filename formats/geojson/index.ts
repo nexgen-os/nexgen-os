@@ -152,13 +152,13 @@ export async function exportGeoJson(db: Db, target: ExportTarget, options: Expor
     const project = await db.query<Row>(
       `select p.id, p.name, p.kind project_kind, p.country, p.status, p.start_date::text, p.end_date::text, p.tags, null source_code,
               ${geojson('p.geometry')} geometry
-         from projects p where p.id = $1 and ${visible('p')}`,
+         from community.projects p where p.id = $1 and ${visible('p')}`,
       [target.projectId, chain],
     );
     if (project.rows.length === 0) throw new Error(`project_not_found: ${target.projectId}`);
     projects.push(...project.rows);
     siteIds = (await db.query<{ site_id: string }>(
-      `select distinct p.site_id from participants p where p.project_id = $1 and p.site_id is not null and ${visible('p')}`,
+      `select distinct p.site_id from community.participants p where p.project_id = $1 and p.site_id is not null and ${visible('p')}`,
       [target.projectId, chain],
     )).rows.map((r) => r.site_id);
   } else {
@@ -166,7 +166,7 @@ export async function exportGeoJson(db: Db, target: ExportTarget, options: Expor
   }
 
   const sites = await db.query<Row>(
-    `select s.id, s.name, s.country, s.street, s.address_extra, s.postal_code, s.city, s.region, s.municipality_code,
+    `select s.id, s.name, s.country, s.street, s.address_extra, s.postal_code, s.city, s.region,
             s.time_zone, s.location_precision, s.profile, s.tags, s.location_source_code source_code, ${geojson('s.geometry')} geometry
        from sites s where s.id = any($1::uuid[]) and ${visible('s')}
       order by s.created_at, s.id`,
@@ -177,7 +177,7 @@ export async function exportGeoJson(db: Db, target: ExportTarget, options: Expor
 
   const buildings = await db.query<Row>(
     `select b.id, b.name, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
-            b.floors_above_ground, b.floors_below_ground, b.year_built, b.status, b.tags, b.source_code, b.metadata,
+            b.status, b.tags, b.source_code, b.metadata,
             ${geojson('b.footprint')} geometry
        from buildings b where b.site_id = any($1::uuid[]) and ${visible('b')}
       order by b.created_at, b.id`,
@@ -185,7 +185,7 @@ export async function exportGeoJson(db: Db, target: ExportTarget, options: Expor
   );
   const surfaces = await db.query<Row>(
     `select f.id, f.name, f.kind surface_kind, coalesce(f.site_id, b.site_id) site_id, f.building_id,
-            f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.material, f.tags, f.source_code, f.metadata,
+            f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.tags, f.source_code, f.metadata,
             ${geojson('f.geometry')} geometry
        from surfaces f left join buildings b on b.id = f.building_id
       where coalesce(f.site_id, b.site_id) = any($1::uuid[]) and ${visible('f')}
@@ -193,9 +193,9 @@ export async function exportGeoJson(db: Db, target: ExportTarget, options: Expor
     [found, chain],
   );
   const devices = await db.query<Row>(
-    `select d.id, d.name, d.device_type, d.site_id, d.building_id, d.surface_id, d.manufacturer, d.model, d.serial_number,
+    `select d.id, d.name, d.device_type, d.site_id, d.building_id, d.space_id, d.surface_id, d.manufacturer, d.model, d.serial_number,
             d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text, d.tags, d.metadata,
-            null source_code, ${geojson('d.geometry')} geometry
+            d.source_code, ${geojson('d.geometry')} geometry
        from devices d where d.site_id = any($1::uuid[]) and ${visible('d')}
       order by d.created_at, d.id`,
     [found, chain],

@@ -1,4 +1,5 @@
--- Example 3 — an energy community in a harbour, in Rotterdam.
+-- Example 3 — an energy community in a harbour, in Rotterdam. Needs the
+-- `community`, `grid` and `ekwo` modules.
 --
 -- A cooperative's project, three warehouses behind their meters taking part
 -- as consumers, the companies who answer for them (Ekwo contacts), a roof
@@ -9,13 +10,24 @@
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000300000001', 'Haven Energie Coöperatie');
 
-insert into contacts (id, organisation_id, name, kind, email, ekwo_contact_id) values
-  ('00000000-0000-4000-8000-000300000011', '00000000-0000-4000-8000-000300000001', 'Van Dijk Logistiek BV', 'company', 'facturen@vandijk.example', '11111111-1111-4111-8111-111111111111'),
-  ('00000000-0000-4000-8000-000300000012', '00000000-0000-4000-8000-000300000001', 'Maas Koeltransport BV', 'company', 'admin@maas.example', '11111111-1111-4111-8111-111111111112'),
-  ('00000000-0000-4000-8000-000300000013', '00000000-0000-4000-8000-000300000001', 'Rijnmond Verpakkingen BV', 'company', 'boekhouding@rijnmond.example', '11111111-1111-4111-8111-111111111113'),
-  ('00000000-0000-4000-8000-000300000014', '00000000-0000-4000-8000-000300000001', 'Stedin', 'company', null, null);
+insert into contacts (id, organisation_id, name, kind) values
+  ('00000000-0000-4000-8000-000300000011', '00000000-0000-4000-8000-000300000001', 'Van Dijk Logistiek BV', 'company'),
+  ('00000000-0000-4000-8000-000300000012', '00000000-0000-4000-8000-000300000001', 'Maas Koeltransport BV', 'company'),
+  ('00000000-0000-4000-8000-000300000013', '00000000-0000-4000-8000-000300000001', 'Rijnmond Verpakkingen BV', 'company');
 
-insert into projects (id, organisation_id, name, kind, country, status, start_date) values
+-- Who they are for the accounting side: their Ekwo contact and the address
+-- their invoices go to, kept by the ekwo module.
+insert into ekwo.contacts (id, ekwo_contact_id, email) values
+  ('00000000-0000-4000-8000-000300000011', '11111111-1111-4111-8111-111111111111', 'facturen@vandijk.example'),
+  ('00000000-0000-4000-8000-000300000012', '11111111-1111-4111-8111-111111111112', 'admin@maas.example'),
+  ('00000000-0000-4000-8000-000300000013', '11111111-1111-4111-8111-111111111113', 'boekhouding@rijnmond.example');
+
+-- The distribution operator of the harbour. No pack of this country ships
+-- yet, so the installation declares it as a pack would.
+insert into grid.operators (code, name, kind, country, coverage, published_by) values
+  ('stedin', 'Stedin', 'dso', 'NL', 'Rotterdam, The Hague, Utrecht and their regions.', 'installation');
+
+insert into community.projects (id, organisation_id, name, kind, country, status, start_date) values
   ('00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000001', 'Waalhaven energy community', 'energy_community', 'NL', 'active', '2025-01-01');
 
 insert into sites (id, organisation_id, name, country, street, postal_code, city, profile) values
@@ -24,32 +36,34 @@ insert into sites (id, organisation_id, name, country, street, postal_code, city
   ('00000000-0000-4000-8000-000300000033', '00000000-0000-4000-8000-000300000001', 'Waalhaven Oostzijde 16', 'NL', 'Waalhaven Oostzijde 16', '3087 BM', 'Rotterdam', 'warehouse'),
   ('00000000-0000-4000-8000-000300000034', '00000000-0000-4000-8000-000300000001', 'Roof plant, hall C', 'NL', 'Waalhaven Oostzijde 20', '3087 BM', 'Rotterdam', 'plant');
 
-insert into meters (id, organisation_id, site_id, identifier, scheme, resource, direction, grid_operator_id) values
-  ('00000000-0000-4000-8000-000300000041', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000031', '871687100000000012', 'gs1_gsrn', 'electricity', 'both', '00000000-0000-4000-8000-000300000014'),
-  ('00000000-0000-4000-8000-000300000042', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000032', '871687100000000014', 'gs1_gsrn', 'electricity', 'both', '00000000-0000-4000-8000-000300000014'),
-  ('00000000-0000-4000-8000-000300000043', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000033', '871687100000000016', 'gs1_gsrn', 'electricity', 'both', '00000000-0000-4000-8000-000300000014'),
-  ('00000000-0000-4000-8000-000300000044', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', '871687100000000020', 'gs1_gsrn', 'electricity', 'injection', '00000000-0000-4000-8000-000300000014');
+insert into grid.meters (id, organisation_id, site_id, identifier, scheme, resource, direction, grid_operator) values
+  ('00000000-0000-4000-8000-000300000041', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000031', '871687100000000012', 'gs1_gsrn', 'electricity', 'both', 'stedin'),
+  ('00000000-0000-4000-8000-000300000042', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000032', '871687100000000014', 'gs1_gsrn', 'electricity', 'both', 'stedin'),
+  ('00000000-0000-4000-8000-000300000043', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000033', '871687100000000016', 'gs1_gsrn', 'electricity', 'both', 'stedin'),
+  ('00000000-0000-4000-8000-000300000044', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', '871687100000000020', 'gs1_gsrn', 'electricity', 'injection', 'stedin');
 
-insert into participants (id, organisation_id, project_id, site_id, name, role, contact_id, status, join_date) values
+insert into community.participants (id, organisation_id, project_id, site_id, name, role, contact_id, status, join_date) values
   ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000031', 'Van Dijk Logistiek', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01'),
   ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000032', 'Maas Koeltransport', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01'),
   ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000033', 'Rijnmond Verpakkingen', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01'),
   ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000034', 'Roof plant', 'producer', null, 'active', '2025-01-01');
 
--- Two tenants of the same landlord, read together.
-insert into participants (id, organisation_id, project_id, name, is_group, status) values
-  ('00000000-0000-4000-8000-000300000055', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Oostzijde 12–14 (same landlord)', true, 'active');
-update participants set parent_id = '00000000-0000-4000-8000-000300000055'
+-- Two tenants of the same landlord, read together: a group has no site.
+insert into community.participants (id, organisation_id, project_id, name, status) values
+  ('00000000-0000-4000-8000-000300000055', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Oostzijde 12–14 (same landlord)', 'active');
+update community.participants set parent_id = '00000000-0000-4000-8000-000300000055'
  where id in ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000052');
 
-insert into devices (id, organisation_id, site_id, meter_id, name, device_type, manufacturer, rated_power_kw, unit_count, installation_date, tags) values
-  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', '00000000-0000-4000-8000-000300000044', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15', '{solar,electric}');
+insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, rated_power_kw, unit_count, installation_date, tags) values
+  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000034', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15', '{solar,electric}');
+insert into links (subject_id, type_code, object_id) values
+  ('00000000-0000-4000-8000-000300000060', 'behind_meter', '00000000-0000-4000-8000-000300000044');
 
 -- A month of quarter-hour offtake per consumer, and of injection by the plant.
 insert into series (id, organisation_id, object_id, quantity_code, kind, value_kind, step, source)
 select ('00000000-0000-4000-8000-0003000000' || (70 + row_number() over ()))::uuid, '00000000-0000-4000-8000-000300000001', m.id,
        case when m.direction = 'injection' then 'injection_energy' else 'offtake_energy' end, 'measured', 'interval', '15 minutes', 'grid operator hub'
-  from meters m where m.organisation_id = '00000000-0000-4000-8000-000300000001' order by m.identifier;
+  from grid.meters m where m.organisation_id = '00000000-0000-4000-8000-000300000001' order by m.identifier;
 
 insert into series_values (series_id, at, value)
 select s.id, ts,
@@ -86,13 +100,13 @@ select record_run('sharing', 'settlement-0.1.0', '00000000-0000-4000-8000-000300
 -- Queries a page would run
 -- The community as a table:
 --   select p.name, p.role, m.identifier, c.name contact, p.join_date
---     from participants p left join meters m on m.site_id = p.site_id left join contacts c on c.id = p.contact_id
---    where p.project_id = '00000000-0000-4000-8000-000300000020' and not p.is_group order by p.role, p.name;
+--     from community.participants p left join grid.meters m on m.site_id = p.site_id left join contacts c on c.id = p.contact_id
+--    where p.project_id = '00000000-0000-4000-8000-000300000020' and p.site_id is not null order by p.role, p.name;
 -- Daily offtake of Van Dijk in May:
 --   select r.bucket::date, r.value from series s, resample(s.id, '2026-05-01', '2026-06-01', '1 day') r
 --    where s.object_id = '00000000-0000-4000-8000-000300000041';
 -- The meters behind the landlord's group:
---   select m.identifier from participant_meters('00000000-0000-4000-8000-000300000055') pm join meters m on m.id = pm.meter_id;
+--   select m.identifier from community.participant_meters('00000000-0000-4000-8000-000300000055') pm join grid.meters m on m.id = pm.meter_id;
 
 -- Daily readings are cut in the site's time zone.
 update sites set time_zone = 'Europe/Amsterdam' where organisation_id = '00000000-0000-4000-8000-000300000001';
