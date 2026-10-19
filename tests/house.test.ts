@@ -16,23 +16,24 @@ let meter: string;
 let pv: string;
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['grid']);
   org = await organisation(db, 'A family');
   site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'buildings', {
     organisation_id: org, site_id: site, name: 'House', profile: 'residential',
-    footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5, floors_above_ground: 2,
+    footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5,
   });
   roof = await insert(db, 'surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
-  meter = await insert(db, 'meters', {
+  meter = await insert(db, 'grid.meters', {
     organisation_id: org, site_id: site, identifier: '871000000000000001', scheme: 'gs1_gsrn',
   });
   pv = await insert(db, 'devices', {
-    organisation_id: org, site_id: site, building_id: house, surface_id: roof, meter_id: meter,
+    organisation_id: org, site_id: site, building_id: house, surface_id: roof,
     name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
   });
+  await db.query(`select link_objects($1, 'behind_meter', $2)`, [pv, meter]);
 });
 
 afterAll(async () => {
@@ -76,7 +77,7 @@ describe('a house', () => {
       [org],
     );
     expect(r.rows).toEqual([
-      { kind: 'building', n: 1 }, { kind: 'device', n: 1 }, { kind: 'meter', n: 1 }, { kind: 'site', n: 1 }, { kind: 'surface', n: 1 },
+      { kind: 'building', n: 1 }, { kind: 'device', n: 1 }, { kind: 'meter', n: 1 }, { kind: 'organisation', n: 1 }, { kind: 'site', n: 1 }, { kind: 'surface', n: 1 },
     ]);
   });
 
@@ -198,7 +199,7 @@ describe('a house', () => {
   it('lets a scenario add a device and override an attribute without touching reality', async () => {
     const sc = await one<{ id: string }>(db, `select id from scenarios where name = 'Add a battery'`);
     const battery = await insert(db, 'devices', {
-      organisation_id: org, site_id: site, building_id: house, meter_id: meter, name: 'Battery', device_type: 'battery',
+      organisation_id: org, site_id: site, building_id: house, name: 'Battery', device_type: 'battery',
       rated_power_kw: 5, scenario_id: sc.id,
     });
     await db.query(
