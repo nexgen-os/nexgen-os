@@ -11,7 +11,7 @@ library; no field of the file is lost.
 | `GroundSurface` faces, else LoD 0, else every face | `footprint` (3D, at the elevation) | projected, unioned, transformed to WGS 84 |
 | lowest vertex | `elevation_m` | |
 | `measuredHeight`, else highest − lowest vertex | `height_m` | |
-| `storeysAboveGround`, `storeysBelowGround`, `yearOfConstruction` | `floors_above_ground`, `floors_below_ground`, `year_built` | |
+| `storeysAboveGround`, `storeysBelowGround`, `yearOfConstruction` | the attributes `floors_above_ground`, `floors_below_ground`, `year_built` | with the file as their source; read back by the export |
 | `RoofSurface`, `OuterFloorSurface` faces of the finest LoD | `surfaces` of kind `roof`, with azimuth and tilt from the face's outward normal | semantic attributes (3DBAG's `b3_*`) in `metadata.cityjson` |
 | `WallSurface` faces | `surfaces` of kind `facade` | |
 | the CityObject id | `external_ids`, scheme `cityjson` | |

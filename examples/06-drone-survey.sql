@@ -1,4 +1,4 @@
--- Example 6 — a roof surveyed by drone, in Bologna.
+-- Example 6 — a roof surveyed by drone, in Bologna. Needs the `community` module.
 --
 -- A surveyor's organisation, a client's site with a factory hall, a drone
 -- flight whose outputs are documents (orthophoto, photos, video), the roof
@@ -9,15 +9,15 @@
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000600000001', 'Rilievi Aerei Emilia srl');
 
-insert into contacts (id, organisation_id, name, kind, email) values
-  ('00000000-0000-4000-8000-000600000005', '00000000-0000-4000-8000-000600000001', 'Meccanica Felsinea SpA', 'company', 'impianti@felsinea.example');
+insert into contacts (id, organisation_id, name, kind) values
+  ('00000000-0000-4000-8000-000600000005', '00000000-0000-4000-8000-000600000001', 'Meccanica Felsinea SpA', 'company');
 
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
   ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', 'Felsinea plant', 'IT', 'Via Emilia Levante 210', '40139', 'Bologna', 'IT-45', 'industrial');
 
-insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m, floors_above_ground) values
+insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000600000020', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000010', 'Hall A', 'industrial',
-   ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11, 1);
+   ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11);
 
 insert into external_ids (object_id, scheme, value) values
   ('00000000-0000-4000-8000-000600000020', 'osm', 'way/112233445'),
@@ -38,24 +38,28 @@ insert into documents (object_id, name, kind, uri, media_type, source_code, sour
    '{"points": 48200000, "density_per_m2": 850, "note": "a survey output kept as a document; the hosted capture tools read it"}');
 
 -- Roof faces measured on the orthophoto: two pitches of a sawtooth roof and a flat annex.
-insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg, material, geometry) values
-  ('00000000-0000-4000-8000-000600000031', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, south pitches', 'roof', 180, 25, 'corrugated steel',
+insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg, geometry) values
+  ('00000000-0000-4000-8000-000600000031', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, south pitches', 'roof', 180, 25,
    ST_GeomFromText('POLYGON Z((11.3850 44.4805 60, 11.3862 44.4805 60, 11.3862 44.4808 63, 11.3850 44.4808 63, 11.3850 44.4805 60))', 4326)),
-  ('00000000-0000-4000-8000-000600000032', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, north glazing', 'roof', 0, 60, 'glass',
+  ('00000000-0000-4000-8000-000600000032', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, north glazing', 'roof', 0, 60,
    ST_GeomFromText('POLYGON Z((11.3850 44.4808 63, 11.3862 44.4808 63, 11.3862 44.4809 61, 11.3850 44.4809 61, 11.3850 44.4808 63))', 4326)),
-  ('00000000-0000-4000-8000-000600000033', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Annex, flat', 'roof', 180, 2, 'bitumen',
+  ('00000000-0000-4000-8000-000600000033', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Annex, flat', 'roof', 180, 2,
    ST_GeomFromText('POLYGON Z((11.3850 44.4809 59, 11.3862 44.4809 59, 11.3862 44.4811 59, 11.3850 44.4811 59, 11.3850 44.4809 59))', 4326));
 
 insert into attributes (object_id, property_code, value, source_code, source) values
   ('00000000-0000-4000-8000-000600000031', 'roof_area', '2860', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
   ('00000000-0000-4000-8000-000600000032', 'roof_area', '410', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
   ('00000000-0000-4000-8000-000600000033', 'roof_area', '1920', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
+  ('00000000-0000-4000-8000-000600000031', 'material', '"corrugated steel"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('00000000-0000-4000-8000-000600000032', 'material', '"glass"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('00000000-0000-4000-8000-000600000033', 'material', '"bitumen"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('00000000-0000-4000-8000-000600000020', 'floors_above_ground', '1', 'rae_drone_survey', 'seen on the oblique photos'),
   ('00000000-0000-4000-8000-000600000033', 'is_external', 'true', null, 'survey');
 
 -- The client answers for the site in the surveyor's solar study.
-insert into projects (id, organisation_id, name, kind, country, status) values
+insert into community.projects (id, organisation_id, name, kind, country, status) values
   ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Felsinea — rooftop solar study', 'study', 'IT', 'simulation');
-insert into participants (organisation_id, project_id, site_id, name, role, contact_id, status) values
+insert into community.participants (organisation_id, project_id, site_id, name, role, contact_id, status) values
   ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000010', 'Meccanica Felsinea', 'prosumer', '00000000-0000-4000-8000-000600000005', 'simulation');
 
 -- Queries a page would run

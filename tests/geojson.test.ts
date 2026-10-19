@@ -23,7 +23,7 @@ let shedRoof: string;
 let shedArray: string;
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['community', 'grid']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
@@ -77,7 +77,7 @@ describe('the GeoJSON export of a site', () => {
       'site', 'building', 'building', 'building', 'surface', 'surface', 'surface', 'surface', 'surface',
       'device', 'device', 'device', 'device', 'device', 'device',
     ]);
-    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.1.0', scenario_id: null, at: null, open: false, withheld: 0 });
+    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.2.0', scenario_id: null, at: null, open: false, withheld: 0 });
   });
 
   it('writes WGS 84 positions with their height, outer rings counter-clockwise, and the box around them', () => {
@@ -101,8 +101,8 @@ describe('the GeoJSON export of a site', () => {
     expect(site.attributes).toEqual({ annual_consumption: 186000 });
 
     const barn = byId(fc, BARN).properties;
-    expect(barn).toMatchObject({ site_id: SITE, height_m: 8, elevation_m: 64, floors_above_ground: 1, year_built: 2004 });
-    expect(barn.attributes).toEqual({ floor_area: 280, energy_label: 'C' });
+    expect(barn).toMatchObject({ site_id: SITE, height_m: 8, elevation_m: 64 });
+    expect(barn.attributes).toEqual({ floor_area: 280, energy_label: 'C', floors_above_ground: 1, year_built: 2004 });
     expect(barn.external_ids).toEqual([{ scheme: 'osm', value: 'way/445566778' }]);
 
     const field = byId(fc, FIELD).properties;
@@ -157,7 +157,7 @@ describe('the open export', () => {
   });
 
   it('drops the attributes of a closed source, serial numbers and metadata, and owes only the open sources', () => {
-    expect(byId(fc, BARN).properties.attributes).toEqual({ floor_area: 280 });
+    expect(byId(fc, BARN).properties.attributes).toEqual({ floor_area: 280, floors_above_ground: 1, year_built: 2004 });
     expect(byId(fc, BARN).properties).not.toHaveProperty('metadata');
     expect(fc.features.some((f) => 'serial_number' in f.properties)).toBe(false);
     expect(fc.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap']);
@@ -195,18 +195,18 @@ describe('a scenario, a moment, a project', () => {
       [BARN],
     );
     const before = await exportGeoJson(db, { siteId: SITE }, { at: '2025-06-01T00:00:00Z' });
-    expect(byId(before, BARN).properties.attributes).toEqual({ energy_label: 'C' });
+    expect(byId(before, BARN).properties.attributes).toEqual({ energy_label: 'C', floors_above_ground: 1, year_built: 2004 });
     expect(before.nexgen_os.at).toBe('2025-06-01T00:00:00.000Z');
     // OpenStreetMap is owed for the identifier, not for an attribute that did not hold yet.
     expect(before.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap', 'roof_layer']);
   });
 
   it('exports a project: its perimeter first, then every site taking part', async () => {
-    const project = await insert(db, 'projects', {
+    const project = await insert(db, 'community.projects', {
       organisation_id: ORG, name: 'Mont Noir solar plan', kind: 'study', country: 'FR', start_date: '2026-03-01',
       geometry: { type: 'Polygon', coordinates: [[[2.72, 50.77], [2.73, 50.77], [2.73, 50.775], [2.72, 50.775], [2.72, 50.77]]] },
     });
-    await insert(db, 'participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
+    await insert(db, 'community.participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
     const fc = await exportGeoJson(db, { projectId: project }, { open: true });
     expect(fc.features[0]).toMatchObject({ id: project, properties: { kind: 'project', project_kind: 'study', country: 'FR', start_date: '2026-03-01' } });
     expect(fc.features[1].id).toBe(SITE);

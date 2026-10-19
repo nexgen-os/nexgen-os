@@ -38,7 +38,7 @@ let mapFile: Uint8Array;
 let siteFile: Uint8Array;
 
 beforeAll(async () => {
-  db = await freshDatabase(['architecture']);
+  db = await freshDatabase();
   org = await organisation(db, 'An architect', USER_A);
   await db.query(`insert into sources (code, name, kind, license, attribution, countries) values ('architect_model', 'Architect model', 'file', 'proprietary', '© The architect', '{NL}')`);
   mapFile = await fixture('ifc-house-map-conversion.ifc');
@@ -60,8 +60,10 @@ interface BuildingRow {
 const building = (id: string) =>
   one<BuildingRow>(
     db,
-    `select b.name, b.elevation_m::float elevation, b.height_m::float height, b.floors_above_ground above, b.floors_below_ground below,
-            b.year_built built, area_m2(b.footprint)::float area, b.source_code source,
+    `select b.name, b.elevation_m::float elevation, b.height_m::float height,
+            (select count(*)::int from spaces f where f.building_id = b.id and f.kind = 'floor' and f.level >= 0) above,
+            (select count(*)::int from spaces f where f.building_id = b.id and f.kind = 'floor' and f.level < 0) below,
+            (attributes_of(b.id)->>'year_built')::int built, area_m2(b.footprint)::float area, b.source_code source,
             ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat,
             (select value from external_ids where object_id = b.id and scheme = 'ifc_guid') guid,
             (b.metadata->'ifc'->'psets'->'Pset_BuildingCommon'->>'IsLandmarked')::boolean landmarked,
@@ -76,17 +78,17 @@ const floors = (buildingId: string) =>
     `select f.name, f.level, f.elevation_m::float elevation, f.height_m::float height,
             (select value from external_ids where object_id = f.id and scheme = 'ifc_guid') guid,
             (f.metadata->'ifc'->'psets'->'Pset_BuildingStoreyCommon'->>'AboveGround')::boolean above
-       from architecture.floors f where f.building_id = $1 order by f.level`,
+       from spaces f where f.building_id = $1 and f.kind = 'floor' order by f.level`,
     [buildingId],
   ).then((r) => r.rows);
 
 const spaces = (buildingId: string) =>
   db.query<{ name: string; level: number; area: number; guid: string; finish: string | null; number: string }>(
-    `select s.name, f.level, s.area_m2::float area,
+    `select s.name, f.level, (attributes_of(s.id)->>'floor_area')::float area,
             (select value from external_ids where object_id = s.id and scheme = 'ifc_guid') guid,
             s.metadata->'ifc'->'psets'->'Pset_SpaceCoveringRequirements'->>'FloorFinish' finish,
             s.metadata->'ifc'->'attributes'->>'Name' number
-       from architecture.spaces s join architecture.floors f on f.id = s.floor_id where f.building_id = $1 order by s.name`,
+       from spaces s join spaces f on f.id = s.parent_id where f.building_id = $1 and s.kind = 'room' order by s.name`,
     [buildingId],
   ).then((r) => r.rows);
 
@@ -201,7 +203,7 @@ describe('an IFC4 model with its equipment', () => {
     }>(
       `select d.name, d.device_type, d.building_id = $2 in_building, d.manufacturer, d.model, d.serial_number serial,
               (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
-              d.metadata->'ifc'->>'source_code' source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
+              d.source_code source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
               ST_X(d.geometry)::float lon, ST_Y(d.geometry)::float lat
          from devices d where d.site_id = $1 order by d.name`,
       [site, r.buildings[0].id],

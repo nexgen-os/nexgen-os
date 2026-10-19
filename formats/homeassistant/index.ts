@@ -2,13 +2,17 @@
 //
 // Home Assistant describes a home as floors, areas, devices and entities,
 // and keeps the states of its entities over time. Nexgen OS describes the
-// same home as floors, spaces, devices and sensors, and keeps series. This
+// same home as spaces (floors and rooms, one tree), devices, and series: the
+// instrument is a device, the point it reads or is asked is a series. This
 // library maps one onto the other, both ways, without losing a field:
 //
-//   floor   → architecture.floors   (level = floor level)
-//   area    → architecture.spaces   (on its floor's level, or straight in the building)
-//   device  → devices               (type sensor_box; identifiers and versions kept)
-//   entity  → sensors               (quantity from device_class and unit; kind from domain)
+//   floor   → spaces of kind floor  (level = floor level)
+//   area    → spaces of kind room   (under its floor, or straight in the building)
+//   device  → devices               (type sensor_box, in its area's room;
+//                                    identifiers and versions kept)
+//   entity  → series                (on its device, else its area, else the
+//                                    building; quantity from device_class and
+//                                    unit; kind from domain)
 //   state   → series_values         (in the quantity's unit; on/off as 1/0;
 //                                    unavailable as quality `missing`)
 //
@@ -124,11 +128,11 @@ function quantityFor(entity: HaEntity): { quantity: string; factor: number; publ
   return { quantity: `ha_${slug(cls || domainOf(entity.entity_id))}_${slug(entity.unit_of_measurement ?? 'none')}`, factor: 1, publish: true };
 }
 
-function kindFor(entity: HaEntity): 'sensor' | 'setpoint' | 'command' {
+function kindFor(entity: HaEntity): 'measured' | 'setpoint' | 'command' {
   const domain = domainOf(entity.entity_id);
   if (SETPOINT_DOMAINS.has(domain)) return 'setpoint';
   if (COMMAND_DOMAINS.has(domain)) return 'command';
-  return 'sensor';
+  return 'measured';
 }
 
 function valueKindFor(entity: HaEntity): 'instant' | 'cumulative' | 'interval' {
@@ -142,10 +146,12 @@ export interface ImportTarget {
 }
 
 export interface ImportResult {
+  /** Floor id → space of kind floor. */
   floors: Map<string, string>;
+  /** Area id → space of kind room. */
   spaces: Map<string, string>;
   devices: Map<string, string>;
-  sensors: Map<string, string>;
+  /** Entity id → series. */
   series: Map<string, string>;
 }
 
@@ -168,31 +174,34 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
   const floors = new Map<string, string>();
   for (const [i, f] of snapshot.floors.entries()) {
     floors.set(f.floor_id, await id(db,
-      `insert into architecture.floors (organisation_id, building_id, name, level, metadata)
-       values ($1, $2, $3, $4, $5) returning id`,
-      [org, buildingId, f.name, f.level ?? i, { ha: { floor_id: f.floor_id, level: f.level, icon: f.icon, aliases: f.aliases } }]));
+      `insert into spaces (organisation_id, building_id, kind, name, level, source_code, metadata)
+       values ($1, $2, 'floor', $3, $4, $5, $6) returning id`,
+      [org, buildingId, f.name, f.level ?? i, SOURCE_CODE, { ha: { floor_id: f.floor_id, level: f.level, icon: f.icon, aliases: f.aliases } }]));
   }
 
   const spaces = new Map<string, string>();
   for (const a of snapshot.areas) {
-    const levelId = a.floor_id ? floors.get(a.floor_id) ?? null : null;
+    const floorId = a.floor_id ? floors.get(a.floor_id) ?? null : null;
     spaces.set(a.area_id, await id(db,
-      `insert into architecture.spaces (organisation_id, floor_id, building_id, name, kind, metadata)
-       values ($1, $2, $3, $4, 'room', $5) returning id`,
-      [org, levelId, levelId ? null : buildingId, a.name, { ha: { area_id: a.area_id, floor_id: a.floor_id, icon: a.icon, aliases: a.aliases } }]));
+      `insert into spaces (organisation_id, building_id, parent_id, kind, name, source_code, metadata)
+       values ($1, $2, $3, 'room', $4, $5, $6) returning id`,
+      [org, buildingId, floorId, a.name, SOURCE_CODE, { ha: { area_id: a.area_id, floor_id: a.floor_id, icon: a.icon, aliases: a.aliases } }]));
   }
 
   const devices = new Map<string, string>();
   for (const d of snapshot.devices) {
     devices.set(d.id, await id(db,
-      `insert into devices (organisation_id, site_id, building_id, name, device_type, manufacturer, model, serial_number, metadata)
-       values ($1, $2, $3, $4, 'sensor_box', $5, $6, $7, $8) returning id`,
-      [org, siteId, buildingId, d.name_by_user ?? d.name ?? d.id, d.manufacturer, d.model, d.serial_number,
+      `insert into devices (organisation_id, site_id, building_id, space_id, name, device_type, manufacturer, model, serial_number, source_code, metadata)
+       values ($1, $2, $3, $4, $5, 'sensor_box', $6, $7, $8, $9, $10) returning id`,
+      [org, siteId, buildingId, (d.area_id && spaces.get(d.area_id)) || null, d.name_by_user ?? d.name ?? d.id, d.manufacturer, d.model, d.serial_number, SOURCE_CODE,
        { ha: { id: d.id, name: d.name, name_by_user: d.name_by_user, sw_version: d.sw_version, hw_version: d.hw_version,
                area_id: d.area_id, via_device_id: d.via_device_id, identifiers: d.identifiers, connections: d.connections } }]));
   }
 
-  const sensors = new Map<string, string>();
+  // One series per entity, whether the recorder kept states for it or not:
+  // the point exists before its first value. Its name is the entity id,
+  // which Home Assistant keeps unique.
+  const series = new Map<string, string>();
   const factors = new Map<string, number>();
   for (const e of snapshot.entities) {
     const q = quantityFor(e);
@@ -203,40 +212,30 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
          valueKindFor(e) === 'cumulative' ? 'last' : 'mean'],
       );
     }
-    const host = (e.device_id && devices.get(e.device_id)) || (e.area_id && spaces.get(e.area_id)) || buildingId;
+    const device = (e.device_id && devices.get(e.device_id)) || null;
+    const observed = device || (e.area_id && spaces.get(e.area_id)) || buildingId;
     factors.set(e.entity_id, q.factor);
-    sensors.set(e.entity_id, await id(db,
-      `insert into sensors (organisation_id, host_id, name, quantity_code, kind, external_ref, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7) returning id`,
-      [org, host, e.name ?? e.original_name ?? e.entity_id, q.quantity, kindFor(e), `homeassistant://${e.entity_id}`,
+    series.set(e.entity_id, await id(db,
+      `select open_series($1, $2, $3, $4, null, $5, $6, $7, $8, null, $9) id`,
+      [observed, q.quantity, kindFor(e), valueKindFor(e), device, `homeassistant://${e.entity_id}`, SOURCE_CODE, e.entity_id,
        { ha: { ...e, binary: BINARY_DOMAINS.has(domainOf(e.entity_id)), factor: q.factor } }]));
   }
 
-  const series = new Map<string, string>();
   const byEntity = new Map<string, HaState[]>();
   for (const s of snapshot.states) byEntity.set(s.entity_id, [...(byEntity.get(s.entity_id) ?? []), s]);
   for (const [entityId, states] of byEntity) {
-    const e = snapshot.entities.find((x) => x.entity_id === entityId);
-    const sensorId = sensors.get(entityId);
-    if (!e || !sensorId) continue;
-    const host = await db.query<{ host_id: string; quantity_code: string; kind: string }>('select host_id, quantity_code, kind from sensors where id = $1', [sensorId]);
-    const { host_id, quantity_code, kind } = host.rows[0];
-    const seriesId = await id(db,
-      `insert into series (organisation_id, object_id, quantity_code, sensor_id, kind, value_kind, source_code, source)
-       values ($1, $2, $3, $4, $5, $6, $7, 'recorder') returning id`,
-      [org, host_id, quantity_code, sensorId, kind === 'setpoint' ? 'setpoint' : 'measured', valueKindFor(e), SOURCE_CODE]);
-    series.set(entityId, seriesId);
+    const seriesId = series.get(entityId);
+    if (!seriesId) continue;
     const factor = factors.get(entityId) ?? 1;
-    for (const s of states) {
+    const values = states.map((s) => {
       const n = s.state === 'on' ? 1 : s.state === 'off' ? 0 : Number(s.state);
       const missing = s.state === 'unavailable' || s.state === 'unknown' || Number.isNaN(n);
-      await db.query(
-        `insert into series_values (series_id, at, value, quality) values ($1, $2, $3, $4)`,
-        [seriesId, s.last_updated, missing ? 0 : round(n * factor), missing ? 3 : 0],
-      );
-    }
+      return { at: s.last_updated, value: missing ? 0 : round(n * factor), quality: missing ? 3 : 0 };
+    });
+    await db.query(`select store_values($1, $2::timestamptz[], $3::float8[], $4::smallint[])`,
+      [seriesId, values.map((v) => v.at), values.map((v) => v.value), values.map((v) => v.quality)]);
   }
-  return { floors, spaces, devices, sensors, series };
+  return { floors, spaces, devices, series };
 }
 
 const round = (n: number) => Number(n.toPrecision(12));
@@ -244,20 +243,18 @@ const round = (n: number) => Number(n.toPrecision(12));
 /** Reads a building back as a Home Assistant snapshot. */
 export async function exportHomeAssistant(db: Db, buildingId: string): Promise<HaSnapshot> {
   const floors = await db.query<{ ha: Omit<HaFloor, 'name'>; name: string }>(
-    `select metadata->'ha' ha, name from architecture.floors where building_id = $1 and metadata ? 'ha' order by level`, [buildingId]);
+    `select metadata->'ha' ha, name from spaces where building_id = $1 and kind = 'floor' and metadata ? 'ha' order by level`, [buildingId]);
   const areas = await db.query<{ ha: Omit<HaArea, 'name'>; name: string }>(
-    `select s.metadata->'ha' ha, s.name from architecture.spaces s
-      left join architecture.floors l on l.id = s.floor_id
-     where coalesce(s.building_id, l.building_id) = $1 and s.metadata ? 'ha' order by s.name`, [buildingId]);
+    `select metadata->'ha' ha, name from spaces where building_id = $1 and kind = 'room' and metadata ? 'ha' order by name`, [buildingId]);
   const devices = await db.query<{ ha: Record<string, unknown>; manufacturer: string | null; model: string | null; serial_number: string | null }>(
     `select metadata->'ha' ha, manufacturer, model, serial_number from devices where building_id = $1 and metadata ? 'ha' order by name`, [buildingId]);
-  const sensors = await db.query<{ id: string; ha: HaEntity & { binary: boolean; factor: number } }>(
-    `select s.id, s.metadata->'ha' ha from sensors s where s.metadata ? 'ha' and site_of(s.id) = (select site_id from buildings where id = $1)
-      order by s.metadata->'ha'->>'entity_id'`, [buildingId]);
+  const points = await db.query<{ id: string; ha: HaEntity & { binary: boolean; factor: number } }>(
+    `select se.id, se.metadata->'ha' ha from series se where se.metadata ? 'ha' and building_of(se.object_id) = $1
+      order by se.metadata->'ha'->>'entity_id'`, [buildingId]);
   const states: HaState[] = [];
-  for (const s of sensors.rows) {
+  for (const s of points.rows) {
     const values = await db.query<{ at: Date; value: number; quality: number }>(
-      `select v.at, v.value, v.quality from series_values v join series se on se.id = v.series_id where se.sensor_id = $1 order by v.at`, [s.id]);
+      `select at, value, quality from series_values where series_id = $1 order by at`, [s.id]);
     for (const v of values.rows) {
       const state = v.quality === 3 ? 'unavailable'
         : s.ha.binary ? (v.value >= 1 ? 'on' : 'off')
@@ -274,7 +271,7 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
       serial_number: r.serial_number, area_id: r.ha.area_id as string | null, via_device_id: r.ha.via_device_id as string | null,
       identifiers: r.ha.identifiers as [string, string][], connections: r.ha.connections as [string, string][],
     })),
-    entities: sensors.rows.map(({ ha }) => {
+    entities: points.rows.map(({ ha }) => {
       const { binary: _b, factor: _f, ...entity } = ha;
       return entity;
     }),

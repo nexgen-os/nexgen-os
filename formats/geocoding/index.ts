@@ -68,7 +68,9 @@ export type Fetch = (url: string, init?: { headers?: Record<string, string> }) =
 
 /**
  * The columns of `sites` a place fills: the address, the point as GeoJSON,
- * the precision and the source. Spread it into an insert or an update.
+ * the precision and the source. Spread it into an insert or an update. The
+ * municipality code is not a column: it is an identifier of the site under
+ * the scheme its country's pack publishes.
  */
 export function siteFields(place: Place) {
   return {
@@ -77,7 +79,6 @@ export function siteFields(place: Place) {
     postal_code: place.address.postal_code ?? null,
     city: place.address.city ?? null,
     region: place.address.region ?? null,
-    municipality_code: place.address.municipality_code ?? null,
     country: place.address.country,
     geometry: { type: 'Point', coordinates: [place.lon, place.lat, 0] } as const,
     location_precision: place.precision,

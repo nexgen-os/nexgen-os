@@ -96,7 +96,8 @@ describe('a CityJSON building', () => {
     buildingId = r.buildings[0].id;
     const b = await one<{ name: string; elevation: number; height: number; floors: number; built: number; area: number; source: string; dak: string; ext: string; lon: number; lat: number }>(
       db,
-      `select b.name, b.elevation_m::float elevation, b.height_m::float height, b.floors_above_ground floors, b.year_built built,
+      `select b.name, b.elevation_m::float elevation, b.height_m::float height, (attributes_of(b.id)->>'floors_above_ground')::int floors,
+              (attributes_of(b.id)->>'year_built')::int built,
               area_m2(b.footprint)::float area, b.source_code source, b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
               (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
               ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat

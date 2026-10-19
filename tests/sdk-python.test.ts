@@ -29,8 +29,8 @@ beforeAll(async () => {
   const org = await organisation(db, 'A utility', USER_A);
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
   const elsewhere = await insert(db, 'sites', { organisation_id: org, name: 'Warehouse', country: 'BE' });
-  const meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '541400000000000001', scheme: 'gs1_gsrn' });
-  const other = await insert(db, 'meters', { organisation_id: org, site_id: elsewhere, identifier: '541400000000000002', scheme: 'gs1_gsrn' });
+  const meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
+  const other = await insert(db, 'devices', { organisation_id: org, site_id: elsewhere, name: 'Meter', device_type: 'meter' });
   const series = (object: string) =>
     insert(db, 'series', { organisation_id: org, object_id: object, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   const energy = await series(meter);

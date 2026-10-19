@@ -75,7 +75,7 @@ let building: string;
 let imported: ImportResult;
 
 beforeAll(async () => {
-  db = await freshDatabase(['architecture']);
+  db = await freshDatabase();
   org = await organisation(db, 'A home');
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
   building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
@@ -87,27 +87,42 @@ afterAll(async () => {
 });
 
 describe('a Home Assistant home in Nexgen OS', () => {
-  it('lands floors on floors, areas on spaces, devices on devices, entities on sensors', async () => {
+  it('lands floors and areas on one tree of spaces, devices in their rooms, entities on series', async () => {
     const r = await db.query<{ kind: string; n: number }>(`select kind, count(*)::int n from objects where organisation_id = $1 group by kind order by kind`, [org]);
-    expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, floor: 2, sensor: 9, site: 1, space: 4 });
-    const garage = await one<{ floor_id: string | null; building_id: string | null }>(
-      db, `select floor_id, building_id from architecture.spaces where id = $1`, [imported.spaces.get('garage')]);
-    expect(garage).toEqual({ floor_id: null, building_id: building });
+    expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, organisation: 1, site: 1, space: 6 });
+    const rooms = await db.query<{ name: string; kind: string; floor: string | null }>(
+      `select s.name, s.kind, f.name floor from spaces s left join spaces f on f.id = s.parent_id where s.building_id = $1 order by s.kind, s.name`, [building]);
+    expect(rooms.rows).toEqual([
+      { name: 'First floor', kind: 'floor', floor: null },
+      { name: 'Ground floor', kind: 'floor', floor: null },
+      { name: 'Bedroom', kind: 'room', floor: 'First floor' },
+      { name: 'Garage', kind: 'room', floor: null },
+      { name: 'Kitchen', kind: 'room', floor: 'Ground floor' },
+      { name: 'Living room', kind: 'room', floor: 'Ground floor' },
+    ]);
+    const placed = await db.query<{ name: string; room: string | null; building: boolean }>(
+      `select d.name, s.name room, d.building_id = $1 building from devices d left join spaces s on s.id = d.space_id order by d.name`, [building]);
+    expect(placed.rows).toEqual([
+      { name: 'Inverter', room: 'Garage', building: true },
+      { name: 'Living room thermostat', room: 'Living room', building: true },
+      { name: 'Netatmo relay', room: null, building: true },
+    ]);
   });
 
-  it('puts each sensor on its device, else its area, else the building, with the right quantity and kind', async () => {
-    const r = await db.query<{ ref: string; host: string; quantity: string; kind: string }>(
-      `select s.external_ref ref, o.kind host, s.quantity_code quantity, s.kind from sensors s join objects o on o.id = s.host_id order by s.external_ref`);
+  it('opens one series per entity, on its device, else its area, else the building, with the right quantity and kind', async () => {
+    const r = await db.query<{ ref: string; observed: string; device: boolean; quantity: string; kind: string }>(
+      `select s.external_ref ref, o.kind observed, s.device_id is not null device, s.quantity_code quantity, s.kind
+         from series s join objects o on o.id = s.object_id order by s.external_ref`);
     expect(r.rows).toEqual([
-      { ref: 'homeassistant://binary_sensor.bedroom_motion', host: 'space', quantity: 'occupancy', kind: 'sensor' },
-      { ref: 'homeassistant://climate.living_room', host: 'device', quantity: 'ha_climate_c', kind: 'setpoint' },
-      { ref: 'homeassistant://sensor.inverter_active_power', host: 'device', quantity: 'power', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.inverter_total_yield', host: 'device', quantity: 'energy', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.kitchen_co2', host: 'space', quantity: 'co2', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.living_room_temperature', host: 'device', quantity: 'temperature', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.outdoor_noise', host: 'building', quantity: 'ha_sound_pressure_db', kind: 'sensor' },
-      { ref: 'homeassistant://sensor.thermostat_battery', host: 'device', quantity: 'charge_level', kind: 'sensor' },
-      { ref: 'homeassistant://switch.garage_heater', host: 'space', quantity: 'ha_switch_none', kind: 'command' },
+      { ref: 'homeassistant://binary_sensor.bedroom_motion', observed: 'space', device: false, quantity: 'occupancy', kind: 'measured' },
+      { ref: 'homeassistant://climate.living_room', observed: 'device', device: true, quantity: 'ha_climate_c', kind: 'setpoint' },
+      { ref: 'homeassistant://sensor.inverter_active_power', observed: 'device', device: true, quantity: 'power', kind: 'measured' },
+      { ref: 'homeassistant://sensor.inverter_total_yield', observed: 'device', device: true, quantity: 'energy', kind: 'measured' },
+      { ref: 'homeassistant://sensor.kitchen_co2', observed: 'space', device: false, quantity: 'co2', kind: 'measured' },
+      { ref: 'homeassistant://sensor.living_room_temperature', observed: 'device', device: true, quantity: 'temperature', kind: 'measured' },
+      { ref: 'homeassistant://sensor.outdoor_noise', observed: 'building', device: false, quantity: 'ha_sound_pressure_db', kind: 'measured' },
+      { ref: 'homeassistant://sensor.thermostat_battery', observed: 'device', device: true, quantity: 'charge_level', kind: 'measured' },
+      { ref: 'homeassistant://switch.garage_heater', observed: 'space', device: false, quantity: 'ha_switch_none', kind: 'command' },
     ]);
     const published = await db.query<{ code: string; unit: string; published_by: string }>(
       `select code, unit, published_by from quantities where published_by = 'homeassistant' order by code`);
@@ -123,7 +138,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
       `select v.value, v.quality from series_values v where v.series_id = $1 order by v.at`, [imported.series.get('sensor.inverter_active_power')]);
     expect(power.rows).toEqual([{ value: 2.345, quality: 0 }, { value: 3.1205, quality: 0 }, { value: 0, quality: 3 }]);
     const kinds = await db.query<{ ref: string; value_kind: string; kind: string }>(
-      `select s.external_ref ref, se.value_kind, se.kind from series se join sensors s on s.id = se.sensor_id order by s.external_ref`);
+      `select external_ref ref, value_kind, kind from series order by external_ref`);
     expect(kinds.rows.find((r) => r.ref.endsWith('total_yield'))).toMatchObject({ value_kind: 'cumulative', kind: 'measured' });
     expect(kinds.rows.find((r) => r.ref.endsWith('active_power'))).toMatchObject({ value_kind: 'instant', kind: 'measured' });
     expect(kinds.rows.find((r) => r.ref.endsWith('climate.living_room'))).toMatchObject({ value_kind: 'instant', kind: 'setpoint' });

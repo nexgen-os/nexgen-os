@@ -1,5 +1,6 @@
-// A school, inside and out, with the architecture module: two floors, classrooms,
-// sensors for several quantities in the rooms, a heating setpoint, the heat
+// A school, inside and out, with the core alone: two floors and their
+// classrooms as one tree of spaces, a multisensor in a classroom whose
+// readings are series, a heating setpoint asked of the heat pump, the heat
 // pump that serves the building, and everything findable from the site.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -13,88 +14,96 @@ let ground: string;
 let first: string;
 let classroom1: string;
 let classroom5: string;
+let probe: string;
+let heatPump: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['architecture']);
+  db = await freshDatabase();
   org = await organisation(db, 'A municipality');
   site = await insert(db, 'sites', {
     organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Valbrisée', profile: 'school',
   });
   school = await insert(db, 'buildings', {
     organisation_id: org, site_id: site, name: 'Main building', profile: 'school',
-    footprint: square(4.4702, 50.6802, 40, 20), elevation_m: 112, height_m: 9.5, floors_above_ground: 2, year_built: 1968,
+    footprint: square(4.4702, 50.6802, 40, 20), elevation_m: 112, height_m: 9.5,
   });
-  ground = await insert(db, 'architecture.floors', { organisation_id: org, building_id: school, name: 'Ground floor', level: 0, elevation_m: 112, height_m: 3.2 });
-  first = await insert(db, 'architecture.floors', { organisation_id: org, building_id: school, name: 'First floor', level: 1, elevation_m: 115.2, height_m: 3 });
-  classroom1 = await insert(db, 'architecture.spaces', { organisation_id: org, floor_id: ground, name: 'Classroom 1', kind: 'room', area_m2: 62 });
-  await insert(db, 'architecture.spaces', { organisation_id: org, floor_id: ground, name: 'Canteen', kind: 'room', area_m2: 140 });
-  classroom5 = await insert(db, 'architecture.spaces', { organisation_id: org, floor_id: first, name: 'Classroom 5', kind: 'room', area_m2: 60 });
-  for (const [name, quantity, kind, ref] of [
-    ['Temperature classroom 1', 'temperature', 'sensor', 'mqtt://school/c1/temp'],
-    ['CO2 classroom 1', 'co2', 'sensor', 'mqtt://school/c1/co2'],
-    ['Heating setpoint classroom 1', 'temperature', 'setpoint', 'modbus://10.0.0.5/4001'],
+  ground = (await one<{ id: string }>(db, `select add_space($1, 'floor', 'Ground floor', null, 0, null, 112, 3.2) id`, [school])).id;
+  first = (await one<{ id: string }>(db, `select add_space($1, 'floor', 'First floor', null, 1, null, 115.2, 3) id`, [school])).id;
+  classroom1 = (await one<{ id: string }>(db, `select add_space($1, 'room', 'Classroom 1', $2) id`, [school, ground])).id;
+  await db.query(`select add_space($1, 'room', 'Canteen', $2)`, [school, ground]);
+  classroom5 = (await one<{ id: string }>(db, `select add_space($1, 'room', 'Classroom 5', $2) id`, [school, first])).id;
+  probe = (await one<{ id: string }>(db, `select install_device($1, 'sensor_box', 'Multisensor classroom 1', jsonb_build_object('space_id', $2::uuid)) id`, [site, classroom1])).id;
+  heatPump = (await one<{ id: string }>(db, `select install_device($1, 'heat_pump', 'Air-to-water heat pump', jsonb_build_object('building_id', $2::uuid), null, 24, '2023-10-02') id`, [site, school])).id;
+  for (const [quantity, kind, device, ref] of [
+    ['temperature', 'measured', probe, 'mqtt://school/c1/temp'],
+    ['co2', 'measured', probe, 'mqtt://school/c1/co2'],
+    ['temperature', 'setpoint', heatPump, 'modbus://10.0.0.5/4001'],
   ]) {
-    await insert(db, 'sensors', { organisation_id: org, host_id: classroom1, name, quantity_code: quantity, kind, external_ref: ref });
+    await db.query(`select open_series($1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
   }
-  await insert(db, 'sensors', { organisation_id: org, host_id: classroom5, name: 'Temperature classroom 5', quantity_code: 'temperature' });
+  await db.query(`select open_series($1, 'temperature', 'measured', 'instant')`, [classroom5]);
 });
 
 afterAll(async () => {
   await db.close();
 });
 
-describe('a school with the architecture module', () => {
-  it('finds the site and the country from a room', async () => {
+describe('a school, inside', () => {
+  it('finds the site, the country and the building from a room', async () => {
     const r = await one<{ site: string; country: string; building: string }>(
       db,
-      'select site_of($1) site, country_of($1) country, architecture.building_of($1) building',
+      'select site_of($1) site, country_of($1) country, building_of($1) building',
       [classroom5],
     );
     expect(r).toEqual({ site, country: 'BE', building: school });
   });
 
-  it('lists the rooms of the building with their sensors, floor by floor', async () => {
-    const r = await db.query<{ level: string; room: string; sensors: number }>(
-      `select st.name level, sp.name room, count(se.id)::int sensors
-         from architecture.floors st
-         join architecture.spaces sp on sp.floor_id = st.id
-         left join sensors se on se.host_id = sp.id
-        where st.building_id = $1
-        group by st.level, st.name, sp.name
-        order by st.level, sp.name`,
+  it('lists the rooms of the building with their points, floor by floor', async () => {
+    const r = await db.query<{ floor: string; room: string; points: number }>(
+      `select f.name floor, r.name room, count(se.id)::int points
+         from spaces f
+         join spaces r on r.parent_id = f.id
+         left join series se on se.object_id = r.id
+        where f.building_id = $1 and f.kind = 'floor'
+        group by f.level, f.name, r.name
+        order by f.level, r.name`,
       [school],
     );
     expect(r.rows).toEqual([
-      { level: 'Ground floor', room: 'Canteen', sensors: 0 },
-      { level: 'Ground floor', room: 'Classroom 1', sensors: 3 },
-      { level: 'First floor', room: 'Classroom 5', sensors: 1 },
+      { floor: 'Ground floor', room: 'Canteen', points: 0 },
+      { floor: 'Ground floor', room: 'Classroom 1', points: 3 },
+      { floor: 'First floor', room: 'Classroom 5', points: 1 },
     ]);
   });
 
-  it('refuses two floors with the same level', async () => {
-    await expect(
-      insert(db, 'architecture.floors', { organisation_id: org, building_id: school, name: 'Another ground floor', level: 0 }),
-    ).rejects.toThrow(/duplicate key/);
+  it('places the multisensor in its room, and its building with it', async () => {
+    const r = await one<{ space: string; building: string }>(db, 'select space_id space, building_id building from devices where id = $1', [probe]);
+    expect(r).toEqual({ space: classroom1, building: school });
   });
 
-  it('records a measured temperature and its setpoint the same way', async () => {
-    const t = await one<{ id: string }>(db, `select id from sensors where name = 'Temperature classroom 1'`);
-    const sp = await one<{ id: string }>(db, `select id from sensors where name = 'Heating setpoint classroom 1'`);
-    const measured = await one<{ id: string }>(
-      db,
-      `insert into series (object_id, quantity_code, sensor_id, kind, value_kind) values ($1, 'temperature', $2, 'measured', 'instant') returning id`,
-      [classroom1, t.id],
-    );
-    const asked = await one<{ id: string }>(
-      db,
-      `insert into series (object_id, quantity_code, sensor_id, kind, value_kind) values ($1, 'temperature', $2, 'setpoint', 'instant') returning id`,
-      [classroom1, sp.id],
-    );
-    await db.query(
-      `insert into series_values (series_id, at, value) values
-         ($1, '2026-01-10 08:00+00', 18.5), ($1, '2026-01-10 08:30+00', 19.5), ($2, '2026-01-10 08:00+00', 20)`,
-      [measured.id, asked.id],
-    );
+  it('refuses two floors at one level, a floor inside a room, a room of another building and a loop', async () => {
+    await expect(db.query(`select add_space($1, 'floor', 'Another ground floor', null, 0)`, [school])).rejects.toThrow(/duplicate key/);
+    await expect(db.query(`select add_space($1, 'floor', 'Mezzanine', $2, 2)`, [school, classroom1])).rejects.toThrow(/spaces_floor_at_top/);
+    await expect(db.query(`select add_space($1, 'room', 'A room with a level', null, 3)`, [school])).rejects.toThrow(/spaces_level_for_floors/);
+    const annex = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Annex' });
+    await expect(db.query(`select add_space($1, 'room', 'Store', $2)`, [annex, ground])).rejects.toThrow(/space_outside_building/);
+    const zone = (await one<{ id: string }>(db, `select add_space($1, 'zone', 'North zone') id`, [school])).id;
+    const wing = (await one<{ id: string }>(db, `select add_space($1, 'zone', 'North wing', $2) id`, [school, zone])).id;
+    await expect(db.query('update spaces set parent_id = $1 where id = $2', [wing, zone])).rejects.toThrow(/space_cycle/);
+  });
+
+  it('refuses a device in a room of another site', async () => {
+    const elsewhere = await insert(db, 'sites', { organisation_id: org, name: 'Gym', country: 'BE' });
+    await expect(db.query(`select install_device($1, 'sensor', 'Stray', jsonb_build_object('space_id', $2::uuid))`, [elsewhere, classroom1]))
+      .rejects.toThrow(/device_space_site_mismatch/);
+  });
+
+  it('records a measured temperature and its setpoint the same way, by their devices', async () => {
+    const measured = await one<{ id: string }>(db, `select id from series where object_id = $1 and quantity_code = 'temperature' and kind = 'measured'`, [classroom1]);
+    const asked = await one<{ id: string; device: string }>(db, `select id, device_id device from series where object_id = $1 and kind = 'setpoint'`, [classroom1]);
+    expect(asked.device).toBe(heatPump);
+    await db.query(`select store_values($1, array['2026-01-10 08:00+00', '2026-01-10 08:30+00']::timestamptz[], array[18.5, 19.5]::float8[])`, [measured.id]);
+    await db.query(`select store_values($1, array['2026-01-10 08:00+00']::timestamptz[], array[20]::float8[])`, [asked.id]);
     const r = await one<{ value: number }>(
       db,
       `select value from resample($1, '2026-01-10 08:00+00', '2026-01-10 09:00+00', '1 hour')`,
@@ -103,11 +112,8 @@ describe('a school with the architecture module', () => {
     expect(r.value).toBe(19);
   });
 
-  it('serves the building with a heat pump, linked to it', async () => {
-    const hp = await insert(db, 'devices', {
-      organisation_id: org, site_id: site, building_id: school, name: 'Air-to-water heat pump', device_type: 'heat_pump', rated_power_kw: 24,
-    });
-    await db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'serves', $2)`, [hp, school]);
+  it('serves the building with the heat pump, linked to it', async () => {
+    await db.query(`select link_objects($1, 'serves', $2)`, [heatPump, school]);
     const r = await one<{ name: string }>(
       db,
       `select d.name from links l join devices d on d.id = l.subject_id where l.type_code = 'serves' and l.object_id = $1`,
@@ -117,28 +123,26 @@ describe('a school with the architecture module', () => {
   });
 
   it('attaches an attribute to a room like to anything else', async () => {
-    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'usage', '"classroom"')`, [classroom1]).catch((e) => e);
-    // usage applies to buildings and sites; a room takes the module's own properties.
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from attributes where object_id = $1', [classroom1]);
-    expect(r.n).toBe(0);
+    await expect(db.query(`select set_attribute($1, 'roof_area', '12')`, [classroom1])).rejects.toThrow(/property_not_applicable/);
+    await db.query(`select set_attribute($1, 'floor_area', '62', null, null, 'as-built drawings')`, [classroom1]);
     await db.query(
-      `insert into property_defs (code, name, datatype, applies_to, published_by) values ('acoustic_class', 'Acoustic class', 'text', '{space}', 'architecture')`,
+      `insert into property_defs (code, name, datatype, applies_to, published_by) values ('acoustic_class', 'Acoustic class', 'text', '{space}', 'installation')`,
     );
-    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'acoustic_class', '"B"')`, [classroom1]);
-    const p = await one<{ p: Record<string, string> }>(db, 'select attributes_of($1) p', [classroom1]);
-    expect(p.p.acoustic_class).toBe('B');
+    await db.query(`select set_attribute($1, 'acoustic_class', '"B"')`, [classroom1]);
+    const p = await one<{ p: Record<string, unknown> }>(db, 'select attributes_of($1) p', [classroom1]);
+    expect(p.p).toEqual({ acoustic_class: 'B', floor_area: 62 });
   });
 
-  it('removes the floors, rooms and sensors when the building goes', async () => {
+  it('removes the floors, rooms, devices in them and their series when the building goes', async () => {
     await db.query('delete from buildings where id = $1', [school]);
-    const r = await one<{ floors: number; spaces: number; sensors: number; objects: number }>(
+    const r = await one<{ spaces: number; series: number; objects: number; placed: number }>(
       db,
-      `select (select count(*)::int from architecture.floors where building_id = $1) floors,
-              (select count(*)::int from architecture.spaces) spaces,
-              (select count(*)::int from sensors) sensors,
-              (select count(*)::int from objects where kind in ('floor', 'space', 'sensor')) objects`,
+      `select (select count(*)::int from spaces where building_id = $1) spaces,
+              (select count(*)::int from series) series,
+              (select count(*)::int from objects where kind = 'space') objects,
+              (select count(*)::int from devices where space_id is not null or building_id is not null) placed`,
       [school],
     );
-    expect(r).toEqual({ floors: 0, spaces: 0, sensors: 0, objects: 0 });
+    expect(r).toEqual({ spaces: 0, series: 0, objects: 0, placed: 0 });
   });
 });
