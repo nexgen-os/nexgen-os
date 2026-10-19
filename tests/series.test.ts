@@ -15,7 +15,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A utility', USER_A);
   await organisation(db, 'Another', USER_B);
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '541400000000000001', scheme: 'gs1_gsrn' });
+  meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
   energy = await insert(db, 'series', { organisation_id: org, object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   // Two weeks around the spring change (29 March 2026, 02:00 → 03:00 in Brussels), 1 kWh per quarter-hour.
   await db.query(
