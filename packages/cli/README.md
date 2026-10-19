@@ -53,6 +53,8 @@ anonymous role: everything is read signed in, under row level security.
 | `migrate [--dry-run]` | Applies what this release adds to the core and to the modules and packs already installed. |
 | `doctor [--json]` | Schema version, files applied per scope, modules, packs, PostGIS, row level security on every table of `nexgen` and of the module schemas, vocabulary counts. Exits 1 with one named line per problem. |
 | `status [--json]` | Version, modules, packs, and the number of organisations, sites, buildings and series. |
+| `pack build <cc>\|--all [--root dir] [--json]` | In a clone of the repository, no database: validates `packs/<cc>/` against `packs/schema/pack.1.json`, compiles it into `supabase/seed/<n>_pack_<cc>.sql` and writes its checksum into `pack.json`. |
+| `pack check <cc>\|--all [--root dir] [--json]` | The same in memory: exits 1 with one named line per problem when a pack fails its checks or a committed seed is not its exact output. The CI runs `pack check --all`. What a pack holds and the checks: [`packs/README.md`](../../packs/README.md). |
 
 Every command reads the connection string from `--db` or `NEXGEN_DB_URL`.
 A remote host is reached over TLS; pass `--ca <file>` (on Supabase, the
@@ -70,6 +72,19 @@ release named first), `unknown_module`, `unknown_pack`,
 `pack_requires_module`, `db_url_required`. `doctor` adds `rls_disabled`,
 `migrations_pending`, `module_unregistered`, `unknown_migration`,
 `schema_version_missing`, `history_missing` and `vocabulary_empty`.
+
+`pack build` and `pack check` refuse with `not_a_checkout` (no
+`packs/schema/pack.1.json` under the root), `unknown_pack` and
+`pack_hand_written` (a pack of release 0.1, whose rows are `seed/*.sql`),
+and name each problem of a pack: `pack_json_invalid`, `pack_schema_invalid`,
+`pack_executable`, `default_without_unit`, `default_without_reference`,
+`section_missing`, `section_required`, `file_unlisted`, `country_mismatch`,
+`region_undeclared`, `region_foreign`, `time_zone_unknown`,
+`time_zone_undeclared`, `pattern_invalid`, `example_mismatch`,
+`source_undeclared`, `validity_invalid`, `validity_overlap`,
+`voltage_range_invalid`, `module_required`, `certification_incomplete`,
+`duplicate_code`, `code_taken`, `seed_sequence_taken`, `checksum_mismatch`,
+`seed_missing`, `seed_stale` and `seed_orphan`. Usage errors exit 2.
 
 ## Versions
 

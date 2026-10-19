@@ -9,3 +9,12 @@ export { POSTGIS_LINE, applyPlan, applyStep, ensureHistory, install, migrate, po
 export type { DoctorReport, Problem, StatusReport } from './doctor.js';
 export { doctor, status, tablesWithoutRls } from './doctor.js';
 export { main, parseArgs } from './cli.js';
+export type { PackLine, PackReport, PackSelection, PackState } from './pack/command.js';
+export { buildPacks, checkPacks } from './pack/command.js';
+export type { Manifest as PackManifest, Pack as CountryPack, PackDefault, PackReading } from './pack/read.js';
+export { SCHEMA_PATH, SEED_DIR, checksumOf, packFolders, readPack, readSchema, seedPath } from './pack/read.js';
+export { checkAcross, checkPack, valuesOf } from './pack/check.js';
+export { compilePack } from './pack/compile.js';
+export { executableContent } from './pack/executable.js';
+export type { Issue as SchemaIssue } from './pack/schema.js';
+export { validate } from './pack/schema.js';

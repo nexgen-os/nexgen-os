@@ -1,5 +1,6 @@
 /**
- * The command line: `init`, `migrate`, `doctor`, `status`.
+ * The command line: `init`, `migrate`, `doctor`, `status` on a database;
+ * `pack build` and `pack check` on the files of a checkout.
  *
  * Arguments are parsed by hand — `--flag value`, `--flag=value` and
  * switches — because this program is handed a database password, and every
@@ -11,6 +12,7 @@ import { readCatalogue, type Step } from './catalogue.js';
 import { doctor, status, type DoctorReport, type StatusReport } from './doctor.js';
 import { install, migrate, postgisVersion, type InstallReport } from './engine.js';
 import { NexgenError } from './errors.js';
+import { buildPacks, checkPacks, type PackReport } from './pack/command.js';
 import { connect, type SqlClient } from './sql.js';
 import { PACKAGE_VERSION, SCHEMA_MIN, SCHEMA_VERSION } from './version.js';
 
@@ -21,12 +23,16 @@ Usage:
   nexgen-os migrate  [--dry-run]                                 apply what is missing
   nexgen-os doctor   [--json]                                    say what is wrong, by name
   nexgen-os status   [--json]                                    version, modules, packs, counts
+  nexgen-os pack build <cc>|--all [--root dir] [--json]          compile a pack into its seed (in a checkout)
+  nexgen-os pack check <cc>|--all [--root dir] [--json]          refuse a pack or a seed that is not its output
 
 Options:
   --db <url>     the connection string (or NEXGEN_DB_URL); on Supabase, the session pooler or direct connection
   --ca <file>    the certificate authority to verify the server against
   --modules      modules to install, comma-separated (default: every module shipped)
   --packs        country packs to install, comma-separated (default: none)
+  --all          every pack of the checkout (pack build, pack check)
+  --root <dir>   the checkout whose packs/ to read (default: the current directory)
   --version, --help
 `;
 
@@ -36,6 +42,8 @@ const FLAGS: Record<string, 'value' | 'switch'> = {
   modules: 'value',
   packs: 'value',
   'dry-run': 'switch',
+  all: 'switch',
+  root: 'value',
   json: 'switch',
   help: 'switch',
   version: 'switch',
@@ -43,17 +51,18 @@ const FLAGS: Record<string, 'value' | 'switch'> = {
 
 export interface Args {
   command: string | undefined;
+  /** What follows the command: `build xa` after `pack`. */
+  operands: string[];
   flags: Map<string, string | true>;
 }
 
 export function parseArgs(argv: string[]): Args {
   const flags = new Map<string, string | true>();
-  let command: string | undefined;
+  const positional: string[] = [];
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i]!;
     if (!token.startsWith('--')) {
-      if (command !== undefined) throw new NexgenError('usage', `unexpected argument ${token}`);
-      command = token;
+      positional.push(token);
       continue;
     }
     const body = token.slice(2);
@@ -72,7 +81,9 @@ export function parseArgs(argv: string[]): Args {
       i += 1;
     }
   }
-  return { command, flags };
+  const [command, ...operands] = positional;
+  if (command !== 'pack' && operands.length > 0) throw new NexgenError('usage', `unexpected argument ${operands[0]}`);
+  return { command, operands, flags };
 }
 
 const list = (v: string | true | undefined): string[] | undefined =>
@@ -116,6 +127,42 @@ function printStatus(out: (line: string) => void, r: StatusReport): void {
   for (const [k, n] of Object.entries(r.counts)) out(`${k.padEnd(15)}${n ?? '-'}`);
 }
 
+const PACK_STATES: Record<PackReport['packs'][number]['state'], string> = {
+  written: 'written',
+  unchanged: 'already the output of its pack',
+  up_to_date: 'the output of its pack',
+  stale: 'not the output of its pack',
+  refused: 'refused',
+  hand_written: 'seed/*.sql written by hand, not compiled',
+};
+
+function printPacks(out: (line: string) => void, r: PackReport): void {
+  for (const p of r.packs) {
+    out(`  ${p.pack}  ${[p.version, p.file].filter(Boolean).join('  ')}${p.version || p.file ? '  ' : ''}${PACK_STATES[p.state]}`);
+  }
+  if (r.problems.length === 0) {
+    out(r.action === 'build' ? 'built: no problem found' : 'no problem found');
+    return;
+  }
+  out(`${r.problems.length} problem(s):`);
+  for (const p of r.problems) out(`  ${p.code}: ${p.detail}`);
+  if (r.action === 'check' && r.problems.some((p) => /^(seed_|checksum_)/.test(p.code))) out('run nexgen-os pack build --all and commit the result');
+}
+
+/** `pack build` and `pack check`: no database, so they run before a connection is asked for. */
+async function packCommand(args: Args, io: Io): Promise<number> {
+  const [action, pack, extra] = args.operands;
+  if (action !== 'build' && action !== 'check') throw new NexgenError('usage', 'pack build <cc>|--all, or pack check <cc>|--all');
+  if (extra !== undefined) throw new NexgenError('usage', `unexpected argument ${extra}`);
+  const all = args.flags.has('all');
+  if (all === (pack !== undefined)) throw new NexgenError('usage', `pack ${action} takes a pack or --all`);
+  const root = (args.flags.get('root') as string | undefined) ?? process.cwd();
+  const r = await (action === 'build' ? buildPacks : checkPacks)(root, { pack, all });
+  if (args.flags.has('json')) io.out(JSON.stringify(r, null, 2));
+  else printPacks(io.out, r);
+  return r.problems.length > 0 ? 1 : 0;
+}
+
 export interface Io {
   out: (line: string) => void;
   err: (line: string) => void;
@@ -127,7 +174,8 @@ export interface Io {
 /** Runs one command and returns the exit code. */
 export async function main(argv: string[], io: Io): Promise<number> {
   try {
-    const { command, flags } = parseArgs(argv);
+    const args = parseArgs(argv);
+    const { command, flags } = args;
     if (flags.has('version')) {
       io.out(PACKAGE_VERSION);
       return 0;
@@ -136,6 +184,7 @@ export async function main(argv: string[], io: Io): Promise<number> {
       io.out(USAGE);
       return command === undefined && !flags.has('help') ? 1 : 0;
     }
+    if (command === 'pack') return await packCommand(args, io);
     if (!['init', 'migrate', 'doctor', 'status'].includes(command)) {
       throw new NexgenError('usage', `unknown command ${command}; run nexgen-os --help`);
     }
