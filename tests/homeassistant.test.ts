@@ -147,10 +147,12 @@ describe('a Home Assistant home in Nexgen OS', () => {
     expect(motion.rows.map((r) => r.value)).toEqual([1, 0]);
   });
 
-  it('reads the register through resample like any series', async () => {
-    const r = await one<{ value: number }>(
-      db, `select value from resample($1, '2026-06-21', '2026-06-22', '1 day')`, [imported.series.get('sensor.inverter_total_yield')]);
-    expect(r.value).toBe(8126.1);
+  it('reads the register through resample as the energy of the day, and its index as a window', async () => {
+    const id = imported.series.get('sensor.inverter_total_yield');
+    const r = await one<{ value: number }>(db, `select value from resample($1, '2026-06-21', '2026-06-22', '1 day')`, [id]);
+    expect(r.value).toBeCloseTo(2.7, 9);
+    const index = await db.query<{ value: number }>(`select value from nexgen.window($1, '2026-06-21', '2026-06-22')`, [id]);
+    expect(index.rows.map((x) => x.value)).toEqual([8123.4, 8126.1]);
   });
 
   it('comes back out identical', async () => {

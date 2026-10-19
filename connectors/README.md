@@ -10,14 +10,22 @@ attributes, documents and series, each carrying its source. Decision
 
 | Interface | Answers with | Lands on |
 |---|---|---|
-| `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the site → `forecast_values`; history → `series_values` |
-| `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter → `series_values` |
+| `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the site, every issue kept; history as `measured` or `simulated` values |
+| `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter |
 | `PlacesProvider` | places around a point, with their external identifier, address and attributes | `sites` / `buildings`, `external_ids`, `attributes` with `source_code` |
 | `Geocoder` (in `formats/geocoding`) | an address ⇄ a point | the site's address and point, with precision and source |
 
 `storeSeries(db, target, series, { issuedAt })` writes what a weather or
-meter connector returned: the series is found or created on the object, and
-the values go to the store of their kind.
+meter connector returned through `store()`, the one write path of the core:
+the series is found or created once on the object (another value kind or
+step is refused by name), the values are converted from `series.unit` by
+the core's `units` vocabulary, keep their quality, and a forecast keeps its
+issue time.
+
+[`series.ts`](series.ts) types the same calls for any TypeScript client:
+`store()`, `seriesEnsure()`, and the reads `resample()`, `window()`,
+`latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`,
+`convertUnit()` — each one call of the SQL function of the same name.
 
 ## Shipped
 

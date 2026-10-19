@@ -82,6 +82,13 @@ export interface ReadOptions {
 const HOUR_MS = 3_600_000;
 const INTERVAL: WeatherQuantity[] = ['ghi', 'dni', 'dhi'];
 const ORDER: WeatherQuantity[] = ['ghi', 'dni', 'dhi', 'temperature', 'wind_speed'];
+/**
+ * The unit each quantity is written in by both formats, by its code in the
+ * core's `units` vocabulary: `store()` converts from it and refuses a unit
+ * that does not measure the quantity. An hour's radiation in Wh/m² is the
+ * hour's mean irradiance in W/m².
+ */
+const UNITS: Record<WeatherQuantity, string> = { ghi: 'W-PER-M2', dni: 'W-PER-M2', dhi: 'W-PER-M2', temperature: 'DEG_C', wind_speed: 'M-PER-SEC' };
 
 /** One row of a file, in its own terms: local standard time, hour ending 1 to 24. */
 interface Row {
@@ -324,6 +331,7 @@ function toWeatherFile(format: WeatherFile['format'], location: WeatherFileLocat
     quantity_code: q,
     value_kind: INTERVAL.includes(q) ? 'interval' : 'instant',
     step: '1 hour',
+    unit: UNITS[q],
     values: points.get(q)!.sort((a, b) => a.at.localeCompare(b.at)),
   }));
   const warnings: WeatherFileWarning[] = [];
