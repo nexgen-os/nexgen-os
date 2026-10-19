@@ -112,7 +112,7 @@ class Nexgen:
         return None if site is None else str(site)
 
     def country_of(self, object_id: str) -> Optional[str]:
-        """The country whose rules apply to an object (ISO 3166-1 alpha-2): its site's, or its project's."""
+        """The country of the site an object is on (ISO 3166-1 alpha-2), None when it is on none."""
         return self._one("select nexgen.country_of(%s::uuid)", (object_id,))
 
     # -- attaching ---------------------------------------------------------

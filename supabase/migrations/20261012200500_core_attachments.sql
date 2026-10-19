@@ -5,12 +5,16 @@
 --   external_ids  the identifiers an object is known by elsewhere
 --   links         a typed link between two objects that is not a column
 --                 of either (feeds, serves, shades, owns, occupies…)
---   successors       what became of an object that was split, merged or replaced
+--                 — and what became of an object that was split, merged or
+--                 replaced (`split_into`, `merged_into`, `replaces`)
 --   documents     files about an object: a permit, a datasheet, a report, a
 --                 photo, a video
 --
 -- Each attachment carries the organisation of its object, copied by trigger
 -- so that row level security reads one column, and may belong to a scenario.
+-- A single row may be inserted as is, under the triggers; a gesture that
+-- writes several rows or carries a rule is a function (`set_attribute()`,
+-- `split_object()`…), so that every caller meets the same rule.
 
 set search_path = nexgen, public, extensions;
 
@@ -39,6 +43,59 @@ begin
 end;
 $$;
 
+comment on function attach() is
+  'Trigger of every attachment: copies the organisation of the object named by its argument, and refuses an attachment outside the object''s scenario.';
+
+-- A value fits a property: its datatype, its range, its allowed values.
+-- Shared by attributes and by the defaults of the country packs.
+create or replace function property_value_check(p_property_code text, p_value jsonb)
+returns void
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  def   property_defs%rowtype;
+  t     text := jsonb_typeof(p_value);
+  n     numeric;
+begin
+  select * into def from property_defs where code = p_property_code;
+  if not found then
+    raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
+  end if;
+  if def.datatype in ('number', 'integer') then
+    if t <> 'number' then
+      raise exception 'invalid_value: % must be a number', def.code using errcode = 'check_violation';
+    end if;
+    n := (p_value #>> '{}')::numeric;
+    if def.datatype = 'integer' and n <> trunc(n) then
+      raise exception 'invalid_value: % must be an integer', def.code using errcode = 'check_violation';
+    end if;
+    if def.minimum is not null and n < def.minimum then
+      raise exception 'invalid_value: % must be at least %', def.code, def.minimum using errcode = 'check_violation';
+    end if;
+    if def.maximum is not null and n > def.maximum then
+      raise exception 'invalid_value: % must be at most %', def.code, def.maximum using errcode = 'check_violation';
+    end if;
+  elsif def.datatype in ('text', 'date') then
+    if t <> 'string' then
+      raise exception 'invalid_value: % must be a string', def.code using errcode = 'check_violation';
+    end if;
+    if def.datatype = 'date' then
+      perform (p_value #>> '{}')::date;
+    end if;
+    if def.allowed_values is not null and not (p_value #>> '{}') = any (def.allowed_values) then
+      raise exception 'invalid_value: % must be one of %', def.code, def.allowed_values using errcode = 'check_violation';
+    end if;
+  elsif def.datatype = 'boolean' and t <> 'boolean' then
+    raise exception 'invalid_value: % must be a boolean', def.code using errcode = 'check_violation';
+  end if;
+end;
+$$;
+
+comment on function property_value_check(text, jsonb) is
+  'Refuses, as invalid_value, a value that does not fit its property: datatype, range, allowed values.';
+
 -- ---------------------------------------------------------------------------
 -- attributes
 -- ---------------------------------------------------------------------------
@@ -58,8 +115,8 @@ create table attributes (
   valid_to         timestamptz,
   scenario_id      uuid references scenarios(id) on delete cascade,
   -- Where the value comes from: a source of the vocabulary when it is one
-  -- (an open-data API, a register), and a free note (a survey, a datasheet,
-  -- a person).
+  -- (an open-data API, a register, a published text), and a free note (a
+  -- survey, a datasheet, a person).
   source_code      text references sources(code),
   source           text,
   created_at       timestamptz not null default now(),
@@ -67,7 +124,7 @@ create table attributes (
 );
 
 comment on table attributes is
-  'Values a trade attaches to an object beyond its columns — U-value, energy label, roof material, efficiency — typed by property_defs, with validity periods and provenance.';
+  'Values a trade attaches to an object beyond its columns — U-value, energy label, roof material, year of construction, efficiency — typed by property_defs, with validity periods and provenance. A column holds what every row has and every query filters on; the rest is an attribute.';
 
 create unique index attributes_one_per_period on attributes
   (object_id, property_code, scenario_id, valid_from) nulls not distinct;
@@ -85,8 +142,6 @@ as $$
 declare
   def   property_defs%rowtype;
   kind  text;
-  t     text := jsonb_typeof(new.value);
-  n     numeric;
 begin
   select * into def from property_defs where code = new.property_code;
   select o.kind into kind from objects o where o.id = new.object_id;
@@ -95,34 +150,7 @@ begin
     raise exception 'property_not_applicable: % does not apply to a %', def.code, kind
       using errcode = 'check_violation';
   end if;
-
-  if def.datatype in ('number', 'integer') then
-    if t <> 'number' then
-      raise exception 'invalid_value: % must be a number', def.code using errcode = 'check_violation';
-    end if;
-    n := (new.value #>> '{}')::numeric;
-    if def.datatype = 'integer' and n <> trunc(n) then
-      raise exception 'invalid_value: % must be an integer', def.code using errcode = 'check_violation';
-    end if;
-    if def.minimum is not null and n < def.minimum then
-      raise exception 'invalid_value: % must be at least %', def.code, def.minimum using errcode = 'check_violation';
-    end if;
-    if def.maximum is not null and n > def.maximum then
-      raise exception 'invalid_value: % must be at most %', def.code, def.maximum using errcode = 'check_violation';
-    end if;
-  elsif def.datatype in ('text', 'date') then
-    if t <> 'string' then
-      raise exception 'invalid_value: % must be a string', def.code using errcode = 'check_violation';
-    end if;
-    if def.datatype = 'date' then
-      perform (new.value #>> '{}')::date;
-    end if;
-    if def.allowed_values is not null and not (new.value #>> '{}') = any (def.allowed_values) then
-      raise exception 'invalid_value: % must be one of %', def.code, def.allowed_values using errcode = 'check_violation';
-    end if;
-  elsif def.datatype = 'boolean' and t <> 'boolean' then
-    raise exception 'invalid_value: % must be a boolean', def.code using errcode = 'check_violation';
-  end if;
+  perform property_value_check(new.property_code, new.value);
 
   if exists (
     select 1 from attributes a
@@ -138,6 +166,9 @@ begin
   return new;
 end;
 $$;
+
+comment on function attributes_check() is
+  'BEFORE INSERT / UPDATE on attributes: the property applies to the object''s kind, the value fits it, and two periods never overlap in one scenario (overlapping_value).';
 
 create trigger attributes_check
   before insert or update on attributes
@@ -209,17 +240,17 @@ returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-declare
-  pat text;
 begin
-  select pattern into pat from id_schemes where code = new.scheme;
-  if pat is not null and new.value !~ pat then
+  if not identifier_valid(new.scheme, new.value) then
     raise exception 'invalid_identifier: % is not a valid %', new.value, new.scheme
       using errcode = 'check_violation';
   end if;
   return new;
 end;
 $$;
+
+comment on function external_ids_check() is
+  'BEFORE INSERT / UPDATE on external_ids: the value matches its scheme (invalid_identifier).';
 
 create trigger external_ids_attach
   before insert or update on external_ids
@@ -247,7 +278,7 @@ create table links (
 );
 
 comment on table links is
-  'Typed, dated links between two objects that are not a column of either: the tree shades the roof, the company occupies the building, the heat pump serves the building, the inverter feeds the meter.';
+  'Typed, dated links between two objects that are not a column of either: the tree shades the roof, the heat pump serves the building, the inverter feeds the meter, the parcel was split into two, the new meter replaces the old one.';
 
 create unique index links_unique on links
   (subject_id, type_code, object_id, scenario_id, valid_from) nulls not distinct;
@@ -288,53 +319,12 @@ begin
 end;
 $$;
 
+comment on function links_check() is
+  'BEFORE INSERT / UPDATE on links: both ends in one organisation, the object in the link''s scenario, the kinds the link type asks for (link_subject_kind, link_object_kind).';
+
 create trigger links_check
   before insert or update on links
   for each row execute function links_check();
-
--- ---------------------------------------------------------------------------
--- successors — what became of an object that was split, merged or replaced.
--- Identifiers never encode anything and are never reused; when a parcel is
--- split or two buildings are merged, the old and new objects are linked here
--- so that history and external references stay traceable.
--- ---------------------------------------------------------------------------
-
-create table successors (
-  organisation_id  uuid not null references organisations(id) on delete cascade,
-  from_id          uuid not null references objects(id) on delete cascade,
-  to_id            uuid not null references objects(id) on delete cascade,
-  kind             text not null,
-  at               timestamptz not null default now(),
-  primary key (from_id, to_id),
-  constraint successors_kind check (kind in ('split', 'merge', 'replace')),
-  constraint successors_not_reflexive check (from_id <> to_id)
-);
-
-comment on table successors is
-  'Splits, merges and replacements between objects, so that history and external references survive a change of identity.';
-
-create or replace function successors_attach()
-returns trigger
-language plpgsql
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  a uuid;
-  b uuid;
-begin
-  select organisation_id into a from objects where id = new.from_id;
-  select organisation_id into b from objects where id = new.to_id;
-  if a <> b then
-    raise exception 'successors_across_organisations' using errcode = 'check_violation';
-  end if;
-  new.organisation_id := a;
-  return new;
-end;
-$$;
-
-create trigger successors_attach
-  before insert or update on successors
-  for each row execute function successors_attach();
 
 -- ---------------------------------------------------------------------------
 -- documents
@@ -379,7 +369,217 @@ create trigger documents_attach
 call secure_table('attributes');
 call secure_table('external_ids');
 call secure_table('links');
-call secure_table('successors');
 call secure_table('documents');
 
-grant execute on function attributes_of(uuid, timestamptz, uuid) to authenticated, service_role;
+-- ---------------------------------------------------------------------------
+-- Gestures
+-- ---------------------------------------------------------------------------
+
+-- History is kept by closing a period and opening the next: the value that
+-- holds at the moment given ends there, the new one starts there.
+create or replace function set_attribute(
+  p_object_id     uuid,
+  p_property_code text,
+  p_value         jsonb,
+  p_from          timestamptz default null,
+  p_source_code   text default null,
+  p_source        text default null,
+  p_scenario_id   uuid default null
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  if p_from is not null then
+    update attributes set valid_to = p_from
+     where object_id = p_object_id and property_code = p_property_code
+       and scenario_id is not distinct from p_scenario_id
+       and (valid_from is null or valid_from < p_from)
+       and (valid_to is null or valid_to > p_from);
+  end if;
+  insert into attributes (id, object_id, property_code, value, valid_from, scenario_id, source_code, source)
+  values (v_id, p_object_id, p_property_code, p_value, p_from, p_scenario_id, p_source_code, p_source);
+  return v_id;
+end;
+$$;
+
+comment on function set_attribute(uuid, text, jsonb, timestamptz, text, text, uuid) is
+  'Sets an attribute from a moment on: the value holding then is closed there, the new one opens. Refuses property_not_applicable, invalid_value, overlapping_value. Returns its id.';
+
+create or replace function add_identifier(p_object_id uuid, p_scheme text, p_value text, p_from timestamptz default null)
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  o objects%rowtype;
+begin
+  select * into o from objects where id = p_object_id;
+  if not found then
+    raise exception 'object_not_found: %', p_object_id using errcode = 'no_data_found';
+  end if;
+  insert into external_ids (object_id, scheme, value, valid_from, scenario_id)
+  values (p_object_id, p_scheme, p_value, p_from, o.scenario_id);
+exception when unique_violation then
+  raise exception 'identifier_taken: % % already names an object of this organisation', p_scheme, p_value
+    using errcode = 'unique_violation';
+end;
+$$;
+
+comment on function add_identifier(uuid, text, text, timestamptz) is
+  'Records an identifier an object is known by elsewhere. Refuses invalid_identifier, identifier_taken.';
+
+create or replace function link_objects(
+  p_subject_id  uuid,
+  p_type_code   text,
+  p_object_id   uuid,
+  p_from        timestamptz default null,
+  p_scenario_id uuid default null
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  insert into links (id, subject_id, type_code, object_id, valid_from, scenario_id)
+  values (v_id, p_subject_id, p_type_code, p_object_id, p_from, p_scenario_id);
+  return v_id;
+end;
+$$;
+
+comment on function link_objects(uuid, text, uuid, timestamptz, uuid) is
+  'Links two objects with a typed link from a moment on. Refuses link_subject_kind, link_object_kind, link_across_organisations. Returns its id.';
+
+create or replace function end_link(p_link_id uuid, p_at timestamptz default now())
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+begin
+  update links set valid_to = p_at where id = p_link_id and valid_to is null;
+  if not found then
+    raise exception 'link_not_open: %', p_link_id using errcode = 'no_data_found';
+  end if;
+end;
+$$;
+
+comment on function end_link(uuid, timestamptz) is
+  'Ends an open link at a moment; the link stays as history. Refuses link_not_open.';
+
+create or replace function attach_document(
+  p_object_id    uuid,
+  p_name         text,
+  p_kind         text,
+  p_uri          text,
+  p_media_type   text default null,
+  p_source_code  text default null,
+  p_source       text default null,
+  p_captured_at  timestamptz default null
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+  o    objects%rowtype;
+begin
+  select * into o from objects where id = p_object_id;
+  if not found then
+    raise exception 'object_not_found: %', p_object_id using errcode = 'no_data_found';
+  end if;
+  insert into documents (id, object_id, name, kind, uri, media_type, source_code, source, captured_at, scenario_id)
+  values (v_id, p_object_id, p_name, p_kind, p_uri, p_media_type, p_source_code, p_source, p_captured_at, o.scenario_id);
+  return v_id;
+end;
+$$;
+
+comment on function attach_document(uuid, text, text, text, text, text, text, timestamptz) is
+  'Attaches a file to an object: a permit, a datasheet, a report, a photo. Returns its id.';
+
+-- Identifiers never encode anything and are never reused: when a parcel is
+-- split or two buildings are merged, the new objects are created as any
+-- other, and the old and new are linked so that history and external
+-- references stay traceable.
+create or replace function split_object(p_object_id uuid, p_into uuid[], p_at timestamptz default now())
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  o    objects%rowtype;
+  n    objects%rowtype;
+  part uuid;
+begin
+  select * into o from objects where id = p_object_id;
+  if not found then
+    raise exception 'object_not_found: %', p_object_id using errcode = 'no_data_found';
+  end if;
+  foreach part in array p_into loop
+    select * into n from objects where id = part;
+    if not found then
+      raise exception 'object_not_found: %', part using errcode = 'no_data_found';
+    elsif n.organisation_id <> o.organisation_id then
+      raise exception 'object_in_other_organisation: %', part using errcode = 'check_violation';
+    elsif n.kind <> o.kind then
+      raise exception 'object_kind_mismatch: a % is split into objects of its kind, not a %', o.kind, n.kind using errcode = 'check_violation';
+    end if;
+    insert into links (subject_id, type_code, object_id, valid_from, scenario_id)
+    values (p_object_id, 'split_into', part, p_at, o.scenario_id);
+  end loop;
+end;
+$$;
+
+comment on function split_object(uuid, uuid[], timestamptz) is
+  'Records that an object was split into others of its kind at a moment, as split_into links. Refuses object_in_other_organisation, object_kind_mismatch.';
+
+create or replace function merge_objects(p_objects uuid[], p_into uuid, p_at timestamptz default now())
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  t     objects%rowtype;
+  o     objects%rowtype;
+  part  uuid;
+begin
+  select * into t from objects where id = p_into;
+  if not found then
+    raise exception 'object_not_found: %', p_into using errcode = 'no_data_found';
+  end if;
+  foreach part in array p_objects loop
+    select * into o from objects where id = part;
+    if not found then
+      raise exception 'object_not_found: %', part using errcode = 'no_data_found';
+    elsif o.organisation_id <> t.organisation_id then
+      raise exception 'object_in_other_organisation: %', part using errcode = 'check_violation';
+    elsif o.kind <> t.kind then
+      raise exception 'object_kind_mismatch: a % is merged into an object of its kind, not a %', o.kind, t.kind using errcode = 'check_violation';
+    end if;
+    insert into links (subject_id, type_code, object_id, valid_from, scenario_id)
+    values (part, 'merged_into', p_into, p_at, o.scenario_id);
+  end loop;
+end;
+$$;
+
+comment on function merge_objects(uuid[], uuid, timestamptz) is
+  'Records that objects were merged into another of their kind at a moment, as merged_into links. Refuses object_in_other_organisation, object_kind_mismatch.';
+
+grant execute on function attributes_of(uuid, timestamptz, uuid), property_value_check(text, jsonb),
+  set_attribute(uuid, text, jsonb, timestamptz, text, text, uuid), add_identifier(uuid, text, text, timestamptz),
+  link_objects(uuid, text, uuid, timestamptz, uuid), end_link(uuid, timestamptz),
+  attach_document(uuid, text, text, text, text, text, text, timestamptz),
+  split_object(uuid, uuid[], timestamptz), merge_objects(uuid[], uuid, timestamptz)
+  to authenticated, service_role;

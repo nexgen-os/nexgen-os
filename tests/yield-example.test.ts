@@ -13,7 +13,7 @@ const PV_SYSTEM = '00000000-0000-4000-8000-000100000051';
 let db: PGlite;
 
 beforeAll(async () => {
-  db = await freshDatabase(['architecture', 'weather', 'solar', 'tasks']);
+  db = await freshDatabase(['grid', 'weather', 'solar']);
   await db.exec(await readFile(`${repoRoot}/examples/01-house-pv-battery.sql`, 'utf8'));
   const readme = await readFile(`${repoRoot}/README.md`, 'utf8');
   const describeSystem = readme.match(/^\s*(insert into solar\.pv_systems .*;)$/m)?.[1];
