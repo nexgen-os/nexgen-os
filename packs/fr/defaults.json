@@ -1,0 +1,175 @@
+{
+  "defaults": [
+    {
+      "property": "metering_step",
+      "value": "PT30M",
+      "unit": "ISO8601-duration",
+      "source_code": "fr_enedis_load_curve_collection",
+      "reference": "Table «Spécificités de la collecte de la Courbe de Charge», row «Fréquence de collecte»: a 30-minute step for a meter below 36 kVA",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "value": "10YFR-RTE------C",
+      "unit": "code",
+      "source_code": "fr_entsoe_eic_codes",
+      "reference": "Row 10YFR-RTE------C, function Bidding Zone, display name FR",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-2A",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-2B",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-971",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-972",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-973",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-974",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "bidding_zone",
+      "region": "FR-976",
+      "value": null,
+      "unit": "code",
+      "source_code": "fr_cre_zni",
+      "reference": "Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "grid_co2_factor",
+      "value": 0.02,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "fr_rte_bilan_2025",
+      "reference": "Chapter «Émissions»: carbon intensity of consumption in 2025, 20.0 g CO2eq/kWh, direct emissions",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "energy_price_household",
+      "value": 152.3,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2024, band KWH2500-4999, component NRG_SUP: 0.1523 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "energy_price_household",
+      "value": 108.8,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2025, band KWH2500-4999, component NRG_SUP: 0.1088 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "energy_price_business",
+      "value": 111.0,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2024, band MWH2000-19999, component NRG_SUP: 0.1110 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "energy_price_business",
+      "value": 88.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2025, band MWH2000-19999, component NRG_SUP: 0.0882 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "grid_fees_and_taxes",
+      "value": 136.3,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2024, band KWH2500-4999, components NETC 0.0698 and TAX_FEE_LEV_CHRG 0.0665 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "grid_fees_and_taxes",
+      "value": 153.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2025, band KWH2500-4999, components NETC 0.0759 and TAX_FEE_LEV_CHRG 0.0773 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "injection_price_reference",
+      "value": 58,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_rte_bilan_2024",
+      "reference": "Chapter «Prix»: yearly mean day-ahead price of France in 2024, 58 €/MWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "injection_price_reference",
+      "value": 61.1,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "fr_rte_bilan_2025",
+      "reference": "Chapter «Prix»: yearly mean day-ahead price of France in 2025, 61.1 €/MWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "vat_rate_electricity",
+      "value": 0.2,
+      "unit": "UNITLESS",
+      "source_code": "fr_bofip_vat_energy_subscriptions",
+      "reference": "BOI-RES-TVA-000209: the standard rate on the subscription of a supply up to 36 kVA from 1 August 2025 (loi n° 2025-127 du 14 février 2025, art. 20, XI-B; CGI art. 278-0 bis), as on the energy itself",
+      "valid_from": "2025-08-01"
+    },
+    {
+      "property": "offpeak_hours",
+      "value": null,
+      "unit": "hours",
+      "source_code": "fr_cre_offpeak_hours",
+      "reference": "Pages 1-2: eight off-peak hours a day, placed by the distribution operator according to local grid constraints; no single national window",
+      "valid_from": "2025-02-06"
+    }
+  ]
+}

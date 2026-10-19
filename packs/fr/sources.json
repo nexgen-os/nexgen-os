@@ -1,0 +1,206 @@
+{
+  "sources": [
+    {
+      "code": "ban",
+      "name": "Base Adresse Nationale",
+      "description": "The national address register: search as you type and reverse geocoding, with house-number precision. Read by formats/geocoding/ban.ts.",
+      "kind": "api",
+      "url": "https://api-adresse.data.gouv.fr/",
+      "docs_url": "https://adresse.data.gouv.fr/outils/api-doc/adresse",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© BAN — Base Adresse Nationale",
+      "redistributable": true
+    },
+    {
+      "code": "geo_api_gouv",
+      "name": "API Découpage administratif",
+      "description": "Municipalities, departments and regions, with their codes and boundaries.",
+      "kind": "api",
+      "url": "https://geo.api.gouv.fr/",
+      "docs_url": "https://geo.api.gouv.fr/decoupage-administratif",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© Etalab",
+      "redistributable": true
+    },
+    {
+      "code": "insee_cog",
+      "name": "Code officiel géographique (INSEE)",
+      "description": "The statistics office's official list of municipalities, departments and regions with their codes, published every year.",
+      "kind": "file",
+      "url": "https://www.insee.fr/fr/information/2560452",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© INSEE",
+      "redistributable": true
+    },
+    {
+      "code": "cadastre",
+      "name": "Cadastre (PCI vecteur, Etalab)",
+      "description": "Parcels, building footprints and sections of the cadastre, by municipality, as GeoJSON.",
+      "kind": "file",
+      "url": "https://cadastre.data.gouv.fr/",
+      "docs_url": "https://cadastre.data.gouv.fr/datasets/cadastre-etalab",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© DGFiP — Etalab",
+      "redistributable": true
+    },
+    {
+      "code": "bd_topo",
+      "name": "BD TOPO (IGN)",
+      "description": "The national topographic database: buildings with height and use, roads, land use, administrative limits.",
+      "kind": "file",
+      "url": "https://geoservices.ign.fr/bdtopo",
+      "docs_url": "https://geoservices.ign.fr/documentation/donnees/vecteur/bdtopo",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© IGN",
+      "redistributable": true
+    },
+    {
+      "code": "rnb",
+      "name": "Référentiel National des Bâtiments",
+      "description": "One stable identifier per building, with its footprint and the addresses and parcels it links to.",
+      "kind": "api",
+      "url": "https://rnb-api.beta.gouv.fr/",
+      "docs_url": "https://rnb.beta.gouv.fr/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© RNB",
+      "redistributable": true
+    },
+    {
+      "code": "sirene",
+      "name": "API Sirene (INSEE)",
+      "description": "The register of companies and establishments: SIREN, SIRET, legal form, activity, addresses.",
+      "kind": "api",
+      "url": "https://api.insee.fr/",
+      "docs_url": "https://www.sirene.fr/",
+      "auth": "api_key",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© INSEE",
+      "redistributable": true
+    },
+    {
+      "code": "enedis_open_data",
+      "name": "Enedis Open Data",
+      "description": "Aggregated consumption and production by municipality, grid capacities, energy sharing operations in service.",
+      "kind": "api",
+      "url": "https://data.enedis.fr/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© Enedis",
+      "redistributable": true
+    },
+    {
+      "code": "enedis_data_connect",
+      "name": "Enedis Data Connect",
+      "description": "A customer's meter data (daily index, 30-minute load curve, contract) read by a third party with the customer's consent, per PRM. Kept for the consent's duration, never passed on.",
+      "kind": "api",
+      "url": "https://datahub-enedis.fr/data-connect/",
+      "auth": "mandate",
+      "license": "Enedis Data Connect terms",
+      "attribution": "© Enedis",
+      "redistributable": false
+    },
+    {
+      "code": "odre",
+      "name": "Open Data Réseaux Énergies",
+      "description": "Datasets of the French energy networks: generation, consumption, exchanges, operators' areas, energy communities.",
+      "kind": "api",
+      "url": "https://odre.opendatasoft.com/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© ODRÉ",
+      "redistributable": true
+    },
+    {
+      "code": "fr_enedis_load_curve_collection",
+      "name": "Enedis — activating and deactivating the collection of load curves",
+      "description": "The distribution operator's sheet on the collection of a meter's load curve: its step and history by meter size.",
+      "kind": "text",
+      "url": "https://www.enedis.fr/media/4543/download",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_cre_zni",
+      "name": "CRE — the energy transition in the non-interconnected zones",
+      "description": "The regulator's page on the zones not connected to the continental grid: Corsica, the overseas departments and islands.",
+      "kind": "text",
+      "url": "https://www.cre.fr/electricite/transition-energetique-dans-les-zni.html",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_rte_bilan_2024",
+      "name": "RTE — Bilan électrique 2024",
+      "description": "The transmission operator's yearly report on the French electricity system for 2024.",
+      "kind": "text",
+      "url": "https://analysesetdonnees.rte-france.com/bilan-electrique-2024/prix",
+      "license": "Public data, reuse with attribution (RTE legal notice)",
+      "attribution": "© RTE — Bilan électrique 2024",
+      "redistributable": true
+    },
+    {
+      "code": "fr_rte_bilan_2025",
+      "name": "RTE — Bilan électrique 2025",
+      "description": "The transmission operator's yearly report on the French electricity system for 2025.",
+      "kind": "text",
+      "url": "https://analysesetdonnees.rte-france.com/bilan-electrique-2025/emissions",
+      "license": "Public data, reuse with attribution (RTE legal notice)",
+      "attribution": "© RTE — Bilan électrique 2025",
+      "redistributable": true
+    },
+    {
+      "code": "fr_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "fr_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "fr_bofip_vat_energy_subscriptions",
+      "name": "BOFiP — VAT rate on electricity and gas subscriptions (BOI-RES-TVA-000209)",
+      "description": "The tax administration's answer on the end of the reduced VAT rate on subscriptions of electricity and natural gas up to 36 kVA.",
+      "kind": "text",
+      "url": "https://bofip.impots.gouv.fr/node/383125",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_cre_offpeak_hours",
+      "name": "CRE — questions and answers on peak and off-peak hours (6 February 2025)",
+      "description": "The regulator's answers on how off-peak hours are placed and on their reform under TURPE 7.",
+      "kind": "text",
+      "url": "https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2025/250206_FAQ_HP-HC.pdf",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_code_travail_voltage_domains",
+      "name": "Code du travail, article R. 4226-2 — voltage domains",
+      "description": "The article that defines the voltage domains of an electrical installation: very low, low and high voltage A and B.",
+      "kind": "text",
+      "url": "https://code.travail.gouv.fr/code-du-travail/r4226-2",
+      "license": "Terms not stated",
+      "redistributable": false
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "identifiers": [
+    {
+      "code": "prm",
+      "name": "PRM / PDL",
+      "description": "The 14-digit identifier of a metering point of the French distribution grid (point de référence mesure, also point de livraison), issued by the distribution operator of the connection.",
+      "pattern": "^[0-9]{14}$",
+      "example": "09876543210123"
+    },
+    {
+      "code": "insee",
+      "name": "Code INSEE",
+      "description": "The code of a municipality in the official geographic code of the statistics office (code commune INSEE): the level at which the distribution operator, planning rules and most datasets are decided. It is not the postal code.",
+      "pattern": "^[0-9][0-9AB][0-9]{3}$",
+      "example": "2A004",
+      "source_code": "insee_cog"
+    },
+    {
+      "code": "ban_address",
+      "name": "BAN address",
+      "description": "The identifier of an address in the Base Adresse Nationale: municipality code, street, number.",
+      "pattern": "^[0-9][0-9abAB][0-9]{3}_[0-9a-z]+_[0-9a-z_]+$",
+      "example": "75107_8909_00007",
+      "url_template": "https://adresse.data.gouv.fr/base-adresse-nationale/{value}",
+      "source_code": "ban"
+    },
+    {
+      "code": "siren",
+      "name": "SIREN",
+      "description": "The 9-digit identifier of a company in the national register.",
+      "pattern": "^[0-9]{9}$",
+      "example": "552081317",
+      "url_template": "https://annuaire-entreprises.data.gouv.fr/entreprise/{value}",
+      "source_code": "sirene"
+    },
+    {
+      "code": "siret",
+      "name": "SIRET",
+      "description": "The 14-digit identifier of an establishment: the SIREN of its company and a 5-digit number.",
+      "pattern": "^[0-9]{14}$",
+      "example": "55208131766522",
+      "url_template": "https://annuaire-entreprises.data.gouv.fr/etablissement/{value}",
+      "source_code": "sirene"
+    },
+    {
+      "code": "parcelle",
+      "name": "Cadastral parcel",
+      "description": "The 14-character identifier of a cadastral parcel: municipality (5), prefix (3), section (2), number (4).",
+      "pattern": "^[0-9][0-9AB][0-9]{3}[0-9A-Z]{3}[0-9A-Z]{2}[0-9]{4}$",
+      "example": "75056000AB0012",
+      "url_template": "https://cadastre.data.gouv.fr/map?parcelleId={value}",
+      "source_code": "cadastre"
+    },
+    {
+      "code": "rnb_id",
+      "name": "RNB building",
+      "description": "The 12-character identifier of a building in the Référentiel National des Bâtiments.",
+      "pattern": "^[A-Z0-9]{12}$",
+      "example": "PG46YY6YWCX8",
+      "url_template": "https://rnb.beta.gouv.fr/batiments/{value}",
+      "source_code": "rnb"
+    }
+  ]
+}

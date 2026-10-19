@@ -31,8 +31,24 @@ release may break, and says how. How a release is cut:
   schema, holds executable content, names an undeclared region, carries a
   default without a unit or a reference, or whose committed seed is not its
   exact output. The installer applies a compiled seed as its pack, never as
-  the core. The packs of release 0.1 (`be`, `fr`) keep their hand-written
-  seeds until they are rewritten as JSON.
+  the core. The `be` pack of release 0.1 keeps its hand-written seeds
+  until it is rewritten as JSON.
+- Fifteen generic task templates in the `tasks` module, for every country
+  (`published_by = 'tasks'`, `country` null): nine steps of a roof
+  installation, six of an energy community. A country pack holds no task.
+
+### Changed — the `fr` pack on the five sections
+
+`packs/fr` is a JSON pack compiled into `supabase/seed/10_pack_fr.sql`
+(version 0.2.0, `community`): France with its 13 regions and the 103
+departments and collectivities below them (ISO 3166-2, the department as region level, six time zones),
+seven identifier schemes, ten registers and the ten published texts its
+values cite, nine grid operators and the voltage domains, and twenty-one
+dated values of ten properties (metering step, bidding zone, emission factor, yearly
+energy prices and grid fees, reference injection price, VAT, off-peak
+hours), each with its source and reference. Its legal texts, rules and
+task templates are no longer in the open repository; installing it needs
+the `grid` module.
 
 ### Changed — schema 0.2.0: the core of three notions
 
