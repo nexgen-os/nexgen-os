@@ -76,6 +76,6 @@ describe(`the Python client${skipped}`, () => {
     const { status, output } = await unittest();
     expect(output, output).not.toMatch(/skipped '/);
     expect(status, output).toBe(0);
-    expect(output).toMatch(/Ran 9 tests/);
+    expect(output).toMatch(/Ran 11 tests/);
   }, 60_000);
 });
