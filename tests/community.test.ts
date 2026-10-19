@@ -1,7 +1,8 @@
-// An energy community: a project, three sites each behind its own meter,
-// taking part as participants with the company that answers for each, a
-// shared PV plant on a fourth site, a group of participants, a meter swapped
-// without losing the connection point, and the values of a register.
+// An energy community, with the `community` and `grid` modules: a project,
+// three sites each behind its own connection point, taking part as
+// participants with the company that answers for each, a shared PV plant on
+// a fourth site, a group of participants, a meter swapped without losing the
+// connection point, and the values of a register.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { freshDatabase, insert, one, organisation } from './helpers/db.js';
@@ -14,25 +15,24 @@ const meters: string[] = [];
 const participants: string[] = [];
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['community', 'grid']);
   org = await organisation(db, 'A cooperative');
-  project = await insert(db, 'projects', { organisation_id: org, name: 'Harbour community', kind: 'energy_community', country: 'NL', status: 'active' });
+  project = await insert(db, 'community.projects', { organisation_id: org, name: 'Harbour community', kind: 'energy_community', country: 'NL', status: 'active' });
   for (const n of [1, 2, 3]) {
     const site = await insert(db, 'sites', { organisation_id: org, name: `Unit ${n}`, country: 'NL', city: 'Rotterdam', time_zone: 'Europe/Amsterdam', profile: 'warehouse' });
-    const meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: `87100000000000000${n}`, scheme: 'gs1_gsrn' });
+    const meter = (await one<{ id: string }>(db, `select grid.declare_meter($1, $2, 'gs1_gsrn') id`, [site, `87100000000000000${n}`])).id;
     const tenant = await insert(db, 'contacts', { organisation_id: org, name: `Tenant ${n}`, kind: 'company' });
-    const participant = await insert(db, 'participants', {
-      organisation_id: org, project_id: project, site_id: site, name: `Tenant ${n}`, role: 'consumer', contact_id: tenant,
-      status: 'active', join_date: '2025-01-01',
-    });
+    const participant = (await one<{ id: string }>(
+      db, `select community.join_project($1, $2, $3, 'consumer', $4, '2025-01-01', 'active') id`, [project, site, `Tenant ${n}`, tenant])).id;
     sites.push(site);
     meters.push(meter);
     participants.push(participant);
   }
   const plant = await insert(db, 'sites', { organisation_id: org, name: 'Roof plant', country: 'NL', profile: 'plant' });
-  const plantMeter = await insert(db, 'meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
-  await insert(db, 'devices', { organisation_id: org, site_id: plant, meter_id: plantMeter, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
-  await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
+  const plantMeter = await insert(db, 'grid.meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
+  const array = await insert(db, 'devices', { organisation_id: org, site_id: plant, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
+  await db.query(`select link_objects($1, 'behind_meter', $2)`, [array, plantMeter]);
+  await insert(db, 'community.participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
 });
 
 afterAll(async () => {
@@ -43,8 +43,8 @@ describe('an energy community', () => {
   it('lists its participants with their site, their meter and who answers for them', async () => {
     const r = await db.query<{ participant: string; role: string; meter: string; contact: string | null }>(
       `select p.name participant, p.role, m.identifier meter, c.name contact
-         from participants p
-         join meters m on m.site_id = p.site_id
+         from community.participants p
+         join grid.meters m on m.site_id = p.site_id
          left join contacts c on c.id = p.contact_id
         where p.project_id = $1
         order by p.role, p.name`,
@@ -58,40 +58,60 @@ describe('an energy community', () => {
     ]);
   });
 
-  it('refuses the same site twice in a project, and a metering number that is not one', async () => {
+  it('refuses the same site twice in a project, a metering number that is not one, and a connection point declared twice', async () => {
     await expect(
-      insert(db, 'participants', { organisation_id: org, project_id: project, site_id: sites[0], name: 'Again', role: 'consumer' }),
+      db.query(`select community.join_project($1, $2, 'Again')`, [project, sites[0]]),
     ).rejects.toThrow(/participant_site_already_in_project/);
     await expect(
-      insert(db, 'meters', { organisation_id: org, site_id: sites[0], identifier: '12AB', scheme: 'gs1_gsrn' }),
+      db.query(`select grid.declare_meter($1, '12AB', 'gs1_gsrn')`, [sites[0]]),
     ).rejects.toThrow(/invalid_identifier/);
+    await expect(
+      db.query(`select grid.declare_meter($1, '871000000000000001', 'gs1_gsrn')`, [sites[0]]),
+    ).rejects.toThrow(/meter_already_open/);
+  });
+
+  it('lets a participant leave and come back, never overlapping itself', async () => {
+    await db.query(`select community.leave_project($1, '2025-12-31')`, [participants[2]]);
+    await expect(db.query(`select community.leave_project($1)`, [participants[2]])).rejects.toThrow(/participant_not_in_project/);
+    await expect(db.query(`select community.join_project($1, $2, 'Back too early', 'consumer', null, '2025-06-01')`, [project, sites[2]]))
+      .rejects.toThrow(/participant_site_already_in_project/);
+    const back = await one<{ id: string }>(db, `select community.join_project($1, $2, 'Back', 'consumer', null, '2026-02-01') id`, [project, sites[2]]);
+    expect(back.id).toBeTruthy();
   });
 
   it('groups participants, and finds the meters behind a group', async () => {
-    const group = await insert(db, 'participants', { organisation_id: org, project_id: project, name: 'Tenants 1 and 2', is_group: true });
-    await db.query('update participants set parent_id = $1 where id = any ($2)', [group, [participants[0], participants[1]]]);
-    const r = await db.query<{ meter_id: string }>('select meter_id from participant_meters($1) order by 1', [group]);
+    const group = await insert(db, 'community.participants', { organisation_id: org, project_id: project, name: 'Tenants 1 and 2' });
+    await db.query('update community.participants set parent_id = $1 where id = any ($2)', [group, [participants[0], participants[1]]]);
+    const r = await db.query<{ meter_id: string }>('select meter_id from community.participant_meters($1) order by 1', [group]);
     expect(r.rows.map((x) => x.meter_id).sort()).toEqual([meters[0], meters[1]].sort());
     await expect(
-      db.query('update participants set parent_id = $1 where id = $2', [participants[0], participants[2]]),
+      db.query('update community.participants set parent_id = $1 where id = $2', [participants[0], participants[2]]),
     ).rejects.toThrow(/participant_parent_not_a_group/);
   });
 
   it('swaps the physical meter and keeps the connection point', async () => {
-    const old = await insert(db, 'devices', {
-      organisation_id: org, site_id: sites[0], meter_id: meters[0], name: 'Meter A', device_type: 'meter', installation_date: '2015-03-01',
-    });
-    await db.query(`update devices set status = 'removed' where id = $1`, [old]);
-    await insert(db, 'devices', {
-      organisation_id: org, site_id: sites[0], meter_id: meters[0], name: 'Meter B', device_type: 'meter', installation_date: '2026-03-01',
-    });
-    const r = await one<{ name: string; identifier: string }>(
+    const old = await one<{ id: string }>(db, `select install_device($1, 'meter', 'Meter A', '{}', null, null, '2015-03-01') id`, [sites[0]]);
+    await db.query(`select link_objects($1, 'behind_meter', $2, '2015-03-01')`, [old.id, meters[0]]);
+    const swapped = await one<{ id: string }>(db, `select replace_device($1, '2026-03-01', null, 'Meter B') id`, [old.id]);
+    await db.query(`select link_objects($1, 'behind_meter', $2, '2026-03-01')`, [swapped.id, meters[0]]);
+    const r = await one<{ name: string; identifier: string; replaces: string }>(
       db,
-      `select d.name, m.identifier from devices d join meters m on m.id = d.meter_id
-        where d.meter_id = $1 and d.device_type = 'meter' and d.status = 'in_service'`,
+      `select d.name, m.identifier, (select object_id from links where subject_id = d.id and type_code = 'replaces') replaces
+         from devices d join links l on l.subject_id = d.id and l.type_code = 'behind_meter' join grid.meters m on m.id = l.object_id
+        where m.id = $1 and d.device_type = 'meter' and d.status = 'in_service'`,
       [meters[0]],
     );
-    expect(r).toEqual({ name: 'Meter B', identifier: '871000000000000001' });
+    expect(r).toEqual({ name: 'Meter B', identifier: '871000000000000001', replaces: old.id });
+    const retired = await one<{ status: string }>(db, 'select status from devices where id = $1', [old.id]);
+    expect(retired.status).toBe('removed');
+    await expect(db.query(`select replace_device($1)`, [old.id])).rejects.toThrow(/device_retired/);
+  });
+
+  it('closes a connection point when its register retires the number', async () => {
+    await db.query(`select grid.close_meter($1, '2026-06-30')`, [meters[2]]);
+    await expect(db.query(`select grid.close_meter($1)`, [meters[2]])).rejects.toThrow(/meter_not_open/);
+    const reissued = await one<{ id: string }>(db, `select grid.declare_meter($1, '871000000000000003', 'gs1_gsrn', 'electricity', 'both', null, '2026-07-01') id`, [sites[2]]);
+    expect(reissued.id).not.toBe(meters[2]);
   });
 
   it('records who occupies a site for a period, and refuses a link whose kinds do not fit', async () => {
@@ -119,9 +139,9 @@ describe('an energy community', () => {
   });
 
   it('lets the same site take part in a second project', async () => {
-    const portfolio = await insert(db, 'projects', { organisation_id: org, name: 'Harbour portfolio', kind: 'portfolio', country: 'NL' });
-    const again = await insert(db, 'participants', { organisation_id: org, project_id: portfolio, site_id: sites[0], name: 'Unit 1', role: 'consumer' });
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from participants where site_id = $1', [sites[0]]);
+    const portfolio = await insert(db, 'community.projects', { organisation_id: org, name: 'Harbour portfolio', kind: 'portfolio', country: 'NL' });
+    const again = await insert(db, 'community.participants', { organisation_id: org, project_id: portfolio, site_id: sites[0], name: 'Unit 1', role: 'consumer' });
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from community.participants where site_id = $1', [sites[0]]);
     expect(again).toBeTruthy();
     expect(r.n).toBe(2);
   });

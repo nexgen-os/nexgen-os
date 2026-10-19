@@ -23,7 +23,7 @@
 // connector, and stores what the engine answers as it comes.
 
 import type { Db } from '../../formats/db.js';
-import { storeSeries, type CollectedSeries, type SeriesPoint, type SeriesTarget, type WeatherProvider } from '../../connectors/index.js';
+import type { CollectedSeries, SeriesPoint, WeatherProvider } from '../../connectors/index.js';
 import { openMeteo } from '../../connectors/open-meteo/index.js';
 import { pvgis, type PvgisSystem } from '../../connectors/pvgis/index.js';
 import { ENGINE_CONTRACT, describeEngine, runEngine, type EngineSpec } from '../../engines/runner.js';
@@ -271,14 +271,15 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
   // Energies add up across arrays, hour by hour; the temperature is the site's, taken once.
   const energy = sumSeries(perArray.map((x) => x.answer.series.find((s) => s.quantity_code === 'production_energy')!));
   const temperature = perArray[0].answer.series.find((s) => s.quantity_code === 'temperature')!;
-  const target = { organisationId: system.organisation_id, objectId: request.pvSystemId, sourceCode: client.source_code, kind: 'simulated' as const };
-  const stored = await storeSeries(db, target, energy);
-  await storeSeries(db, { ...target, objectId: system.site_id }, temperature);
+  const owned: OwnedSeries[] = [
+    { key: 'production', objectId: request.pvSystemId, sourceCode: client.source_code, series: energy },
+    { key: 'temperature', objectId: system.site_id, sourceCode: client.source_code, series: temperature },
+  ];
 
   const nYears = request.years.to - request.years.from + 1;
   const annualKwh = round(energy.values.reduce((s, v) => s + v.value, 0) / nYears);
   const radiationDb = perArray[0].answer.meta.radiation_db;
-  const runId = await recordRun(
+  const { runId, results } = await recordRun(
     db,
     ENGINE_VERSION,
     request.pvSystemId,
@@ -289,9 +290,10 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
       losses: profile.losses,
       conventions: CONVENTIONS,
     },
-    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp },
+    owned,
+    (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp }),
   );
-  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
+  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
 }
 
 async function runPvwatts(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider, reference: PvgisClient): Promise<YieldResult> {
@@ -358,20 +360,16 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
     yearsCovered = covered.yearsCovered;
   }
 
-  const target: SeriesTarget = {
-    organisationId: system.organisation_id,
-    objectId: request.pvSystemId,
-    sourceCode: weather.source_code,
-    kind: 'simulated',
-    name: months ? `typical year ${years.from}-${years.to}` : null,
-  };
-  const stored = await storeSeries(db, target, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) });
-  if (siteTemperature) await storeSeries(db, { ...target, objectId: system.site_id }, { ...siteTemperature, values: rounded(temperature) });
+  const name = months ? `typical year ${years.from}-${years.to}` : null;
+  const owned: OwnedSeries[] = [
+    { key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
+    ...(siteTemperature ? [{ key: 'temperature', objectId: system.site_id, sourceCode: weather.source_code, name, series: { ...siteTemperature, values: rounded(temperature) } }] : []),
+  ];
 
   const annualKwh = round(annual);
   const modelledTotal = perArray.reduce((s, x) => s + x.modelled, 0);
   const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
-  const runId = await recordRun(
+  const { runId, results } = await recordRun(
     db,
     PVWATTS_ENGINE_VERSION,
     request.pvSystemId,
@@ -424,9 +422,10 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
         real_years: 'the mean annual total over the years covered, a year counting with at least 95 % of its hours',
       },
     },
-    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered },
+    owned,
+    (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered }),
   );
-  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }
 
 /** The engine's module and layout for an array: its module product's physics, or the PVWatts DC model on its power and γ. */
@@ -517,20 +516,22 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
   const answered = answer.result.series;
   const energy = answered.find((s) => s.quantity_code === 'production_energy' && s.array === undefined);
   if (!energy) throw new Error(`engine_contract_mismatch: ${spec.name} answered no production_energy for the system`);
-  const target: SeriesTarget = { organisationId: system.organisation_id, objectId: request.pvSystemId, sourceCode: weather.source_code, kind: 'simulated', name: `${spec.name} ${years.from}-${years.to}` };
-  const stored = await storeSeries(db, target, energy);
-  const perArray: Record<string, Record<string, string>> = {};
+  const name = `${spec.name} ${years.from}-${years.to}`;
+  const owned: OwnedSeries[] = [{ key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy }];
+  const arrayKeys: { array: string; quantity: string; key: string }[] = [];
   for (const s of answered.filter((x) => x.array !== undefined)) {
     const a = arrays.find((x) => x.name === s.array);
     if (!a) throw new Error(`engine_contract_mismatch: ${spec.name} answered a series for an array the request does not have: ${s.array}`);
-    // An array described without its own row: its series hang on the system.
-    const { seriesId } = await storeSeries(db, { ...target, objectId: a.id ?? request.pvSystemId }, s);
-    (perArray[a.name] ??= {})[s.quantity_code] = seriesId;
+    // An array described without its own row: its series hang on the system,
+    // told apart by the array's name.
+    const key = `array ${a.name}: ${s.quantity_code}`;
+    arrayKeys.push({ array: a.name, quantity: s.quantity_code, key });
+    owned.push({ key, objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s });
   }
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
   const annualKwh = round(covered.annual);
-  const runId = await recordRun(
+  const { runId, results } = await recordRun(
     db,
     described.version,
     request.pvSystemId,
@@ -555,14 +556,56 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
       losses: profile.losses,
       conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the site\'s time zone' },
     },
-    { series_id: stored.seriesId, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, years_covered: covered.yearsCovered, array_series: perArray },
+    owned,
+    (ids) => {
+      const perArray: Record<string, Record<string, string>> = {};
+      for (const k of arrayKeys) (perArray[k.array] ??= {})[k.quantity] = ids[k.key];
+      return { series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, years_covered: covered.yearsCovered, array_series: perArray };
+    },
   );
-  return { runId, seriesId: stored.seriesId, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }
 
-async function recordRun(db: Db, engineVersion: string, subjectId: string, inputs: unknown, results: unknown): Promise<string> {
-  const run = await db.query<{ id: string }>(`select record_run('solar', $1, $2, null, $3::jsonb, $4::jsonb) id`, [engineVersion, subjectId, JSON.stringify(inputs), JSON.stringify(results)]);
-  return run.rows[0].id;
+/** A series a run computed, under the key its results name it by. */
+interface OwnedSeries {
+  key: string;
+  objectId: string;
+  sourceCode: string;
+  name?: string | null;
+  series: CollectedSeries;
+}
+
+/**
+ * Records a run with the series it owns: the run of the same identity when
+ * it is already there, untouched; else a new one, whose series are written
+ * with its id before it is final, so that no later run ever overwrites them.
+ */
+async function recordRun(
+  db: Db,
+  engineVersion: string,
+  subjectId: string,
+  inputs: unknown,
+  owned: OwnedSeries[],
+  results: (seriesIds: Record<string, string>) => Record<string, unknown>,
+): Promise<{ runId: string; results: Record<string, unknown> }> {
+  const started = (await db.query<{ run_id: string; finished: boolean }>(
+    `select run_id, finished from start_run('solar', $1, $2, null, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
+  if (started.finished) {
+    const done = await db.query<{ results: Record<string, unknown> }>('select results from runs where id = $1', [started.run_id]);
+    return { runId: started.run_id, results: done.rows[0].results };
+  }
+  const ids: Record<string, string> = {};
+  for (const o of owned) {
+    const opened = await db.query<{ id: string }>(
+      `select open_series($1, $2, 'simulated', $3, $4::interval, null, null, $5, $6, null, '{}', $7) id`,
+      [o.objectId, o.series.quantity_code, o.series.value_kind, o.series.step, o.sourceCode, o.name ?? null, started.run_id]);
+    ids[o.key] = opened.rows[0].id;
+    await db.query(`select store_values($1, $2::timestamptz[], $3::float8[])`,
+      [ids[o.key], o.series.values.map((v) => v.at), o.series.values.map((v) => v.value)]);
+  }
+  const final = results(ids);
+  await db.query(`select finish_run($1, $2::jsonb)`, [started.run_id, JSON.stringify(final)]);
+  return { runId: started.run_id, results: final };
 }
 
 /** Values of several series added up, instant by instant. */

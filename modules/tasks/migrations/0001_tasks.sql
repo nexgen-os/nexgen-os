@@ -11,13 +11,24 @@
 -- reports and certificates attach to it as documents and attributes.
 --
 -- What has to be done is data. A template says, for a country, a kind of
--- project and a role, one task of one phase, with the legal reference it
--- answers and the documents it expects; the module ships none, the country
--- packs and the installation publish theirs. `tasks.plan()` reads the
--- templates that match a project and creates its tasks, once.
--- `tasks.progress()` sums the tasks of a site or a project up on a day.
+-- project and a role, one task of one phase, with the reference it answers
+-- and the documents it expects; the module ships none, the country packs
+-- and the installation publish theirs. `tasks.plan()` reads the templates
+-- that match a project and creates its tasks, once. `tasks.progress()` sums
+-- the tasks of a site or a project up on a day.
+--
+-- Projects and their participants are the `community` module's, which has
+-- to be installed first.
 
 set search_path = nexgen, public, extensions;
+
+do $$
+begin
+  if to_regclass('community.projects') is null then
+    raise exception 'module_required: tasks needs the community module (projects and participants)' using errcode = 'undefined_table';
+  end if;
+end
+$$;
 
 create schema tasks;
 grant usage on schema tasks to authenticated, service_role;
@@ -99,15 +110,15 @@ create table tasks.templates (
   published_by     text not null,
   -- The country whose rules ask for it (ISO 3166-1 alpha-2); null: every country.
   country          char(2),
-  -- The kind of project it applies to (`projects.kind`); null: every kind.
+  -- The kind of project it applies to (`community.projects.kind`); null: every kind.
   project_kind     text,
   phase            text not null references tasks.phases(code),
   role             text references tasks.roles(code),
   name             text not null,
   description      text,
-  -- The text the task answers: one of the core's `legal_sources`, and the
-  -- article or the citation in words.
-  legal_source_code text references legal_sources(code),
+  -- The text the task answers, as its publisher cites it: a code, and the
+  -- article or the citation in words. Law itself is not kept in the model.
+  legal_source_code text,
   legal_reference  text,
   -- The documents the task is expected to produce or collect.
   documents        text[] not null default '{}',
@@ -248,7 +259,7 @@ declare
   v_applies   boolean;
   t           record;
 begin
-  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from projects p where p.id = p_project_id;
+  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from community.projects p where p.id = p_project_id;
   if not found then
     raise exception 'project_not_found: %', p_project_id using errcode = 'no_data_found';
   end if;
@@ -341,7 +352,7 @@ as $$
   sites as (
     select p_object_id as id
     union
-    select p.site_id from participants p where p.project_id = p_object_id and p.site_id is not null
+    select p.site_id from community.participants p where p.project_id = p_object_id and p.site_id is not null
   ),
   m as (
     select m.*, ph.position
@@ -369,5 +380,5 @@ comment on function tasks.progress(uuid, date, uuid) is
 grant execute on function tasks.progress(uuid, date, uuid) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('tasks', 'Tasks', '0.1.0', 'tasks', '0.1.0',
+values ('tasks', 'Tasks', '0.1.0', 'tasks', '0.2.0',
         'What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a site or a project on a day.');
