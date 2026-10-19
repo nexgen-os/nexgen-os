@@ -7,7 +7,7 @@ import { doctor, main, readCatalogue, status } from '../src/index.js';
 let db: PGlite;
 
 beforeAll(async () => {
-  db = await freshDatabase(['architecture', 'solar', 'weather'], ['fr']);
+  db = await freshDatabase(['grid', 'solar', 'weather'], ['fr']);
 });
 
 afterAll(async () => {
@@ -25,10 +25,10 @@ describe('doctor', () => {
   it('finds nothing wrong on a fresh installation', async () => {
     const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
     expect(r.problems).toEqual([]);
-    expect(r.schemaVersion).toBe('0.1.0');
+    expect(r.schemaVersion).toBe('0.2.0');
     expect(r.postgis).toMatch(/^3\./);
-    expect(r.applied).toEqual({ core: 13, 'module:architecture': 1, 'module:solar': 2, 'module:weather': 1, 'pack:fr': 7 });
-    expect(r.modules.map((m) => m.code)).toEqual(['architecture', 'solar', 'weather']);
+    expect(r.applied).toEqual({ core: 12, 'module:grid': 1, 'module:solar': 2, 'module:weather': 1, 'pack:fr': 7 });
+    expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);
     expect(r.vocabularies.id_schemes).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe('doctor', () => {
   });
 
   it('names a step recorded as missing and a module without its row', async () => {
-    await db.exec(`begin; delete from nexgen.schema_migrations where name = 'packs/fr/seed/0001_fr.sql'; delete from nexgen.modules where code = 'architecture';`);
+    await db.exec(`begin; delete from nexgen.schema_migrations where name = 'packs/fr/seed/0001_fr.sql'; delete from nexgen.modules where code = 'grid';`);
     try {
       const codes = (await doctor(sqlClient(db), await readCatalogue(repoRoot))).problems.map((p) => p.code);
       expect(codes).toEqual(['module_unregistered']);
@@ -83,24 +83,24 @@ describe('status and the command line', () => {
     const org = await organisation(db, 'Status firm');
     await insert(db, 'sites', { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
     const r = await status(sqlClient(db));
-    expect(r).toMatchObject({ schemaVersion: '0.1.0', packs: ['fr'], counts: { organisations: 1, sites: 1, buildings: 0, series: 0 } });
-    expect([...r.modules].sort()).toEqual(['architecture', 'solar', 'weather']);
+    expect(r).toMatchObject({ schemaVersion: '0.2.0', packs: ['fr'], counts: { organisations: 1, sites: 1, buildings: 0, series: 0 } });
+    expect([...r.modules].sort()).toEqual(['grid', 'solar', 'weather']);
     const cli = await run(['status']);
     expect(cli.code).toBe(0);
-    expect(cli.out).toMatch(/^Nexgen OS 0\.1\.0\nmodules {8}architecture, solar, weather\npacks {10}fr\norganisations {2}1\nsites/);
+    expect(cli.out).toMatch(/^Nexgen OS 0\.2\.0\nmodules {8}grid, solar, weather\npacks {10}fr\norganisations {2}1\nsites/);
   });
 
   it('init through the command line: a dry run, then the run, then nothing to apply', async () => {
     const empty = await emptyDatabase();
     try {
-      const dry = await run(['init', '--modules', 'architecture', '--dry-run'], empty);
+      const dry = await run(['init', '--modules', 'grid', '--dry-run'], empty);
       expect(dry.code).toBe(0);
-      expect(dry.out).toMatch(/would apply 14 step\(s\), 0 already recorded — dry run, rolled back$/);
-      const real = await run(['init', '--modules=architecture'], empty);
-      expect(real.out).toMatch(/applied 14 step\(s\), 0 already recorded\n.*https:\/\/nexgen\.wesmart\.com.*$/);
-      const again = await run(['init', '--modules=architecture'], empty);
-      expect(again.out).toBe('nothing to apply: 14 step(s) already recorded');
-      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 14 step(s) already recorded');
+      expect(dry.out).toMatch(/would apply 13 step\(s\), 0 already recorded — dry run, rolled back$/);
+      const real = await run(['init', '--modules=grid'], empty);
+      expect(real.out).toMatch(/applied 13 step\(s\), 0 already recorded\n.*https:\/\/nexgen\.wesmart\.com.*$/);
+      const again = await run(['init', '--modules=grid'], empty);
+      expect(again.out).toBe('nothing to apply: 13 step(s) already recorded');
+      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 13 step(s) already recorded');
     } finally {
       await empty.close();
     }
@@ -110,6 +110,6 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: architecture, solar, tasks, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: community, ekwo, grid, solar, tasks, weather/);
   });
 });

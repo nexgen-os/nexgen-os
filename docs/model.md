@@ -1,152 +1,224 @@
 # The core model
 
+The core holds three notions — the places, the devices installed on them,
+and the series those devices and places produce — and the engine that
+attaches everything else to any of them. A trade that needs more adds a
+module with its own schema; a country adds a pack.
+
 ```mermaid
 erDiagram
   organisations ||--o{ organisation_members : "who may work"
   organisations ||--o{ contacts : "deals with"
-  organisations ||--o{ projects : owns
   organisations ||--o{ sites : owns
   sites ||--o{ buildings : holds
+  buildings ||--o{ spaces : "floors, rooms, zones, units"
+  spaces ||--o{ spaces : "inside"
   buildings ||--o{ surfaces : "roof faces, facades"
   sites ||--o{ surfaces : "ground areas"
-  sites ||--o{ meters : "connection points"
-  projects ||--o{ participants : "takes part"
-  sites ||--o{ participants : "as"
-  contacts ||--o{ participants : "answers for"
-  participants ||--o{ participants : groups
   sites ||--o{ devices : installed
-  surfaces ||--o{ devices : "mounted on"
-  meters ||--o{ devices : behind
+  buildings ||--o{ devices : in
+  spaces ||--o{ devices : in
+  surfaces ||--o{ devices : on
   device_directory ||--o{ devices : "instance of"
-  objects ||--o{ sensors : "point of"
-  objects ||--o{ series : observed
+  objects ||--o{ series : "observed"
+  devices ||--o{ series : "measures, is set"
+  runs ||--o{ series : owns
   series ||--o{ series_values : values
-  objects ||--o{ attributes : "has"
+  series ||--o{ forecast_values : issues
+  objects ||--o{ attributes : has
   objects ||--o{ external_ids : "known as"
   objects ||--o{ links : "subject / object"
-  objects ||--o{ documents : "files"
+  objects ||--o{ documents : files
   objects ||--o{ runs : subject
   scenarios ||--o{ objects : "only in"
   modules ||--o{ runs : computed
+  countries ||--o{ regions : "subdivided in"
+  countries ||--o{ defaults : decides
+  regions ||--o{ defaults : decides
 ```
 
-`objects` is the registry: one row per project, site, building, surface,
-meter, participant, device or sensor (and per floor or space of the
-`architecture` module), with its kind, its organisation and its scenario.
-The named tables keep it up to date by trigger. Attachments point to it;
-pages read the named tables.
+`objects` is the registry: one row per organisation, site, building, space,
+surface or device (and per object a module declares: a connection point, a
+project, a participant, a task), with its kind, its organisation and its
+scenario. The named tables keep it up to date by trigger; `declare_object()`
+registers a module's table as a kind, with the columns that lead to its
+parents. Attachments point to the registry; pages read the named tables.
 
 ## Who
 
 - **organisations** — the tenant, with its members (`owner`, `editor`,
-  `viewer`). Its legal identity is its Ekwo company (`ekwo_company_id`).
-- **contacts** — a person or a company: an owner, a tenant, an installer, a
-  grid operator. An Ekwo contact (`ekwo_contact_id`): legal form, numbers,
-  addresses, bank details and invoices live there.
+  `viewer`; `create_organisation`, `add_member`, `set_member_role`,
+  `remove_member`, never without an owner). An organisation is an object
+  ([0023](decisions/0023-an-organisation-is-an-object.md)): its identifiers,
+  documents and its own defaults attach to it as to any other.
+- **contacts** — a person or a company the organisation deals with: a name
+  and a kind. How to reach and invoice them is the accounting side's (the
+  `ekwo` module, [0010](decisions/0010-ekwo-link.md)).
 
 ## Where
 
-- **projects** — a working perimeter (energy community, portfolio, study,
-  district plan) with a country, a lifecycle (`simulation`, `creation`,
-  `active`, `inactive`, `archived`) and, when it has one, a perimeter.
-- **sites** — an address in the fields every country has (street, extra
-  line, postal code, city, region, country), the municipality in the
-  country's own code when rules are decided there, a parcel or a point with
-  how precisely and by whom it was placed (`location_precision`,
-  `location_source_code`), a time zone, a profile (what it is used for).
-  Everything on a site inherits its country: `country_of()`. Address to
-  point and back is the `geocoding` library, on any geocoder declared as a
-  source ([0009](decisions/0009-addresses-and-geocoding.md)).
-- **buildings** — footprint, elevation, height, floors, year, profile,
-  lifecycle, the source it was described from and, in `metadata`, what that
-  source said beyond the columns. `building_volume()` extrudes the footprint.
+- **sites** — the place a person owns, rents or operates, in the one
+  standard shape of a place ([0025](decisions/0025-a-place-has-one-shape.md)),
+  with a time zone and a profile (what it is used for). `create_site()`
+  takes the shape below and defaults the time zone to the region's, else the
+  country's first, from the pack; `locate_site()` places it again from a
+  geocoder's answer; `place_of(site)` gives it back. Everything on a site
+  inherits its country: `country_of()`, `site_of()`.
+- **buildings** — footprint, elevation, height, profile, status, the source
+  it was described from and, in `metadata`, what that source said beyond the
+  columns. `building_volume()` extrudes the footprint. Its year, material
+  and floor counts are attributes.
+- **spaces** — the inside of a building, one tree
+  ([0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md)):
+  `floor` (with its `level`), `room`, `zone`, `unit`, each with its
+  building, its parent space, elevation, height and geometry (`add_space`).
 - **surfaces** — a roof face, a facade, a ground area or a carport, on a
-  building or a site, with azimuth and tilt.
+  building or a site, with azimuth (degrees clockwise from true north) and
+  tilt; `add_surface` reads them from a 3D polygon when none is given.
 
-## The grid side
+### The shape of a place
 
-- **meters** — a connection point: identifier and scheme (checked against
-  the scheme's pattern), resource, direction, grid operator, validity. The
-  physical meter is a device of type `meter` on it and can be swapped.
-- **participants** — a site's role in a project: `producer`, `consumer` or
-  `prosumer`, with the contact who answers for it, a status, a join and
-  leave date (a site is in a project once at a time), and a parent for
-  groups. `participant_meters()` gives the meters behind a participant,
-  groups included.
+Every geocoder, importer, connector and the command line produce this one
+JSON object, and `sites` stores it in columns of the same names. A place
+travels between systems as a GeoJSON feature whose properties are these keys
+(`formats/geojson`).
+
+```json
+{
+  "street": "12 School Street",
+  "address_extra": "Building B, box 3",
+  "postal_code": "1000",
+  "city": "Port Town",
+  "region": "XX-AB",
+  "country": "XX",
+  "geometry": { "type": "Point", "coordinates": [4.4702, 50.6802, 112] },
+  "location_precision": "rooftop",
+  "location_source_code": "nominatim",
+  "identifiers": [{ "scheme": "osm", "value": "way/123" }]
+}
+```
+
+`country` is ISO 3166-1 alpha-2 and the only key required; `region` is ISO
+3166-2 and must be one the country's pack lists, when it lists any; the
+geometry is WGS 84 with its height; `location_precision` is `rooftop`,
+`parcel`, `street`, `postal_code`, `city` or `region`; `location_source_code`
+names a row of `sources`; `identifiers` (a municipality code, a cadastral
+parcel, an address register id) become `external_ids` of the site. Any other
+key is refused (`place_key_unknown`).
 
 ## What
 
-- **devices** — type (from `device_types`), site, building, surface and
-  meter (all on the same site), catalogue product, manufacturer, model, rated
-  power, unit count, geometry, status. A module derives the types it owns:
-  `call derive_devices('energy.pv_systems', 'solar')` makes a table with the
+- **devices** — anything installed, including the instruments that measure:
+  a PV system, a battery, a heat pump, a meter, a thermometer
+  ([0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
+  Type (from `device_types`), site, and where on it — building, space,
+  surface — checked together by `devices_check`; catalogue product,
+  manufacturer, model, rated power, unit count, status, installation and
+  removal dates. `install_device`, `move_device` (the place it leaves stays
+  as a `placed_in` link), `retire_device`, `replace_device` (a `replaces`
+  link). Anything else about where it belongs — the meter it is behind, the
+  zone it serves — is a link. A module derives the types it owns:
+  `call derive_devices('solar.pv_systems', 'solar')` makes a table with the
   same id, refused for any other type.
-- **device_directory** — products: manufacturer, model, unit power, capacity,
-  surface, price. Shared rows (`organisation_id` null) come from modules and
+- **device_directory** — products: manufacturer, model, unit power,
+  capacity, price. Shared rows (`organisation_id` null) come from modules and
   packs.
-- **sensors** — a point of any object (`host_id`): quantity, kind (`sensor`,
-  `setpoint`, `command`), the address a connector reads it at.
+
+## Over time
+
+- **series** — one quantity of one object over time: the object it
+  describes, the device that measures it or is set through it when there is
+  one, its kind (`measured`, `simulated`, `forecast`, `setpoint`,
+  `command`), what one value means (`interval`, `instant`, `cumulative`),
+  its step, its source and `external_ref` (how a connector finds the point:
+  a Home Assistant entity, a Modbus register, an MQTT topic), and in
+  `metadata` only what the source adds. `open_series()` finds or creates it
+  once per identity.
+- **series_values** — the values, in the unit of the quantity, dated at the
+  start of their interval, with a quality code (0 measured, 1 estimated,
+  2 substituted, 3 missing). Partitioned by week on `at`. Written through
+  `store_values()`, read through `resample(series, from, to, step,
+  time_zone?)`: sub-day steps bin in absolute time, a day or more cuts in the
+  site's time zone, named error when there is none
+  ([0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md)).
+- **forecast_values** — every issue of a `forecast` series
+  (`store_forecast()`); `resample()` gives the latest issue, or the latest
+  before `p_issued_before`.
+- **runs** — a computation of a module on an object: inputs, engine
+  version, results ([0004](decisions/0004-deterministic-runs.md)).
+  `record_run()` (or `start_run()` then `finish_run()`) writes it with the
+  series it owns (`series.run_id`): the same identity gives the same run, a
+  finished run and its series never change, and two runs never share a
+  series. `discard_superseded_series()` deletes the series of runs later
+  runs replaced; the runs stay.
+- **scenarios** — `scenario_id is null` is the world as it is. A scenario
+  holds what a variant adds: objects, attributes that override reality,
+  series. A scenario may build on another one (`create_scenario`).
 
 ## Attached to any object
 
 - **attributes** — one row per property and validity period, typed by
-  `property_defs` (datatype, unit, range, allowed values, kinds it applies
-  to). History is kept by closing a period and opening the next; two values
-  never overlap in the same scenario. Read with `attributes_of(object, at,
-  scenario)`.
+  `property_defs` (datatype, quantity hence unit, range, allowed values,
+  kinds it applies to), with its source. A column holds only what every row
+  has and every query filters on
+  ([0019](decisions/0019-a-column-only-for-what-every-row-has.md)); the rest
+  is an attribute. `set_attribute()` closes the period holding and opens the
+  next; `attributes_of(object, at, scenario)` reads them.
 - **external_ids** — unique per scheme in an organisation, checked against
-  the scheme's pattern, with validity.
-- **links** — typed and dated (`serves`, `shades`, `occupies`, `owns`…); the
-  link type may require kinds on either side.
-- **successors** — splits, merges, replacements. Identifiers never encode
-  anything and are never reused.
+  the scheme's pattern, with validity (`add_identifier`).
+- **links** — typed and dated (`serves`, `shades`, `occupies`, `owns`,
+  `placed_in`…); the link type may require kinds on either side
+  (`link_objects`, `end_link`). Splits, merges and replacements are links
+  too: `split_into`, `merged_into`, `replaces` (`split_object`,
+  `merge_objects`). Identifiers never encode anything and are never reused.
 - **documents** — permit, datasheet, report, photo, video, plan: a URI, a
-  media type, a source, a capture date. Heavy files stay in object storage.
-  Georeferenced 3D models and drawings are the `3d` module's.
+  media type, a source, a capture date (`attach_document`). Heavy files stay
+  in object storage; georeferenced 3D models are the `3d` module's.
 - **tags** — marker tags from `tags`, checked on write.
 
-## Over time
+## Countries and defaults
 
-- **series** — one quantity on one object, `measured`, `simulated`,
-  `forecast` or `setpoint`; what one value means (`interval`, `instant`,
-  `cumulative`); its step; the sensor that produces it; its source.
-- **series_values** — the timestamped values of a series, with a quality code
-  (0 measured, 1 estimated, 2 substituted, 3 missing). Partitioned by week
-  on `at`; no organisation column (access goes through the series).
-  `resample(series, from, to, step, time_zone?)` is the one way series are
-  read: sub-day steps bin in absolute time, a day or more cuts in the site's
-  time zone, named error when there is none. Decision [0007](decisions/0007-series-at-scale.md).
-- **forecast_values** — every issue of a `forecast` series, one row per
-  instant and issue time; `resample()` gives the latest issue, or the latest
-  before `p_issued_before`. Each kind of series has its one store, checked
-  on write. Decision [0011](decisions/0011-external-data.md).
-- **scenarios** — `scenario_id is null` is the world as it is. A scenario
-  holds what a variant adds: objects, attributes that override reality,
-  series. A scenario may build on another one.
-- **runs** — `record_run(module, engine_version, subject, scenario, inputs,
-  results)`: same identity, same run; a finished run never changes.
+- **countries** — what a pack says a country is: currency, languages, time
+  zones, the level its regions are listed at, postal code pattern,
+  municipality identifier scheme, and which version of the pack the
+  installation holds, with its checksum and certification.
+- **regions** — its ISO 3166-2 subdivisions at that level, with their
+  parent and time zone.
+- **defaults** — the values a country or one of its regions decides, by
+  property, each with its period, source and reference; never edited, a new
+  value is a new row and a `valid_to` on the old one.
+- **`parameter_of(object, property, at, scenario)`** — the one resolution of
+  a parameter ([0021](decisions/0021-one-cascade-of-defaults.md)): the
+  object's own attribute, its parents' nearest first, its organisation's
+  attribute, its region's default, its country's — `{value, level,
+  source_code, reference, valid_from}`. There is no global level: nothing
+  found is `parameter_missing` naming the property and the level reached; a
+  country that decides no single value answers `parameter_not_decided` with
+  its reference. A run records what it read.
+
+All three are written by the packs (`nexgen-os pack build`) and read by
+everyone signed in.
 
 ## Vocabularies
 
 `device_types` (with the module that derives each), `profiles` (uses of a
 building or a site), `link_types`, `quantities` (one unit each, QUDT),
-`property_defs` (bSDD / IFC), `tags` (Haystack), `id_schemes` and `sources`
-(the external APIs and datasets: base URL, authentication type, license,
-attribution, countries, retention). An organisation's use of a source is a
-`connections` row; the code that reads it is a connector under
-`connectors/` ([0011](decisions/0011-external-data.md)). Read by everyone signed in, written by migrations,
-seeds, modules and packs.
+`property_defs` (bSDD / IFC, including the values packs publish),
+`tags` (Haystack), `id_schemes` and `sources` (the external APIs, datasets,
+registers and published texts: base URL, authentication type, licence,
+attribution, countries, regions, retention). An organisation's use of a
+source is a `connections` row naming its secret; the code that reads it is
+a connector under `connectors/` ([0011](decisions/0011-external-data.md)).
+Read by everyone signed in, written by migrations, seeds, modules and packs.
 
-## The law of a country
+## What the modules add
 
-`legal_sources` (the texts: codes, laws, decrees, orders, a regulator's
-deliberations, standards, with their official reference and the consolidated
-text online), `rules` (what a text sets, in plain words and in numbers, for a
-section — addresses, grid, energy sharing, compliance, support, data — a
-country and its regions, with the article and the dates it holds between;
-`rules_on(country, section, day)` gives those of a day) and `grid_operators`
-(who runs the grid and what they cover). Published by the country packs;
-read by the modules that check, share or plan.
+| Module | Schema | Holds |
+|---|---|---|
+| `grid` | `grid` | `operators` (who runs the grid, written by packs) and `meters`, connection points with the identifier their operator knows (`declare_meter`, `close_meter`); a device behind a meter is a `behind_meter` link |
+| `community` | `community` | `projects` (an energy community, a portfolio, a study) and `participants`, a site's role in a project (`join_project`, `leave_project`, `participant_meters`) |
+| `ekwo` | `ekwo` | the accounting bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is |
+| `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 
 ## Geometry
 
@@ -158,7 +230,11 @@ distances are in metres anywhere, without a national grid.
 
 ## Security
 
-Every table carries `organisation_id`, copied by trigger from the object an
-attachment points to. `secure_table()` applies the two policies: members
-read, owners and editors write. Objects named by a foreign key are checked
-to be in the same organisation and compatible scenario (`parent_check`).
+Every table of an organisation's data carries `organisation_id`, copied by
+trigger from the object an attachment points to. Members read; owners and
+editors write. Objects named by a foreign key are checked to be in the same
+organisation and a compatible scenario (`parent_check`). Every gesture is a
+`security invoker` function: it acts with the rights of the person calling
+it and refuses by name ([0038](decisions/0038-everything-raises-by-name.md)).
+Vocabularies, countries, regions and defaults are read by everyone signed in
+and written only by the installation.

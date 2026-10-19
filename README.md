@@ -1,7 +1,7 @@
 # Nexgen OS
 
-An open foundation for describing the world — sites, buildings, roofs,
-meters, participants, devices, sensors — in 3D and over time, so that
+An open foundation for describing the world — sites, buildings, rooms,
+roofs, devices and the series they produce — in 3D and over time, so that
 architecture, energy, operations and compliance tools share one model.
 
 Nexgen OS is the open foundation and the reference language. **Nexgen**, the
@@ -21,23 +21,29 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 ## The model in one screen
 
-The core names its objects after what the trades call them. Each is a table;
-what a trade knows beyond its columns is attached to it.
+The core holds three notions — the places, the devices installed on them,
+the series they produce — and attaches everything else to any of them. Each
+named object is a table with the columns every row has; what a trade knows
+beyond them is an attribute with its period and its source.
 
 | Table | Holds | Standard it follows |
 |---|---|---|
-| `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; legal identity and invoicing are referenced from Ekwo OS ([0010](docs/decisions/0010-ekwo-link.md)) | Ekwo companies and contacts |
-| `projects` | a working perimeter: energy community, portfolio, study, district plan | Nexgen projects |
-| `sites`, `buildings`, `surfaces` | places: an address in the fields every country has, a point or a parcel with its precision and its source, a building with its footprint and height, a roof face or a ground area with its orientation | CityGML, IFC spatial structure |
-| `meters`, `participants` | connection points, and a site's role in a project behind them | IEC CIM UsagePoint, Nexgen participants |
-| `devices`, `device_directory`, `sensors` | what is installed, the products it is an instance of, and its measurable points; a module derives each device type into its own table | Nexgen devices, Brick, Home Assistant |
-| `series`, `series_values`, `forecast_values` | measured, simulated and setpoint series in one store, forecasts with every issue in another | OGC SensorThings |
-| `attributes`, `external_ids`, `links`, `successors`, `documents` | what is attached to any object: typed values with validity, identifiers, typed links, splits and merges, files | IFC property sets, bSDD, Overture GERS |
-| `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations, the module registry, an organisation's use of a source | — |
-| `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs and datasets | Brick, IFC, CityGML, QUDT, Haystack |
+| `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; an organisation is an object like the others | Ekwo companies and contacts |
+| `sites`, `buildings`, `spaces`, `surfaces` | the 3D skeleton: a place in one standard shape (address, WGS 84 point, precision, source), a building with its footprint and height, its floors, rooms, zones and units as one tree, its roof faces, facades and ground areas with their orientation | CityGML, IFC spatial structure, schema.org `PostalAddress` |
+| `devices`, `device_directory` | what is installed, instruments included, placed on its site, in a building or a space, on a surface; the products it is an instance of | Brick equipment, Home Assistant devices |
+| `series`, `series_values`, `forecast_values` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command | OGC SensorThings datastream, Brick and Haystack points |
+| `attributes`, `external_ids`, `links`, `documents` | what attaches to any object: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
+| `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations and the series they own, the module registry, an organisation's use of a source | — |
+| `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country, with no global fallback | ISO 3166, ISO 4217 |
+| `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
 
-Details, diagram and rules: [docs/model.md](docs/model.md). Why named
-objects: [docs/decisions/0006](docs/decisions/0006-named-objects.md).
+Every act that writes several rows or carries a rule is one function named
+after the gesture — `create_site`, `add_space`, `install_device`,
+`open_series`, `store_values`, `record_run`, `merge_objects`… — that
+refuses by name. Connection points (`grid`), energy communities
+(`community`) and the accounting bridge (`ekwo`) are modules with their own
+schema. Details, diagram and rules: [docs/model.md](docs/model.md); the
+rules and why: [docs/doctrine.md](docs/doctrine.md).
 
 ## Principles
 
@@ -90,12 +96,13 @@ npm run typecheck
 
 The tests describe real cases end to end: a house (site, building, roof
 face, PV system derived by a module, attributes over time, documents,
-scenario), a school with the `architecture` module (floors, rooms, sensors
-for several quantities, setpoints, a heat pump serving the building), an
-energy community (project, participants behind their meters, contacts,
+scenario), a school with the core alone (floors and rooms as one tree of
+spaces, a multisensor whose readings are series, setpoints, a heat pump
+serving the building), an energy community with the `community` and `grid`
+modules (project, participants behind their meters, contacts,
 groups, meter swap, cumulative register, a site in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries, shading,
-plot split), security (row level security, viewers, run immutability,
+plot split as links), the cascade of defaults, security (row level security, viewers, run immutability,
 vocabulary hygiene), the series store across a clock change, the weather
 and solar modules with a yield run on PVGIS, on `pvwatts.ts` and on the
 pvlib engine, the format libraries in and out without losing a field, the
@@ -165,7 +172,7 @@ and what each run records: [modules/solar/README.md](modules/solar/README.md).
 ```
 supabase/migrations/   the core, in the schema `nexgen` (`public` stays the installation's)
 supabase/seed/         the core vocabularies
-modules/               one Postgres schema per module (architecture, weather, solar and tasks shipped)
+modules/               one Postgres schema per module (grid, community, ekwo, weather, solar and tasks shipped)
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
 formats/               one MIT library per format or geocoder (homeassistant, geocoding with the national registers, cityjson, geojson, ifc, panond, weather-files)
 connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT

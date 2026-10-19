@@ -11,8 +11,8 @@ import { NexgenError } from './errors.js';
 import type { SqlClient } from './sql.js';
 
 export const PACKAGE_VERSION = '0.1.0';
-export const SCHEMA_VERSION = '0.1.0';
-export const SCHEMA_MIN = '0.1.0';
+export const SCHEMA_VERSION = '0.2.0';
+export const SCHEMA_MIN = '0.2.0';
 
 /** Compares two `x.y.z` versions: negative, zero or positive. */
 export function compareVersions(a: string, b: string): number {

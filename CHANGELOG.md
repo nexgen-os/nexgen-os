@@ -34,6 +34,76 @@ release may break, and says how. How a release is cut:
   the core. The packs of release 0.1 (`be`, `fr`) keep their hand-written
   seeds until they are rewritten as JSON.
 
+### Changed — schema 0.2.0: the core of three notions
+
+The core migrations are rewritten in place, since nothing was installed
+from them yet: the schema `nexgen` now reads as places, the devices on
+them, the series they produce, and the attachments around them.
+`nexgen_schema_version()` answers `0.2.0` and the command line's schema
+floor is 0.2.0. Table by table:
+
+- `organisations` is an object of the registry (decision 0023): its
+  attributes, identifiers, links and documents attach to it.
+  `ekwo_company_id` leaves it for `ekwo.companies`.
+- `contacts` keeps a name and a kind; `email`, `phone` and
+  `ekwo_contact_id` move to `ekwo.contacts` (new module `ekwo`).
+- `projects` and `participants` move to the new module `community`
+  (`community.projects`, `community.participants`, with `join_project()`,
+  `leave_project()`, `participant_meters()`); `country_of()` no longer
+  reads a project. The `tasks` module depends on `community`.
+- `meters` and `grid_operators` move to the new module `grid`
+  (`grid.meters` with `declare_meter()` and `close_meter()`,
+  `grid.operators` with a `published_by` column).
+- `legal_sources`, `rules` and `rules_on()` leave the public repository;
+  the `fr` and `be` seeds no longer write them.
+- `sites` stores the one standard shape of a place — street,
+  `address_extra`, postal code, city, region (ISO 3166-2, checked against
+  the pack's regions), country, point, `location_precision`,
+  `location_source_code` — taken by `create_site()` and `locate_site()` and
+  given back by `place_of()`; `municipality_code` becomes an identifier of
+  the site.
+- `buildings` loses `year_built`, `material` and the floor counts, now
+  attributes with their period and source (decision 0019).
+- `spaces` is new in the core: floors, rooms, zones and units of a
+  building in one tree, with `add_space()`. The `architecture` module, whose
+  `floors` and `spaces` it replaces, is removed.
+- `devices` is placed by `site_id`, `building_id`, `space_id` and
+  `surface_id`, checked together; `meter_id` leaves it for a `behind_meter`
+  link of the `grid` module. `install_device()`, `move_device()`,
+  `retire_device()`, `replace_device()`.
+- `sensors` is removed (decision 0022): the instrument is a device, the
+  point is the series. `series` gains `device_id`, `external_ref`,
+  `metadata`, the kind `command`, and `run_id`; `sensor_id` is removed.
+  `open_series()`, `store_values()`, `store_forecast()`.
+- `runs` own their series (`series.run_id`, unique per identity): a
+  finished run's series never change; `start_run()`, `finish_run()`,
+  `record_run()` and `discard_superseded_series()`.
+- `successors` and `successors_attach()` are removed: a split, a merge or a
+  replacement is a link (`split_into`, `merged_into`, `replaces`) written by
+  `split_object()` and `merge_objects()`.
+- `attributes`, `external_ids`, `links`, `documents` are written through
+  `set_attribute()`, `add_identifier()`, `link_objects()`, `end_link()`,
+  `attach_document()`; a plain insert stays allowed under the triggers.
+- `countries`, `regions` and `defaults` are new, in the shapes the pack
+  compiler writes; `parameter_of(object, property, at, scenario)` resolves a
+  parameter from the object through its parents and its organisation to its
+  region and country, and refuses `parameter_missing` or
+  `parameter_not_decided` by name, with no global fallback.
+- `sources.kind` takes `text`, a published text a value is read from.
+- `property_defs` gains the values a pack publishes (metering step,
+  bidding zone, grid emission factor, fallback specific yield, tax rate,
+  energy prices, off-peak hours, energy sharing limits, voltage levels,
+  connection thresholds) and stops repeating a column (`usage`,
+  `commissioning_date`; `installed_power` applies to a site or a project
+  only).
+- The organisation functions `create_organisation()`, `add_member()`,
+  `set_member_role()`, `remove_member()` and `create_scenario()`,
+  `add_building()`, `add_surface()` complete the gestures; every one is
+  `security invoker` and refuses by name.
+- `formats/homeassistant`, `formats/ifc`, `formats/cityjson` and
+  `formats/geojson` write `spaces` and series of devices; the Home Assistant
+  round trip stays lossless. The seven examples load the modules they use.
+
 ## [0.1.0] — 2026-10-17
 
 The first release: what other people can install, read and build on.
