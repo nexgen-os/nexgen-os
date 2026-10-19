@@ -1,0 +1,94 @@
+# The doctrine of Nexgen OS
+
+The rules that hold, one line each, grouped by theme; each links to the
+record that says why, what it forbids and what it replaced. The full index,
+with the statuses, is in [`decisions/`](decisions/README.md).
+
+## Objects
+
+- [0006](decisions/0006-named-objects.md) The core names a few objects (the place, the device, the series), and everything else is attached to them
+- [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
+- [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
+- [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
+- [0027](decisions/0027-a-product-is-a-catalogue-entry.md) A product is a catalogue entry, and a device is an instance of it
+- [0028](decisions/0028-two-objects-that-are-one-are-merged.md) Two objects that are one are merged, and the absorbed one is retired
+- [0002](decisions/0002-standards-as-vocabulary-mappings.md) A standard enters as a mapping of a vocabulary row
+
+## Places
+
+- [0003](decisions/0003-geometry-wgs84-3d-utm.md) Geometry is stored in WGS 84 in 3D, and measured in UTM
+- [0025](decisions/0025-a-place-has-one-shape.md) A place has one shape: address, point, precision, source
+- [0009](decisions/0009-addresses-and-geocoding.md) What applies to a place follows its region, its municipality or its area
+- [0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md) A device is placed on a surface or in a space, and a space is one notion with a kind
+- [0008](decisions/0008-3d-module.md) A 3D model is a file a row points to, and it enriches a place without changing it
+
+## Series
+
+- [0029](decisions/0029-a-series-belongs-to-an-object.md) A series belongs to an object, and a value is dated at the start of its interval
+- [0030](decisions/0030-a-value-is-stored-in-the-unit-of-its-quantity.md) A value is stored in the unit of its quantity
+- [0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md) One way to write a series, one way to read it, and an aggregate is derived
+- [0007](decisions/0007-series-at-scale.md) Series live in plain Postgres, on any host
+
+## Computation
+
+- [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
+- [0004](decisions/0004-deterministic-runs.md) A figure is a run, and a finished run never changes
+- [0013](decisions/0013-external-engines.md) An engine reads one request and answers one result
+- [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as an engine
+- [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is
+
+## Modules
+
+- [0032](decisions/0032-a-module-has-its-own-schema.md) A module has its own schema and writes the core through a function
+- [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
+- Records of single modules: [0010](decisions/0010-ekwo-link.md) the accounting bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
+
+## Packs
+
+- [0020](decisions/0020-a-pack-holds-what-a-function-reads.md) A pack holds what a function reads, and data cannot execute
+- [0021](decisions/0021-one-cascade-of-defaults.md) One cascade of defaults, and no global fallback
+- [0034](decisions/0034-a-pack-upgrade-is-never-silent.md) A pack upgrade is never silent, and a golden site is its contract
+
+## Formats and external data
+
+- [0035](decisions/0035-a-format-library-touches-no-database.md) A format library is MIT, one package per format, and touches no database
+- [0036](decisions/0036-a-file-is-imported-once.md) A file is imported once, and a reader reports rather than corrects
+- [0011](decisions/0011-external-data.md) A source is a row, a connection names a secret, a connector is code
+
+## Rights and refusals
+
+- [0037](decisions/0037-the-schema-grants-its-own-rights.md) The schema grants its own rights, and the surface is closed
+- [0038](decisions/0038-everything-raises-by-name.md) Everything raises, by name
+
+## Agents and the public
+
+- [0039](decisions/0039-an-agent-is-a-user-of-the-model.md) An agent is a user of the model
+- [0014](decisions/0014-integrations-dashboards-warehouses-streams.md) Integrations come through three doors: SQL, files, stream
+- [0015](decisions/0015-publications.md) Nothing is public until an owner publishes it, and a publication is kept as published
+
+## Releases
+
+- [0040](decisions/0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) A release has a tag, a schema version and a schema floor
+- [0005](decisions/0005-open-questions.md) The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
+
+## Inherited
+
+These decisions of Ekwo OS, the accounting core built on the same playbook,
+apply as they are written there: 0002 *The surface is closed, not merely
+empty* · 0003 *The schema grants its own rights* · 0005 *A guard answers
+true or false, and reads as the schema* · 0007 *An invitation names an
+address, not a user id* · 0013 *Locks live in the database, and everything
+raises* · 0025 *A country is a pack of data, compiled into SQL* · 0028 *A
+pack upgrade is never silent* · 0034 *A label is data, and a declared
+language is a promise* · 0040 *A portfolio is what the caller may read* ·
+0042 *A document is shared by a link that is the whole secret* · 0043 *A
+company leaves with its books* · 0052 *The installer needs only Node and the
+customer's project* · 0053 *The MCP server acts as the user* · 0054 *The
+command line answers one document and an exit code* · 0055 *The command line
+acts as a signed-in person* · 0058 *`doctor` compares against a generated
+inventory* · 0059 *A release has a tag, a schema version and a schema floor*
+· 0060 *Under load, the plan is the assertion, not the clock* · 0062 *A
+machine key reaches the API, and is on its own company* · 0063 *A module code
+outlives its names* · 0064 *A key writes as the person who issued it* · 0065
+*A shared instance keeps its tenants apart*. Read "organisation" for
+"company" and "installation" for "customer's project".
