@@ -1,61 +1,66 @@
-# 0016 — Third-party tools and methods: where their names go
+# 0016 — A third party's name goes where its data, its computation or its file is
 
-**Decided 15/10/2026.** Builds on [0011](0011-external-data.md)
-(connectors and sources), [0012](0012-solar-module.md) (named yield
-profiles) and [0013](0013-external-engines.md) (external engines).
+> Status: accepted · 15/10/2026, rewritten 19/10/2026
 
 ## Context
 
-Nexgen OS leans on other people's work at every step: a weather service,
-a PV library, the file an installer's tool writes, a published method of
-the literature. Each time, the question comes back: does the thing keep
-the third party's name, or is it rewritten under a generic name of ours?
-Both answers are right somewhere, and a wrong one costs: a generic name
-over a rewritten method hides which model ran and makes two runs
-incomparable; a vendor's name over our own code claims a thing we did not
-write and may not reproduce.
+Nexgen OS leans on other people's work at every step: a weather service, a
+PV library, the file an installer's tool writes, a published method of the
+literature. Each time the question comes back: does the thing keep the
+third party's name, or is it rewritten under a generic name? Both answers
+are right somewhere, and a wrong one costs: a generic name over a rewritten
+method hides which model ran and makes two runs incomparable; a vendor's
+name over code written here claims a thing the vendor did not write and may
+not reproduce.
 
 ## Decision
 
-**Generic function, named model, cited source.** A third party's name
-lives in exactly three places, each with its rule; everywhere else a
-function says what it computes and takes the model as data.
+**Generic function, named model, cited source.** A third party's name lives
+in exactly four places, each with its rule; everywhere else a function says
+what it computes and takes the model as data.
 
-| Family | What the third party brings | Its name is… | Rewritten? |
+| Where | What the third party brings | Its name is… | Rewritten? |
 |---|---|---|---|
-| `connectors/<provider>` (open-meteo, pvgis) | data | the provider's: the data stays theirs, with its licence and version, recorded as the `source` of every series ([0011](0011-external-data.md)) | never |
-| `engines/<tool>` (pvlib) | a computation, JSON in and JSON out | the tool's: a run records `engine` and its version, or it cannot be replayed ([0013](0013-external-engines.md)) | never |
-| `formats/<format>` (weather-files, panond, ifc, cityjson) | a file we read | the format's when it is a standard (EPW, TMY3, IFC, CityJSON), the vendor's file name when the format is theirs (PAN and OND of PVsyst) | read, never written |
-| a model inside `modules/` (`pvwatts.ts`, the Sandia inverter model, `exceedance()`) | a published method | the method's public name, as the literature cites it (NREL PVWatts, SAND2007-5036, IEC 61724-1): a reference, not a brand | yes, with the reference in the docstring |
+| a connector (Open-Meteo, PVGIS) | data | the provider's: the data stays theirs, with its licence and version, recorded as the source of every value ([0011](0011-external-data.md)) | never |
+| an engine (pvlib) | a computation, JSON in and JSON out | the tool's: a run records the engine and its version, or it cannot be replayed ([0013](0013-external-engines.md)) | never |
+| a format library (EPW, IFC, CityJSON, PAN and OND) | a file | the format's when it is a standard, the vendor's file name when the format is theirs ([0035](0035-a-format-library-touches-no-database.md)) | read, never re-implemented from behaviour |
+| a model inside a module (PVWatts, the Sandia inverter model) | a published method | the method's public name, as the literature cites it (NREL PVWatts, SAND2007-5036, IEC 61724-1): a reference, not a brand | yes, with the reference beside the code |
 
-Three rules follow.
+**Only published, open methods are rewritten.** A proprietary tool (PVsyst,
+PV\*SOL, the closed parts of SAM) is read through its files and compared
+against, never re-implemented from its behaviour. A profile named
+`pvsyst_like` or `pvsol_like` says it *imitates* that tool's chain of losses
+for a calibration ([0012](0012-solar-module.md)); the suffix is the claim's
+limit. These are the only places a vendor's name appears outside a format
+library.
 
-1. **Only published, open methods are rewritten.** A proprietary tool
-   (PVsyst, PV\*SOL, SAM's closed parts) is read through its files and
-   compared against, never re-implemented from its behaviour. A yield
-   profile named `pvsyst_like` or `pvsol_like` says it *imitates* that
-   tool's chain of losses for a calibration ([0012](0012-solar-module.md));
-   the suffix is the claim's limit. These are the only places a vendor's
-   name appears outside `formats/`.
-2. **The function is generic; the model is a parameter the run keeps.**
-   `yield(system, profile)` takes `pvwatts` or `pvgis_like`;
-   `sharing.allocate(community, period, key)` takes `fixed`,
-   `proportional`, `dynamic` or `p2p`; the inverter run says
-   `model: sandia`. A function named after a model (`pvwattsYield`,
-   `sandiaEfficiency`) is a sign the model should be data.
-3. **Nothing of a country or of a product of ours in a name.** The order
-   of an energy-sharing cascade, a ceiling, a tariff rule are data of a
-   country pack; a method is never called after the platform that first
-   ran it. A sentence of [AGENTS.md](../../AGENTS.md) carries this rule
-   to whoever writes code here.
+**The function is generic; the model is a parameter the run keeps.** A
+yield takes a profile (`pvwatts`, `pvgis_like`); an allocation takes a key
+(`fixed`, `proportional`, `dynamic`); an inverter run says its model
+(`sandia`). A function named after a model is a sign the model should be
+data.
 
-## Consequences
+**No country and no product in a name.** The order of an energy-sharing
+cascade, a ceiling, a tariff rule are data of a country pack; a method is
+never named after the platform that first ran it.
 
-- A reader of a run knows what ran (`engine`, `model`, `profile`, source
-  of each series) without opening the code.
-- Adding a model is adding a value and its implementation behind a
-  generic function, never a second function beside it.
-- The energy-flow modules to come (`consumption`, `sharing`, `storage`)
-  port Nexgen's computations under generic names; the method of each
-  allocation key and dispatch is named and cited, the national rules sit
-  in the packs.
+## What it forbids
+
+- A function named after a model, a country or a product.
+- A proprietary tool re-implemented from its behaviour.
+- A rewritten method without the reference it implements.
+- A vendor's name outside a connector, an engine, a format library or a
+  profile that says it imitates.
+
+## What it replaced
+
+Names chosen case by case: functions named after the model they happened to
+implement, and methods named after the product that first ran them.
+
+## See also
+
+- Inherits Ekwo OS 0063 (*A module code outlives its names*), for the
+  permanence of a name once written on data.
+- [`AGENTS.md`](../../AGENTS.md), "For an agent working on the code".
+- [0024](0024-one-language-per-layer.md) — where code in another language
+  goes.
