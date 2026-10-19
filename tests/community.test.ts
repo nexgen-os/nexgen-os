@@ -124,7 +124,7 @@ describe('an energy community', () => {
     ).rejects.toThrow(/link_subject_kind/);
   });
 
-  it('reads a cumulative register as its index per step', async () => {
+  it('reads a cumulative register as the consumption of each step, and its index as a window', async () => {
     const register = await one<{ id: string }>(
       db,
       `insert into series (object_id, quantity_code, kind, value_kind, source) values ($1, 'offtake_energy', 'measured', 'cumulative', 'dso') returning id`,
@@ -135,7 +135,10 @@ describe('an energy community', () => {
       [register.id],
     );
     const r = await db.query<{ value: number }>(`select value from resample($1, '2026-04-01', '2026-04-03', '1 day')`, [register.id]);
-    expect(r.rows.map((x) => x.value)).toEqual([1012, 1030]);
+    // 1000 → 1012 → 1030: both increments start on the first day.
+    expect(r.rows.map((x) => x.value)).toEqual([30]);
+    const index = await db.query<{ value: number }>(`select value from nexgen.window($1, '2026-04-01', '2026-04-03')`, [register.id]);
+    expect(index.rows.map((x) => x.value)).toEqual([1000, 1012, 1030]);
   });
 
   it('lets the same site take part in a second project', async () => {

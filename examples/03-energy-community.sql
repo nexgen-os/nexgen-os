@@ -65,15 +65,15 @@ select ('00000000-0000-4000-8000-0003000000' || (70 + row_number() over ()))::uu
        case when m.direction = 'injection' then 'injection_energy' else 'offtake_energy' end, 'measured', 'interval', '15 minutes', 'grid operator hub'
   from grid.meters m where m.organisation_id = '00000000-0000-4000-8000-000300000001' order by m.identifier;
 
-insert into series_values (series_id, at, value)
-select s.id, ts,
+select store(s.id, array_agg(ts order by ts), array_agg((
        case when s.quantity_code = 'injection_energy'
             then round(greatest(0, 60 * sin(pi() * (extract(hour from ts at time zone 'Europe/Amsterdam') - 6) / 14))::numeric, 2)
             else round((3 + 9 * (case when extract(isodow from ts) < 6 and extract(hour from ts) between 7 and 18 then 1 else 0.3 end)
-                        * (0.8 + 0.4 * random()))::numeric, 2) end
+                        * (0.8 + 0.4 * random()))::numeric, 2) end)::float8 order by ts))
   from series s
   cross join generate_series('2026-05-01 00:00+02'::timestamptz, '2026-05-31 23:45+02', '15 minutes') ts
- where s.organisation_id = '00000000-0000-4000-8000-000300000001';
+ where s.organisation_id = '00000000-0000-4000-8000-000300000001'
+ group by s.id;
 
 insert into attributes (object_id, property_code, value, source) values
   ('00000000-0000-4000-8000-000300000041', 'subscribed_power', '80', 'supply contract'),

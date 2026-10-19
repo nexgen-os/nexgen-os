@@ -115,8 +115,8 @@ describe('computation runs', () => {
     const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
       db, `select s.id, r.results from runs r join series s on s.run_id = r.id where r.id = $1`, [run.id]);
     expect(owned.results).toEqual({ kwh: 5420, series: { production: owned.id } });
-    await expect(asUser(db, USER_A, () => db.query(`update series_values set value = 0 where series_id = $1`, [owned.id]))).rejects.toThrow(/run_is_final/);
-    await expect(db.query(`select store_values($1, array['2028-06-01T12:00:00Z']::timestamptz[], array[1.0]::float8[])`, [owned.id])).rejects.toThrow(/run_is_final/);
+    await expect(asUser(db, USER_A, () => db.query(`update series_values set value = 0 where series_id = $1`, [owned.id]))).rejects.toThrow(/permission denied/);
+    await expect(db.query(`select store($1, array['2028-06-01T12:00:00Z']::timestamptz[], array[1.0]::float8[])`, [owned.id])).rejects.toThrow(/run_is_final/);
     await expect(db.query(`delete from series_values where series_id = $1`, [owned.id])).rejects.toThrow(/run_is_final/);
   });
 });

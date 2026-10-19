@@ -70,14 +70,12 @@ insert into series (id, organisation_id, object_id, device_id, quantity_code, ki
   ('00000000-0000-4000-8000-000700000073', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000051',
    'temperature', 'measured', 'instant', null, 'bacnet://10.1.0.9/analog-input,12', 'building management system');
 
-insert into series_values (series_id, at, value)
-select '00000000-0000-4000-8000-000700000071', ts,
-       round(((case when extract(isodow from ts) < 6 and extract(hour from ts) between 6 and 18 then 28 else 9 end)
-             * (1 + 0.3 * sin(extract(epoch from ts) / 86400 * 2 * pi())))::numeric, 1)
+select store('00000000-0000-4000-8000-000700000071', array_agg(ts order by ts),
+             array_agg(round(((case when extract(isodow from ts) < 6 and extract(hour from ts) between 6 and 18 then 28 else 9 end)
+                       * (1 + 0.3 * sin(extract(epoch from ts) / 86400 * 2 * pi())))::numeric, 1)::float8 order by ts))
   from generate_series('2026-01-19 00:00+01'::timestamptz, '2026-01-25 23:00+01', '1 hour') ts;
 
-insert into series_values (series_id, at, value)
-select '00000000-0000-4000-8000-000700000072', d + t, v
+select store('00000000-0000-4000-8000-000700000072', array_agg((d + t)::timestamptz order by d + t), array_agg(v::float8 order by d + t))
   from generate_series('2026-01-19'::date, '2026-01-25', '1 day') d
   cross join (values (interval '6 hours', 21), (interval '18 hours', 16)) as s(t, v);
 

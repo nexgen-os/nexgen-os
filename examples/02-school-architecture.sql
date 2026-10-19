@@ -72,15 +72,15 @@ select '00000000-0000-4000-8000-000200000001', s.id, case when q.kind = 'setpoin
 
 -- A school morning in classroom 1: the room warms up, the CO2 climbs with
 -- the pupils, the setpoint goes up at six and down after school.
-select store_values(s.id, array_agg(ts order by ts), array_agg(round((16.5 + 4.5 * least(1, extract(epoch from ts - '2026-01-12 06:00+01'::timestamptz) / 10800))::numeric, 1)::float8 order by ts))
+select store(s.id, array_agg(ts order by ts), array_agg(round((16.5 + 4.5 * least(1, extract(epoch from ts - '2026-01-12 06:00+01'::timestamptz) / 10800))::numeric, 1)::float8 order by ts))
   from series s, generate_series('2026-01-12 06:00+01'::timestamptz, '2026-01-12 12:00+01', '10 minutes') ts
  where s.object_id = '00000000-0000-4000-8000-000200000041' and s.quantity_code = 'temperature' and s.kind = 'measured'
  group by s.id;
-select store_values(s.id, array_agg(ts order by ts), array_agg(round(420 + case when ts >= '2026-01-12 08:30+01' then 900 * least(1, extract(epoch from ts - '2026-01-12 08:30+01'::timestamptz) / 5400) else 0 end)::float8 order by ts))
+select store(s.id, array_agg(ts order by ts), array_agg(round(420 + case when ts >= '2026-01-12 08:30+01' then 900 * least(1, extract(epoch from ts - '2026-01-12 08:30+01'::timestamptz) / 5400) else 0 end)::float8 order by ts))
   from series s, generate_series('2026-01-12 06:00+01'::timestamptz, '2026-01-12 12:00+01', '10 minutes') ts
  where s.object_id = '00000000-0000-4000-8000-000200000041' and s.quantity_code = 'co2'
  group by s.id;
-select store_values(s.id, array['2026-01-12 06:00+01', '2026-01-12 16:30+01']::timestamptz[], array[21, 16]::float8[])
+select store(s.id, array['2026-01-12 06:00+01', '2026-01-12 16:30+01']::timestamptz[], array[21, 16]::float8[])
   from series s
  where s.object_id = '00000000-0000-4000-8000-000200000041' and s.kind = 'setpoint';
 

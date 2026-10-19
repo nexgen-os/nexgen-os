@@ -104,6 +104,64 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) value
   ('specific_yield',      'Specific yield',               'KiloW-HR-PER-KiloW',  'last', null);
 
 -- ---------------------------------------------------------------------------
+-- Units (QUDT codes): the quantity kind each measures, and the factor and
+-- offset to the SI unit of that kind (QUDT conversionMultiplier and
+-- conversionOffset). store() converts a value given in any of them to the
+-- unit of its quantity; convert_unit() converts between any two of a kind.
+-- The symbol is how devices and APIs write the unit.
+-- ---------------------------------------------------------------------------
+
+insert into units (code, name, symbol, quantity_kind, factor, "offset") values
+  ('J',                   'Joule',                         'J',        'Energy',               1, 0),
+  ('KiloJ',               'Kilojoule',                     'kJ',       'Energy',               1e3, 0),
+  ('MegaJ',               'Megajoule',                     'MJ',       'Energy',               1e6, 0),
+  ('GigaJ',               'Gigajoule',                     'GJ',       'Energy',               1e9, 0),
+  ('W-HR',                'Watt hour',                     'Wh',       'Energy',               3600, 0),
+  ('KiloW-HR',            'Kilowatt hour',                 'kWh',      'Energy',               3.6e6, 0),
+  ('MegaW-HR',            'Megawatt hour',                 'MWh',      'Energy',               3.6e9, 0),
+  ('GigaW-HR',            'Gigawatt hour',                 'GWh',      'Energy',               3.6e12, 0),
+  ('W',                   'Watt',                          'W',        'Power',                1, 0),
+  ('KiloW',               'Kilowatt',                      'kW',       'Power',                1e3, 0),
+  ('MegaW',               'Megawatt',                      'MW',       'Power',                1e6, 0),
+  ('GigaW',               'Gigawatt',                      'GW',       'Power',                1e9, 0),
+  ('K',                   'Kelvin',                        'K',        'Temperature',          1, 0),
+  ('DEG_C',               'Degree Celsius',                '°C',       'Temperature',          1, 273.15),
+  ('DEG_F',               'Degree Fahrenheit',             '°F',       'Temperature',          5.0 / 9, 459.67 * 5 / 9.0),
+  ('UNITLESS',            'Unitless',                      null,       'DimensionlessRatio',   1, 0),
+  ('PERCENT',             'Percent',                       '%',        'DimensionlessRatio',   0.01, 0),
+  ('PPM',                 'Parts per million',             'ppm',      'DimensionlessRatio',   1e-6, 0),
+  ('PPB',                 'Parts per billion',             'ppb',      'DimensionlessRatio',   1e-9, 0),
+  ('NUM',                 'Number',                        null,       'Count',                1, 0),
+  ('W-PER-M2',            'Watt per square metre',         'W/m²',     'Irradiance',           1, 0),
+  ('KiloW-PER-M2',        'Kilowatt per square metre',     'kW/m²',    'Irradiance',           1e3, 0),
+  ('J-PER-M2',            'Joule per square metre',        'J/m²',     'EnergyPerArea',        1, 0),
+  ('W-HR-PER-M2',         'Watt hour per square metre',    'Wh/m²',    'EnergyPerArea',        3600, 0),
+  ('KiloW-HR-PER-M2',     'Kilowatt hour per square metre','kWh/m²',   'EnergyPerArea',        3.6e6, 0),
+  ('M3',                  'Cubic metre',                   'm³',       'Volume',               1, 0),
+  ('L',                   'Litre',                         'L',        'Volume',               1e-3, 0),
+  ('FT3',                 'Cubic foot',                    'ft³',      'Volume',               0.028316846592, 0),
+  ('KiloGM',              'Kilogram',                      'kg',       'Mass',                 1, 0),
+  ('GM',                  'Gram',                          'g',        'Mass',                 1e-3, 0),
+  ('TONNE',               'Tonne',                         't',        'Mass',                 1e3, 0),
+  ('M2',                  'Square metre',                  'm²',       'Area',                 1, 0),
+  ('M',                   'Metre',                         'm',        'Length',               1, 0),
+  ('KiloM',               'Kilometre',                     'km',       'Length',               1e3, 0),
+  ('CentiM',              'Centimetre',                    'cm',       'Length',               1e-2, 0),
+  ('MilliM',              'Millimetre',                    'mm',       'Length',               1e-3, 0),
+  ('M-PER-SEC',           'Metre per second',              'm/s',      'Speed',                1, 0),
+  ('KiloM-PER-HR',        'Kilometre per hour',            'km/h',     'Speed',                1 / 3.6, 0),
+  ('PA',                  'Pascal',                        'Pa',       'Pressure',             1, 0),
+  ('HectoPA',             'Hectopascal',                   'hPa',      'Pressure',             1e2, 0),
+  ('KiloPA',              'Kilopascal',                    'kPa',      'Pressure',             1e3, 0),
+  ('BAR',                 'Bar',                           'bar',      'Pressure',             1e5, 0),
+  ('MilliBAR',            'Millibar',                      'mbar',     'Pressure',             1e2, 0),
+  ('W-PER-M2-K',          'Watt per square metre kelvin',  'W/(m²·K)', 'ThermalTransmittance', 1, 0),
+  ('KiloGM-PER-KiloW-HR', 'Kilogram per kilowatt hour',    'kg/kWh',   'MassPerEnergy',        1 / 3.6e6, 0),
+  ('GM-PER-KiloW-HR',     'Gram per kilowatt hour',        'g/kWh',    'MassPerEnergy',        1e-3 / 3.6e6, 0),
+  ('HR',                  'Hour',                          'h',        'Time',                 3600, 0),
+  ('KiloW-HR-PER-KiloW',  'Kilowatt hour per kilowatt',    'kWh/kW',   'Time',                 3600, 0);
+
+-- ---------------------------------------------------------------------------
 -- Property definitions: attributes beyond the columns (bSDD / IFC property
 -- sets where they exist). Kinds refer to objects.kind. A fact a column holds
 -- is never repeated here: the use of a building is its `profile`, a

@@ -172,7 +172,7 @@ describe('a house', () => {
     );
     const simulated = await one<{ id: string }>(
       db,
-      `insert into series (object_id, quantity_code, kind, step, scenario_id) values ($1, 'energy', 'simulated', '1 hour', $2) returning id`,
+      `insert into series (object_id, quantity_code, kind, step, scenario_id, source_code) values ($1, 'energy', 'simulated', '1 hour', $2, 'pvgis') returning id`,
       [pv, sc.id],
     );
     await db.query(

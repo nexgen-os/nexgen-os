@@ -114,7 +114,7 @@ comment on function run_hash(text, text, jsonb) is
 --   start_run()   the run of an identity — module, engine version, subject,
 --                 scenario, inputs: the finished one when it exists (the
 --                 module has nothing to write), else a new running one
---   open_series(…, run) and store_values()   the series the run computed
+--   series_ensure(…, run) and store()   the series the run computed
 --   finish_run()  its results; from then on nothing of it changes
 --
 -- `record_run()` does the three in one call, for a result whose series fit
@@ -190,6 +190,7 @@ comment on function finish_run(uuid, jsonb) is
 --   { "key": "production", "object_id": "…", "quantity_code": "production_energy",
 --     "value_kind": "interval", "step": "1 hour", "kind": "simulated",
 --     "name": null, "source_code": null, "device_id": null,
+--     "unit": null,
 --     "at": ["2026-01-01T00:00:00Z", …], "value": [0.0, …] }
 --
 -- and the results name the series under `series.<key>`.
@@ -220,19 +221,15 @@ begin
   end if;
   for s in select * from jsonb_array_elements(coalesce(p_series, '[]'::jsonb)) loop
     n := n + 1;
-    sid := open_series(
+    sid := series_ensure(
       (s->>'object_id')::uuid, s->>'quantity_code', coalesce(s->>'kind', 'simulated'),
       coalesce(s->>'value_kind', 'interval'), (s->>'step')::interval, (s->>'device_id')::uuid, null,
       s->>'source_code', s->>'name', p_scenario_id, '{}'::jsonb, run.run_id);
-    if coalesce(s->>'kind', 'simulated') = 'forecast' then
-      perform store_forecast(sid, now(),
-        array(select jsonb_array_elements_text(s->'at'))::timestamptz[],
-        array(select jsonb_array_elements_text(s->'value'))::float8[]);
-    else
-      perform store_values(sid,
-        array(select jsonb_array_elements_text(s->'at'))::timestamptz[],
-        array(select jsonb_array_elements_text(s->'value'))::float8[]);
-    end if;
+    perform store(sid,
+      array(select jsonb_array_elements_text(s->'at'))::timestamptz[],
+      array(select jsonb_array_elements_text(s->'value'))::float8[],
+      null, s->>'unit',
+      case when coalesce(s->>'kind', 'simulated') = 'forecast' then now() end);
     owned := owned || jsonb_build_object(coalesce(s->>'key', s->>'name', s->>'quantity_code', n::text), sid);
   end loop;
   return finish_run(run.run_id,
