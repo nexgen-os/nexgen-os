@@ -31,8 +31,8 @@ const rel = (f) => relative(root, f);
 // The adapter of a national register (formats/geocoding/ban.ts, belgium.ts…)
 // carries the country and the languages of its register: that is its data,
 // not a default; only the generic index of the library is held to the rule.
-// A seed compiled from a pack (supabase/seed/<n>_pack_<cc>.sql) is the pack.
-const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^supabase\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^formats\/geocoding\/(?!index\.ts$)[a-z]+\.ts$/.test(rel(f));
+// A seed compiled from a pack (core/seed/<n>_pack_<cc>.sql) is the pack.
+const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^core\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^formats\/geocoding\/(?!index\.ts$)[a-z]+\.ts$/.test(rel(f));
 
 // 1. country, currency, language literals in code
 const literal = /'(BE|FR|NL|DE|ES|IT|LU|SN|US|GB)'|'EUR'|'USD'|'(fr|nl|de|es)'\s*(,|\))/;

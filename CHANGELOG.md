@@ -24,7 +24,7 @@ release may break, and says how. How a release is cut:
   schema `packs/schema/pack.1.json` in five sections — identity,
   identifiers, sources, grid, defaults — with its version, certification
   and checksum. `nexgen-os pack build <cc>` compiles it into
-  `supabase/seed/<n>_pack_<cc>.sql`, which upserts every row by its natural
+  `core/seed/<n>_pack_<cc>.sql`, which upserts every row by its natural
   key, records the version and checksum in `countries`, and refuses by name
   a value edited in place (`value_edited`). `nexgen-os pack check --all`,
   run by the new `packs` job of the CI, refuses a pack that fails the
@@ -38,7 +38,7 @@ release may break, and says how. How a release is cut:
 
 ### Changed — the `fr` pack on the five sections
 
-`packs/fr` is a JSON pack compiled into `supabase/seed/10_pack_fr.sql`
+`packs/fr` is a JSON pack compiled into `core/seed/10_pack_fr.sql`
 (version 0.2.0, `community`): France with its 13 regions and the 103
 departments and collectivities below them (ISO 3166-2, the department as region level, six time zones),
 seven identifier schemes, ten registers and the ten published texts its
@@ -51,7 +51,7 @@ the `grid` module.
 
 ### Changed — the `be` pack on the five sections
 
-`packs/be` is a JSON pack compiled into `supabase/seed/11_pack_be.sql`
+`packs/be` is a JSON pack compiled into `core/seed/11_pack_be.sql`
 (version 0.2.0, `community`): Belgium with its three regions (ISO 3166-2,
 the region as region level), six identifier schemes, nine registers and the
 seven published texts its values cite, eight grid operators by region, and

@@ -19,7 +19,7 @@ import { deref, isObject, unsupportedKeywords, validate, type Issue, type Schema
 
 export const SCHEMA_PATH = 'packs/schema/pack.1.json';
 /** Where compiled seeds are written, beside the core's own seed (Ekwo OS's place). */
-export const SEED_DIR = 'supabase/seed';
+export const SEED_DIR = 'core/seed';
 export const SECTIONS = ['identifiers', 'sources', 'grid', 'defaults'] as const;
 export type Section = (typeof SECTIONS)[number];
 
@@ -169,7 +169,7 @@ export async function isHandWritten(root: string, slug: string): Promise<boolean
   return existsSync(dir) && (await readdir(dir)).some((f) => f.endsWith('.sql'));
 }
 
-/** `supabase/seed/12_pack_xa.sql`, relative to the checkout. */
+/** `core/seed/12_pack_xa.sql`, relative to the checkout. */
 export function seedPath(manifest: Pick<Manifest, 'seed_sequence' | 'country'>): string {
   return `${SEED_DIR}/${manifest.seed_sequence}_pack_${manifest.country.toLowerCase()}.sql`;
 }

@@ -4,7 +4,7 @@
  * The core's migrations, then the core's seed, then each module asked for
  * (its migrations in order), then each pack asked for (its seed in order).
  * A pack's seed is the file `nexgen-os pack build` compiles beside the
- * core's, `supabase/seed/<n>_pack_<cc>.sql`, or, for a pack of release 0.1,
+ * core's, `core/seed/<n>_pack_<cc>.sql`, or, for a pack of release 0.1,
  * its own `packs/<cc>/seed/*.sql`; a compiled seed is never part of the core.
  * Every file is a step with a scope and a name — its path in the release —
  * which is what `schema_migrations` records. `plan()` is pure: given what
@@ -21,6 +21,19 @@ export interface Step {
   name: string;
   /** `core`, `module:<code>` or `pack:<country code>`. */
   scope: string;
+}
+
+/**
+ * Installations of release 0.1 recorded the core under `supabase/`. The
+ * files moved to `core/` without changing; a recorded name is read through
+ * this map, so that `doctor` and `migrate` see the same step under either.
+ */
+export const RENAMED_STEPS: ReadonlyArray<readonly [RegExp, string]> = [[/^supabase\/(migrations|seed)\//, 'core/$1/']];
+
+/** The name a step has in this release, whichever name an installation recorded. */
+export function currentStepName(name: string): string {
+  for (const [from, to] of RENAMED_STEPS) if (from.test(name)) return name.replace(from, to);
+  return name;
 }
 
 export interface Pack {
@@ -46,7 +59,7 @@ export interface Catalogue {
 export function defaultRoot(): string {
   const pkg = join(dirname(fileURLToPath(import.meta.url)), '..');
   const assets = join(pkg, 'assets');
-  return existsSync(join(assets, 'supabase', 'migrations')) ? assets : join(pkg, '..', '..');
+  return existsSync(join(assets, 'core', 'migrations')) ? assets : join(pkg, '..', '..');
 }
 
 async function sqlSteps(root: string, dir: string, scope: string): Promise<Step[]> {
@@ -63,9 +76,9 @@ async function folders(root: string, dir: string): Promise<string[]> {
 
 /** Reads what ships under `root`. */
 export async function readCatalogue(root: string = defaultRoot()): Promise<Catalogue> {
-  const seeds = await sqlSteps(root, 'supabase/seed', 'core');
-  const packSeed = (s: Step) => /^supabase\/seed\/\d+_pack_([a-z]{2})\.sql$/.exec(s.name)?.[1];
-  const core = [...(await sqlSteps(root, 'supabase/migrations', 'core')), ...seeds.filter((s) => packSeed(s) === undefined)];
+  const seeds = await sqlSteps(root, 'core/seed', 'core');
+  const packSeed = (s: Step) => /^core\/seed\/\d+_pack_([a-z]{2})\.sql$/.exec(s.name)?.[1];
+  const core = [...(await sqlSteps(root, 'core/migrations', 'core')), ...seeds.filter((s) => packSeed(s) === undefined)];
   const modules = new Map<string, Step[]>();
   for (const code of await folders(root, 'modules')) {
     const steps = await sqlSteps(root, `modules/${code}/migrations`, `module:${code}`);

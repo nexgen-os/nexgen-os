@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { emptyDatabase, freshDatabase, one, repoRoot, sqlClient } from '../../../tests/helpers/db.js';
-import { install, migrate, plan, readCatalogue, type Catalogue, type Step } from '../src/index.js';
+import { currentStepName, install, migrate, plan, readCatalogue, recordedSteps, type Catalogue, type Step } from '../src/index.js';
 
 const opened: PGlite[] = [];
 const temp: string[] = [];
@@ -26,7 +26,7 @@ const step = (name: string, scope: string): Step => ({ name, scope });
 /** A catalogue written by hand: a core, two modules, one pack that needs one of them. */
 const synthetic: Catalogue = {
   root: '/nowhere',
-  core: [step('supabase/migrations/1_a.sql', 'core'), step('supabase/seed/1_seed.sql', 'core')],
+  core: [step('core/migrations/1_a.sql', 'core'), step('core/seed/1_seed.sql', 'core')],
   modules: new Map([
     ['alpha', [step('modules/alpha/migrations/0001_alpha.sql', 'module:alpha')]],
     ['beta', [step('modules/beta/migrations/0001_beta.sql', 'module:beta'), step('modules/beta/migrations/0002_beta.sql', 'module:beta')]],
@@ -42,7 +42,7 @@ describe('plan', () => {
   });
 
   it('leaves out what is recorded', () => {
-    const recorded = new Set(['supabase/migrations/1_a.sql', 'supabase/seed/1_seed.sql', 'modules/alpha/migrations/0001_alpha.sql']);
+    const recorded = new Set(['core/migrations/1_a.sql', 'core/seed/1_seed.sql', 'modules/alpha/migrations/0001_alpha.sql']);
     const p = plan(synthetic, { modules: ['alpha'], packs: [] }, recorded);
     expect(p.steps).toHaveLength(3);
     expect(p.pending).toEqual([]);
@@ -62,8 +62,8 @@ describe('plan', () => {
   it('reads the release in the repository: the version migration last of the core migrations, the seed after', async () => {
     const c = await readCatalogue(repoRoot);
     const names = c.core.map((s) => s.name);
-    expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_2_0.sql');
-    expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
+    expect(names.at(-2)).toBe('core/migrations/20261013000000_schema_version_0_2_0.sql');
+    expect(names.at(-1)).toBe('core/seed/0001_core_vocabularies.sql');
     expect([...c.modules.keys()]).toEqual(['community', 'ekwo', 'grid', 'solar', 'tasks', 'weather']);
     expect([...c.packs.keys()]).toEqual(['be', 'fr']);
   });
@@ -130,13 +130,24 @@ describe('migrate', () => {
     const db = await track(freshDatabase(['grid']));
     const root = await mkdtemp(join(tmpdir(), 'nexgen-release-'));
     temp.push(root);
-    for (const dir of ['supabase', 'modules', 'packs']) await cp(join(repoRoot, dir), join(root, dir), { recursive: true });
+    for (const dir of ['core', 'modules', 'packs']) await cp(join(repoRoot, dir), join(root, dir), { recursive: true });
     await writeFile(
-      join(root, 'supabase/migrations/20991231000000_core_later.sql'),
+      join(root, 'core/migrations/20991231000000_core_later.sql'),
       'set search_path = nexgen, public, extensions;\ncreate table later (id int primary key);\nalter table later enable row level security;\n',
     );
     const r = await migrate(sqlClient(db), { root });
-    expect(r.applied).toEqual([{ name: 'supabase/migrations/20991231000000_core_later.sql', scope: 'core' }]);
+    expect(r.applied).toEqual([{ name: 'core/migrations/20991231000000_core_later.sql', scope: 'core' }]);
     expect((await migrate(sqlClient(db), { root })).applied).toEqual([]);
+  });
+
+  it('reads the names a 0.1 installation recorded under supabase/ as the core/ names, and applies nothing again', async () => {
+    expect(currentStepName('supabase/migrations/1_a.sql')).toBe('core/migrations/1_a.sql');
+    expect(currentStepName('supabase/seed/10_pack_fr.sql')).toBe('core/seed/10_pack_fr.sql');
+    expect(currentStepName('modules/grid/migrations/0001_grid.sql')).toBe('modules/grid/migrations/0001_grid.sql');
+    const db = await track(freshDatabase(['grid']));
+    await db.exec(`update nexgen.schema_migrations set name = regexp_replace(name, '^core/', 'supabase/') where name like 'core/%'`);
+    const client = sqlClient(db);
+    expect([...(await recordedSteps(client)).keys()].filter((n) => n.startsWith('supabase/'))).toEqual([]);
+    expect((await migrate(client, { root: repoRoot })).applied).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/nexgen-os/nexgen-os/blob/main/packs/schema/pack.1.json",
   "title": "Nexgen OS country pack, version 1",
-  "description": "A pack is the few values a country decides that a function of the model reads. This schema describes every file of packs/<cc>/: the manifest pack.json (the root of this schema, which carries the identity of the country) and the section files identifiers.json, sources.json, grid.json and defaults.json ($defs/identifiers_file, $defs/sources_file, $defs/grid_file, $defs/defaults_file). Nothing here is executable: there is no expression, no script, no hook, and there will not be one. A value is a value, a unit and a reference. Nothing is ever deleted from a pack: a value that stops holding gets a valid_to and the value that replaces it is a new row. `nexgen-os pack build <cc>` compiles a pack into supabase/seed/<seed_sequence>_pack_<cc>.sql; `nexgen-os pack check --all` refuses a seed that is not the exact output of its pack.",
+  "description": "A pack is the few values a country decides that a function of the model reads. This schema describes every file of packs/<cc>/: the manifest pack.json (the root of this schema, which carries the identity of the country) and the section files identifiers.json, sources.json, grid.json and defaults.json ($defs/identifiers_file, $defs/sources_file, $defs/grid_file, $defs/defaults_file). Nothing here is executable: there is no expression, no script, no hook, and there will not be one. A value is a value, a unit and a reference. Nothing is ever deleted from a pack: a value that stops holding gets a valid_to and the value that replaces it is a new row. `nexgen-os pack build <cc>` compiles a pack into core/seed/<seed_sequence>_pack_<cc>.sql; `nexgen-os pack check --all` refuses a seed that is not the exact output of its pack.",
   "type": "object",
   "required": ["country", "name", "version", "schema_min", "seed_sequence", "certification", "sections", "identity"],
   "additionalProperties": false,
@@ -34,7 +34,7 @@
       "type": "integer",
       "minimum": 10,
       "maximum": 899,
-      "description": "The number the compiled seed carries: 12 gives supabase/seed/12_pack_<cc>.sql. Declared rather than derived, so that adding a country never renames the seed of another; immutable once published. Take the first number no pack of the checkout has taken: `nexgen-os pack check --all` refuses two packs claiming one."
+      "description": "The number the compiled seed carries: 12 gives core/seed/12_pack_<cc>.sql. Declared rather than derived, so that adding a country never renames the seed of another; immutable once published. Take the first number no pack of the checkout has taken: `nexgen-os pack check --all` refuses two packs claiming one."
     },
     "certification": { "$ref": "#/$defs/certification" },
     "modules": {
