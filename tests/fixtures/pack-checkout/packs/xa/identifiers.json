@@ -1,0 +1,19 @@
+{
+  "identifiers": [
+    {
+      "code": "xa_metering_point",
+      "name": "Metering point number",
+      "description": "Issued by the distribution operator of the connection.",
+      "pattern": "^XA[0-9]{8}$",
+      "example": "XA12345678"
+    },
+    {
+      "code": "xa_municipality",
+      "name": "Municipality code",
+      "pattern": "^[0-9]{5}$",
+      "example": "10001",
+      "url_template": "https://example.org/municipality/{value}",
+      "source_code": "xa_statistics"
+    }
+  ]
+}

@@ -3,6 +3,9 @@
  *
  * The core's migrations, then the core's seed, then each module asked for
  * (its migrations in order), then each pack asked for (its seed in order).
+ * A pack's seed is the file `nexgen-os pack build` compiles beside the
+ * core's, `supabase/seed/<n>_pack_<cc>.sql`, or, for a pack of release 0.1,
+ * its own `packs/<cc>/seed/*.sql`; a compiled seed is never part of the core.
  * Every file is a step with a scope and a name — its path in the release —
  * which is what `schema_migrations` records. `plan()` is pure: given what
  * ships, what is asked and what is recorded, it says what to apply.
@@ -60,10 +63,9 @@ async function folders(root: string, dir: string): Promise<string[]> {
 
 /** Reads what ships under `root`. */
 export async function readCatalogue(root: string = defaultRoot()): Promise<Catalogue> {
-  const core = [
-    ...(await sqlSteps(root, 'supabase/migrations', 'core')),
-    ...(await sqlSteps(root, 'supabase/seed', 'core')),
-  ];
+  const seeds = await sqlSteps(root, 'supabase/seed', 'core');
+  const packSeed = (s: Step) => /^supabase\/seed\/\d+_pack_([a-z]{2})\.sql$/.exec(s.name)?.[1];
+  const core = [...(await sqlSteps(root, 'supabase/migrations', 'core')), ...seeds.filter((s) => packSeed(s) === undefined)];
   const modules = new Map<string, Step[]>();
   for (const code of await folders(root, 'modules')) {
     const steps = await sqlSteps(root, `modules/${code}/migrations`, `module:${code}`);
@@ -71,7 +73,8 @@ export async function readCatalogue(root: string = defaultRoot()): Promise<Catal
   }
   const packs = new Map<string, Pack>();
   for (const code of await folders(root, 'packs')) {
-    const steps = await sqlSteps(root, `packs/${code}/seed`, `pack:${code}`);
+    const compiled = seeds.filter((s) => packSeed(s) === code).map((s) => ({ ...s, scope: `pack:${code}` }));
+    const steps = [...(await sqlSteps(root, `packs/${code}/seed`, `pack:${code}`)), ...compiled];
     if (steps.length === 0) continue;
     const manifest = join(root, 'packs', code, 'pack.json');
     const json = existsSync(manifest) ? (JSON.parse(await readFile(manifest, 'utf8')) as { modules?: string[] }) : {};
