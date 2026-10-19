@@ -1,95 +1,65 @@
-# 0008 — The `3d` module: the shape of what is built
+# 0008 — A 3D model is a file a row points to, and it enriches a place without changing it
 
-**Proposed 12/10/2026, narrowed 13/10/2026.** Research:
-[docs/research/3d-geo.md](../research/3d-geo.md) — its sections on captures,
-scenes and video stay as research for Nexgen, WeSmart's commercial platform.
+> Status: accepted · 12/10/2026, rewritten 19/10/2026
 
 ## Context
 
-The core already holds the first level of 3D: geometry in WGS 84 with
-heights, buildings with a footprint, an elevation and a height
-(`building_volume()`), roof faces with azimuth and tilt, and, through
-`architecture`, floors and spaces. What is missing is the proper
-three-dimensional model of a building when one exists — the IFC from the
-architect, the CityJSON tile from the city, the mesh from a survey, the glTF
-of a PV layout — placed on the globe, so that a viewer, an export and a
-computation read the same object.
-
-The first draft of this decision went further: drone flights, images with
-their poses, point clouds, orthophotos, scenes, camera paths and rendered
-videos. Those describe how a place is photographed and shown, not what it
-is. They stay out of the open repository, in Nexgen, WeSmart's commercial platform, as a module
-of its own there (working name `drone`: flights, photogrammetry, films).
+The core holds the first level of 3D in its own tables: geometry in WGS 84
+with heights, buildings with a footprint, an elevation and a height, roof
+faces with their azimuth and tilt, spaces inside a building. A building is
+often also known by a proper three-dimensional model: the IFC of the
+architect, the CityJSON tile of the city, the mesh of a survey, the glTF of
+a PV layout. These files weigh megabytes to gigabytes, come in formats a
+database does not read, and each carries its own numbers for what the core
+already describes. The question is how they relate to the place without
+becoming a second description of it.
 
 ## Decision
 
-The `3d` module describes the built thing in three dimensions, and nothing
-else. Its Postgres schema is `three_d`, since a schema name cannot start
-with a digit.
+**Heavy geometry stays in object storage, and a row points to it.** A 3D
+model, a drawing, a point cloud, a raster or a tileset is a file; the
+database holds its address, its checksum, its format, its source and its
+capture date, and how it is placed on the globe. Never its bytes.
 
-| Table | What it is |
-|---|---|
-| `three_d.models` | one georeferenced 3D model of a building, a site or a device: format (glTF, IFC, CityJSON, mesh), file URI and checksum, CRS, origin on the globe (EPSG:4979) and in the native CRS, rotation, scale, up axis, units, vertical datum, bounding box, level of detail, the source's own georeferencing block kept as it came. `three_d.model_to_world(model_id)` is the matrix that places any of them |
-| `three_d.drawings` | plans, sections, elevations, roof plans — PDF, SVG, DXF — with an optional georeference so that a plan lies on the map |
-| `three_d.tilesets` | a 3D Tiles 1.1 tileset built from `surfaces` or `three_d.models`, static on object storage, with the run that built it |
+**A model is placed by data.** Its origin on the globe, its rotation, its
+scale, its up axis, its units and its vertical datum are values of the row,
+and the source's own georeferencing block is kept as it came, so that one
+function places any model in WGS 84, whatever its format.
 
-Four rules:
+**A model enriches the place; it never changes its shape.** The place keeps
+its one shape ([0025](0025-a-place-has-one-shape.md)), the building its own
+numbers (floors, heights, areas) in the core. A roof face measured on a
+model is written to the surfaces of the core with the model as its source;
+nothing keeps a second copy of the roof or of the building's numbers beside
+the model.
 
-- files on object storage, rows in Postgres: a URI and a checksum, never
-  bytes;
-- the building's own numbers — floors, heights, areas — stay in the core
-  and in `architecture`; the module adds the model, not a second copy of the
-  numbers;
-- roof faces measured on a model are written to `surfaces` with their
-  source; the module never keeps a second copy of roof geometry;
-- every derived artefact — a tileset, a model built from parameters — is a
-  run, so it can be rebuilt.
+**What is derived from a model is a run.** A tileset built from the
+surfaces, a model generated from parameters, a layout of modules on a face:
+each is produced by a run that records its inputs, so it can be rebuilt
+([0004](0004-deterministic-runs.md)).
 
-### What the pure computations become
+**The open repository describes what is built.** How a place is
+photographed and shown (flights, images and their poses, scenes, camera
+paths, rendered videos) is not part of the description.
 
-The deterministic parts of the product's 3D — the parametric roof model
-(two slopes, one slope, several spans, tables on the ground, faces drawn by
-hand, in local metres), the layout of modules on a face and on the ground,
-the position of the sun — are TypeScript with no WebGL and already tested.
-They move into the open repository as functions of the `solar` module
-(layouts) and of `3d` (roof model), and their result is persisted: one
-`three_d.models` row (glTF) per layout, produced by a run, so that a viewer,
-an export to PV\*SOL, IFC or CityJSON and the hosted film pipeline all read
-the same object.
+## What it forbids
 
-### How 3D is served
+- File bytes in a database row.
+- A second copy, inside a model's row, of numbers the core holds (heights,
+  floors, roof faces).
+- A derived 3D artefact that no run produced.
+- A change to the shape of a place to make room for a model.
 
-Three tiers, one rule:
+## What it replaced
 
-- **every building in view** — vector tiles from `buildings` (`ST_AsMVT`,
-  served by martin or written once as PMTiles) and a `fill-extrusion`
-  layer: cheap, cached, no custom code;
-- **real geometry** — roof faces and models as **3D Tiles 1.1** built from
-  PostGIS by pg2b3dm (or tyler from CityJSON), read by the three.js tiles
-  renderer, deck.gl or CesiumJS;
-- **the one object of the page** — one glTF in a thin custom layer with
-  three.js.
+A proposed `3d` module whose record mixed the rule with its tables, its
+serving tiers and the line with the commercial platform; that design is in
+the [road map](../road-to-0.1.md).
 
-The open repository targets **MapLibre GL JS** (BSD-3): extrusions, custom
-layers, terrain, globe and the free camera all exist there. Mapbox GL JS v3's
-`model` layer, Standard style and tokens are Nexgen's, WeSmart's product.
+## See also
 
-### The line with Nexgen, WeSmart's product
-
-| Open — this repository | Nexgen, WeSmart's product |
-|---|---|
-| the schema, row level security, `model_to_world()`, the tile functions | drone flights, images and their poses, point clouds, orthophotos and surface models, photogrammetry jobs (OpenDroneMap as a service) |
-| format readers: CityJSON 2.0, IFC `IfcMapConversion`, 3D Tiles tilesets, glTF anchors | scenes, camera paths, renders: the generation of videos and stills, and the pipeline that makes them |
-| derivations that are pure functions of open inputs: extrusion, roof shapes from Overture, roof planes from a surface model, 3D Tiles builds | the generation of 3D objects from surveys |
-| MapLibre bricks: extrusion style fragment, three.js custom layer, tiles renderer wrapper | API keys and quotas (solar API, Mapbox tokens), the Mapbox `model` layer and Standard style |
-| adapters for open reference data: 3DBAG (CC BY), UrbIS, German LoD2 (CityGML), Overture | paid or restricted datasets |
-
-## Consequences
-
-- The module stays small: three tables, one function, the readers.
-- The format libraries start with the readers the module needs:
-  CityJSON, IFC georeferencing, 3D Tiles, glTF anchors.
-- The acceptance test of the module: an IFC and a CityJSON of the same
-  building land as two `three_d.models` rows and `model_to_world()` puts
-  both on the same footprint.
-- The hosted `drone` module reads this one; nothing here reads it.
+- [0003](0003-geometry-wgs84-3d-utm.md) — the frame of all geometry.
+- [0035](0035-a-format-library-touches-no-database.md) — the readers of IFC,
+  CityJSON and 3D Tiles are format libraries.
+- [`docs/research/3d-geo.md`](../research/3d-geo.md), [`docs/research/bim-3d.md`](../research/bim-3d.md).
+- [`modules/3d/README.md`](../../modules/3d/README.md).
