@@ -61,8 +61,8 @@ afterAll(async () => {
 function unittest(): Promise<{ status: number | null; output: string }> {
   return new Promise((resolve) => {
     const child = spawn(python, ['-m', 'unittest', 'discover', '-v', '-s', 'tests'], {
-      cwd: join(repoRoot, 'sdk', 'python'),
-      env: { ...process.env, NEXGEN_DB_URL: url, NEXGEN_SDK_FIXTURE: JSON.stringify(fixture), PYTHONPATH: join(repoRoot, 'sdk', 'python') },
+      cwd: join(repoRoot, 'packages', 'python'),
+      env: { ...process.env, NEXGEN_DB_URL: url, NEXGEN_SDK_FIXTURE: JSON.stringify(fixture), PYTHONPATH: join(repoRoot, 'packages', 'python') },
     });
     let output = '';
     child.stdout.on('data', (d) => (output += d));
