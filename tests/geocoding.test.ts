@@ -3,7 +3,9 @@
 // site accepts exactly what the library hands it.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { addressLines, nominatim, photon, siteFields, type Fetch, type Place } from '../formats/geocoding/index.js';
+import { addressLines, siteFields, type Fetch, type Place } from '@nexgen-os/core';
+import { nominatim } from '@nexgen-os/nominatim';
+import { photon } from '@nexgen-os/photon';
 import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 /** A fetch that records what it was asked and answers from a table of URLs. */

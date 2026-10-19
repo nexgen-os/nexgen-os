@@ -5,9 +5,9 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { pvgis } from '../connectors/pvgis/index.js';
-import type { Fetch } from '../formats/geocoding/index.js';
-import { runYield } from '../modules/solar/yield.js';
+import { pvgis } from '@nexgen-os/pvgis';
+import type { Fetch } from '@nexgen-os/core';
+import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 
 let db: PGlite;

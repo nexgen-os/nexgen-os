@@ -1,0 +1,37 @@
+{
+  "name": "@nexgen-os/homeassistant",
+  "version": "0.1.0",
+  "description": "Home Assistant floors, areas, devices, entities and recorder states to and from Nexgen OS.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/homeassistant"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.1.0"
+  }
+}

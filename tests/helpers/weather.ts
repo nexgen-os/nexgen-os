@@ -1,7 +1,7 @@
 // Weather answers for tests: recorded fixtures, and an Open-Meteo archive
 // that makes up a sky for any period.
 import { readFile } from 'node:fs/promises';
-import type { Fetch } from '../../formats/geocoding/index.js';
+import type { Fetch } from '@nexgen-os/core';
 import { repoRoot } from './db.js';
 
 const HOUR = 3_600_000;

@@ -2,7 +2,7 @@
 // file's efficiency curves exactly as pvlib's `inverter.fit_sandia` fits it.
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { polyfit, sandiaFromOnd } from '../modules/solar/inverter.js';
+import { polyfit, sandiaFromOnd } from '../modules/solar/src/inverter.js';
 import { repoRoot } from './helpers/db.js';
 
 /** A 10 kW inverter as the PAN/OND reader gives it: three curves of [DC W, AC W] at three voltages. */

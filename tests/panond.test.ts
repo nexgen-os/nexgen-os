@@ -5,7 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { importProduct, parsePanOnd, profilePoints, readOnd, readPan, type PanOndObject, type PvsystModuleParameters } from '../formats/panond/index.js';
+import { importProduct, parsePanOnd, profilePoints, readOnd, readPan, type PanOndObject, type PvsystModuleParameters } from '@nexgen-os/panond';
 import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8');

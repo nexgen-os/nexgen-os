@@ -12,10 +12,11 @@ Belgium decides most things per region: Flanders (`BE-VLG`), Brussels
 building identifiers and distribution operators. A row that holds in part of
 the country names its regions, and the geocoders return the region of each
 place they find ([decision 0009](../../docs/decisions/0009-addresses-and-geocoding.md)).
-The three regional registers answer as geocoders in
-[`formats/geocoding/belgium.ts`](../../formats/geocoding/belgium.ts)
-(`geopunt()` for `BE-VLG`, `urbis()` for `BE-BRU`, `walloon()` for `BE-WAL`,
-`belgium()` keyed by region).
+The three regional registers answer as geocoders in the connectors
+[`geopunt`](../../packages/connectors/geopunt/README.md) for `BE-VLG`,
+[`urbis`](../../packages/connectors/urbis/README.md) for `BE-BRU` and
+[`icar`](../../packages/connectors/icar/README.md) for `BE-WAL`, keyed by
+region in the `national` choice of `geocoderFor()`.
 
 | File | Holds |
 |---|---|

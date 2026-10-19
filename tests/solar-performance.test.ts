@@ -4,8 +4,8 @@
 // reading renews.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { storeSeries, type SeriesPoint } from '../connectors/index.js';
-import { PERFORMANCE_ENGINE_VERSION, performanceIndicators } from '../modules/solar/performance.js';
+import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
+import { PERFORMANCE_ENGINE_VERSION, performanceIndicators } from '../modules/solar/src/performance.js';
 import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 const HOUR = 3_600_000;

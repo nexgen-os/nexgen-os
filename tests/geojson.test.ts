@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { bbox, exportGeoJson, type Feature, type FeatureCollection } from '../formats/geojson/index.js';
+import { bbox, exportGeoJson, type Feature, type FeatureCollection } from '@nexgen-os/geojson';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';

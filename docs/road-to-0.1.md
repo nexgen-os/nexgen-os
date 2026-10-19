@@ -63,7 +63,7 @@ the MCP server and the Nexgen application reading a Nexgen OS database
 - [x] Continuous integration: the test suite on three Node versions, a
   hygiene check (no country literal in code, no secret, English only), the
   DCO check, and `engine-pvlib` (the pvlib engine on Python 3.12, compared
-  with `modules/solar/pvwatts.ts`).
+  with `modules/solar/src/pvwatts.ts`).
 
 ### Before the first users
 
@@ -75,8 +75,8 @@ the MCP server and the Nexgen application reading a Nexgen OS database
 - [x] The IFC reader (`IfcMapConversion`, floors and spaces), the first of
   the three format readers that make the model worth filling.
 - [x] The EPW and TMY3 weather file reader, and the EPW writer
-  (`formats/weather-files`).
-- [x] The PAN/OND product file reader (`formats/panond`).
+  (`packages/formats/weather-files`).
+- [x] The PAN/OND product file reader (`packages/formats/panond`).
 - [x] A second country pack, so that the pack mechanics are proven twice
   (`be`, with its three regional registers).
 - [x] The installer run against a real Supabase project, as a user runs it
@@ -160,7 +160,7 @@ used to carry are kept here, each under the record that holds its rule.
   (`power_flow`).
 - **Integrations** ([0014](decisions/0014-integrations-dashboards-warehouses-streams.md)),
   in the order the first sites ask for them: daily and monthly views of
-  series for business intelligence tools, with the rollups; `formats/parquet`,
+  series for business intelligence tools, with the rollups; `packages/formats/parquet`,
   with the cold tier; `formats/influx-line-protocol`, for the first site
   with an InfluxDB history; `connectors/mqtt`, for the first site with a
   gateway; `formats/grafana` (a dashboard written from the objects of a

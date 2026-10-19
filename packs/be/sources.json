@@ -3,7 +3,7 @@
     {
       "code": "geopunt",
       "name": "Geolocation API of Digitaal Vlaanderen (Geopunt)",
-      "description": "The Flemish address register (Basisregisters Vlaanderen) as a geocoder, with the Brussels UrbIS addresses alongside: search, reverse, house-number precision. Its matching is loose on house numbers; the adapter checks the number it matched. Read by formats/geocoding/belgium.ts.",
+      "description": "The Flemish address register (Basisregisters Vlaanderen) as a geocoder, with the Brussels UrbIS addresses alongside: search, reverse, house-number precision. Its matching is loose on house numbers; the adapter checks the number it matched. Read by the connectors `geopunt` and `urbis`.",
       "kind": "api",
       "url": "https://geo.api.vlaanderen.be/geolocation/",
       "docs_url": "https://geo.api.vlaanderen.be/geolocation/",

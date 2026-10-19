@@ -1,0 +1,38 @@
+{
+  "name": "@nexgen-os/ifc",
+  "version": "0.1.0",
+  "description": "IFC4 and IFC2x3 buildings, storeys, spaces and roofs read into Nexgen OS.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/ifc"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.1.0",
+    "web-ifc": "0.0.78"
+  }
+}

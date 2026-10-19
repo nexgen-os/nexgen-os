@@ -4,7 +4,7 @@
 // the same way again.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { exportCityJson, importCityJson, orientation, sridOf, type CityJsonDocument } from '../formats/cityjson/index.js';
+import { exportCityJson, importCityJson, orientation, sridOf, type CityJsonDocument } from '@nexgen-os/cityjson';
 import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 // A gabled house, 10 m by 6 m, ground at 2 m, eaves at 8 m, ridge at 11.5 m,

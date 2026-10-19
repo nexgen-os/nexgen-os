@@ -7,7 +7,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
-import { convertUnit, coverage, exportRows, fill, forecastAt, latest, resample, store, window } from '../connectors/series.js';
+import { convertUnit, coverage, exportRows, fill, forecastAt, latest, resample, store, window } from '@nexgen-os/core';
 
 let db: PGlite;
 let org: string;

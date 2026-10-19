@@ -3,8 +3,8 @@
 // quadrature, recorded as a run anyone can redo.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { storeSeries, type SeriesPoint } from '../connectors/index.js';
-import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../modules/solar/exceedance.js';
+import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
+import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../modules/solar/src/exceedance.js';
 import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 const HOUR = 3_600_000;

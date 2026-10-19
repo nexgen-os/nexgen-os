@@ -31,7 +31,7 @@ KINDS = ["pv_yield"]
 # semi-integrated case. Faiman has no published values per mounting: its U0
 # and U1 come from the yield profile (pvlib's defaults 25 / 6.84 in the
 # `pvwatts` profile, PVGIS's 26.9 / 6.2 in `pvgis_like`), as
-# modules/solar/pvwatts.ts reads them.
+# modules/solar/src/pvwatts.ts reads them.
 MOUNTING_TEMPERATURE = {
     "sapm": {
         "open_rack": "open_rack_glass_polymer",
@@ -127,7 +127,7 @@ def _values(series):
 def _over_intervals(series, index, step_h):
     """A series on the intervals of `index`: an interval series as it is; an
     instant series as the mean of its readings at the two ends of each
-    interval, or the one present (as modules/solar/pvwatts.ts aligns them)."""
+    interval, or the one present (as modules/solar/src/pvwatts.ts aligns them)."""
     import pandas as pd
 
     values = _values(series)
@@ -395,7 +395,7 @@ def pv_yield(request):
         return mc
 
     def no_inverter(mc):
-        # AC equals DC: the `pvwatts` profile of modules/solar/pvwatts.ts
+        # AC equals DC: the `pvwatts` profile of modules/solar/src/pvwatts.ts
         # models no inverter.
         dc = mc.results.dc if isinstance(mc.results.dc, tuple) else (mc.results.dc,)
         power = [d["p_mp"] if isinstance(d, pd.DataFrame) else d for d in dc]

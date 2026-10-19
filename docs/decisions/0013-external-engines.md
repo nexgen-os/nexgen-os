@@ -74,4 +74,4 @@ yield whose engine was the edge function that happened to compute it.
   translated: one engine contract, several request kinds.
 - [0004](0004-deterministic-runs.md), [0012](0012-solar-module.md),
   [0016](0016-naming-third-party-methods.md).
-- `engines/runner.ts`, `engines/pvlib`, `tests/engines-pvlib.test.ts`.
+- `packages/core/src/engines/runner.ts`, `engines/pvlib`, `tests/engines-pvlib.test.ts`.

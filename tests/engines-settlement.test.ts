@@ -5,8 +5,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SETTLEMENT_EXAMPLE_ENGINE, type SettlementLine, type SettlementRequest, type SettlementResult } from '../engines/settlement.js';
-import { describeEngine, runEngine, type EngineSpec } from '../engines/runner.js';
+import { SETTLEMENT_EXAMPLE_ENGINE, type SettlementLine, type SettlementRequest, type SettlementResult } from '@nexgen-os/core';
+import { describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
 import { repoRoot } from './helpers/db.js';
 
 // The engine from its folder, with the Python on the path: no installation needed.

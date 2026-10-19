@@ -88,7 +88,7 @@ every issue.
 - Inherits Ekwo OS 0006 (*A machine key is a caller narrower than a
   person*) and 0027 (*The sources of a pack are a register, not a
   bibliography*).
-- [`connectors/README.md`](../../connectors/README.md).
+- [`connectors/README.md`](../../packages/connectors/README.md).
 - [0016](0016-naming-third-party-methods.md) — a connector keeps its
   provider's name.
 - [0029](0029-a-series-belongs-to-an-object.md) — forecasts and their

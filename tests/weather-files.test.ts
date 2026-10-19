@@ -6,7 +6,7 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { exportEpw, importWeatherFile, readEpw, readTmy3, writeEpw, type WeatherFile } from '../formats/weather-files/index.js';
+import { exportEpw, importWeatherFile, readEpw, readTmy3, writeEpw, type WeatherFile } from '@nexgen-os/weather-files';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8');

@@ -5,7 +5,7 @@
 -- refuses a seed that is not the exact output of its pack.
 --
 -- file           core/seed/10_pack_fr.sql
--- checksum       sha256:108ad1a3d7b45e505890670af595d9b0e6aa07ee649c3797a247d2dc93dac4fb
+-- checksum       sha256:1d1b6e23b245ab04081c02508aa1927f991ba283518012804fcae713e0c9505d
 -- certification  community
 -- schema_min     0.2.0
 -- modules        grid
@@ -21,7 +21,7 @@ set search_path = nexgen, public, extensions;
 
 -- sources: 20. The registers, services and texts the country's data and values come from.
 insert into sources (code, name, description, kind, base_url, docs_url, auth, countries, regions, license, attribution, retention_days, redistributable, published_by) values
-  ('ban', 'Base Adresse Nationale', 'The national address register: search as you type and reverse geocoding, with house-number precision. Read by formats/geocoding/ban.ts.', 'api', 'https://api-adresse.data.gouv.fr/', 'https://adresse.data.gouv.fr/outils/api-doc/adresse', 'none', array['FR']::text[], '{}'::text[], 'Licence Ouverte 2.0', '© BAN — Base Adresse Nationale', null, true, 'pack:fr'),
+  ('ban', 'Base Adresse Nationale', 'The national address register: search as you type and reverse geocoding, with house-number precision. Read by packages/connectors/ban.', 'api', 'https://api-adresse.data.gouv.fr/', 'https://adresse.data.gouv.fr/outils/api-doc/adresse', 'none', array['FR']::text[], '{}'::text[], 'Licence Ouverte 2.0', '© BAN — Base Adresse Nationale', null, true, 'pack:fr'),
   ('bd_topo', 'BD TOPO (IGN)', 'The national topographic database: buildings with height and use, roads, land use, administrative limits.', 'file', 'https://geoservices.ign.fr/bdtopo', 'https://geoservices.ign.fr/documentation/donnees/vecteur/bdtopo', 'none', array['FR']::text[], '{}'::text[], 'Licence Ouverte 2.0', '© IGN', null, true, 'pack:fr'),
   ('cadastre', 'Cadastre (PCI vecteur, Etalab)', 'Parcels, building footprints and sections of the cadastre, by municipality, as GeoJSON.', 'file', 'https://cadastre.data.gouv.fr/', 'https://cadastre.data.gouv.fr/datasets/cadastre-etalab', 'none', array['FR']::text[], '{}'::text[], 'Licence Ouverte 2.0', '© DGFiP — Etalab', null, true, 'pack:fr'),
   ('enedis_data_connect', 'Enedis Data Connect', 'A customer''s meter data (daily index, 30-minute load curve, contract) read by a third party with the customer''s consent, per PRM. Kept for the consent''s duration, never passed on.', 'api', 'https://datahub-enedis.fr/data-connect/', null, 'mandate', array['FR']::text[], '{}'::text[], 'Enedis Data Connect terms', '© Enedis', null, false, 'pack:fr'),
@@ -75,7 +75,7 @@ where id_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, certification, certified_by, certified_on, published_by) values
-  ('FR', 'France', 'EUR', array['fr']::text[], array['Europe/Paris', 'America/Guadeloupe', 'America/Martinique', 'America/Cayenne', 'Indian/Reunion', 'Indian/Mayotte']::text[], 'department', '^[0-9]{5}$', 'insee', '0.2.0', 'sha256:108ad1a3d7b45e505890670af595d9b0e6aa07ee649c3797a247d2dc93dac4fb', 'community', null, null::date, 'pack:fr')
+  ('FR', 'France', 'EUR', array['fr']::text[], array['Europe/Paris', 'America/Guadeloupe', 'America/Martinique', 'America/Cayenne', 'Indian/Reunion', 'Indian/Mayotte']::text[], 'department', '^[0-9]{5}$', 'insee', '0.2.0', 'sha256:1d1b6e23b245ab04081c02508aa1927f991ba283518012804fcae713e0c9505d', 'community', null, null::date, 'pack:fr')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,

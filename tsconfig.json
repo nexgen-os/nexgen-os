@@ -8,7 +8,71 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@nexgen-os/ban": [
+        "./packages/connectors/ban/src/index.ts"
+      ],
+      "@nexgen-os/geopunt": [
+        "./packages/connectors/geopunt/src/index.ts"
+      ],
+      "@nexgen-os/icar": [
+        "./packages/connectors/icar/src/index.ts"
+      ],
+      "@nexgen-os/nominatim": [
+        "./packages/connectors/nominatim/src/index.ts"
+      ],
+      "@nexgen-os/open-meteo": [
+        "./packages/connectors/open-meteo/src/index.ts"
+      ],
+      "@nexgen-os/photon": [
+        "./packages/connectors/photon/src/index.ts"
+      ],
+      "@nexgen-os/pvgis": [
+        "./packages/connectors/pvgis/src/index.ts"
+      ],
+      "@nexgen-os/urbis": [
+        "./packages/connectors/urbis/src/index.ts"
+      ],
+      "@nexgen-os/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@nexgen-os/cityjson": [
+        "./packages/formats/cityjson/src/index.ts"
+      ],
+      "@nexgen-os/geojson": [
+        "./packages/formats/geojson/src/index.ts"
+      ],
+      "@nexgen-os/homeassistant": [
+        "./packages/formats/homeassistant/src/index.ts"
+      ],
+      "@nexgen-os/ifc": [
+        "./packages/formats/ifc/src/index.ts"
+      ],
+      "@nexgen-os/panond": [
+        "./packages/formats/panond/src/index.ts"
+      ],
+      "@nexgen-os/parquet": [
+        "./packages/formats/parquet/src/index.ts"
+      ],
+      "@nexgen-os/weather-files": [
+        "./packages/formats/weather-files/src/index.ts"
+      ]
+    }
   },
-  "include": ["tests/**/*.ts", "examples/**/*.ts", "engines/**/*.ts", "formats/**/*.ts", "connectors/**/*.ts", "packs/**/*.ts", "modules/**/*.ts", "packages/*/src/**/*.ts", "packages/*/tests/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "tests/**/*.ts",
+    "examples/**/*.ts",
+    "packs/**/*.ts",
+    "modules/**/*.ts",
+    "./packages/**/src/**/*.ts",
+    "./packages/**/tests/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist"
+  ]
 }

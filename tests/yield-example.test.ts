@@ -4,8 +4,8 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { pvgis } from '../connectors/pvgis/index.js';
-import type { Fetch } from '../formats/geocoding/index.js';
+import { pvgis } from '@nexgen-os/pvgis';
+import type { Fetch } from '@nexgen-os/core';
 import { yieldOfSystem } from '../examples/yield.js';
 import { freshDatabase, one, repoRoot } from './helpers/db.js';
 
