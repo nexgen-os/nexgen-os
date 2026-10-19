@@ -18,13 +18,13 @@ const utmFootprint = (x: number, y: number) => ({
 });
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['community']);
   org = await organisation(db, 'A city');
   const outline = await one<{ g: string }>(
     db,
     `select ST_AsGeoJSON(ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326)) g`,
   );
-  district = await insert(db, 'projects', {
+  district = await insert(db, 'community.projects', {
     organisation_id: org, name: 'Plateau', kind: 'district_plan', country: 'SN', geometry: JSON.parse(outline.g),
   });
   for (const [i, x] of [236100, 236300, 236500].entries()) {
@@ -33,7 +33,7 @@ beforeAll(async () => {
       organisation_id: org, site_id: site, name: `Building ${i + 1}`, footprint: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
     });
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
-    await insert(db, 'participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
+    await insert(db, 'community.participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
   }
   // One building outside the district, to prove the spatial query.
   const outside = await insert(db, 'sites', { organisation_id: org, name: 'Far plot', country: 'SN' });
@@ -57,7 +57,7 @@ describe('a district from open data', () => {
 
   it('finds the buildings inside the district perimeter', async () => {
     const r = await db.query<{ name: string }>(
-      `select b.name from buildings b, projects p
+      `select b.name from buildings b, community.projects p
         where p.id = $1 and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry))
         order by b.name`,
       [district],
@@ -89,20 +89,34 @@ describe('a district from open data', () => {
     expect(r.n).toBe(1);
   });
 
-  it('keeps the trace of a plot split in two', async () => {
+  it('keeps the trace of a plot split in two, as split_into links', async () => {
     const p = await one<{ id: string }>(db, `select id from sites where name = 'Plot 1'`);
     const a = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1a', country: 'SN' });
     const b = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1b', country: 'SN' });
-    await db.query(`insert into successors (from_id, to_id, kind) values ($1, $2, 'split'), ($1, $3, 'split')`, [p.id, a, b]);
-    const r = await db.query<{ name: string }>(
-      `select s.name from successors l join sites s on s.id = l.to_id where l.from_id = $1 order by s.name`,
+    await db.query(`select split_object($1, array[$2, $3]::uuid[], '2026-02-01')`, [p.id, a, b]);
+    const r = await db.query<{ name: string; dated: boolean }>(
+      `select s.name, l.valid_from = '2026-02-01'::timestamptz dated from links l join sites s on s.id = l.object_id
+        where l.subject_id = $1 and l.type_code = 'split_into' order by s.name`,
       [p.id],
     );
-    expect(r.rows.map((x) => x.name)).toEqual(['Plot 1a', 'Plot 1b']);
+    expect(r.rows).toEqual([{ name: 'Plot 1a', dated: true }, { name: 'Plot 1b', dated: true }]);
+  });
+
+  it('merges only objects of one kind and one organisation', async () => {
+    const [p2, p3] = (await db.query<{ id: string }>(`select id from sites where name in ('Plot 2', 'Plot 3') order by name`)).rows.map((r) => r.id);
+    const merged = await insert(db, 'sites', { organisation_id: org, name: 'Plots 2 and 3', country: 'SN' });
+    await db.query(`select merge_objects(array[$1, $2]::uuid[], $3)`, [p2, p3, merged]);
+    const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'merged_into' and object_id = $1`, [merged]);
+    expect(r.n).toBe(2);
+    const b1 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 1'`);
+    await expect(db.query(`select merge_objects(array[$1]::uuid[], $2)`, [b1.id, merged])).rejects.toThrow(/object_kind_mismatch/);
+    const elsewhere = await organisation(db, 'Another city');
+    const theirs = await insert(db, 'sites', { organisation_id: elsewhere, name: 'Their plot', country: 'SN' });
+    await expect(db.query(`select split_object($1, array[$2]::uuid[])`, [merged, theirs])).rejects.toThrow(/object_in_other_organisation/);
   });
 
   it('counts the district by its participants', async () => {
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from participants where project_id = $1', [district]);
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from community.participants where project_id = $1', [district]);
     expect(r.n).toBe(3);
   });
 });
