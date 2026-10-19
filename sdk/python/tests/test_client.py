@@ -67,6 +67,35 @@ class ClientTest(unittest.TestCase):
         # The connection is still usable after a refusal.
         self.assertEqual(self.nexgen.schema_version(), FIXTURE["schema_version"])
 
+    def test_stores_through_the_one_write_path_and_reads_the_values_back(self):
+        identity = {"object_id": FIXTURE["meter"], "quantity_code": "consumption_energy", "step": "1 hour"}
+        start = datetime(2026, 6, 3, 8, tzinfo=UTC)
+        values = [(start + timedelta(hours=i), 500.0 * (i + 1)) for i in range(3)]
+        stored = self.nexgen.store(identity, values, unit="Wh")
+        self.assertEqual(stored.changed, 3)
+        self.assertEqual(self.nexgen.store(identity, values, unit="Wh").changed, 0)
+        readings = self.nexgen.window(stored.series_id, start, start + timedelta(hours=3))
+        self.assertEqual([(r.value, r.quality) for r in readings], [(0.5, 0), (1.0, 0), (1.5, 0)])
+        latest = self.nexgen.latest([stored.series_id])
+        self.assertEqual([(l.series_id, l.at.astimezone(UTC), l.value) for l in latest], [(stored.series_id, start + timedelta(hours=2), 1.5)])
+        with self.assertRaises(NexgenError) as refused:
+            self.nexgen.store(stored.series_id, [(start, 1.0)], unit="kW")
+        self.assertEqual(refused.exception.code, "series_unit_mismatch")
+        self.assertEqual(self.nexgen.convert_unit(1500, "W", "kW"), 1.5)
+
+    def test_gives_rows_and_columns_through_the_optional_extras(self):
+        hours = self.nexgen.resample(FIXTURE["series"], datetime(2026, 6, 1, 10, tzinfo=UTC), datetime(2026, 6, 1, 12, tzinfo=UTC), "1 hour")
+        self.assertEqual(hours.columns()["samples"], [4, 4])
+        self.assertEqual(hours.columns()["expected"], [4, 4])
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            with self.assertRaises(NexgenError) as refused:
+                hours.to_arrow()
+            self.assertEqual(refused.exception.code, "extra_required")
+        else:
+            self.assertEqual(hours.to_arrow().num_rows, 2)
+
     def test_attaches_with_a_period_and_a_source_and_reads_it_back(self):
         site = FIXTURE["site"]
         first = self.nexgen.attach(
