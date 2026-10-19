@@ -131,19 +131,66 @@ key is refused (`place_key_unknown`).
   one, its kind (`measured`, `simulated`, `forecast`, `setpoint`,
   `command`), what one value means (`interval`, `instant`, `cumulative`),
   its step, its source and `external_ref` (how a connector finds the point:
-  a Home Assistant entity, a Modbus register, an MQTT topic), and in
-  `metadata` only what the source adds. `open_series()` finds or creates it
-  once per identity.
+  a Home Assistant entity, a Modbus register, an MQTT topic), the run that
+  computed it (`run_id`), and in `metadata` only what the source adds. One
+  series per identity — object, quantity, kind, source, scenario, name,
+  run — found or created by `series_ensure()`, which refuses another value
+  kind or step by name. A simulated series names its run or its source
+  (`series_run_required`).
 - **series_values** — the values, in the unit of the quantity, dated at the
-  start of their interval, with a quality code (0 measured, 1 estimated,
-  2 substituted, 3 missing). Partitioned by week on `at`. Written through
-  `store_values()`, read through `resample(series, from, to, step,
-  time_zone?)`: sub-day steps bin in absolute time, a day or more cuts in the
-  site's time zone, named error when there is none
-  ([0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md)).
-- **forecast_values** — every issue of a `forecast` series
-  (`store_forecast()`); `resample()` gives the latest issue, or the latest
-  before `p_issued_before`.
+  start of their interval in UTC, with a quality code of
+  `series_quality_codes` (0 measured, 1 estimated, 2 substituted,
+  3 missing; 100 and up for a pack's mapping of a data hub's flags).
+  Partitioned by week on `at` (`series_values_partition()` in UTC, or
+  pg_partman). **forecast_values** keeps every issue of a `forecast`
+  series with the time it was issued.
+- **units** — QUDT codes and symbols, each with its quantity kind and the
+  factor and offset to the SI unit of that kind. `convert_unit(value, from,
+  to)` converts between two units of a kind (`unit_unknown`,
+  `unit_incompatible`); format libraries look units up here instead of
+  keeping factors of their own
+  ([0030](decisions/0030-a-value-is-stored-in-the-unit-of-its-quantity.md)).
+
+**One way to write**
+([0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md)).
+`store(series, at[], value[], quality[]?, unit?, issued_at?, identity?)`
+is the only write the API roles are granted: the series by its id or by its
+identity (created through `series_ensure()`), the values converted from
+`unit` to the quantity's (`series_unit_mismatch`), a null stored missing,
+instants on the series' step (`series_step_mismatch`), a forecast with its
+issue time (`issued_at_required`), the series of a finished run never
+written again (`run_is_final`). A value equal to the one stored is left as
+it is, so a second import of the same file changes nothing. Every write
+marks the hours it touched in **series_dirty** and keeps **series_latest**,
+the last value of each series. The connectors (`storeSeries()`), the
+format libraries, the modules, `record_run()` and the Python client all
+call it.
+
+**Aggregates are derived.** **series_rollups** holds hourly (UTC) and daily
+(the site's time zone) aggregates: count, sum, minimum, maximum, last value,
+and for a register its consumption. `series_rollup()` drains the dirty
+hours and computes them again from the values; pg_cron runs it every minute
+where it is installed, elsewhere whoever maintains the installation calls
+it. A rollup in a dirty hour is never read.
+
+**One family of reads**, each `security definer` with one access check per
+series (a member of its organisation, or a role that bypasses row level
+security; a role without a signed-in user reads nothing):
+
+| Function | Answers |
+|---|---|
+| `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the site's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets and are fresh |
+| `nexgen.window(series, from, to, limit?)` | the stored values in time order: how an index is read (`window` is a reserved word: call it qualified) |
+| `latest(series[])` | the last value that is not missing, one row per series |
+| `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a run of a module (a validation module), with its method |
+| `coverage(series, from, to)` | the gaps of a regular series: bounds and count of the values it lacks |
+| `forecast_at(series, from, to, as_of?, horizon?)` | a forecast as known at `as_of`, or issued `horizon` before each instant, or its latest issue |
+| `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `formats/parquet` writes as a file |
+
+The same calls are typed for TypeScript in `connectors/series.ts` and for
+Python in `sdk/python` (rows by default; Arrow, pandas and Polars as
+optional extras).
+
 - **runs** — a computation of a module on an object: inputs, engine
   version, results ([0004](decisions/0004-deterministic-runs.md)).
   `record_run()` (or `start_run()` then `finish_run()`) writes it with the
@@ -203,6 +250,7 @@ everyone signed in.
 
 `device_types` (with the module that derives each), `profiles` (uses of a
 building or a site), `link_types`, `quantities` (one unit each, QUDT),
+`units` (QUDT codes and symbols, with the factor and offset of each),
 `property_defs` (bSDD / IFC, including the values packs publish),
 `tags` (Haystack), `id_schemes` and `sources` (the external APIs, datasets,
 registers and published texts: base URL, authentication type, licence,
@@ -236,5 +284,9 @@ editors write. Objects named by a foreign key are checked to be in the same
 organisation and a compatible scenario (`parent_check`). Every gesture is a
 `security invoker` function: it acts with the rights of the person calling
 it and refuses by name ([0038](decisions/0038-everything-raises-by-name.md)).
+The series are the one exception, by design: `store()` and the reads are
+`security definer`, check the caller's organisation once per series, and
+the API roles hold no insert, update or delete on the value tables, so that
+the write path is the only one.
 Vocabularies, countries, regions and defaults are read by everyone signed in
 and written only by the installation.
