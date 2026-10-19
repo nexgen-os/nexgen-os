@@ -40,6 +40,9 @@ let icarReverse: unknown;
 
 beforeAll(async () => {
   db = await freshDatabase(['community', 'grid', 'tasks'], ['be']);
+  // The be pack of release 0.1 still ships its own task templates; the
+  // generic ones of the tasks module are set aside until it is redone.
+  await db.query(`delete from tasks.templates where published_by = 'tasks'`);
   geopuntKorenmarkt = await recorded('geopunt-location-korenmarkt-1-gent.json');
   urbisWetstraat = await recorded('urbis-getaddresses-nl-wetstraat-16.json');
   urbisElsewhere = await recorded('urbis-getaddresses-fr-korenmarkt-1-gent.json');

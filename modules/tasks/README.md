@@ -18,7 +18,7 @@ status, country, dates) and its participants.
 |---|---|
 | `tasks.phases` | the phases a project goes through, in their usual order: `study`, `design`, `permitting`, `financing`, `procurement`, `site_preparation`, `installation`, `grid_connection`, `commissioning`, `handover`, `operation`, `decommissioning`. A vocabulary: read by everyone signed in, written by migrations, modules and packs. |
 | `tasks.roles` | who carries a task: `owner`, `installer`, `grid_operator`, `municipality`, `regulator`, `financer`, `notary`, `community_manager`. Distinct from the roles of an organisation's members and from a participant's role in the energy flows. A vocabulary, extended by packs. |
-| `tasks.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the published text (the code of a `sources` row of kind `text`) and the reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. Published by the country packs (`published_by = 'pack:fr'`) and by the installation; the module ships none, so no country is written in it. |
+| `tasks.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the published text (the code of a `sources` row of kind `text`) and the reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. The module publishes fifteen generic ones for every country (`published_by = 'tasks'`, `country` null): nine steps of a roof installation, six of an energy community. A step one country adds is published by the installation or a private overlay under its own name; a country pack holds no task. |
 | `tasks.tasks` | an object (`task`): one thing to do about a project, a site, a building, a surface or a device (`subject_id`), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos, reports and certificates attach to it as documents and attributes. |
 
 A task in progress has its actual start; one done has its actual end, and
@@ -30,7 +30,7 @@ are of its organisation. It may exist only in a scenario, like any object.
 ```sql
 select tasks.plan(:project);
 -- {"project_id": …, "created": 9, "existing": 0,
---  "skipped": [{"code": "building_permit", "published_by": "pack:fr", "reason": "attribute_missing", "property": "installed_power"}]}
+--  "skipped": [{"code": "building_permit", "published_by": "acme", "reason": "attribute_missing", "property": "installed_power"}]}
 ```
 
 `plan()` reads the project's country and kind, and the regions of the
@@ -60,8 +60,10 @@ takes a scenario as its third argument.
 
 ## What stays outside
 
-- The rules themselves live in the country packs (section `tasks`) and in
-  the installation's own templates; the module decides nothing by itself.
+- The steps one country adds (a named inspection body, a regional
+  authorisation, a purchase-contract branch) live in the installation's own
+  templates or a private overlay, never in a country pack; the law they
+  answer is not kept in the open model.
 - Whether a rule applies beyond a threshold on one attribute (a protected
   zone, a heritage building) is the `compliance` module's question, which
   will create tasks in its turn.
