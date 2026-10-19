@@ -20,6 +20,19 @@ release may break, and says how. How a release is cut:
   (`price_missing`, `price_kind_unsupported`, `signal_misaligned`,
   `signals_overlap`, `currency_mixed`) and a volume counted twice
   (`volume_counted_twice`).
+- The pack toolchain. A country pack is JSON described by the published
+  schema `packs/schema/pack.1.json` in five sections — identity,
+  identifiers, sources, grid, defaults — with its version, certification
+  and checksum. `nexgen-os pack build <cc>` compiles it into
+  `supabase/seed/<n>_pack_<cc>.sql`, which upserts every row by its natural
+  key, records the version and checksum in `countries`, and refuses by name
+  a value edited in place (`value_edited`). `nexgen-os pack check --all`,
+  run by the new `packs` job of the CI, refuses a pack that fails the
+  schema, holds executable content, names an undeclared region, carries a
+  default without a unit or a reference, or whose committed seed is not its
+  exact output. The installer applies a compiled seed as its pack, never as
+  the core. The packs of release 0.1 (`be`, `fr`) keep their hand-written
+  seeds until they are rewritten as JSON.
 
 ## [0.1.0] — 2026-10-17
 
