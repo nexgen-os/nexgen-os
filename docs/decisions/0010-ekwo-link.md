@@ -50,6 +50,7 @@ The core in `public`, and the bridge columns (`ekwo_company_id`,
 
 ## See also
 
+- [The README, "Invoicing, and Ekwo OS"](../../README.md#invoicing-and-ekwo-os) — where the line is, in plain words.
 - Inherits Ekwo OS 0051 (*A module has its own schema*), with a reasoned
   divergence: the core of Nexgen OS is in `nexgen`, where Ekwo's is in
   `public`.

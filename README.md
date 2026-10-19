@@ -49,7 +49,7 @@ the rules are in [docs/model.md](docs/model.md).
    that describing and studying a place can be delegated without the data
    leaving its owner ([AGENTS.md](AGENTS.md)).
 5. **Modules in their own schema, countries as data, formats by format,
-   invoices in Ekwo.**
+   invoices in Ekwo OS** ([why](#invoicing-and-ekwo-os)).
 
 ## Install
 
@@ -187,6 +187,32 @@ get further than this repository takes you:
 
 Questions and bugs about the foundation itself go to the issues of this
 repository.
+
+## Invoicing, and Ekwo OS
+
+Nexgen OS describes places, devices and series, and computes what moved and
+at what price. The [`sharing`](modules/README.md) module gives who received
+how much: allocation keys, and the volume of each participant over each
+interval. The [`contracts`](modules/README.md) module gives under which
+contract and at which price: a supply, an injection, a physical or virtual
+PPA (power purchase agreement), an internal community tariff, each with its
+price signals. A settlement engine
+([`engines/README.md`](engines/README.md)) turns both into settlement lines:
+over each interval, the energy, the price and who pays whom.
+
+That is where Nexgen OS stops. It keeps no invoice and no ledger: a
+settlement line is handed to an accounting application, and
+[Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)),
+the open accounting core built on the same playbook, is the one it is built
+for. The [`accounting`](modules/accounting/README.md) module is the bridge:
+an organisation's Ekwo company, a contact's Ekwo contact, and the details of
+a contact that the accounting side manages, so that the core holds no
+personal data ([decision 0010](docs/decisions/0010-ekwo-link.md)).
+
+The two install side by side on one database: Nexgen OS takes the schema
+`nexgen` and its modules; `public`, and `ekwo` from Ekwo OS 1.0, stay Ekwo's.
+How to install both, and what the bridge needs when they share a database:
+[docs/with-ekwo-os.md](docs/with-ekwo-os.md).
 
 ## Licence
 
