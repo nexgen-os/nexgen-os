@@ -61,13 +61,13 @@ Four things only you do here:
 
 - **read**: the tables of the core and the modules, through SQL or the REST
   API Supabase gives the schema (`nexgen`, and one schema per module), or
-  from Python through the client in `sdk/python`;
+  from Python through the client in `packages/python`;
   `attributes_of()`, `resample()`, `site_of()`, `country_of()` are the one
   way to read attributes, series and places;
 - **attach**: an attribute with its period, a document, an identifier, a
   link, a tag — always with its source, never a value you made up;
-- **import**: a file through a format library (`formats/`), a place through
-  a geocoder, weather or readings through a connector (`connectors/`), each
+- **import**: a file through a format library (`packages/formats/`), a place through
+  a geocoder, weather or readings through a connector (`packages/connectors/`), each
   of which writes the provenance for you;
 - **run**: a computation of a module, which lands as a run with its inputs
   and its engine version; the same inputs give the same figure, and a
@@ -95,9 +95,9 @@ Four things only you do here:
    (code and unit), `property_defs` (what an attribute may hold),
    `sources` (what exists outside, with its licence), `id_schemes`.
 3. **Describe, with a source**: a building with its footprint from a
-   CityJSON file (`formats/cityjson`), a roof face with its azimuth and
+   CityJSON file (`packages/formats/cityjson`), a roof face with its azimuth and
    tilt, a PV system and its arrays; the geocoder for an address.
-4. **Compute as a run**: a yield through `modules/solar/yield.ts` with a
+4. **Compute as a run**: a yield through `modules/solar/src/yield.ts` with a
    named profile; read it back with `resample(series, from, to, step)`.
 5. **Show, then let the person decide**: what you attached, what the run
    read, what it did not model (`DISCLAIMER.md`). Nothing you did needs
@@ -117,8 +117,8 @@ Read `CONTRIBUTING.md` (DCO sign-off, English, no country in code),
 are as they are, including the ones taken back). Run only the test file you
 touch while you work, the whole suite once at the end; never two suites at
 once. Commits and pull requests are made in the project's name.
-A third party's name goes in `connectors/` (its data), `engines/` (its
-computation) or `formats/` (its files), and a published method keeps the
+A third party's name goes in `packages/connectors/` (its data), `engines/`
+(its computation) or `packages/formats/` (its files), and a published method keeps the
 name the literature cites it by; every function of ours says what it
 computes and takes the model as data (`profile`, `key`, `model`), and no
 name carries a country or a product ([0016](docs/decisions/0016-naming-third-party-methods.md)).

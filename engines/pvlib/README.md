@@ -42,7 +42,7 @@ answers the rest (`nexgen_pvlib`, Python, pandas, numpy, scipy).
 |---|---|
 | `site` | position in degrees; `altitude_m` in metres (pvlib looks it up when absent, and `meta` says so); `time_zone` is carried for the caller, every computation is in UTC |
 | `arrays[]` | one orientation each, names unique. `mounting`: `open_rack`, `roof_parallel`, `semi_integrated`, `insulated`, `floating` (the values of `solar.pv_arrays`). `module.parameters` in pvlib's key names; `pvwatts` `pdc0` is in W per module. One module model for all the arrays of a request |
-| `inverter` | `pvwatts` (`pdc0`, `eta_inv_nom`), `sandia` (`Paco`, `Pdco`, `C0`…), `adr`, or `no_loss`: AC equals DC, no inverter modelled, which is what the `pvwatts` profile of `modules/solar/pvwatts.ts` assumes |
+| `inverter` | `pvwatts` (`pdc0`, `eta_inv_nom`), `sandia` (`Paco`, `Pdco`, `C0`…), `adr`, or `no_loss`: AC equals DC, no inverter modelled, which is what the `pvwatts` profile of `modules/solar/src/pvwatts.ts` assumes |
 | `losses` | the yield profile's ordered losses, as fractions; each applies to what the previous ones left, a negative one is a gain. They multiply the DC power before the inverter. A loss without a value is refused (`loss_without_value`) |
 | `models.transposition` | `haydavies`, `perez`, `isotropic`, `klucher`, `reindl`; required with horizontal weather, ignored with `poa_irradiance` |
 | `models.decomposition` | `erbs` or null: with `ghi` alone, pvlib's `irradiance.erbs` gives `dni` and `dhi`, and `meta` says so |
@@ -57,7 +57,7 @@ PVsyst's U-values are the ones [`docs/research/solar-tools.md`](../../docs/resea
 insulated back 15, all with Uv 0; a roof-parallel array is ventilated from
 below like PVsyst's semi-integrated case. SAPM uses Sandia's open rack,
 close mount and insulated back sets. Faiman has no published values per
-mounting: U0 and U1 come from the yield profile, as `modules/solar/pvwatts.ts`
+mounting: U0 and U1 come from the yield profile, as `modules/solar/src/pvwatts.ts`
 reads them (pvlib's defaults 25 / 6.84 in `pvwatts`, PVGIS's 26.9 / 6.2 in
 `pvgis_like`).
 
@@ -70,7 +70,7 @@ reads them (pvlib's defaults 25 / 6.84 in `pvwatts`, PVGIS's 26.9 / 6.2 in
 **Time.** Irradiance is a mean over its interval: the sun is placed at the
 middle of each interval, and every result is dated at the interval's
 start. An `instant` temperature or wind is averaged over the interval from
-its readings at both ends, as `modules/solar/pvwatts.ts` does.
+its readings at both ends, as `modules/solar/src/pvwatts.ts` does.
 
 ## Result
 

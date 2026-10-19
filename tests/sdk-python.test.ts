@@ -1,4 +1,4 @@
-// The Python client (sdk/python), when psycopg is installed: a fresh
+// The Python client (packages/python), when psycopg is installed: a fresh
 // installation served over the Postgres protocol, a site with a series and
 // another without a time zone, then the client's own tests run against it.
 // Without the client and psycopg, the test is skipped and says how to
@@ -14,7 +14,7 @@ import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './he
 // The caller gives the interpreter: the environment's, else the local virtual environment, else the Python on the path.
 const localVenv = join(repoRoot, '.venv-sdk', 'bin', 'python');
 const python = process.env.NEXGEN_SDK_PYTHON ?? (existsSync(localVenv) ? localVenv : 'python3');
-const INSTALL = 'pip install -e "sdk/python[binary]"';
+const INSTALL = 'pip install -e "packages/python[binary]"';
 const installed = spawnSync(python, ['-c', 'import nexgen_os, psycopg'], { encoding: 'utf8' }).status === 0;
 const skipped = installed ? '' : ` (skipped: the Python client is not installed; ${INSTALL})`;
 

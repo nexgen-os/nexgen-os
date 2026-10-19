@@ -11,8 +11,8 @@
 // year PVGIS covers, the last full one but two by default.
 
 import { pathToFileURL } from 'node:url';
-import type { Db } from '../formats/db.js';
-import { runYield, type YieldClients, type YieldResult } from '../modules/solar/yield.js';
+import type { Db } from '@nexgen-os/core';
+import { runYield, type YieldClients, type YieldResult } from '../modules/solar/src/yield.js';
 import { connect } from '../packages/cli/src/sql.js';
 
 export interface MonthOfYield {

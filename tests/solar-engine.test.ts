@@ -6,9 +6,9 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { openMeteo } from '../connectors/open-meteo/index.js';
-import { sandiaFromOnd } from '../modules/solar/inverter.js';
-import { runYield } from '../modules/solar/yield.js';
+import { openMeteo } from '@nexgen-os/open-meteo';
+import { sandiaFromOnd } from '../modules/solar/src/inverter.js';
+import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 

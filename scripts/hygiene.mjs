@@ -28,11 +28,11 @@ function walk(dir, out = []) {
 
 const files = walk(root).filter((f) => /\.(sql|ts|mjs|md|json|yml)$/.test(f) && !f.endsWith('scripts/hygiene.mjs'));
 const rel = (f) => relative(root, f);
-// The adapter of a national register (formats/geocoding/ban.ts, belgium.ts…)
-// carries the country and the languages of its register: that is its data,
-// not a default; only the generic index of the library is held to the rule.
+// The adapter of a national register (the connectors `ban`, `geopunt`, `urbis`
+// and `icar`) carries the country and the languages of its register: that is
+// its data, not a default; the open geocoders and the core are held to the rule.
 // A seed compiled from a pack (core/seed/<n>_pack_<cc>.sql) is the pack.
-const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^core\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^formats\/geocoding\/(?!index\.ts$)[a-z]+\.ts$/.test(rel(f));
+const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^core\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^packages\/connectors\/(ban|geopunt|urbis|icar)\//.test(rel(f));
 
 // 1. country, currency, language literals in code
 const literal = /'(BE|FR|NL|DE|ES|IT|LU|SN|US|GB)'|'EUR'|'USD'|'(fr|nl|de|es)'\s*(,|\))/;

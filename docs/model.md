@@ -81,7 +81,7 @@ parents. Attachments point to the registry; pages read the named tables.
 Every geocoder, importer, connector and the command line produce this one
 JSON object, and `sites` stores it in columns of the same names. A place
 travels between systems as a GeoJSON feature whose properties are these keys
-(`formats/geojson`).
+(`packages/formats/geojson`).
 
 ```json
 {
@@ -185,10 +185,10 @@ security; a role without a signed-in user reads nothing):
 | `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a run of a module (a validation module), with its method |
 | `coverage(series, from, to)` | the gaps of a regular series: bounds and count of the values it lacks |
 | `forecast_at(series, from, to, as_of?, horizon?)` | a forecast as known at `as_of`, or issued `horizon` before each instant, or its latest issue |
-| `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `formats/parquet` writes as a file |
+| `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `packages/formats/parquet` writes as a file |
 
-The same calls are typed for TypeScript in `connectors/series.ts` and for
-Python in `sdk/python` (rows by default; Arrow, pandas and Polars as
+The same calls are typed for TypeScript in `packages/core/src/series.ts` and for
+Python in `packages/python` (rows by default; Arrow, pandas and Polars as
 optional extras).
 
 - **runs** — a computation of a module on an object: inputs, engine

@@ -2,7 +2,7 @@
 // written in Node: the envelope goes in on stdin, the answer comes back on
 // stdout, and every failure is a named error.
 import { describe, expect, it } from 'vitest';
-import { describeEngine, engineCommand, runEngine } from '../engines/runner.js';
+import { describeEngine, engineCommand, runEngine } from '@nexgen-os/core';
 import { repoRoot } from './helpers/db.js';
 
 const fake = (mode: string) => [process.execPath, `${repoRoot}/tests/fixtures/engines/fake.mjs`, mode];

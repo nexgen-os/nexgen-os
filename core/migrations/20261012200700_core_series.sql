@@ -972,7 +972,7 @@ comment on function forecast_at(uuid, timestamptz, timestamptz, timestamptz, int
   'A forecast between two instants as known at p_as_of, or issued at least p_horizon before each instant, or its latest issue; each value with its issue time. Refuses series_not_found, not_a_forecast, as_of_or_horizon.';
 
 -- The rows of the files door (decision 0014): series, instant in UTC,
--- value, quality, sorted by series and time. formats/parquet writes them
+-- value, quality, sorted by series and time. packages/formats/parquet writes them
 -- as a Parquet file.
 create or replace function export_rows(p_series_ids uuid[], p_from timestamptz, p_to timestamptz)
 returns table (series_id uuid, at timestamptz, value double precision, quality smallint)

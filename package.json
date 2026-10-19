@@ -2,7 +2,7 @@
   "name": "nexgen-os-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "An open foundation for describing places, buildings and the things in them — in 3D, over time — so that energy, architecture and compliance tools can share one model.",
+  "description": "An open foundation for describing places, buildings and the things in them \u2014 in 3D, over time \u2014 so that energy, architecture and compliance tools can share one model.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "engines": {
@@ -11,7 +11,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @nexgen-os/core && npm run build --workspaces --if-present",
     "release:check": "node scripts/check-trusted-publishing.mjs",
     "release:publish": "node scripts/publish.mjs"
   },
@@ -25,10 +25,9 @@
     "vitest": "5.0.3"
   },
   "workspaces": [
-    "packages/*"
-  ],
-  "dependencies": {
-    "hyparquet-writer": "0.16.13",
-    "web-ifc": "0.0.78"
-  }
+    "packages/cli",
+    "packages/core",
+    "packages/formats/*",
+    "packages/connectors/*"
+  ]
 }

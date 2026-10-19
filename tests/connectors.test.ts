@@ -4,9 +4,9 @@
 // an organisation's connection to a source is a row of its own.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { openMeteo } from '../connectors/open-meteo/index.js';
-import { storeSeries } from '../connectors/index.js';
-import type { Fetch } from '../formats/geocoding/index.js';
+import { openMeteo } from '@nexgen-os/open-meteo';
+import { storeSeries } from '@nexgen-os/core';
+import type { Fetch } from '@nexgen-os/core';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 const answer = (temperature: number[], radiation: number[]) => ({

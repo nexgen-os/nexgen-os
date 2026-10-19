@@ -67,7 +67,7 @@ Engines are optional: a yield computed by pvlib needs Python and
 `engines/pvlib` installed, as [`engines/README.md`](engines/README.md) says.
 
 From Python, the client reads the model and attaches with a source:
-[`sdk/python/README.md`](sdk/python/README.md).
+[`packages/python/README.md`](packages/python/README.md).
 
 The installer and its commands: [`packages/cli/README.md`](packages/cli/README.md).
 How a release is cut: [`docs/releasing.md`](docs/releasing.md).
@@ -157,17 +157,18 @@ and what each run records: [modules/solar/README.md](modules/solar/README.md).
 
 ```
 core/                  the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies, the model in one screen
-modules/               one Postgres schema per module (grid, community, ekwo, weather, solar and tasks shipped)
+modules/               one Postgres schema per module (grid, community, ekwo, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
-formats/               one MIT library per format or geocoder (homeassistant, geocoding with the national registers, cityjson, geojson, ifc, panond, weather-files)
-connectors/            the interfaces to the outside world and the open connectors (open-meteo, pvgis), MIT
-engines/               external computations in any language, JSON in and out (pvlib, optional), MIT
-sdk/python/            the Python client: the readers of the model, attributes attached with their source, MIT
+packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
+packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue
+packages/formats/      one MIT package per file format (homeassistant, cityjson, geojson, ifc, panond, parquet, weather-files)
+packages/connectors/   one MIT package per outside service: weather (open-meteo, pvgis) and geocoders (nominatim, photon, ban, geopunt, urbis, icar)
+packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
+engines/               external computations in other languages, JSON in and out (pvlib, optional), MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, research, how a release is cut
-packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 scripts/               hygiene, and what a release publishes
-tests/                 the core's tests, the examples, the modules, the formats, the packs, the engines
+tests/                 the core's tests, the examples, the modules, the packages, the packs, the engines
 ```
 
 ## Help, and the platform built on it

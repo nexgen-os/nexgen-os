@@ -2,12 +2,12 @@
 // the country is and its departments, its identifier schemes, its registers
 // and the texts its values cite, its grid operators, and the defaults a
 // study of a French site starts from, read through parameter_of(). The
-// national address register, kept as code in formats/geocoding, answers as
+// national address register, kept as code in the `ban` connector, answers as
 // a geocoder of the core's shape, first in the chain for a French search.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
-import { ban } from '../formats/geocoding/ban.js';
+import { geocoderFor, type Fetch, type Geocoder, type Place } from '@nexgen-os/core';
+import { ban } from '@nexgen-os/ban';
 import { checkPacks } from '../packages/cli/src/index.js';
 import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 

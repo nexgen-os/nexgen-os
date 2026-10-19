@@ -6,9 +6,9 @@
 // whose inputs say why they differ.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import type { SeriesPoint } from '../connectors/index.js';
-import { openMeteo } from '../connectors/open-meteo/index.js';
-import { pvgis } from '../connectors/pvgis/index.js';
+import type { SeriesPoint } from '@nexgen-os/core';
+import { openMeteo } from '@nexgen-os/open-meteo';
+import { pvgis } from '@nexgen-os/pvgis';
 import {
   HOURS_PER_YEAR,
   alignWeather,
@@ -31,8 +31,8 @@ import {
   total,
   typicalYear,
   withinLocalYears,
-} from '../modules/solar/pvwatts.js';
-import { runYield } from '../modules/solar/yield.js';
+} from '../modules/solar/src/pvwatts.js';
+import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, square } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 

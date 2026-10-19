@@ -3,7 +3,7 @@
     {
       "code": "ban",
       "name": "Base Adresse Nationale",
-      "description": "The national address register: search as you type and reverse geocoding, with house-number precision. Read by formats/geocoding/ban.ts.",
+      "description": "The national address register: search as you type and reverse geocoding, with house-number precision. Read by packages/connectors/ban.",
       "kind": "api",
       "url": "https://api-adresse.data.gouv.fr/",
       "docs_url": "https://adresse.data.gouv.fr/outils/api-doc/adresse",

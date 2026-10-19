@@ -3,14 +3,16 @@
 // registers and the texts its values cite, its grid operators by region, and
 // the defaults a study of a Belgian site starts from, read through
 // parameter_of(). The three regional address registers, kept as code in
-// formats/geocoding, answer as geocoders of the core's shape on a recorded
+// the geocoder connectors, answer as geocoders of the core's shape on a recorded
 // answer, and the chain asks Brussels, Flanders and Wallonia in turn before
 // the open fallback.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
-import { belgium, geopunt, urbis, walloon } from '../formats/geocoding/belgium.js';
+import { geocoderFor, type Fetch, type Geocoder, type Place } from '@nexgen-os/core';
+import { geopunt } from '@nexgen-os/geopunt';
+import { icar as walloon } from '@nexgen-os/icar';
+import { urbis } from '@nexgen-os/urbis';
 import { checkPacks } from '../packages/cli/src/index.js';
 import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
@@ -235,6 +237,16 @@ describe('ICAR, the Walloon register', () => {
     const place = await walloon({ fetch: back.fetch }).reverse(5.5732, 50.6459);
     expect(place).toMatchObject({ address: { street: 'Place Saint-Lambert 18', municipality_code: '62063', region: 'BE-WAL' }, precision: 'rooftop' });
   });
+});
+
+// The three registers keyed by region for `geocoderFor`, in the order a
+// search tries them: Brussels first (UrbIS keeps only what it finds in
+// Brussels), Flanders next (Geopunt finds nothing in Wallonia), Wallonia
+// last (ICAR guesses a municipality for anything it does not know).
+const belgium = (options: { fetch?: Fetch } = {}): Record<'BE-BRU' | 'BE-VLG' | 'BE-WAL', Geocoder> => ({
+  'BE-BRU': urbis({ fetch: options.fetch, languages: ['fr', 'nl'] }),
+  'BE-VLG': geopunt({ fetch: options.fetch }),
+  'BE-WAL': walloon({ fetch: options.fetch }),
 });
 
 describe('the chain of Belgian registers', () => {

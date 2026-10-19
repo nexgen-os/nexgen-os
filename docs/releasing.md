@@ -110,8 +110,10 @@ worse than one not cut.
 ## npm
 
 The installer is published as `nexgen-os` (its binary is `nexgen-os`); the
-format libraries, the connectors and the core client will be published under
-`@nexgen-os/*`, the scope of the npm organisation `nexgen-os`.
+core (`packages/core`), the format libraries (`packages/formats/*`) and the
+connectors (`packages/connectors/*`) are published under `@nexgen-os/*`, the
+scope of the npm organisation `nexgen-os`. `npm run build` compiles each of
+them to its `dist/`, the core first.
 `npm run build -w packages/cli` copies the release's migrations, seeds and
 packs into `packages/cli/assets/`, which the published package carries and
 records by the same paths as the repository.

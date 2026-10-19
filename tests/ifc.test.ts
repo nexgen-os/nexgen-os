@@ -27,7 +27,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { importIfc } from '../formats/ifc/index.js';
+import { importIfc } from '@nexgen-os/ifc';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(join(repoRoot, 'tests', 'fixtures', name)).then((b) => new Uint8Array(b));

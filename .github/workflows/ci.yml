@@ -24,6 +24,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run build
       - run: npm test
 
   engine-pvlib:
@@ -58,7 +59,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: pip install -e "sdk/python[binary]"
+      - run: pip install -e "packages/python[binary]"
       - run: npx vitest run tests/sdk-python.test.ts
         env:
           NEXGEN_SDK_PYTHON: python

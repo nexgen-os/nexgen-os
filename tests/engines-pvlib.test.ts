@@ -1,5 +1,5 @@
 // The pvlib engine (engines/pvlib), when it is installed: the same roof
-// computed by modules/solar/pvwatts.ts and by pvlib with the same model
+// computed by modules/solar/src/pvwatts.ts and by pvlib with the same model
 // choices, day by day; pvlib's own transposition against the source's; its
 // named refusals; and a yield run through it. Without the engine, every test
 // is skipped and says how to install it.
@@ -7,14 +7,14 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import type { CollectedSeries, SeriesPoint } from '../connectors/index.js';
-import { openMeteo } from '../connectors/open-meteo/index.js';
-import { hourStart } from '../connectors/pvgis/index.js';
-import { PVLIB_ENGINE, type PvYieldRequest, type PvYieldResult } from '../engines/pvlib/index.js';
-import { describeEngine, runEngine, type EngineSpec } from '../engines/runner.js';
-import { sandiaFromOnd } from '../modules/solar/inverter.js';
-import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '../modules/solar/pvwatts.js';
-import { runYield } from '../modules/solar/yield.js';
+import type { CollectedSeries, SeriesPoint } from '@nexgen-os/core';
+import { openMeteo } from '@nexgen-os/open-meteo';
+import { hourStart } from '@nexgen-os/pvgis';
+import { PVLIB_ENGINE, type PvYieldRequest, type PvYieldResult } from '@nexgen-os/core';
+import { describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
+import { sandiaFromOnd } from '../modules/solar/src/inverter.js';
+import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '../modules/solar/src/pvwatts.js';
+import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
@@ -52,7 +52,7 @@ const daily = (points: SeriesPoint[]) => {
   return [...days.entries()].sort();
 };
 
-/** modules/solar/pvwatts.ts on the same weather. */
+/** modules/solar/src/pvwatts.ts on the same weather. */
 const typescriptModel = (poa: SeriesPoint[], temperature: SeriesPoint[], wind: SeriesPoint[]) =>
   arrayEnergy(cleanWeather(alignWeather(poa, temperature, wind)).hours, { kwp: KWP, gammaPdc: GAMMA }, { ...FAIMAN, remainingFraction: remainingAfterLosses(LOSSES) });
 

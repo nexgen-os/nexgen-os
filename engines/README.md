@@ -59,7 +59,7 @@ answers, and to know the engine string before a run.
 
 **Time and series.** Every stamp is ISO 8601 with its offset and dates the
 **start** of its interval, as everywhere in the core. A series is the
-`CollectedSeries` of [`connectors/index.ts`](../connectors/index.ts), with
+`CollectedSeries` of [`packages/core/src/connectors.ts`](../packages/core/src/connectors.ts), with
 its unit and, when it belongs to one part of the request, that part's name:
 
 ```json
@@ -84,10 +84,10 @@ fractions, in order, each applying to what the previous ones left.
 A request kind is a shape, written once in TypeScript beside the runner,
 that any engine accepting it answers in.
 
-- `pv_yield` ([`pvlib/index.ts`](pvlib/index.ts)): a PV system's arrays,
+- `pv_yield` ([`pvlib/index.ts`](../packages/core/src/engines/pvlib.ts)): a PV system's arrays,
   models, losses and weather in; its production, plane-of-array irradiance
   and module temperature out.
-- `settlement` ([`settlement.ts`](settlement.ts)): the contracts in force
+- `settlement` ([`settlement.ts`](../packages/core/src/engines/settlement.ts)): the contracts in force
   over a period (`from`, `to`, `step`), each with its parties, its type,
   its volume basis, its priority, its price signals in the shape of
   `contracts.price_signals` and the series its volume is read from (a
@@ -147,7 +147,7 @@ the models it ran, the defaults it applied, the versions it used.
 5. Write one JSON object on stdout, the series in the shape above, the
    choices in `meta`; exit 0.
 
-The runner ([`runner.ts`](runner.ts)) needs no change for a new engine. The
+The runner ([`runner.ts`](../packages/core/src/engines/runner.ts)) needs no change for a new engine. The
 fake engine of the tests, [`tests/fixtures/engines/fake.mjs`](../tests/fixtures/engines/fake.mjs),
 is a complete one in forty lines of Node.
 

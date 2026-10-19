@@ -6,7 +6,7 @@ The values France decides that a function of the model reads, compiled by
 Version 0.2.0, certification `community`: checked by the toolchain, read by
 no French professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; the national address register answers in
-[`formats/geocoding/ban.ts`](../../formats/geocoding/ban.ts).
+[`packages/connectors/ban`](../../packages/connectors/ban/README.md).
 
 | File | Holds |
 |---|---|

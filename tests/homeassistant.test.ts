@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { freshDatabase, insert, one, organisation, square } from './helpers/db.js';
-import { exportHomeAssistant, importHomeAssistant, type HaSnapshot, type ImportResult } from '../formats/homeassistant/index.js';
+import { exportHomeAssistant, importHomeAssistant, type HaSnapshot, type ImportResult } from '@nexgen-os/homeassistant';
 
 const snapshot: HaSnapshot = {
   floors: [

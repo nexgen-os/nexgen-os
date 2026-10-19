@@ -24,7 +24,7 @@ through `record_run()`.
 |---|---|
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
 | `solar.pv_arrays` | an object (`pv_array`): one group of modules with one orientation, on a surface of the system's site (`array_outside_system_site` otherwise). Azimuth and tilt come from the surface unless given; `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
-| `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them through [`formats/panond`](../../formats/panond/README.md) |
+| `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them through [`packages/formats/panond`](../../packages/formats/panond/README.md) |
 | `solar.horizons` | the far horizon of a site or a surface, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
 | `solar.yield_profiles` | named modelling choices: decomposition, transposition, incidence, temperature model and parameters, spectral, ordered losses, clipping. A vocabulary, read by everyone signed in |
 
@@ -125,7 +125,7 @@ profile whose models the engine has, and needs `profileCode`
 
 | Read from | Sent to the engine |
 |---|---|
-| the system, its arrays and their products (the same rows as the other runs) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several); an `ond` product as the Sandia model fitted on its efficiency curves as pvlib's `fit_sandia` does ([`inverter.ts`](inverter.ts)), recorded in the run's inputs with `fitted_from: 'ond'`; a Sandia, ADR or OND inverter needs module products whose model gives the DC voltage (`inverter_needs_voltage` on the PVWatts DC model) |
+| the system, its arrays and their products (the same rows as the other runs) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several); an `ond` product as the Sandia model fitted on its efficiency curves as pvlib's `fit_sandia` does ([`inverter.ts`](src/inverter.ts)), recorded in the run's inputs with `fitted_from: 'ond'`; a Sandia, ADR or OND inverter needs module products whose model gives the DC voltage (`inverter_needs_voltage` on the PVWatts DC model) |
 | the profile | decomposition, transposition, incidence (`iam_model`, `no_loss` when null), spectral, temperature model and parameters, the ordered losses as fractions |
 | the weather connector (Open-Meteo's ERA5 archive), the years in the site's local calendar | a profile with a transposition: `ghi`, `dni`, `dhi` once for the site (`ghi` alone when it names a decomposition); without one: each array's `poa_irradiance`, as `pvwatts` reads it; temperature and wind speed |
 
@@ -143,7 +143,7 @@ an engine's run.
 ## P50 and P90 of a yield run
 
 `exceedance(db, { yieldRunId, uncertainties?, probabilities?, horizonYears? })`
-([`exceedance.ts`](exceedance.ts)) reads a yield run on real years — an
+([`exceedance.ts`](src/exceedance.ts)) reads a yield run on real years — an
 engine run or `pvwatts` with `typicalYear: false` — and gives the energy a
 year exceeds with each probability asked (75, 90 and 99 % by default):
 
@@ -172,7 +172,7 @@ Production power and energy and the generic `irradiance` are the core's.
 ## Performance against the measurement
 
 `performanceIndicators(db, { pvSystemId, from, to, yieldRunId? })`
-([`performance.ts`](performance.ts)) gives the indicators of IEC 61724-1
+([`performance.ts`](src/performance.ts)) gives the indicators of IEC 61724-1
 for whole days in the site's time zone, in total and by month:
 
 | Indicator | |
@@ -199,7 +199,7 @@ and a new reading a new one. Named errors: `pv_system_not_found`,
   P50 / P90), the IEC 61724-1 indicators, the `pvsyst_like` and
   `pvsol_like` engines, and the format readers (PAN / OND, PVsyst and
   PV\*SOL CSV). Weather files (EPW, TMY3) are read and written by
-  [`formats/weather-files`](../../formats/weather-files/README.md).
+  [`packages/formats/weather-files`](../../packages/formats/weather-files/README.md).
 - The run summary beyond the annual and specific yield (P50 / P90), the
   `pvsyst_like` and
   `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
