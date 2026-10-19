@@ -1,0 +1,142 @@
+{
+  "operators": [
+    {
+      "code": "enedis",
+      "name": "Enedis",
+      "kind": "dso",
+      "coverage": "About 95 % of the distribution of mainland France; the rest is served by local distribution companies.",
+      "website": "https://www.enedis.fr/",
+      "data_hub_url": "https://datahub-enedis.fr/",
+      "identifier_scheme": "prm",
+      "description": "The main distribution operator: connection, Linky meters, meter data (Data Connect), the operator side of collective self-consumption."
+    },
+    {
+      "code": "rte",
+      "name": "RTE",
+      "kind": "tso",
+      "coverage": "The transmission grid of mainland France.",
+      "website": "https://www.rte-france.com/",
+      "data_hub_url": "https://data.rte-france.com/",
+      "description": "The transmission system operator: the high-voltage grid, balancing, the connection of large plants, the public data of the system."
+    },
+    {
+      "code": "edf_sei",
+      "name": "EDF Systèmes Énergétiques Insulaires",
+      "kind": "island",
+      "regions": [
+        "FR-2A",
+        "FR-2B",
+        "FR-971",
+        "FR-972",
+        "FR-973",
+        "FR-974"
+      ],
+      "coverage": "Corsica and the overseas departments but Mayotte, not interconnected with the mainland.",
+      "website": "https://www.edf.fr/sei",
+      "identifier_scheme": "prm",
+      "description": "Distribution and system operation of the non-interconnected zones (zones non interconnectées)."
+    },
+    {
+      "code": "es_reseaux",
+      "name": "Strasbourg Électricité Réseaux",
+      "kind": "dso",
+      "regions": [
+        "FR-67"
+      ],
+      "coverage": "Strasbourg and about 400 municipalities of the Bas-Rhin.",
+      "website": "https://www.es-reseaux.fr/",
+      "identifier_scheme": "prm",
+      "description": "The largest local distribution company (entreprise locale de distribution)."
+    },
+    {
+      "code": "geg_reseaux",
+      "name": "GreenAlp",
+      "kind": "dso",
+      "regions": [
+        "FR-38"
+      ],
+      "coverage": "Grenoble and its surroundings.",
+      "website": "https://www.greenalp.fr/",
+      "identifier_scheme": "prm",
+      "description": "The distribution subsidiary of Gaz Électricité de Grenoble."
+    },
+    {
+      "code": "srd",
+      "name": "SRD",
+      "kind": "dso",
+      "regions": [
+        "FR-86"
+      ],
+      "coverage": "Most of the Vienne department outside Poitiers.",
+      "website": "https://www.srd-energies.fr/",
+      "identifier_scheme": "prm",
+      "description": "Local distribution company of the Vienne."
+    },
+    {
+      "code": "geredis",
+      "name": "Gérédis",
+      "kind": "dso",
+      "regions": [
+        "FR-79"
+      ],
+      "coverage": "The Deux-Sèvres department.",
+      "website": "https://www.geredis.fr/",
+      "identifier_scheme": "prm",
+      "description": "Local distribution company of the Deux-Sèvres."
+    },
+    {
+      "code": "urm",
+      "name": "URM",
+      "kind": "dso",
+      "regions": [
+        "FR-57"
+      ],
+      "coverage": "Metz and its surroundings.",
+      "website": "https://www.urm-metz.fr/",
+      "identifier_scheme": "prm",
+      "description": "Local distribution company of Metz."
+    },
+    {
+      "code": "edm",
+      "name": "Électricité de Mayotte",
+      "kind": "island",
+      "regions": [
+        "FR-976"
+      ],
+      "coverage": "Mayotte, not interconnected.",
+      "website": "https://www.electricitedemayotte.com/",
+      "description": "Producer, distribution operator and supplier of Mayotte."
+    }
+  ],
+  "voltage_levels": {
+    "levels": [
+      {
+        "code": "tbt",
+        "name": "Très basse tension",
+        "min_kv": 0,
+        "max_kv": 0.05
+      },
+      {
+        "code": "bt",
+        "name": "Basse tension",
+        "min_kv": 0.05,
+        "max_kv": 1
+      },
+      {
+        "code": "hta",
+        "name": "Haute tension A",
+        "min_kv": 1,
+        "max_kv": 50
+      },
+      {
+        "code": "htb",
+        "name": "Haute tension B",
+        "min_kv": 50,
+        "max_kv": 400
+      }
+    ],
+    "source_code": "fr_code_travail_voltage_domains",
+    "reference": "Article R. 4226-2, alternating current: TBT up to 50 V, BT up to 1 000 V, HTA up to 50 kV, HTB above; the upper bound of HTB is the highest voltage of the transmission grid, 400 kV",
+    "valid_from": "2011-07-01"
+  }
+}

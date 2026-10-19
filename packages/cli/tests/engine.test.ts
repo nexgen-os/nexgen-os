@@ -82,21 +82,21 @@ describe('install on a database', () => {
     expect(scopes.rows).toEqual([
       { scope: 'core', n: 12 },
       { scope: 'module:grid', n: 1 },
-      { scope: 'pack:fr', n: 7 },
+      { scope: 'pack:fr', n: 1 },
     ]);
   });
 
   it('applies a module after the core and a pack after its modules, and adds a module later', async () => {
     const db = await track(emptyDatabase());
     const order: string[] = [];
-    await install(sqlClient(db), { root: repoRoot, modules: ['weather'], packs: ['fr'], onStep: (s) => order.push(s.scope) });
-    const firstModule = order.indexOf('module:weather');
+    await install(sqlClient(db), { root: repoRoot, modules: ['weather', 'grid'], packs: ['fr'], onStep: (s) => order.push(s.scope) });
+    const firstModule = order.indexOf('module:grid');
     expect(order.slice(0, firstModule).every((s) => s === 'core')).toBe(true);
     expect(order.lastIndexOf('module:weather')).toBeLessThan(order.indexOf('pack:fr'));
     const later = await install(sqlClient(db), { root: repoRoot, modules: ['solar'], packs: [] });
     expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar']);
     const modules = await db.query<{ code: string }>('select code from nexgen.modules order by code');
-    expect(modules.rows.map((r) => r.code)).toEqual(['solar', 'weather']);
+    expect(modules.rows.map((r) => r.code)).toEqual(['grid', 'solar', 'weather']);
   });
 
   it('dry run: reports what it would apply and leaves nothing', async () => {
