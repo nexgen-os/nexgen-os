@@ -63,6 +63,24 @@ jobs:
         env:
           NEXGEN_SDK_PYTHON: python
 
+  packs:
+    name: packs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The country seeds are compiled from packs/. A seed that is not the
+      # exact output of its pack means the two have drifted, and the pack is
+      # the source: run `nexgen-os pack build --all` and commit the result.
+      - name: every pack passes its checks and its seed is its output
+        run: |
+          npm run build -w packages/cli
+          node packages/cli/dist/bin.js pack check --all
+
   hygiene:
     name: hygiene
     runs-on: ubuntu-latest
