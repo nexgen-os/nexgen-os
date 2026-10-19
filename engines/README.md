@@ -63,12 +63,17 @@ answers, and to know the engine string before a run.
 its unit and, when it belongs to one part of the request, that part's name:
 
 ```json
-{ "quantity_code": "poa_irradiance", "value_kind": "interval", "step": "1 hour", "unit": "W/m2", "array": "South",
+{ "quantity_code": "poa_irradiance", "value_kind": "interval", "step": "1 hour", "unit": "W/m²", "array": "South",
   "values": [{ "at": "2023-01-01T10:00:00Z", "value": 149.52 }] }
 ```
 
-so that a caller stores what an engine answers with `storeSeries()`,
-without translation. An `interval` value is the mean (or the total, for an
+**Units.** The `unit` of a series is a code or a symbol of the `units`
+vocabulary of the core (`kWh`, `W/m²`, `°C`): the values come in that unit and
+`store()` converts them to the quantity's own, or refuses by name
+(`unit_unknown`) a label the vocabulary does not hold. A caller stores what an
+engine answers with `storeSeries()`, without translation (`engineUnit()` of
+`@nexgen-os/core` reads the ASCII spellings `W/m2` and `degC` that an earlier
+release of the pvlib engine used). An `interval` value is the mean (or the total, for an
 energy) over its interval; an `instant` value is read at its stamp, and an
 engine that needs it over an interval takes the mean of the readings at the
 two ends.

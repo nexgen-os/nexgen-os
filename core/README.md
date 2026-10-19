@@ -32,6 +32,6 @@ Every act that writes several rows or carries a rule is one function named
 after the gesture — `create_site`, `add_space`, `install_device`,
 `series_ensure`, `store`, `record_run`, `merge_objects`… — that
 refuses by name. Connection points (`grid`), energy communities
-(`community`) and the accounting bridge (`ekwo`) are modules with their own
+(`community`) and the accounting bridge (`accounting`) are modules with their own
 schema. Details, diagram and rules: [docs/model.md](../docs/model.md); the
 rules and why: [docs/doctrine.md](../docs/doctrine.md).

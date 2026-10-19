@@ -1,4 +1,4 @@
-# 0010 — The accounting side is Ekwo's, reached through one bridge module
+# 0010 — The accounting bridge: one module reaches the accounting side
 
 > Status: accepted · 13/10/2026, rewritten 19/10/2026 · a record of the modules
 
@@ -26,7 +26,7 @@ with Ekwo OS in `public` when an installation wants one transaction from
 settlement to invoice; a connection reads it with `nexgen` on its search
 path.
 
-**The bridge is one module, `ekwo`.** It holds what links the two: the Ekwo
+**The bridge is one module, `accounting`.** It holds what links the two: the Ekwo
 company of an organisation, the Ekwo contact of a contact, the documents a
 run's amounts became, and the personal details of a contact that
 accounting manages. When Ekwo shares the database, its keys are real

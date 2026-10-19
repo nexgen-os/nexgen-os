@@ -21,9 +21,6 @@ export const SETTLEMENT_EXAMPLE_ENGINE: Pick<EngineSpec, 'name' | 'install'> = {
   install: 'pip install -e engines/settlement-example, NEXGEN_ENGINE_SETTLEMENT_EXAMPLE="python3 -m nexgen_settlement_example"',
 };
 
-/** The units of energy a price is quoted per, as `contracts.price_signals.per_unit` holds them. */
-export const PRICE_UNITS = { 'KiloW-HR': 1, 'MegaW-HR': 1000 } as const;
-
 /** A price signal of a contract, as a row of `contracts.price_signals`: start included, end excluded, no end until further notice. */
 export interface SettlementPriceSignal {
   kind: 'fixed' | 'indexed' | 'cap' | 'floor';
@@ -37,7 +34,8 @@ export interface SettlementPriceSignal {
   index_adder?: number | null;
   /** ISO 4217. */
   currency: string;
-  per_unit: keyof typeof PRICE_UNITS;
+  /** The unit of energy the price is quoted per, a code of the `units` vocabulary (`KiloW-HR`, `MegaW-HR`); `convertUnit()` gives its factor. */
+  per_unit: string;
 }
 
 /** A party: a contact of the organisation, or the organisation itself when `contact_id` is null. */
@@ -95,7 +93,7 @@ export interface SettlementLine {
   to: string;
   energy_kwh: number;
   price: number;
-  per_unit: keyof typeof PRICE_UNITS;
+  per_unit: string;
   currency: string;
   amount: number;
 }

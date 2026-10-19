@@ -1,5 +1,5 @@
 -- Example 3 — an energy community in a harbour, in Rotterdam. Needs the
--- `community`, `grid` and `ekwo` modules.
+-- `community`, `grid` and `accounting` modules.
 --
 -- A cooperative's project, three warehouses behind their meters taking part
 -- as consumers, the companies who answer for them (Ekwo contacts), a roof
@@ -16,8 +16,8 @@ insert into contacts (id, organisation_id, name, kind) values
   ('00000000-0000-4000-8000-000300000013', '00000000-0000-4000-8000-000300000001', 'Rijnmond Verpakkingen BV', 'company');
 
 -- Who they are for the accounting side: their Ekwo contact and the address
--- their invoices go to, kept by the ekwo module.
-insert into ekwo.contacts (id, ekwo_contact_id, email) values
+-- their invoices go to, kept by the accounting module.
+insert into accounting.contacts (id, ekwo_contact_id, email) values
   ('00000000-0000-4000-8000-000300000011', '11111111-1111-4111-8111-111111111111', 'facturen@vandijk.example'),
   ('00000000-0000-4000-8000-000300000012', '11111111-1111-4111-8111-111111111112', 'admin@maas.example'),
   ('00000000-0000-4000-8000-000300000013', '11111111-1111-4111-8111-111111111113', 'boekhouding@rijnmond.example');

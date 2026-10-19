@@ -45,6 +45,20 @@ export interface EngineDescription {
   kinds: string[];
 }
 
+// Labels an engine of an earlier release used for units of the `units`
+// vocabulary: ASCII spellings of the symbols `W/m²` and `°C`.
+const ENGINE_UNIT_LABELS: Record<string, string> = { 'W/m2': 'W/m²', degC: '°C' };
+
+/**
+ * The unit of an engine's values, as the `units` vocabulary spells it (a
+ * code or a symbol: `kWh`, `W/m²`, `°C`). An engine's answer names its
+ * unit; `store()` converts the values to the quantity's own, and refuses by
+ * name (`unit_unknown`) a label the vocabulary does not hold.
+ */
+export function engineUnit(label: string | undefined): string | undefined {
+  return label === undefined ? undefined : (ENGINE_UNIT_LABELS[label] ?? label);
+}
+
 /**
  * The command of an engine: the caller's, or the environment variable
  * `NEXGEN_ENGINE_<NAME>` read as a JSON array of strings or as words

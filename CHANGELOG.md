@@ -71,9 +71,9 @@ floor is 0.2.0. Table by table:
 
 - `organisations` is an object of the registry (decision 0023): its
   attributes, identifiers, links and documents attach to it.
-  `ekwo_company_id` leaves it for `ekwo.companies`.
+  `ekwo_company_id` leaves it for `accounting.companies`.
 - `contacts` keeps a name and a kind; `email`, `phone` and
-  `ekwo_contact_id` move to `ekwo.contacts` (new module `ekwo`).
+  `ekwo_contact_id` move to `accounting.contacts` (new module `accounting`).
 - `projects` and `participants` move to the new module `community`
   (`community.projects`, `community.participants`, with `join_project()`,
   `leave_project()`, `participant_meters()`); `country_of()` no longer

@@ -25,6 +25,10 @@ interface BanFeature {
   };
 }
 
+// Paris is one territorial collectivity, `FR-75C` in ISO 3166-2, where its
+// context reads the department code `75`.
+const SUBDIVISION: Record<string, string> = { '75': '75C' };
+
 const PRECISION: Record<BanFeature['properties']['type'], Precision> = {
   housenumber: 'rooftop',
   street: 'street',
@@ -60,7 +64,7 @@ function fromBan(f: BanFeature): Place {
   // The context reads "<department code>, <department>, <region>": the department code is the ISO 3166-2 subdivision.
   const department = p.context?.split(',')[0]?.trim();
   const place: Place = {
-    address: { street, address_extra: null, postal_code: p.postcode ?? null, city: p.city ?? null, region: department ? `FR-${department}` : null, municipality_code: p.citycode ?? null, country: 'FR' },
+    address: { street, address_extra: null, postal_code: p.postcode ?? null, city: p.city ?? null, region: department ? `FR-${SUBDIVISION[department] ?? department}` : null, municipality_code: p.citycode ?? null, country: 'FR' },
     lon: f.geometry.coordinates[0],
     lat: f.geometry.coordinates[1],
     precision: PRECISION[p.type] ?? 'city',

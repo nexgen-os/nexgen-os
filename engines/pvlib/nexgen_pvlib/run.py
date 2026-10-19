@@ -7,7 +7,7 @@ network or writes a file.
 
 Conventions, as in the core: every stamp is ISO 8601 with its offset and
 dates the start of its interval; azimuth in degrees clockwise from true
-north, tilt from horizontal; irradiance W/m2, temperature degC, wind m/s,
+north, tilt from horizontal; irradiance W/m², temperature °C, wind m/s,
 energy kWh per interval.
 """
 
@@ -497,8 +497,8 @@ def pv_yield(request):
     cell_temperature = results.cell_temperature if isinstance(results.cell_temperature, tuple) else (results.cell_temperature,)
     out = [series("production_energy", "kWh", energy.to_numpy())]
     for a, irrad, tcell in zip(request_arrays, total_irrad, cell_temperature):
-        out.append(series("poa_irradiance", "W/m2", irrad["poa_global"].fillna(0).to_numpy(), a["name"]))
-        out.append(series("module_temperature", "degC", tcell.to_numpy(), a["name"]))
+        out.append(series("poa_irradiance", "W/m²", irrad["poa_global"].fillna(0).to_numpy(), a["name"]))
+        out.append(series("module_temperature", "°C", tcell.to_numpy(), a["name"]))
 
     return {
         "series": out,

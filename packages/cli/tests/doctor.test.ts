@@ -110,6 +110,27 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: community, ekwo, grid, solar, tasks, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: accounting, community, grid, solar, tasks, weather/);
+  });
+
+  it('names the weeks whose values sit in the default partition with no weekly partition, and the weeks to come once it partitions', async () => {
+    const client = sqlClient(db);
+    await db.exec('begin');
+    try {
+      const org = await organisation(db, 'Partitions firm');
+      const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'ZZ', time_zone: 'UTC' });
+      const meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
+      const series = await insert(db, 'series', { organisation_id: org, object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
+      await db.query(`insert into series_values (series_id, at, value) values ($1, '2026-03-25T10:00:00Z', 1)`, [series]);
+      expect((await doctor(client, await readCatalogue(repoRoot))).problems).toEqual([
+        expect.objectContaining({ code: 'series_partitions_missing', detail: expect.stringContaining('2026-03-23') }),
+      ]);
+      await db.exec(`select nexgen.series_values_partition('2026-03-25')`);
+      const after = (await doctor(client, await readCatalogue(repoRoot))).problems;
+      expect(after.map((p) => p.code)).toEqual(['series_partitions_missing']);
+      expect(after[0].detail).not.toContain('2026-03-23');
+    } finally {
+      await db.exec('rollback');
+    }
   });
 });
