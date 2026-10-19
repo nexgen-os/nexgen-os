@@ -7,27 +7,30 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- Device types. The codes of Nexgen, in a tree aligned on Brick and IFC. The
--- module that derives each type into its own table is named.
+-- Device types. The codes of Nexgen, in a tree aligned on Brick Equipment and
+-- IFC. The module that derives a type into its own table is named when it
+-- ships; the instrument that measures (a meter, a sensor) is a device too,
+-- and what it measures is a series.
 -- ---------------------------------------------------------------------------
 
 insert into device_types (code, name, parent_code, module_code, brick_class, ifc_class, description) values
-  ('generator',  'Generator',          null,        'generators',  'Electrical_Generation_Equipment', 'IfcElectricGenerator', 'Any electricity-producing device.'),
+  ('generator',  'Generator',          null,        null,  'Electrical_Generation_Equipment', 'IfcElectricGenerator', 'Any electricity-producing device.'),
   ('solar',      'PV system',          'generator', 'solar',   'PV_Array',            'IfcSolarDevice',          'Photovoltaic modules and their inverters.'),
-  ('wind',       'Wind turbine',       'generator', 'generators',  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
-  ('hydro',      'Hydro turbine',      'generator', 'generators',  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
-  ('cogeneration',        'Combined heat and power', 'generator', 'generators', null,              'IfcElectricGenerator',    'A cogeneration unit.'),
-  ('biomass',    'Biomass plant',      'generator', 'generators',  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
-  ('inverter',   'Inverter',           null,        'solar',   'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
-  ('battery',    'Battery',            null,        'storage',  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
-  ('charger',         'EV charging station', null,       'charging',  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
-  ('heat_pump',   'Heat pump',          null,        'heating', 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
-  ('boiler',     'Boiler',             null,        'heating', 'Boiler',              'IfcBoiler',               'A boiler.'),
-  ('geothermal', 'Geothermal system',  null,        'heating', null,                  'IfcUnitaryEquipment',     'A ground-source heat exchange system.'),
-  ('hvac',       'Air handling unit',  null,        'heating', 'AHU',                 'IfcUnitaryEquipment',     'An air handling or ventilation unit.'),
-  ('meter',      'Meter',              null,        'grid',    'Meter',               'IfcFlowMeter',            'A physical metering device, on a connection point.'),
-  ('sensor_box', 'Sensor box',         null,        'monitoring',     'Sensor',              'IfcSensor',               'A device whose only job is to carry sensors.'),
-  ('controller', 'Controller',         null,        'monitoring',     'Controller',          'IfcController',           'A gateway or controller that drives other devices.');
+  ('wind',       'Wind turbine',       'generator', null,  'Wind_Turbine',        'IfcElectricGenerator',    'A wind turbine.'),
+  ('hydro',      'Hydro turbine',      'generator', null,  null,                  'IfcElectricGenerator',    'A hydroelectric turbine.'),
+  ('cogeneration',        'Combined heat and power', 'generator', null, null,              'IfcElectricGenerator',    'A cogeneration unit.'),
+  ('biomass',    'Biomass plant',      'generator', null,  null,                  'IfcElectricGenerator',    'A biomass boiler or plant.'),
+  ('inverter',   'Inverter',           null,        null,   'Inverter',            'IfcElectricFlowStorageDevice', 'A power converter between DC and AC.'),
+  ('battery',    'Battery',            null,        null,  'Battery',             'IfcElectricFlowStorageDevice', 'An electrical energy storage system.'),
+  ('charger',         'EV charging station', null,       null,  'Electric_Vehicle_Charging_Station', 'IfcElectricAppliance', 'An electric vehicle charging station.'),
+  ('heat_pump',   'Heat pump',          null,        null, 'Heat_Pump',           'IfcUnitaryEquipment',     'A heat pump.'),
+  ('boiler',     'Boiler',             null,        null, 'Boiler',              'IfcBoiler',               'A boiler.'),
+  ('geothermal', 'Geothermal system',  null,        null, null,                  'IfcUnitaryEquipment',     'A ground-source heat exchange system.'),
+  ('hvac',       'Air handling unit',  null,        null, 'AHU',                 'IfcUnitaryEquipment',     'An air handling or ventilation unit.'),
+  ('meter',      'Meter',              null,        null,    'Meter',               'IfcFlowMeter',            'A physical metering device; the grid module names the connection point it is on.'),
+  ('sensor',     'Sensor',             null,        null,     null,                  'IfcSensor',               'An instrument that measures one or more quantities: a thermometer, a CO2 probe, a presence detector.'),
+  ('sensor_box', 'Sensor box',         'sensor',    null,     null,                  'IfcSensor',               'A device carrying several sensors, read as one (a multisensor, a smart plug).'),
+  ('controller', 'Controller',         null,        null,     'Controller',          'IfcController',           'A gateway or controller that drives other devices.');
 
 -- ---------------------------------------------------------------------------
 -- Profiles: what a building or a site is used for.
@@ -58,9 +61,15 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
   ('serves',    'serves',         'is served by',    '{device}',       null,                 'feeds',       'IfcRelServicesBuildings', 'The device serves the place (a heat pump serves a building).'),
   ('shades',    'shades',         'is shaded by',    null,             null,                 null,          null,                      'The subject casts shade on the object.'),
   ('adjacent_to','is adjacent to','is adjacent to',  null,             null,                 null,          'IfcRelSpaceBoundary',     'The two objects share a boundary.'),
-  ('owns',      'owns',           'is owned by',     '{participant}',  null,                 null,          'IfcRelAssignsToActor',    'Ownership, read from the participant (its contact owns the object).'),
-  ('occupies',  'occupies',       'is occupied by',  '{participant}',  null,                 null,          'IfcRelOccupiesSpaces',    'Occupation: a tenant, a resident, for a period.'),
-  ('operates',  'operates',       'is operated by',  '{participant}',  null,                 null,          'IfcRelAssignsToActor',    'Operation and maintenance responsibility.');
+  ('owns',      'owns',           'is owned by',     '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Ownership: an organisation, or a participant whose contact owns the object.'),
+  ('occupies',  'occupies',       'is occupied by',  '{organisation,participant}', null,     null,          'IfcRelOccupiesSpaces',    'Occupation: a tenant, a resident, for a period.'),
+  ('operates',  'operates',       'is operated by',  '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Operation and maintenance responsibility.'),
+  -- What became of an object. Identifiers never encode anything and are
+  -- never reused: a split, a merge, a replacement is a dated link.
+  ('split_into', 'was split into', 'was split from', null,            null,                 null,          null,                      'The subject was divided into the object (a parcel split by the cadastre); one link per part.'),
+  ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
+  ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
+  ('placed_in', 'was placed in',  'held',            '{device}',       '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure', 'Where a device was before it moved, over the period it was there.');
 
 -- ---------------------------------------------------------------------------
 -- Quantities, each with the one unit it is stored in (QUDT unit codes).
@@ -89,25 +98,56 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind) value
   ('area',                'Area',                         'M2',         'last', 'Area'),
   ('length',              'Length',                       'M',          'last', 'Length'),
   ('u_value','Thermal transmittance',       'W-PER-M2-K', 'last', 'ThermalTransmittance'),
-  ('ratio',               'Ratio',                        'UNITLESS',   'last', 'DimensionlessRatio');
+  ('ratio',               'Ratio',                        'UNITLESS',   'last', 'DimensionlessRatio'),
+  -- Two quantities of the values a country decides (see below).
+  ('emission_factor',     'Emission factor of energy',    'KiloGM-PER-KiloW-HR', 'last', null),
+  ('specific_yield',      'Specific yield',               'KiloW-HR-PER-KiloW',  'last', null);
 
 -- ---------------------------------------------------------------------------
 -- Property definitions: attributes beyond the columns (bSDD / IFC property
--- sets where they exist). Kinds refer to objects.kind.
+-- sets where they exist). Kinds refer to objects.kind. A fact a column holds
+-- is never repeated here: the use of a building is its `profile`, a
+-- device's power its `rated_power_kw`, its commissioning its
+-- `installation_date`.
 -- ---------------------------------------------------------------------------
 
 insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
-  ('floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building}',          'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
-  ('usage',       'Occupancy type',        'text',    null,     null, null, null, '{building,site}',     'Pset_BuildingCommon',        'OccupancyType'),
+  ('floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building,space}',    'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
   ('energy_label',         'Energy label',          'text',    null,     null, null, '{A+,A,B,C,D,E,F,G}', '{building}', null,               null),
+  ('year_built',           'Year of construction',  'integer', null,     1000, 2200, null, '{building}',          'Pset_BuildingCommon',        'YearOfConstruction'),
+  ('floors_above_ground',  'Floors above ground',   'integer', null,     0,    null, null, '{building}',          'Pset_BuildingCommon',        'NumberOfStoreys'),
+  ('floors_below_ground',  'Floors below ground',   'integer', null,     0,    null, null, '{building}',          null,                         null),
   ('roof_area',            'Roof area',             'number',  'area',   0,    null, null, '{surface}',           'Qto_RoofBaseQuantities',     'GrossArea'),
+  ('material',             'Material',              'text',    null,     null, null, null, '{surface}',           'Pset_MaterialCommon',        'Name'),
   ('u_value','Thermal transmittance', 'number',  'u_value', 0, null, null, '{surface}', 'Pset_WallCommon',        'ThermalTransmittance'),
   ('is_external',          'Is external',           'boolean', null,     null, null, null, '{surface}',           'Pset_WallCommon',            'IsExternal'),
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
-  ('commissioning_date',   'Commissioning date',    'date',    null,     null, null, null, '{device}',            'Pset_ManufacturerOccurrence', 'AcquisitionDate'),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
-  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site,device}',       null,              null),
-  ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
+  -- The sum over a site or a project; a device's own is its rated power.
+  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site}',      null,                         null);
+
+-- The values a country or a region decides, published as `defaults` rows by
+-- its pack and read through parameter_of(); an organisation or an object
+-- that knows better holds the same property as an attribute. A price is in
+-- the currency of the country (countries.currency), hence no quantity.
+insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, description) values
+  ('metering_step',               'Metering step',                          'text',   null,              null, null, 'The interval of the readings a grid operator publishes, as an ISO 8601 duration (PT15M).'),
+  ('bidding_zone',                'Bidding zone',                           'text',   null,              null, null, 'The bidding zone of the wholesale electricity market, by its EIC code.'),
+  ('grid_co2_factor',             'Emission factor of grid electricity',    'number', 'emission_factor', 0,    null, 'Greenhouse gas emitted per kWh taken from the grid, from the transmission operator''s yearly balance.'),
+  ('pv_specific_yield_fallback',  'Specific yield of PV, fallback',         'number', 'specific_yield',  0,    null, 'The mean yearly energy of one kWp, used only where no yield run exists, and marked as a fallback.'),
+  ('vat_rate_electricity',        'Value added tax on electricity',         'number', 'ratio',           0,    1,    'The rate applied to a household electricity bill.'),
+  ('energy_price_household',      'Energy price, households',               'number', null,              0,    null, 'In the currency of the country per MWh, without grid fees and taxes, from a public statistic.'),
+  ('energy_price_business',       'Energy price, businesses',               'number', null,              0,    null, 'In the currency of the country per MWh, without grid fees and taxes, from a public statistic.'),
+  ('grid_fees_and_taxes',         'Grid fees and taxes',                    'number', null,              0,    null, 'In the currency of the country per MWh taken from the grid.'),
+  ('injection_price_reference',   'Reference price of injected energy',     'number', null,              0,    null, 'In the currency of the country per MWh injected into the grid.'),
+  ('offpeak_hours',               'Off-peak hours',                         'json',   null,              null, null, 'The windows of off-peak hours, as a list of [start, end) local times; null where it depends on the supply contract.'),
+  ('sharing_max_distance_m',      'Energy sharing, maximum distance',       'number', 'length',          0,    null, 'The greatest distance between two participants of an energy sharing operation.'),
+  ('sharing_max_power_kw',        'Energy sharing, maximum power',          'number', 'power',           0,    null, 'The greatest installed power of an energy sharing operation.'),
+  ('sharing_settlement_period',   'Energy sharing, settlement period',      'text',   null,              null, null, 'The period energy is shared over, as an ISO 8601 duration.'),
+  ('voltage_levels',              'Voltage levels',                         'json',   null,              null, null, 'The voltage levels of the grid, a list of {code, name, min_kv, max_kv} in kilovolts, a level holding the voltages above min_kv up to max_kv.'),
+  ('connection_max_power_lv',     'Maximum power of a low voltage connection',    'number', 'power', 0, null, 'Above it, a connection is made at medium voltage.'),
+  ('connection_max_power_mv',     'Maximum power of a medium voltage connection', 'number', 'power', 0, null, 'Above it, a connection is made at high voltage.'),
+  ('connection_study_power',      'Power above which a connection is studied',    'number', 'power', 0, null, 'The power from which the grid operator studies a connection request before answering.');
 
 -- ---------------------------------------------------------------------------
 -- Tags (Project Haystack markers where one exists).
