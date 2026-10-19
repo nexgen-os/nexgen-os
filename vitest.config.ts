@@ -9,5 +9,7 @@ export default defineConfig({
     // given back while the process lives: one child process per file.
     pool: 'forks',
     isolate: true,
+    // A machine with little memory bounds the pool: VITEST_MAX_FORKS=2.
+    ...(process.env.VITEST_MAX_FORKS ? { maxWorkers: Number(process.env.VITEST_MAX_FORKS) } : {}),
   },
 });
