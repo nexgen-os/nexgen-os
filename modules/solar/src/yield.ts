@@ -28,7 +28,7 @@ import { store } from '@nexgen-os/core';
 import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis, type PvgisSystem } from '@nexgen-os/pvgis';
 import { ENGINE_CONTRACT, describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
-import { PVLIB_ENGINE, type EngineSeries, type PvYieldArray, type PvYieldRequest, type PvYieldResult } from '@nexgen-os/core';
+import { PVLIB_ENGINE, engineUnit, type EngineSeries, type PvYieldArray, type PvYieldRequest, type PvYieldResult } from '@nexgen-os/core';
 import {
   POA_MAX_W_M2,
   alignWeather,
@@ -518,7 +518,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
   const energy = answered.find((s) => s.quantity_code === 'production_energy' && s.array === undefined);
   if (!energy) throw new Error(`engine_contract_mismatch: ${spec.name} answered no production_energy for the system`);
   const name = `${spec.name} ${years.from}-${years.to}`;
-  const owned: OwnedSeries[] = [{ key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy }];
+  const owned: OwnedSeries[] = [{ key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy, unit: engineUnit(energy.unit) }];
   const arrayKeys: { array: string; quantity: string; key: string }[] = [];
   for (const s of answered.filter((x) => x.array !== undefined)) {
     const a = arrays.find((x) => x.name === s.array);
@@ -527,7 +527,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
     // told apart by the array's name.
     const key = `array ${a.name}: ${s.quantity_code}`;
     arrayKeys.push({ array: a.name, quantity: s.quantity_code, key });
-    owned.push({ key, objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s });
+    owned.push({ key, objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
   }
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
@@ -574,6 +574,8 @@ interface OwnedSeries {
   sourceCode: string;
   name?: string | null;
   series: CollectedSeries;
+  /** The unit the values are in, a code or symbol of the `units` vocabulary; the quantity's own when absent. `store()` converts. */
+  unit?: string;
 }
 
 /**
@@ -596,13 +598,12 @@ async function recordRun(
     return { runId: started.run_id, results: done.rows[0].results };
   }
   const ids: Record<string, string> = {};
-  // The values are in the quantity's unit, as the engines' contract says:
-  // the `unit` an engine answers with is a label, not a conversion.
+  // An engine says the unit of its values; `store()` converts them to the quantity's.
   for (const o of owned) {
     const stored = await store(db, {
       object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
       step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, run_id: started.run_id,
-    }, o.series.values);
+    }, o.series.values, { unit: o.unit ?? null });
     ids[o.key] = stored.seriesId;
   }
   const final = results(ids);

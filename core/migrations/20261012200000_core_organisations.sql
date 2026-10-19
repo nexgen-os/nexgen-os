@@ -10,7 +10,7 @@
 --
 -- Who a company or a person legally is — legal form, registration number,
 -- tax number, postal and electronic addresses, bank details — is not
--- modelled here. An accounting application keeps it; the `ekwo` module is
+-- modelled here. An accounting application keeps it; the `accounting` module is
 -- the bridge to one (decision 0010).
 
 -- The core lives in its own schema, as every module does (decision 0010):
@@ -221,7 +221,7 @@ create table contacts (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- Display name. The legal name, numbers and addresses are kept by the
-  -- application that invoices them (the `ekwo` module links to it).
+  -- application that invoices them (the `accounting` module links to it).
   name             text not null,
   kind             text not null default 'company',
   created_at       timestamptz not null default now(),

@@ -1,4 +1,4 @@
-# `ekwo` — the bridge to the accounting side
+# `accounting` — the bridge to the accounting side
 
 Status: shipped with schema 0.2, decision [0010](../../docs/decisions/0010-ekwo-link.md). Schema: `ekwo`.
 
@@ -11,7 +11,7 @@ the accounting side.
 
 | Table | Holds |
 |---|---|
-| `ekwo.companies` | the Ekwo company an organisation is, one each |
-| `ekwo.contacts` | the email and phone a contact is reached at, and the Ekwo contact it is; personal data, readable by the organisation's members only |
+| `accounting.companies` | the Ekwo company an organisation is, one each |
+| `accounting.contacts` | the email and phone a contact is reached at, and the Ekwo contact it is; personal data, readable by the organisation's members only |
 
-Install: `npx nexgen-os init --modules ekwo`.
+Install: `npx nexgen-os init --modules accounting`.

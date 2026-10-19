@@ -1,6 +1,6 @@
 # `@nexgen-os/ban` — the French national address base
 
-The Base Adresse Nationale of France: search as you type and reverse geocoding with house-number precision, the department as region. Source `ban`. MIT; the data is under the Licence Ouverte 2.0, no key. The country pack `fr` names the register as a source; the code lives here.
+The Base Adresse Nationale of France: search as you type and reverse geocoding with house-number precision, the ISO 3166-2 subdivision of the department as region (`FR-34`; Paris is `FR-75C`). Source `ban`. MIT; the data is under the Licence Ouverte 2.0, no key. The country pack `fr` names the register as a source; the code lives here.
 
 ```ts
 import { ban } from '@nexgen-os/ban';

@@ -91,7 +91,7 @@ describes; its record is written once the fix has shipped.
 
 ## Records of single modules
 
-- [0010](0010-ekwo-link.md) · The accounting side is Ekwo's, reached through one bridge module · accepted
+- [0010](0010-ekwo-link.md) · The accounting bridge: one module reaches the accounting side · accepted
 - [0012](0012-solar-module.md) · A yield says what it was computed from · accepted
 - [0017](0017-tasks-as-data.md) · What has to be done is a template, the same in every country · accepted
 

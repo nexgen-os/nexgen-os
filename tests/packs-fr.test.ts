@@ -130,13 +130,20 @@ describe('the fr pack', () => {
     const g = ban({ fetch: fetchWith(banAnswer) });
     const places = await g.search('55 rue du faubourg saint honoré paris');
     expect(places[0]).toMatchObject({
-      address: { street: 'Rue du Faubourg Saint-Honoré 55', postal_code: '75008', city: 'Paris', region: 'FR-75', municipality_code: '75108', country: 'FR' },
+      address: { street: 'Rue du Faubourg Saint-Honoré 55', postal_code: '75008', city: 'Paris', region: 'FR-75C', municipality_code: '75108', country: 'FR' },
       precision: 'rooftop',
       source_code: 'ban',
       external_id: { scheme: 'ban_address', value: '75108_3522_00055' },
     });
     expect(places[1]).toMatchObject({ address: { street: 'Place de la Comédie', region: 'FR-34' }, precision: 'street' });
     expect((await g.reverse(2.3169, 48.8703))?.label).toBe('55 Rue du Faubourg Saint-Honoré 75008 Paris');
+  });
+
+  it('gives Paris the ISO 3166-2 code FR-75C, a region the pack lists', async () => {
+    const [paris] = await ban({ fetch: fetchWith(banAnswer) }).search('55 rue du faubourg saint honoré paris');
+    expect(paris.address.region).toBe('FR-75C');
+    const region = await one<{ code: string }>(db, `select code from regions where code = $1`, [paris.address.region]);
+    expect(region.code).toBe('FR-75C');
   });
 });
 

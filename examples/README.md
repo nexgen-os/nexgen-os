@@ -5,7 +5,7 @@ and the spaces inside its buildings, its devices and the series they read,
 attachments, and the queries a page would run on it. They load on a fresh
 database after the core migrations, the core vocabularies and the modules
 they name in their first line (`grid` for connection points, `community`
-for projects and participants, `ekwo` for the accounting side), and the
+for projects and participants, `accounting` for the accounting side), and the
 test suite loads every one of them (`tests/examples.test.ts`).
 
 Identifiers are fixed (`00000000-0000-4000-8000-000N…`, N = the example),

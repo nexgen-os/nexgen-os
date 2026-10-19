@@ -72,6 +72,41 @@ export async function tablesWithoutRls(db: SqlClient, schemas: string[]): Promis
   return rows.map((r) => r.t);
 }
 
+/**
+ * The weeks of `series_values` that should have a partition and have none,
+ * each as the Monday (UTC) that starts it. A week should have one when values
+ * of it sit in the default partition, and, once an installation partitions at
+ * all, for the current week and the next. Partitions are read by their
+ * bounds, so those of `series_values_partition()` and of `pg_partman` count
+ * alike. Read-only: `select nexgen.series_values_partition('<date>')` creates one.
+ */
+export async function missingSeriesPartitions(db: SqlClient): Promise<string[]> {
+  if (!(await exists(db, 'nexgen.series_values_default'))) return [];
+  const rows = await db.query<{ monday: string }>(
+    `with parts as (
+       select (regexp_match(pg_get_expr(c.relpartbound, c.oid), 'FROM \\(''([^'']+)''\\) TO \\(''([^'']+)''\\)'))[1]::timestamptz as lower,
+              (regexp_match(pg_get_expr(c.relpartbound, c.oid), 'FROM \\(''([^'']+)''\\) TO \\(''([^'']+)''\\)'))[2]::timestamptz as upper
+         from pg_inherits i
+         join pg_class c on c.oid = i.inhrelid
+         join pg_class p on p.oid = i.inhparent
+         join pg_namespace n on n.oid = p.relnamespace
+        where n.nspname = 'nexgen' and p.relname = 'series_values'
+          and pg_get_expr(c.relpartbound, c.oid) like 'FOR VALUES FROM%'
+     ),
+     wanted as (
+       select distinct date_trunc('week', at at time zone 'UTC')::date as monday from nexgen.series_values_default
+       union
+       select d::date from generate_series(date_trunc('week', now() at time zone 'UTC'), date_trunc('week', now() at time zone 'UTC') + interval '7 days', interval '7 days') d
+        where exists (select 1 from parts)
+     )
+     select to_char(monday, 'YYYY-MM-DD') as monday from wanted w
+      where not exists (
+        select 1 from parts where parts.lower <= (w.monday::timestamp at time zone 'UTC') and parts.upper >= ((w.monday + 7)::timestamp at time zone 'UTC'))
+      order by monday`,
+  );
+  return rows.map((r) => r.monday);
+}
+
 export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<DoctorReport> {
   const cat = catalogue ?? (await readCatalogue());
   const problems: Problem[] = [];
@@ -128,6 +163,14 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
   const schemas = ['nexgen', ...report.modules.map((m) => m.schema_name)];
   for (const t of await tablesWithoutRls(db, schemas)) {
     problems.push({ code: 'rls_disabled', detail: `${t} has no row level security` });
+  }
+
+  const unpartitioned = await missingSeriesPartitions(db);
+  if (unpartitioned.length > 0) {
+    problems.push({
+      code: 'series_partitions_missing',
+      detail: `no weekly partition of series_values for the weeks starting ${unpartitioned.join(', ')}; select nexgen.series_values_partition('<date>') creates one, pg_partman keeps them`,
+    });
   }
 
   for (const v of VOCABULARIES) {
