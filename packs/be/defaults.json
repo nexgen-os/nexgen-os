@@ -1,0 +1,98 @@
+{
+  "defaults": [
+    {
+      "property": "bidding_zone",
+      "value": "10YBE----------2",
+      "unit": "code",
+      "source_code": "be_entsoe_eic_codes",
+      "reference": "Row 10YBE----------2, function Bidding Zone, display name BE",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "metering_step",
+      "region": "BE-VLG",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "be_fluvius_quarter_hour",
+      "reference": "Page text: the digital electricity meter measures consumption per quarter hour; an electricity meter that is not digital gives index readings only",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "metering_step",
+      "region": "BE-BRU",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "be_sibelga_consumption_history",
+      "reference": "Section on the consumption history: a smart meter or a remote meter transmits data every quarter of an hour; a mechanical meter gives annual consumption only",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "metering_step",
+      "region": "BE-WAL",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "be_ores_smart_meter",
+      "reference": "Page text: the communicating meter collects consumption by intervals of 15 minutes; a meter that is not communicating gives index readings only",
+      "valid_from": "2026-10-20"
+    },
+    {
+      "property": "energy_price_household",
+      "value": 156.4,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2024, band KWH2500-4999, component NRG_SUP: 0.1564 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "energy_price_household",
+      "value": 154.1,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2025, band KWH2500-4999, component NRG_SUP: 0.1541 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "energy_price_business",
+      "value": 110.8,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2024, band MWH2000-19999, component NRG_SUP: 0.1108 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "energy_price_business",
+      "value": 102.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2025, band MWH2000-19999, component NRG_SUP: 0.1025 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "grid_fees_and_taxes",
+      "value": 176.9,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2024, band KWH2500-4999, components NETC 0.0871 and TAX_FEE_LEV_CHRG 0.0898 EUR/kWh, VAT excluded; a national mean, the network costs differ by region",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "property": "grid_fees_and_taxes",
+      "value": 199.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, 2025, band KWH2500-4999, components NETC 0.1196 and TAX_FEE_LEV_CHRG 0.0799 EUR/kWh, VAT excluded; a national mean, the network costs differ by region",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "property": "vat_rate_electricity",
+      "value": 0.06,
+      "unit": "UNITLESS",
+      "source_code": "be_fps_finance_energy_bill",
+      "reference": "From 1 April 2023 the VAT rate on natural gas and electricity is permanently 6 % instead of 21 %, for a private customer",
+      "valid_from": "2023-04-01"
+    }
+  ]
+}

@@ -72,5 +72,5 @@ professional of the country read it, written with the day in `pack.json`.
 
 | Pack | State |
 |---|---|
-| [`be`](be/README.md) | release 0.1: rows written by hand in `seed/*.sql`; listed by `pack check --all`, not compiled yet |
+| [`be`](be/README.md) | 0.2.0, `community`: compiled into `supabase/seed/11_pack_be.sql` |
 | [`fr`](fr/README.md) | 0.2.0, `community`: compiled into `supabase/seed/10_pack_fr.sql` |

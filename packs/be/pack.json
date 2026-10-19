@@ -1,18 +1,49 @@
 {
+  "$schema": "../schema/pack.1.json",
   "country": "BE",
   "name": "Belgium",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "checksum": "sha256:6fe27fff7a90e6bd394104802f652de5b8cb54d30b270f35a70f536aee6dba70",
+  "schema_min": "0.2.0",
+  "seed_sequence": 11,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
   "sections": [
     "identifiers",
     "sources",
-    "legal",
-    "tasks",
-    "grid"
+    "grid",
+    "defaults"
   ],
-  "regions": [
-    "BE-VLG",
-    "BE-BRU",
-    "BE-WAL"
-  ],
-  "requires_core_min": "0.1.0"
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "nl",
+      "fr",
+      "de"
+    ],
+    "time_zones": [
+      "Europe/Brussels"
+    ],
+    "region_level": "region",
+    "postal_code_pattern": "^[1-9][0-9]{3}$",
+    "municipality_scheme": "nis",
+    "regions": [
+      {
+        "code": "BE-VLG",
+        "name": "Vlaanderen"
+      },
+      {
+        "code": "BE-BRU",
+        "name": "Bruxelles-Capitale / Brussel-Hoofdstad"
+      },
+      {
+        "code": "BE-WAL",
+        "name": "Wallonie"
+      }
+    ]
+  }
 }
