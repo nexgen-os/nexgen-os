@@ -1,161 +1,97 @@
-# 0012 — The `solar` module: a yield that says what it was computed from
+# 0012 — A yield says what it was computed from
 
-**Proposed 13/10/2026.** Research: [docs/research/solar-tools.md](../research/solar-tools.md)
-(PVsyst, PV\*SOL, SAM, pvlib, HelioScope, OpenSolar, Solargis, Meteonorm,
-PVGIS, Open-Meteo, IEC 61724 / 61853 / 62446, PAN/OND, EPW/TMY, Orange
-Button, read on 13/10/2026).
+> Status: accepted · 13/10/2026, rewritten 19/10/2026 · a record of the modules
+> Research: [docs/research/solar-tools.md](../research/solar-tools.md)
 
 ## Context
 
-The product this core comes from computes a PV yield in one edge function:
-hourly plane-of-array irradiance from ERA5 through Open-Meteo, a Faiman cell
-temperature, a PVWatts-like conversion with one system loss and one
-temperature coefficient per organisation, a typical year chosen month by
-month, an annual total anchored on PVGIS. It is honest and fast, and a
-six-week comparison with a partner's PV\*SOL studies showed where it
-diverges: the clock of the series (two hours in winter, fixed on 13/10),
-the five-year hourly mean that smooths the weather (fixed the same day),
-the single loss figure where PV\*SOL and PVsyst carry eight, the weather
-source itself (Meteonorm against ERA5 and SARAH: 2 to 3 % on the annual),
-the sub-hourly step of the load, and conventions nobody wrote down:
-azimuth zero at south in one tool and at north in another, values dated
-at the end of the hour here and at the start there, winter time all year in
-PV\*SOL.
+The platform this core comes from computed a PV yield in one function:
+hourly plane-of-array irradiance from a reanalysis, a cell temperature
+model, a PVWatts-like conversion with one system loss per organisation, a
+typical year chosen month by month. A six-week comparison with a partner's
+PV\*SOL studies showed where it diverged: the clock of the series, a
+multi-year hourly mean that smoothed the weather, one loss figure where
+PV\*SOL and PVsyst carry eight, the weather source itself (2 to 3 % on the
+annual), and conventions nobody wrote down: azimuth zero at south in one
+tool and at north in another, values dated at the end of the hour here and
+at the start there, winter time all year in one tool.
 
-The lesson of the comparison is the lesson of the research: **the gaps
-between tools are gaps of inputs and conventions first, of physics second**.
-A yield is comparable when it says which weather, which period, which time
-convention, which models and which losses it was computed with. That is
-what the module has to carry, as data, so that a run can be reproduced,
-compared with a PV\*SOL or PVsyst study, and improved without a second
-engine.
+The gaps between tools are gaps of inputs and conventions first, of physics
+second. A yield is comparable when it says which weather, which period,
+which time convention, which models and which losses it was computed with.
 
 ## Decision
 
-### One module, `solar`, for what is specific to photovoltaics
+**A trade is a module named after what it adds.** Photovoltaics is the
+`solar` module; weather, storage, consumption and sharing are modules of
+their own, each reading the series the others produce. There is no
+catch-all energy module.
 
-The `solar` module replaces the planned catch-all `energy` module, which is
-dissolved into modules named after what they add: `solar`, `storage`,
-`charging`, `consumption`, `sharing`, `weather`, and later `flexibility`
-and `generators`. Each reads the series the others produce. The seed moves
-the device types `solar` and `inverter` to the `solar` module, `battery` to
-`storage`, `charger` to `charging`, and wind, hydro, cogeneration and
-biomass to `generators`.
+**The array is the level every tool exchanges.** Between the roof face and
+the PV system sits one group of modules with one orientation, one mounting,
+one product and one inverter, as pvlib's array, PVsyst's orientation and
+Orange Button's PV array do. Its azimuth and tilt come from its surface and
+may be overridden for racks and trackers.
 
-| Table | What it is |
-|---|---|
-| `solar.pv_systems` | the PV system as a device (`derive_devices`): DC power, AC power, grid connection, commissioning date, degradation and first-year loss |
-| `solar.pv_arrays` | one group of modules with one orientation: the surface it sits on (azimuth and tilt copied from `surfaces`, overridable for racks and trackers), mounting (`open_rack`, `roof_parallel`, `semi_integrated`, `insulated`, `floating`, `tracker`), module product and count, string layout, inverter product and count, albedo, bifacial. The level every tool exchanges — pvlib's Array, PVsyst's orientation, OpenSolar's module groups, Orange Button's PVArray — between the roof face and the system |
-| `solar.module_products`, `solar.inverter_products` | the physics of a product of the core `device_directory`, same id: the model family (`pvsyst`, `cec`, `sapm`, `pvwatts` for modules; `sandia`, `adr`, `pvwatts`, `ond` for inverters) and its parameters as one JSON in pvlib's key names, so that pvlib, SAM and a PAN/OND reader agree on what each key means |
-| `solar.horizons` | one far-horizon profile per site or surface, as (azimuth, elevation) pairs, with its source (PVGIS DEM, survey, PVsyst, Meteonorm) |
-| `solar.yield_profiles` | a named set of modelling choices: decomposition, transposition, incidence, temperature (model and parameters), spectral, an **ordered list of losses** (soiling, mismatch, DC wiring, module quality, LID, AC wiring, availability, auxiliaries), DC/AC clipping. Shipped: `pvgis_like`, `pvwatts`, `pvsyst_like`, `pvsol_like`, each documented with what the tool it imitates assumes |
+**A product's physics is data in a published vocabulary of keys.** The
+parameters of a module or inverter model are kept in pvlib's key names, so
+that pvlib, SAM and a PAN/OND reader agree on what each key means; the
+product itself is a catalogue entry of the core
+([0027](0027-a-product-is-a-catalogue-entry.md)).
 
-Weather is not the module's: it is core `series` on the site (or on a
-grid point a module declares), `measured`, `simulated` (a typical year is
-simulated, never a real year) or `forecast`, with their `source_code`
-(`pvgis_sarah3`, `pvgis_era5`, `open_meteo_era5`, `meteonorm`, `solargis`,
-a station). The module publishes the quantities it needs — `ghi`, `dni`,
-`dhi`, `poa_irradiance`, `module_temperature` — and reads them through the
-connectors of decision 0011. Choosing or downloading a weather model is
-therefore choosing a source and a connector, open by default (PVGIS,
-Open-Meteo under its terms), licensed in Nexgen, WeSmart's commercial platform (Meteonorm,
-Solargis), the installation's own station or model tomorrow.
+**A yield profile is a named set of modelling choices**: decomposition,
+transposition, incidence, temperature, spectral, an ordered list of losses,
+clipping. Losses are a list with an order, never one percentage. A profile
+that imitates a tool says so in its name (`pvsyst_like`), and documents
+what that tool assumes ([0016](0016-naming-third-party-methods.md)).
 
-### Conventions, written once
+**Conventions are written once.** Azimuth in degrees clockwise from true
+north; every value dated at the start of its interval, in UTC, read in the
+site's time zone ([0029](0029-a-series-belongs-to-an-object.md)); a
+typical year is simulated, never a real year; every reader and connector
+converts from its source's own convention.
 
-- azimuth: degrees clockwise from true north, everywhere in the database;
-  every reader and connector converts (PVGIS and Open-Meteo count from
-  south, PVsyst too, pvlib and SAM from north);
-- time: every series value is dated at the **start** of its interval, in
-  UTC, and read in the site's time zone; every source declares its own
-  convention (PVGIS SARAH instantaneous, Open-Meteo preceding-hour mean,
-  EPW hour-ending, PVsyst interval start in winter time) and the connector
-  converts;
-- a typical year is `simulated`; a run on real years says which years;
-- losses are a list with an order, never one percentage; the single
-  `systemLoss` of today is the `pvwatts` profile with one entry.
+**Weather belongs to the place.** It is a series of the site or of a
+weather point several sites share, with its source; which weather model a
+site reads is a default resolved through the one cascade
+([0021](0021-one-cascade-of-defaults.md)), from the project's choice down to
+the pack's rule for the country or the region, within the coverage of the
+model.
 
-### A run says everything
+**A run says everything.** A yield run records the system, the profile, the
+weather series and their period, the horizon, the engine and its version,
+and writes its simulated series and its summary (annual and specific
+yield, performance ratio, P50 and P90). Measured production stays measured;
+the indicators of IEC 61724-1 compare the two.
 
-A yield run (`record_run`, decision 0004) takes a PV system, a yield
-profile, the weather series and their period, the horizon, the engine and
-its version (pvlib, PVGIS PVcalc, SAM), and writes `simulated` series on
-the system — energy per hour, plane-of-array irradiance, cell temperature
-— and a summary: annual yield, specific yield, performance ratio, P50 and
-P90 with the variability components. Measured production stays `measured`
-on the meter or the inverter; IEC 61724-1 performance indicators (reference
-and final yield, performance ratio, energy performance index) compare the
-two. Engines run outside Postgres (a worker, an API); the database holds
-parameters, series, runs and their lineage.
+**Proprietary project files are read as results, never written.** A PVsyst
+or PV\*SOL result lands as a run and its documents; the weather a run used
+is exported in a format those tools read, so that their user reruns the
+same weather.
 
-### Formats and products
+**The line with paid data runs on prices, never on physics.** Product
+physics come from open readers; prices, installed costs and supplier
+references may come from a licensed dataset.
 
-Read: PVGIS and Open-Meteo (connectors), EPW and TMY3 weather files,
-PVsyst and PV\*SOL hourly CSV results as `simulated` runs, PAN and OND
-product files (read, kept as documents, never written), the CEC module and
-inverter tables, SunSpec models for live inverter data. Write: the weather
-series a run used as EPW or PVsyst CSV, so that a PVsyst or PV\*SOL user
-reruns the same weather; a run as SAM JSON; hourly results with pvlib
-names. Never: PVsyst `.PRJ` or PV\*SOL project files.
+## What it forbids
 
-Products follow three layers. The core `device_directory` is the identity
-of a product (manufacturer, model, type, unit power or capacity, surface,
-datasheet, price), shared or an organisation's. The modules derive the
-technical parameters — `solar.module_products` and `solar.inverter_products`
-here, batteries in `storage`, protocols and registers in `monitoring`. The
-data come from open readers (CEC tables, PAN/OND) for the physics, and
-from a curated dataset of Nexgen, WeSmart's commercial platform, for prices, installed costs
-and supplier references (`sources` row, not redistributable). The line
-between open and paid runs on prices, never on physics.
+- One loss percentage standing for a chain of losses.
+- An azimuth from south, or a value dated at the end of its interval, past
+  the reader that met it.
+- A yield without its profile, weather source, period and engine version.
+- A weather model chosen per device, or by a constant of the module.
 
-### What stays with the tools
+## What it replaced
 
-3D near shading, string and cable design, bankable reports: PVsyst,
-PV\*SOL and HelioScope keep them. Their outputs land here as runs and
-documents, compared on the same series.
+The planned catch-all `energy` module, the single system loss, the weather
+module's own order of resolution ending on a core default, and the list of
+modules to come that this record used to carry (now in the
+[road map](../road-to-0.1.md)).
 
-## Consequences
+## See also
 
-- `modules/README.md` lists `solar`, `storage`, `charging`, `consumption`,
-  `sharing`; the catch-all `energy` is gone.
-- The product's engine becomes the `pvwatts` yield profile on the
-  `open_meteo_era5` and `pvgis_sarah3` sources, with its clock and typical
-  year rules written as conventions; a comparison with a PV*SOL study becomes a test:
-  a PV\*SOL study imported as a run, its weather exported as EPW, the
-  `pvsol_like` profile within a stated tolerance.
-- The format libraries gain the weather and product formats above; the first `solar`
-  acceptance test is a PVGIS TMY and an Open-Meteo year on the same roof,
-  run through the same profile, with the gap explained by the inputs.
-- Weather is a module of its own, `weather`, shared with `heating` and
-  `thermal` (decided 13/10/2026, see below). Open: which of the four
-  profiles ships first (`pvgis_like` is the cheapest to verify).
-
-## Weather: a module of its own, chosen per place (decided 13/10/2026)
-
-Weather belongs to a place, not to a device: two PV systems on one site
-share it, a heat pump on the same site reads the same temperature, and a
-participant is a role, not a location. So the data and the choice sit at
-the site, and a `weather` module holds what several modules need:
-
-- `weather.points` — the grid cell or the station a site reads: its
-  position, the model it belongs to and the model's resolution; sites are
-  linked to their nearest point, and the weather series hang on the point,
-  once, whatever the number of sites in the cell (ERA5 cells are 25 km;
-  SARAH 5 km). A site with its own station is its own point.
-- weather models are `sources` with their coverage (`countries`,
-  `regions`, and a coverage geometry when a dataset stops at a coastline
-  or a latitude), their licence and their retention. Open ones ship with
-  the core (PVGIS SARAH3 in Europe and Africa, ERA5 everywhere through
-  Open-Meteo); national services come with packs (a weather office's
-  reanalysis or forecast); licensed ones with Nexgen, WeSmart's commercial platform.
-- `weather.source_for(site, purpose)` resolves the model to use for one
-  site and one purpose (irradiance for a yield, temperature for heating,
-  a forecast for dispatch), in this order: the project's explicit choice,
-  the organisation's connection, the pack's rule for the country or the
-  region, the core's default by coverage. A run always records which one
-  it read, so two sites of one project may read two models when their
-  locations call for it, and the result says so.
-
-The choice is therefore made per site through data, never per device; a
-project may pin a model for a study, and a run may be given one
-explicitly for a comparison.
+- [0004](0004-deterministic-runs.md), [0013](0013-external-engines.md) —
+  runs and engines.
+- [`modules/solar/README.md`](../../modules/solar/README.md),
+  [`modules/weather/README.md`](../../modules/weather/README.md).
+- IEC 61724-1, pvlib, SAM, Orange Button.

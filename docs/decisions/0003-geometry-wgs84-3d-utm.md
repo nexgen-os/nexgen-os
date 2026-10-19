@@ -1,16 +1,48 @@
-# 0003 — Geometry in WGS 84, three-dimensional, measured in UTM
+# 0003 — Geometry is stored in WGS 84 in 3D, and measured in UTM
 
-**Decided 12/10/2026.**
+> Status: accepted · 12/10/2026, rewritten 19/10/2026
 
-Every geometry is stored in EPSG:4326 with Z in metres above sea level. Input
-in any CRS is transformed on the way in. Metric computations project to the
-UTM zone of the shape (`metric_srid`).
+## Context
 
-**Why.** National grids differ by country, and the core names none. WGS 84 is
-the exchange CRS of GeoJSON, CityJSON, 3D Tiles and every web map. UTM gives
-areas within a fraction of a percent at building and district scale, anywhere
-on earth.
+National grids differ by country (Lambert 72 and 2008, Lambert 93, the
+Dutch RD, the many UTM and Gauss-Krueger zones), and a core that stored one
+of them would name a country. WGS 84 is the exchange system of GeoJSON,
+CityJSON, 3D Tiles and every web map. Measured in degrees, though, an area
+or a length is meaningless; it needs a metric projection that holds
+anywhere on earth.
 
-**Not in Postgres.** Point clouds (COPC), meshes (glTF), BIM files (IFC),
-rasters (COG), 3D Tiles and videos stay in object storage. A representation
-row points to them, with their source and capture date.
+## Decision
+
+**Every geometry is stored in EPSG:4326, with Z in metres above sea
+level.** A geometry given in any other reference system is transformed on
+the way in; one given without its reference system is refused by name
+(`crs_required`) rather than assumed.
+
+**A length, an area or a volume is measured in the UTM zone of the shape.**
+One function of the core chooses the zone from the geometry itself; areas
+are right within a fraction of a percent at building and district scale,
+everywhere.
+
+**A geometry in the database is a shape, not a model.** Footprints, roof
+faces, points and parcels are rows; a point cloud, a mesh, a BIM file, a
+raster or a tileset is a file on object storage that a row points to
+([0008](0008-3d-module.md)).
+
+## What it forbids
+
+- A national reference system, or any projected system, as the stored
+  geometry of the core or of a module.
+- A default reference system for an input that does not say its own.
+- An area or a length computed in degrees, or in a projection chosen by
+  country.
+
+## What it replaced
+
+Nothing: written with the first core.
+
+## See also
+
+- [0008](0008-3d-module.md) — heavy geometry stays in object storage.
+- [0025](0025-a-place-has-one-shape.md) — the point of a place, in WGS 84.
+- [0035](0035-a-format-library-touches-no-database.md) — the libraries
+  transform on the way in.

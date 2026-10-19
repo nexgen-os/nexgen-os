@@ -1,122 +1,85 @@
-# 0006 — Named objects, in the words of the trades
+# 0006 — The core names a few objects, and everything else is attached to them
 
-**Decided 12/10/2026.** Supersedes [0001](0001-one-entity-table-attached-values.md).
+> Status: accepted · 12/10/2026, rewritten 19/10/2026
 
 ## Context
 
-The first core described everything as an `entity` of a class held in a
-vocabulary, with values, relationships and representations attached. It was
-clean and it was abstract: nobody could tell what the model contained
-without reading the vocabulary, and every query started with "which class is
-this". Projects that went that way (InterConnect, SAREF-only models) became
-languages to learn before being useful.
+The first core described everything as an entity of a class held in a
+vocabulary ([0001](0001-one-entity-table-attached-values.md)). It was clean
+and it was abstract: nobody could tell what the model held without reading
+the vocabulary, and every query started with "which class is this". It was
+withdrawn the day it was written, for named objects in the words of the
+trades.
 
-Two products that work well took the other road. Nexgen and EMS name four
-floors — organisation, project, participant, device — and the participant
-carries the one rule everyone understands: one participant is what sits
-behind one grid meter. Ekwo names its objects after the accounting trade —
-company, invoice, document, contact, product — and specialises them in
-modules (e-invoicing, fixed assets). Both stay small, and both stay concrete.
-
-Two inventories of the production schemas (EMS, 52 business tables; Nexgen,
-3,024 participants and 1,496 devices) also showed what the four floors lack:
-
-- the meter is folded into the participant (its identifier in four places);
-- places are not objects: footprints, roof faces and zones live in JSON;
-- `devices` is one 79-column table where PV, battery, charger, wind and heat
-  pump columns sit side by side, and building load profiles are reused as
-  device types — the same categories serving participants and devices;
-- legal identity is spread over four tables and the organisation holds none;
-- membership and allocation keys have three generations and no validity;
-- three series stores coexist and the time zone is hard-coded;
-- the catalogue of external sources (about 42 APIs and datasets) lives in
-  code.
+The named core that followed went the other way too far: forty tables,
+among them the grid operator, the meter, the community project and its
+participants, the law and its rules, and sensors beside devices. Ekwo OS,
+built on the same playbook, is compact because it names few objects and
+gives each many functions, not because its tables are narrow. A trade the
+core describes in full (the grid, the energy community) is a trade every
+installation carries, whether it practises it or not.
 
 ## Decision
 
-The core names its objects after what the trades call them, in the words
-Nexgen already uses. Every object is a table with the columns that object
-always has. Genericity lives in three places only: the **attributes** a
-trade can add from a vocabulary, the **modules** that derive an object into
-a specialised one, and the **packs** that hold what varies by country.
+**The core names three notions, in the words of the trades:**
 
-### The core
+- **the place**: the site, the building on it, the surfaces of the building
+  or the ground (a roof face, a facade, a carport), and the spaces inside it
+  (floors, rooms, zones, units) ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
+- **the device**: anything installed on the place, from a PV system to a
+  meter or a probe, an instance of a product of the catalogue
+  ([0022](0022-the-instrument-is-a-device-the-point-is-the-series.md),
+  [0027](0027-a-product-is-a-catalogue-entry.md));
+- **the series**: a quantity over time, measured, simulated or forecast,
+  belonging to one object ([0029](0029-a-series-belongs-to-an-object.md)).
 
-| Object | What it is | Standard |
-|---|---|---|
-| `organisations`, `organisation_members` | the tenant and who works in it; its legal identity is its Ekwo company | — |
-| `contacts` | a person or a company the organisation deals with: an Ekwo contact, referenced | Ekwo `contacts` |
-| `projects` | a working perimeter: an energy community, a portfolio, a study, a district plan; a country, a lifecycle | Nexgen `projects` |
-| `sites` | a place with an address and a parcel: the unit a person owns, rents or operates, and the thing behind a meter | CityGML LandUse, cadastral parcel |
-| `buildings` | footprint, elevation, height, floors, use, lifecycle; the LoD 1 block derives from it | CityGML Building, IfcBuilding |
-| `surfaces` | a roof face, a facade, a ground area, a carport: what a device is mounted on, with azimuth and tilt | CityGML RoofSurface, Nexgen orientation segments |
-| `meters` | a connection point: identifier and scheme, resource, direction, grid operator, validity | IEC CIM UsagePoint |
-| `participants` | a site's role in a project — producer, consumer, prosumer — behind its meters, with its contact, its group and its period | Nexgen `participants`, CIM Customer |
-| `devices` | what every device has: type, site, building, surface, meter, catalogue product, rated power, status; derived per type by a module table with the same id | Nexgen `devices`, Brick Equipment |
-| `device_directory` | the products: manufacturer, model, unit power, capacity, price | Nexgen `device_directory` |
-| `sensors` | a measurable or controllable point of any object: quantity, kind (sensor, setpoint, command), address at the source | Brick Point, Home Assistant entity |
-| `series`, `series_values` | one quantity over time for one object, measured, simulated, forecast or asked; one store | OGC SensorThings |
-| `attributes` | a typed value a trade attaches to any object, with validity and provenance | IFC property sets, bSDD |
-| `external_ids` | the identifiers an object is known by elsewhere | IFC GlobalId, OSM, Overture GERS, GS1 |
-| `links` | a typed, dated link that is not a column of either side: serves, shades, occupies, owns | Brick, IFC relationships |
-| `successors` | splits, merges, replacements | Overture GERS changelog |
-| `documents` | files about an object: permit, datasheet, report, photo, video | Nexgen `documents` |
-| `scenarios`, `runs`, `modules` | design variants, immutable computations, the module registry | [0004](0004-deterministic-runs.md) |
-| `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data | Brick, IFC, CityGML, QUDT, Haystack |
+Around them, what every installation needs and no trade owns: the
+organisation and its members ([0023](0023-an-organisation-is-an-object.md)),
+the contacts it deals with, the scenarios of a study, the runs that compute
+([0004](0004-deterministic-runs.md)), the sources and connections of
+external data ([0011](0011-external-data.md)).
 
-Two things are not objects of their own. **Legal identity and invoicing are
-Ekwo's**: Nexgen OS computes what is owed — an allocation, a settlement line
-per participant per period — and hands it to Ekwo OS, which issues the
-invoice, its VAT, its e-invoicing, its payment and its accounting entry. An
-organisation and a contact keep the Ekwo id they are known by: real foreign
-keys when Ekwo shares the database, a reference and a display name when it
-runs elsewhere. **Device types and profiles are two vocabularies**: a device
-type says what a device is; a profile says what a building or a site is used
-for. A production site is a site with the profile `plant` and a device of
-type `solar`.
+**Every object is a table with the columns that object always has**
+([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
+`from buildings`, never `from entities where class = 'building'`.
 
-### The registry
+**Everything else is attached, through one registry.** What every object
+shares (an id, an organisation, a scenario, a kind) is kept once in
+`objects`, maintained by the tables that name it. Attributes with their
+period and source, external identifiers, dated links, documents and tags
+attach to any object through it, whatever table or module the object lives
+in.
 
-What every object shares — an id, an organisation, a scenario, a kind — is
-kept once in `objects`, maintained by the triggers of the named tables. It is
-plumbing: attachments point to it, pages read `from buildings`. A module
-registers the kinds it adds (`floor`, `space`) the same way.
+**Genericity lives in three places only**: the vocabularies (a new property,
+a new device type, a new kind of link is a row), the modules (a new kind of
+object, or what a trade adds to one, is a module table with the same id,
+[0032](0032-a-module-has-its-own-schema.md)), and the packs (what a country
+decides, [0020](0020-a-pack-holds-what-a-function-reads.md)).
 
-### Sources and connectors
+**A trade of its own is a module.** The grid (operators, connection points,
+mandates, tariffs) and the energy community (projects, participants,
+allocation) are modules beside `solar` and `architecture`; the law is not
+held in the open repository.
 
-The external systems data comes from — an open-data API, a grid operator's
-hub, a solar API, a register, a device protocol — are rows of `sources`:
-base URL, documentation, type of authentication (the secret itself stays in
-the installation's vault), countries covered, license, attribution. An
-identifier scheme, a series, a document or an attribute says which source it
-comes from. A **connector** — an organisation's configured link to a source,
-with its credentials reference, schedule, mappings to sensors and series and
-collection log — is the `monitoring` module's (and the `grid` module's for
-meter-data mandates), as Nexgen's `connectors`, `connector_configs` and
-`connector_mappings` are today.
+## What it forbids
 
-### Modules
+- A generic entity table, or a class column standing in for a table.
+- A table per kind of thing in the core: a new kind is a module table or a
+  vocabulary row.
+- A trade's own objects in the core because one installation needs them.
+- An attachment table per object (`building_documents`,
+  `device_identifiers`): attachments go through the registry.
 
-Each module owns a Postgres schema, derives the core's objects into its own
-tables with the same id, registers the kinds it adds, and writes results
-back as runs. The first one, `architecture`, ships with the core. The list is
-in [`modules/README.md`](../../modules/README.md).
+## What it replaced
 
-### Packs
+The entity table of [0001](0001-one-entity-table-attached-values.md), then
+the 0.1 core of forty tables, with the grid, the community, the law and the
+sensors in it.
 
-Grid operators, meter identifier schemes, community scheme types, tariff
-components, protected zones and national sources are rows a pack ships,
-never enums in the core.
+## See also
 
-## Consequences
-
-- Twenty named tables and eight vocabularies in the core; queries read
-  `from buildings`, never `from entities where class = 'building'`.
-- A new kind of thing is a module table; a new property is a vocabulary row;
-  a new API is a source row.
-- 0001 is withdrawn. 0002 (standards as mappings), 0003 (WGS 84 3D) and 0004
-  (deterministic runs) stand. The PostGIS helpers, row level security,
-  vocabularies, series, scenarios and runs of the first core are kept.
-- The vocabulary is Nexgen's wherever Nexgen has a word: `organisations`,
-  `projects`, `participants`, `devices`, `device_directory`, `profiles`,
-  `documents`, the statuses of projects and participants.
+- Inherits Ekwo OS 0008 (*Documents and entries are two joined layers*),
+  translated: a description (objects) and a computation (runs, series) are
+  two layers; and 0044 (*A product is a catalogue entry in the core*).
+- [`docs/model.md`](../model.md) — the tables of the model.
+- [`modules/README.md`](../../modules/README.md) — the modules.

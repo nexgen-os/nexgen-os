@@ -1,79 +1,65 @@
-# 0009 — Addresses, positions and geocoding
+# 0009 — What applies to a place follows its region, its municipality or its area
 
-**Decided 13/10/2026.**
-
-
-**Amended 16/10/2026.** The adapter of a national address register is code,
-and code never belongs in a pack: `ban()` and the Belgian adapters moved to
-`formats/geocoding/`. A pack names its register as a `sources` row and
-keeps only data: identifiers, sources, legal sources, rules, task templates.
+> Status: accepted · 13/10/2026, rewritten 19/10/2026
 
 ## Context
 
-A site is found by its address in one country and by its coordinates in
-another, and a form takes either and shows both. The product this core comes
-from recognises an address as it is typed, through a commercial geocoder, in
-the countries it was configured for, and turns it into a point and back. An
-open core has to do this in every country, on open data by default, with a
-commercial geocoder as a choice of the installation and never a requirement.
+A country is not always the level at which things are decided. Belgium keeps
+one address register, one set of grid rules and one energy policy per
+region; France has local distribution operators on some four hundred
+municipalities beside the national one; the Netherlands decides much per
+municipality. A grid operator's concession may follow no administrative
+line at all. A model that knew only the country of a site would pick the
+wrong register, the wrong operator or the wrong default for a site in the
+wrong part of it.
 
 ## Decision
 
-1. **One shape of address: the fields every country has.** `street` (with
-   its number, as the country writes it), `address_extra` (building, floor,
-   unit, box), `postal_code`, `city`, `region` (ISO 3166-2), `country` (ISO
-   3166-1). It is the postal address of schema.org and of Overture's address
-   theme, and nothing more. How a country orders them on an envelope, which
-   ones it requires, what its postal code looks like: the country pack's.
-2. **A position says how precise it is and who placed it.**
-   `location_precision` — `rooftop`, `parcel`, `street`, `postal_code`,
-   `city`, `region` — and `location_source_code`: a geocoder, a GPS device, a
-   person on a map, all of them sources. A point without them is a point
-   nobody vouches for, and a page can say so.
-3. **Geocoders are sources, read by one library.** `formats/geocoding` (MIT)
-   has one interface — `search(text)` gives places, `reverse(lon, lat)`
-   gives the address at a point — and one adapter per geocoder. Nominatim and
-   Photon (OpenStreetMap, ODbL, worldwide) ship with the core; a country's
-   address register comes with its pack; commercial geocoders are adapters an
-   installation configures with its own key, under that geocoder's terms on
-   what may be stored. Every place a geocoder returns carries its source, its
-   precision and the identifier the geocoder knows it by, so the site keeps
-   all three.
-4. **Nothing in the database calls a geocoder.** The library runs in the
-   application, a command line or an edge function; the core stores what came
-   back and from whom.
+**A place knows three levels below its country, all of them data:**
 
-## Consequences
+- **the region**: the subdivision in ISO 3166-2 (`BE-VLG`, `FR-75`), part of
+  the shape of every place ([0025](0025-a-place-has-one-shape.md)); the
+  pack lists the regions at the level it decides things
+  ([0020](0020-a-pack-holds-what-a-function-reads.md));
+- **the municipality**: the country's own code for it, an identifier of the
+  place under a scheme of the pack;
+- **the area**: when neither code says it (an operator's concession drawn
+  on a map), a geometry on the row that applies, and the place's point
+  inside it.
 
-- `sites` gains `address_extra`, `location_precision` and
-  `location_source_code`; `sources` gains `nominatim` and `photon`.
-- A form built on the library works in every country from the first day, on
-  OpenStreetMap; a pack improves the country it knows.
-- Out of scope, on purpose: parsing a free-text address into fields and
-  validating an address against a register. Both are services a geocoder
-  provides, not the core's.
+**A row that applies to part of a country says which part**: its regions,
+its municipalities or its area. A source, an operator, a default of the
+pack carry the same three, and nothing else decides where they apply.
 
-## The regional level (added 13/10/2026)
+**What applies to a place is resolved from the most precise level up**:
+what the object says itself (the operator named on its connection point),
+then the area, then the municipality, then the region, then the country.
+The first level that answers is the answer; none answers is a named gap
+([0038](0038-everything-raises-by-name.md)). Defaults follow the same
+geography inside their own cascade
+([0021](0021-one-cascade-of-defaults.md)).
 
-A country is not always the level at which things are decided: Belgium keeps
-one address register, one grid operator and one set of rules per region;
-France has local distribution operators on some four hundred municipalities
-beside the national one; the Netherlands decides most things per
-municipality. Three levels, all data:
+**Geocoders fill the first two levels.** A register answers with the
+region and the municipality code; where a country keeps one register per
+region, the region chooses which one is asked.
 
-- **region** — `sites.region`, ISO 3166-2 (`BE-VLG`, `FR-75`, `NL-NH`);
-  a pack row that applies to part of a country says so in `regions`
-  (`sources.regions`, and the same column on the rows of the `grid`,
-  `sharing` and `compliance` modules);
-- **municipality** — `sites.municipality_code`, in the country's own code
-  (INSEE, NIS, CBS), an `id_schemes` row of the pack; a grid operator, a
-  planning rule or a dataset decided per municipality lists its codes;
-- **area** — when neither code says it (an operator's concession drawn on a
-  map), a geometry on the row, and `ST_Contains` on the site's point.
+## What it forbids
 
-The geocoders fill the first two: a register answers with the region and
-the municipality code, and the chain of geocoders (`geocoderFor`) asks the
-registers keyed by region in turn (`BE-BRU`, `BE-VLG`, `BE-WAL`) when a
-country keeps one per region. Resolution order for an operator or a rule:
-what the object says itself (the meter's operator), then area, then
-municipality, then region, then country.
+- A rule, an operator or a register chosen by the country alone when the
+  country decides it per region or per municipality.
+- A region written in another code than ISO 3166-2.
+- A list of the municipalities of a country in code.
+
+## What it replaced
+
+The record "Addresses, positions and geocoding" of 13/10/2026, whose shape of
+address and whose geocoders now have their own rule
+([0025](0025-a-place-has-one-shape.md)), and whose regional level, added the
+same day, is this rule.
+
+## See also
+
+- Inherits Ekwo OS 0024 (*A tax follows the territory of the parties*),
+  translated: a rule follows the region of the place.
+- [0011](0011-external-data.md) — sources and their coverage.
+- [`docs/research/geocoders-compared.md`](../research/geocoders-compared.md).
