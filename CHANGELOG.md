@@ -10,6 +10,13 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- `formats/utilityrate5`: the fixed prices of a contract, in the shape of
+  `contracts.price_signals`, written as the energy rates of SAM's
+  `utilityrate5` — a weekday and weekend schedule of up to twelve periods,
+  or a buy and sell rate for each step of the year in local standard
+  time — and read back as price intervals. What the format cannot say is
+  refused by name (`utilityrate5_not_a_schedule`,
+  `utilityrate5_price_not_fixed`, `utilityrate5_tiered_rate_unsupported`…).
 - The `settlement` request kind of the engines (`engines/settlement.ts`):
   contracts with their price signals and the series their volume is read
   from in, settlement lines out — energy, price and amount over each
