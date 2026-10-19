@@ -13,7 +13,7 @@ is specific to a trade lives here, one folder and one schema per module.
    (`call declare_object('grid.meters', 'meter', '{site_id}')`)
    so that attributes, identifiers, links, series and documents attach to it.
 3. **Read the core freely, write it through its functions** (`record_run()`,
-   `open_series()`, `store_values()`, `link_objects()`…). A module may
+   `series_ensure()`, `store()`, `link_objects()`…). A module may
    also publish vocabulary rows (device types, profiles, properties,
    quantities, link types, sources) with `published_by` set to its code.
 4. **Row level security on every table**, through `secure_table()`.

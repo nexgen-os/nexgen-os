@@ -31,15 +31,15 @@ beyond them is an attribute with its period and its source.
 | `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; an organisation is an object like the others | Ekwo companies and contacts |
 | `sites`, `buildings`, `spaces`, `surfaces` | the 3D skeleton: a place in one standard shape (address, WGS 84 point, precision, source), a building with its footprint and height, its floors, rooms, zones and units as one tree, its roof faces, facades and ground areas with their orientation | CityGML, IFC spatial structure, schema.org `PostalAddress` |
 | `devices`, `device_directory` | what is installed, instruments included, placed on its site, in a building or a space, on a surface; the products it is an instance of | Brick equipment, Home Assistant devices |
-| `series`, `series_values`, `forecast_values` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command | OGC SensorThings datastream, Brick and Haystack points |
+| `series`, `series_values`, `forecast_values`, `series_rollups`, `series_latest` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command; its hourly and daily aggregates and its latest value, derived | OGC SensorThings datastream, Brick and Haystack points |
 | `attributes`, `external_ids`, `links`, `documents` | what attaches to any object: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
 | `scenarios`, `runs`, `modules`, `connections` | design variants, immutable computations and the series they own, the module registry, an organisation's use of a source | — |
 | `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country, with no global fallback | ISO 3166, ISO 4217 |
-| `device_types`, `profiles`, `link_types`, `quantities`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
+| `device_types`, `profiles`, `link_types`, `quantities`, `units`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
 
 Every act that writes several rows or carries a rule is one function named
 after the gesture — `create_site`, `add_space`, `install_device`,
-`open_series`, `store_values`, `record_run`, `merge_objects`… — that
+`series_ensure`, `store`, `record_run`, `merge_objects`… — that
 refuses by name. Connection points (`grid`), energy communities
 (`community`) and the accounting bridge (`ekwo`) are modules with their own
 schema. Details, diagram and rules: [docs/model.md](docs/model.md); the
@@ -53,9 +53,13 @@ rules and why: [docs/doctrine.md](docs/doctrine.md).
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
    falls in, anywhere on earth.
-3. **One way to read.** `attributes_of()` for attributes, `resample()` for
-   series, `site_of()` and `country_of()` for where, `building_volume()` for a
-   derived 3D block.
+3. **One way to read, one way to write.** `attributes_of()` for attributes,
+   `resample()` for series (the amount of each bucket, a register's
+   consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
+   beside it), `site_of()` and `country_of()` for where, `building_volume()`
+   for a derived 3D block. Values are written by `store()` alone, which
+   converts their unit, checks their quality and step, and keeps the
+   aggregates and the latest value; clients never resample, convert or fill.
 4. **Deterministic core, operable by an agent.** Nothing in the core calls a
    model; modules hand results back through `record_run()`: same inputs,
    same engine, same run. On top of it, an AI agent works as a user of the

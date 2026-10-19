@@ -33,7 +33,9 @@ const epw = await exportEpw(db, { objectId: pointOrSite, sourceCode: 'pvgis', ki
 The series land on the object named — a weather point of the `weather`
 module or a site — with the `sources` row the caller names: the dataset the
 file comes from, with its licence. Importing the same file again replaces
-the values. The export reads the series through `resample()` and writes
+the values. Each quantity is stored through `store()` with the unit the
+formats write it in (W/m², °C, m/s), checked against the core's `units`
+vocabulary. The export reads the series through `resample()` and writes
 every hour of the year, missing ones with the EPW codes; 29 February only
 when the series have it.
 

@@ -101,7 +101,7 @@ floor is 0.2.0. Table by table:
 - `sensors` is removed (decision 0022): the instrument is a device, the
   point is the series. `series` gains `device_id`, `external_ref`,
   `metadata`, the kind `command`, and `run_id`; `sensor_id` is removed.
-  `open_series()`, `store_values()`, `store_forecast()`.
+  `series_ensure()` and `store()` (below).
 - `runs` own their series (`series.run_id`, unique per identity): a
   finished run's series never change; `start_run()`, `finish_run()`,
   `record_run()` and `discard_superseded_series()`.
@@ -130,6 +130,61 @@ floor is 0.2.0. Table by table:
 - `formats/homeassistant`, `formats/ifc`, `formats/cityjson` and
   `formats/geojson` write `spaces` and series of devices; the Home Assistant
   round trip stays lossless. The seven examples load the modules they use.
+
+### Changed — the series package
+
+Decisions 17 and 19–26 of the audit of 19 October 2026, in the core's
+series migration (rewritten in place, schema 0.2.0):
+
+- **One write path.** `store(series, at[], value[], quality[]?, unit?,
+  issued_at?, identity?)` writes every value, by series id or by identity
+  (`series_ensure()`, which replaces `open_series()`; `store_values()`
+  and `store_forecast()` are gone). It converts from the unit given,
+  stores a null as missing, keeps the quality given (D5), refuses an
+  instant off the series' step and another value kind or step for an
+  identity (D6), leaves an equal value untouched, and keeps the latest
+  value. `insert`, `update` and `delete` on `series_values` and
+  `forecast_values` are revoked from `authenticated` (D4). New named
+  refusals: `series_unit_mismatch`, `series_step_mismatch`,
+  `series_value_kind_mismatch`, `series_run_required` (a simulated series
+  names its run or its source), `series_read_only`, `series_required`,
+  `values_duplicated`, `quality_unknown`, `value_required`,
+  `instant_required`, `issued_at_required`. `storeSeries()`, the Home
+  Assistant import, `modules/solar/yield.ts`, `record_run()`, the
+  examples and the Python client call it.
+- **Units.** A core vocabulary `units` (QUDT code, symbol, quantity kind,
+  factor and offset to SI; 48 rows in the core seed) and
+  `convert_unit(value, from, to)` (`unit_unknown`, `unit_incompatible`).
+  `formats/homeassistant` loses its 14 factors (D14) and
+  `formats/weather-files` states the unit of each quantity it reads.
+- **`resample()` answers the amount of each bucket.** A cumulative
+  register gives its consumption per bucket, resets handled (D3; it gave
+  its last index); the index is read through `nexgen.window()` and
+  `latest()`. Sub-day steps bin from local midnight, so half-hour time
+  zones fall on local hours (D7); a number of days or months is honoured,
+  and a step mixing calendar units is refused as `step_unsupported` (D8).
+  Each bucket says `expected` and its worst `quality` (D10). A role
+  without a signed-in user reads no series unless it bypasses row level
+  security (D9).
+- **Rollups and latest value.** `series_rollups` (hour in UTC, day in the
+  site's time zone), `series_dirty` marked by every statement on the
+  values, `series_rollup()` scheduled every minute by pg_cron where it is
+  installed; `resample()` reads the rollups when they cover the buckets
+  and none is dirty. `series_latest` is kept by `store()`.
+- **Reads.** `fill()` (gaps filled on read, flagged estimated, nothing
+  written), `coverage()` (the gaps of a regular series), `forecast_at()`
+  (a forecast as known at a time or at a horizon), `export_rows()` (the
+  rows of the files door).
+- `series_values_partition()` writes its bounds in UTC whatever the
+  session's time zone. Quality code 0 is "measured" everywhere (D13).
+- `formats/parquet` (new, MIT): series as Parquet files written on the
+  client from `export_rows()` with Hyparquet Writer, or by `pg_parquet` /
+  `pg_duckdb` when the server has one and the caller names a path.
+- `connectors/series.ts` types the calls for TypeScript. The Python client
+  gains `store()`, `window()`, `latest()`, `fill()`, `coverage()`,
+  `forecast_at()`, `export_rows()`, `convert_unit()`; its reads return
+  `Rows` with `to_arrow()`, `to_pandas()`, `to_polars()` through the
+  optional extras `arrow`, `pandas`, `polars`.
 
 ## [0.1.0] — 2026-10-17
 
