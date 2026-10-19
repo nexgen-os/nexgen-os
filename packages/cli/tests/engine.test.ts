@@ -62,26 +62,26 @@ describe('plan', () => {
   it('reads the release in the repository: the version migration last of the core migrations, the seed after', async () => {
     const c = await readCatalogue(repoRoot);
     const names = c.core.map((s) => s.name);
-    expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_1_0.sql');
+    expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_2_0.sql');
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['architecture', 'solar', 'tasks', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['community', 'ekwo', 'grid', 'solar', 'tasks', 'weather']);
     expect([...c.packs.keys()]).toEqual(['be', 'fr']);
   });
 });
 
 describe('install on a database', () => {
   it('records every step once: applying twice applies once', async () => {
-    const db = await track(freshDatabase(['architecture'], ['fr']));
+    const db = await track(freshDatabase(['grid'], ['fr']));
     const before = await one<{ n: number }>(db, 'select count(*)::int n from nexgen.schema_migrations');
-    const again = await install(sqlClient(db), { root: repoRoot, modules: ['architecture'], packs: ['fr'] });
+    const again = await install(sqlClient(db), { root: repoRoot, modules: ['grid'], packs: ['fr'] });
     expect(again.applied).toEqual([]);
     expect(again.skipped).toBe(before.n);
     const after = await one<{ n: number }>(db, 'select count(*)::int n from nexgen.schema_migrations');
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 13 },
-      { scope: 'module:architecture', n: 1 },
+      { scope: 'core', n: 12 },
+      { scope: 'module:grid', n: 1 },
       { scope: 'pack:fr', n: 7 },
     ]);
   });
@@ -127,7 +127,7 @@ describe('migrate', () => {
   });
 
   it('applies only what a newer release adds, to the core and the modules installed', async () => {
-    const db = await track(freshDatabase(['architecture']));
+    const db = await track(freshDatabase(['grid']));
     const root = await mkdtemp(join(tmpdir(), 'nexgen-release-'));
     temp.push(root);
     for (const dir of ['supabase', 'modules', 'packs']) await cp(join(repoRoot, dir), join(root, dir), { recursive: true });

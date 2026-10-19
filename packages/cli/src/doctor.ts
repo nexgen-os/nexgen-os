@@ -40,6 +40,8 @@ export const VOCABULARIES = [
   'sources',
   'object_kinds',
   'series_quality_codes',
+  'countries',
+  'regions',
 ] as const;
 
 async function exists(db: SqlClient, relation: string): Promise<boolean> {
