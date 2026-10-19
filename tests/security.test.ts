@@ -1,8 +1,10 @@
 // What each person may see and do, what never changes once written, and
 // what the core publishes.
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const VIEWER = '00000000-0000-4000-8000-0000000000c1';
 
@@ -102,11 +104,68 @@ describe('computation runs', () => {
   it('never changes a finished run', async () => {
     await expect(db.query(`update runs set results = '{"kwh": 1}'`)).rejects.toThrow(/run_is_final/);
   });
+
+  it('never changes the series a finished run computed', async () => {
+    const run = await asUser(db, USER_A, () =>
+      one<{ id: string }>(db, `select record_run('pv', '0.3.0', $1, null, '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
+        siteA,
+        JSON.stringify([{ key: 'production', object_id: siteA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
+      ]),
+    );
+    const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
+      db, `select s.id, r.results from runs r join series s on s.run_id = r.id where r.id = $1`, [run.id]);
+    expect(owned.results).toEqual({ kwh: 5420, series: { production: owned.id } });
+    await expect(asUser(db, USER_A, () => db.query(`update series_values set value = 0 where series_id = $1`, [owned.id]))).rejects.toThrow(/run_is_final/);
+    await expect(db.query(`select store_values($1, array['2028-06-01T12:00:00Z']::timestamptz[], array[1.0]::float8[])`, [owned.id])).rejects.toThrow(/run_is_final/);
+    await expect(db.query(`delete from series_values where series_id = $1`, [owned.id])).rejects.toThrow(/run_is_final/);
+  });
+});
+
+describe('organisations', () => {
+  it('never lose their last owner', async () => {
+    await expect(asUser(db, USER_A, () => db.query(`select remove_member($1, $2)`, [orgA, USER_A]))).rejects.toThrow(/last_owner/);
+    await expect(asUser(db, USER_A, () => db.query(`select set_member_role($1, $2, 'editor')`, [orgA, USER_A]))).rejects.toThrow(/last_owner/);
+    await asUser(db, USER_A, () => db.query(`select set_member_role($1, $2, 'editor')`, [orgA, VIEWER]));
+    await asUser(db, USER_A, () => db.query(`select set_member_role($1, $2, 'viewer')`, [orgA, VIEWER]));
+  });
+
+  it('are objects: an attribute attaches to one, readable by its members only', async () => {
+    await expect(db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'roof_area', '120', 'a guess')`, [orgA]))
+      .rejects.toThrow(/property_not_applicable/);
+    await db.query(`insert into property_defs (code, name, datatype, published_by) values ('discount_rate', 'Discount rate', 'number', 'installation')`);
+    await asUser(db, USER_A, () => db.query(`select set_attribute($1, 'discount_rate', '0.04', null, null, 'board decision')`, [orgA]));
+    const mine = await asUser(db, USER_A, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
+    const theirs = await asUser(db, USER_B, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
+    expect(mine.rows).toEqual([{ value: 0.04 }]);
+    expect(theirs.rows).toEqual([]);
+  });
+
+  it('read the pack\'s defaults and write none of them: their own are their attributes', async () => {
+    await db.query(`insert into countries (code, name, currency, time_zones, region_level, pack_version, published_by) values ('ZZ', 'Testland', 'ZZZ', '{UTC}', 'region', '0.1.0', 'pack:zz')`);
+    await db.query(`insert into sources (code, name, kind) values ('zz_statistics', 'Testland statistics', 'text')`);
+    await db.query(`insert into defaults (property_code, country, value, source_code, reference, published_by) values ('discount_rate', 'ZZ', '0.05', 'zz_statistics', 'table 1', 'pack:zz')`);
+    const a = await asUser(db, USER_A, () => db.query<{ value: number }>(`select value from defaults`));
+    const b = await asUser(db, USER_B, () => db.query<{ value: number }>(`select value from defaults`));
+    expect(a.rows.map((r) => r.value)).toEqual([0.05]);
+    expect(b.rows.map((r) => r.value)).toEqual([0.05]);
+    await expect(asUser(db, USER_A, () => db.query(`insert into defaults (property_code, country, value, source_code, valid_from, published_by) values ('discount_rate', 'ZZ', '0.03', 'zz_statistics', '2030-01-01', 'firm a')`)))
+      .rejects.toThrow(/permission denied/);
+    await expect(asUser(db, USER_B, () => db.query(`update defaults set reference = 'edited' where country = 'ZZ'`))).rejects.toThrow(/permission denied/);
+  });
 });
 
 describe('what the core publishes', () => {
-  it('names a module for every device type', async () => {
-    const r = await db.query<{ code: string }>(`select code from device_types where module_code is null`);
+  it('names no module that does not ship in a device type', async () => {
+    const shipped = (await readdir(join(repoRoot, 'modules'), { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name);
+    const r = await db.query<{ code: string; module_code: string }>(`select code, module_code from device_types where module_code is not null`);
+    expect(r.rows.filter((t) => !shipped.includes(t.module_code))).toEqual([]);
+  });
+
+  it('has row level security on every table of the schema', async () => {
+    const r = await db.query(
+      `select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'nexgen' and c.relkind in ('r', 'p') and not c.relrowsecurity and not c.relispartition`,
+    );
     expect(r.rows).toEqual([]);
   });
 
@@ -123,9 +182,8 @@ describe('what the core publishes', () => {
     const r = await one<{ registered: number; named: number }>(
       db,
       `select (select count(*)::int from objects) registered,
-              (select count(*) from projects) + (select count(*) from sites) + (select count(*) from buildings)
-              + (select count(*) from surfaces) + (select count(*) from participants) + (select count(*) from meters)
-              + (select count(*) from devices) + (select count(*) from sensors) as named`,
+              (select count(*) from organisations) + (select count(*) from sites) + (select count(*) from buildings)
+              + (select count(*) from spaces) + (select count(*) from surfaces) + (select count(*) from devices) as named`,
     );
     expect(Number(r.named)).toBe(r.registered);
   });

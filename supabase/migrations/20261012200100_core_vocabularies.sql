@@ -33,7 +33,8 @@ create table device_types (
   description     text,
   -- The more general type this one refines: an electricity meter is a meter.
   parent_code     text references device_types(code),
-  -- The module that derives devices of this type into its own table, if any.
+  -- The module that derives devices of this type into its own table, when
+  -- one ships; null otherwise (`derive_devices()` records the type anyway).
   module_code     text,
   brick_class     text,
   ifc_class       text,
@@ -43,7 +44,7 @@ create table device_types (
 );
 
 comment on table device_types is
-  'What a device can be: solar, wind, battery, charger, heat_pump, boiler, inverter, meter, sensor… A tree aligned on Brick and IFC. A module derives the types it owns.';
+  'What a device can be: solar, wind, battery, charger, heat_pump, boiler, inverter, meter, sensor… A tree aligned on Brick Equipment and IFC. The instrument that measures is a device; what it measures is a series.';
 
 create or replace function device_type_is_a(p_type text, p_ancestor text)
 returns boolean
@@ -184,6 +185,9 @@ as $$
   select not exists (select 1 from unnest(p_tags) t where not exists (select 1 from tags where code = t));
 $$;
 
+comment on function tags_known(text[]) is
+  'True when every tag is in the vocabulary.';
+
 -- ---------------------------------------------------------------------------
 -- sources — the external systems data comes from.
 -- ---------------------------------------------------------------------------
@@ -193,16 +197,17 @@ create table sources (
   name            text not null,
   description     text,
   -- api: queried live; file: downloaded datasets; registry: an official
-  -- register; device: read from equipment; manual: entered by a person.
+  -- register; device: read from equipment; manual: entered by a person;
+  -- text: a published text a value is read from (a law, a
+  -- statistic, an operator's page), cited the same way as an API.
   kind            text not null default 'api',
   base_url        text,
   docs_url        text,
   -- How a connector authenticates: none, api_key, oauth2, certificate,
-  -- mandate (the data subject's authorisation, as with grid operators). The
-  -- secret itself never lives in the core; `secret_ref` names it in the
-  -- installation's vault.
+  -- mandate (the data subject's authorisation, as with grid operators). A
+  -- source is shared by every organisation and names no credential: an
+  -- organisation's `connections` row names its own, kept in the vault.
   auth            text not null default 'none',
-  secret_ref      text,
   -- ISO 3166-1 alpha-2 codes the source covers; empty = worldwide.
   countries       text[] not null default '{}',
   -- ISO 3166-2 codes the source is limited to inside those countries;
@@ -221,7 +226,7 @@ create table sources (
   published_by    text not null default 'core',
   constraint sources_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
   constraint sources_retention_positive check (retention_days is null or retention_days > 0),
-  constraint sources_kind check (kind in ('api', 'file', 'registry', 'device', 'manual')),
+  constraint sources_kind check (kind in ('api', 'file', 'registry', 'device', 'manual', 'text')),
   constraint sources_auth check (auth in ('none', 'api_key', 'oauth2', 'certificate', 'mandate'))
 );
 
@@ -248,7 +253,21 @@ create table id_schemes (
 );
 
 comment on table id_schemes is
-  'Identifier systems an object may also be known by: IFC GlobalId, OpenStreetMap, Overture GERS, a cadastre, a metering point numbering.';
+  'Identifier systems an object may also be known by: IFC GlobalId, OpenStreetMap, Overture GERS, a cadastre, a municipality code, a metering point numbering.';
+
+-- The one check of an identifier against its scheme, for every table that
+-- holds one (external identifiers, a module's metering points).
+create or replace function identifier_valid(p_scheme text, p_value text)
+returns boolean
+language sql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+  select coalesce((select p_value ~ s.pattern from id_schemes s where s.code = p_scheme), true);
+$$;
+
+comment on function identifier_valid(text, text) is
+  'True when the value matches the pattern of its scheme, or the scheme has none.';
 
 -- ---------------------------------------------------------------------------
 -- Access: readable by everyone signed in, written by migrations and seeds.
@@ -267,4 +286,4 @@ begin
 end
 $$;
 
-grant execute on function device_type_is_a(text, text), tags_known(text[]) to authenticated, service_role;
+grant execute on function device_type_is_a(text, text), tags_known(text[]), identifier_valid(text, text) to authenticated, service_role;
