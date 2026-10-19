@@ -39,9 +39,9 @@ beforeAll(async () => {
     ['co2', 'measured', probe, 'mqtt://school/c1/co2'],
     ['temperature', 'setpoint', heatPump, 'modbus://10.0.0.5/4001'],
   ]) {
-    await db.query(`select open_series($1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
+    await db.query(`select series_ensure($1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
   }
-  await db.query(`select open_series($1, 'temperature', 'measured', 'instant')`, [classroom5]);
+  await db.query(`select series_ensure($1, 'temperature', 'measured', 'instant')`, [classroom5]);
 });
 
 afterAll(async () => {
@@ -102,8 +102,8 @@ describe('a school, inside', () => {
     const measured = await one<{ id: string }>(db, `select id from series where object_id = $1 and quantity_code = 'temperature' and kind = 'measured'`, [classroom1]);
     const asked = await one<{ id: string; device: string }>(db, `select id, device_id device from series where object_id = $1 and kind = 'setpoint'`, [classroom1]);
     expect(asked.device).toBe(heatPump);
-    await db.query(`select store_values($1, array['2026-01-10 08:00+00', '2026-01-10 08:30+00']::timestamptz[], array[18.5, 19.5]::float8[])`, [measured.id]);
-    await db.query(`select store_values($1, array['2026-01-10 08:00+00']::timestamptz[], array[20]::float8[])`, [asked.id]);
+    await db.query(`select store($1, array['2026-01-10 08:00+00', '2026-01-10 08:30+00']::timestamptz[], array[18.5, 19.5]::float8[])`, [measured.id]);
+    await db.query(`select store($1, array['2026-01-10 08:00+00']::timestamptz[], array[20]::float8[])`, [asked.id]);
     const r = await one<{ value: number }>(
       db,
       `select value from resample($1, '2026-01-10 08:00+00', '2026-01-10 09:00+00', '1 hour')`,

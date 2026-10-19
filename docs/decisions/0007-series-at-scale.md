@@ -30,7 +30,7 @@ and a quality code — no organisation, no unit, no text:
 
 - row level security goes through the series a value belongs to, checked
   once per statement, never per row;
-- the quality is a small integer against a code table (good, estimated,
+- the quality is a small integer against a code table (measured, estimated,
   substituted, missing);
 - the value is a double precision number: a register of 1,234,567.891 kWh
   does not survive a single-precision float, and exact decimals belong to

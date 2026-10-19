@@ -52,9 +52,8 @@ insert into series (id, organisation_id, object_id, device_id, quantity_code, ki
   ('00000000-0000-4000-8000-000100000071', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000051', '00000000-0000-4000-8000-000100000052',
    'production_energy', 'measured', 'interval', '15 minutes', 'sunspec://192.168.1.20/40083', 'inverter');
 
-insert into series_values (series_id, at, value)
-select '00000000-0000-4000-8000-000100000071', ts,
-       round(greatest(0, 3.6 * sin(pi() * (extract(epoch from ts - '2026-06-21 06:30+02'::timestamptz) / 3600) / 13.5))::numeric / 4, 3)
+select store('00000000-0000-4000-8000-000100000071', array_agg(ts order by ts),
+             array_agg(round(greatest(0, 3.6 * sin(pi() * (extract(epoch from ts - '2026-06-21 06:30+02'::timestamptz) / 3600) / 13.5))::numeric / 4, 3)::float8 order by ts))
   from generate_series('2026-06-21 00:00+02'::timestamptz, '2026-06-21 23:45+02', '15 minutes') ts;
 
 -- The two registers of the smart meter, as ever-rising indexes: offtake
@@ -65,8 +64,8 @@ insert into series (id, organisation_id, object_id, device_id, quantity_code, ki
   ('00000000-0000-4000-8000-000100000073', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000040', '00000000-0000-4000-8000-000100000053',
    'injection_energy', 'measured', 'cumulative', '1 day', 'p1://meter/2.8.0', 'meter');
 
-insert into series_values (series_id, at, value)
-select '00000000-0000-4000-8000-000100000072', d, 48210 + 6.2 * (extract(epoch from d - '2026-06-01'::timestamptz) / 86400)
+select store('00000000-0000-4000-8000-000100000072', array_agg(d order by d),
+             array_agg((48210 + 6.2 * (extract(epoch from d - '2026-06-01'::timestamptz) / 86400))::float8 order by d))
   from generate_series('2026-06-01'::timestamptz, '2026-06-30', '1 day') d;
 
 -- The energy label, before and after the insulation works of 2025.

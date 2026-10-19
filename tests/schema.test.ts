@@ -65,7 +65,7 @@ describe('site_of across modules', () => {
       await both.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 10)', [device.id]);
       const array = await one<{ id: string }>(both, `insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ($1, $2, 'A', 180, 30, 'roof_parallel', 10) returning id`, [org, device.id]);
       const probe = await one<{ id: string }>(both, `select install_device($1, 'sensor', 'Thermometer', jsonb_build_object('space_id', $2::uuid)) id`, [site.id, space.id]);
-      const series = await one<{ id: string }>(both, `select open_series($1, 'temperature', 'measured', 'instant', '10 minutes', $2) id`, [space.id, probe.id]);
+      const series = await one<{ id: string }>(both, `select series_ensure($1, 'temperature', 'measured', 'instant', '10 minutes', $2) id`, [space.id, probe.id]);
       const r = await both.query<{ what: string; site: string; building: string | null }>(
         `select 'space' what, site_of($1) site, building_of($1) building
          union all select 'pv_array', site_of($2), building_of($2)
