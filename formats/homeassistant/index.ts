@@ -13,8 +13,9 @@
 //   entity  → series                (on its device, else its area, else the
 //                                    building; quantity from device_class and
 //                                    unit; kind from domain)
-//   state   → series_values         (in the quantity's unit; on/off as 1/0;
-//                                    unavailable as quality `missing`)
+//   state   → values through store() (converted to the quantity's unit by
+//                                    the core's units vocabulary; on/off as
+//                                    1/0; unavailable as quality `missing`)
 //
 // Every Home Assistant field the model has no column for travels in
 // `metadata.ha`, so that the export gives the registry back as it was. The
@@ -87,30 +88,30 @@ export interface HaSnapshot {
 }
 
 import type { Db } from '../db.js';
+import { store } from '../../connectors/series.js';
 export type { Db };
 
 export const SOURCE_CODE = 'homeassistant';
 
 /**
- * Home Assistant device classes and units, to the core's quantities and the
- * factor that brings a value into the quantity's unit. Anything else gets a
- * quantity of its own, published by this library, so that nothing is lost.
+ * Home Assistant device classes to the core's quantities. The unit an
+ * entity states is the core's business: it is looked up in the `units`
+ * vocabulary and converted by `store()`. A class this list does not know,
+ * or a unit that does not measure its quantity, gets a quantity of its own,
+ * published by this library, so that nothing is lost.
  */
-const QUANTITIES: Record<string, { quantity: string; factor: number }> = {
-  'temperature|°C': { quantity: 'temperature', factor: 1 },
-  'humidity|%': { quantity: 'humidity', factor: 1 },
-  'carbon_dioxide|ppm': { quantity: 'co2', factor: 1 },
-  'power|W': { quantity: 'power', factor: 0.001 },
-  'power|kW': { quantity: 'power', factor: 1 },
-  'energy|Wh': { quantity: 'energy', factor: 0.001 },
-  'energy|kWh': { quantity: 'energy', factor: 1 },
-  'energy|MWh': { quantity: 'energy', factor: 1000 },
-  'battery|%': { quantity: 'charge_level', factor: 1 },
-  'irradiance|W/m²': { quantity: 'irradiance', factor: 1 },
-  'volume|m³': { quantity: 'volume', factor: 1 },
-  'gas|m³': { quantity: 'volume', factor: 1 },
-  'occupancy|': { quantity: 'occupancy', factor: 1 },
-  'presence|': { quantity: 'occupancy', factor: 1 },
+const QUANTITIES: Record<string, string> = {
+  temperature: 'temperature',
+  humidity: 'humidity',
+  carbon_dioxide: 'co2',
+  power: 'power',
+  energy: 'energy',
+  battery: 'charge_level',
+  irradiance: 'irradiance',
+  volume: 'volume',
+  gas: 'volume',
+  occupancy: 'occupancy',
+  presence: 'occupancy',
 };
 
 const SETPOINT_DOMAINS = new Set(['number', 'input_number', 'climate', 'water_heater']);
@@ -120,12 +121,18 @@ const BINARY_DOMAINS = new Set(['binary_sensor', 'switch', 'input_boolean', 'lig
 const domainOf = (entityId: string) => entityId.split('.')[0];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'none';
 
-function quantityFor(entity: HaEntity): { quantity: string; factor: number; publish: boolean } {
+/** The quantity of an entity, and whether its unit is converted by the core (`converted`) or a quantity is published for it. */
+async function quantityFor(db: Db, entity: HaEntity): Promise<{ quantity: string; converted: boolean; publish: boolean }> {
   const cls = entity.device_class ?? entity.original_device_class ?? '';
-  const key = `${cls}|${entity.unit_of_measurement ?? ''}`;
-  const known = QUANTITIES[key];
-  if (known) return { ...known, publish: false };
-  return { quantity: `ha_${slug(cls || domainOf(entity.entity_id))}_${slug(entity.unit_of_measurement ?? 'none')}`, factor: 1, publish: true };
+  const known = QUANTITIES[cls];
+  if (known && entity.unit_of_measurement === null) return { quantity: known, converted: false, publish: false };
+  if (known) {
+    const r = await db.query<{ ok: boolean }>(
+      `select exists (select 1 from units a join units b on b.quantity_kind = a.quantity_kind join quantities q on q.unit = b.code
+                       where q.code = $1 and (a.code = $2 or a.symbol = $2)) ok`, [known, entity.unit_of_measurement]);
+    if (r.rows[0].ok) return { quantity: known, converted: true, publish: false };
+  }
+  return { quantity: `ha_${slug(cls || domainOf(entity.entity_id))}_${slug(entity.unit_of_measurement ?? 'none')}`, converted: false, publish: true };
 }
 
 function kindFor(entity: HaEntity): 'measured' | 'setpoint' | 'command' {
@@ -202,9 +209,9 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
   // the point exists before its first value. Its name is the entity id,
   // which Home Assistant keeps unique.
   const series = new Map<string, string>();
-  const factors = new Map<string, number>();
+  const units = new Map<string, string | null>();
   for (const e of snapshot.entities) {
-    const q = quantityFor(e);
+    const q = await quantityFor(db, e);
     if (q.publish) {
       await db.query(
         `insert into quantities (code, name, unit, aggregation, published_by) values ($1, $2, $3, $4, 'homeassistant') on conflict (code) do nothing`,
@@ -214,11 +221,11 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
     }
     const device = (e.device_id && devices.get(e.device_id)) || null;
     const observed = device || (e.area_id && spaces.get(e.area_id)) || buildingId;
-    factors.set(e.entity_id, q.factor);
+    units.set(e.entity_id, q.converted ? e.unit_of_measurement : null);
     series.set(e.entity_id, await id(db,
-      `select open_series($1, $2, $3, $4, null, $5, $6, $7, $8, null, $9) id`,
+      `select series_ensure($1, $2, $3, $4, null, $5, $6, $7, $8, null, $9) id`,
       [observed, q.quantity, kindFor(e), valueKindFor(e), device, `homeassistant://${e.entity_id}`, SOURCE_CODE, e.entity_id,
-       { ha: { ...e, binary: BINARY_DOMAINS.has(domainOf(e.entity_id)), factor: q.factor } }]));
+       { ha: { ...e, binary: BINARY_DOMAINS.has(domainOf(e.entity_id)), converted: q.converted } }]));
   }
 
   const byEntity = new Map<string, HaState[]>();
@@ -226,14 +233,12 @@ export async function importHomeAssistant(db: Db, target: ImportTarget, snapshot
   for (const [entityId, states] of byEntity) {
     const seriesId = series.get(entityId);
     if (!seriesId) continue;
-    const factor = factors.get(entityId) ?? 1;
     const values = states.map((s) => {
       const n = s.state === 'on' ? 1 : s.state === 'off' ? 0 : Number(s.state);
       const missing = s.state === 'unavailable' || s.state === 'unknown' || Number.isNaN(n);
-      return { at: s.last_updated, value: missing ? 0 : round(n * factor), quality: missing ? 3 : 0 };
+      return { at: s.last_updated, value: missing ? 0 : n, quality: missing ? 3 : 0 };
     });
-    await db.query(`select store_values($1, $2::timestamptz[], $3::float8[], $4::smallint[])`,
-      [seriesId, values.map((v) => v.at), values.map((v) => v.value), values.map((v) => v.quality)]);
+    await store(db, seriesId, values, { unit: units.get(entityId) ?? null });
   }
   return { floors, spaces, devices, series };
 }
@@ -248,17 +253,21 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
     `select metadata->'ha' ha, name from spaces where building_id = $1 and kind = 'room' and metadata ? 'ha' order by name`, [buildingId]);
   const devices = await db.query<{ ha: Record<string, unknown>; manufacturer: string | null; model: string | null; serial_number: string | null }>(
     `select metadata->'ha' ha, manufacturer, model, serial_number from devices where building_id = $1 and metadata ? 'ha' order by name`, [buildingId]);
-  const points = await db.query<{ id: string; ha: HaEntity & { binary: boolean; factor: number } }>(
-    `select se.id, se.metadata->'ha' ha from series se where se.metadata ? 'ha' and building_of(se.object_id) = $1
+  const points = await db.query<{ id: string; unit: string; ha: HaEntity & { binary: boolean; converted: boolean } }>(
+    `select se.id, q.unit, se.metadata->'ha' ha from series se join quantities q on q.code = se.quantity_code
+      where se.metadata ? 'ha' and building_of(se.object_id) = $1
       order by se.metadata->'ha'->>'entity_id'`, [buildingId]);
   const states: HaState[] = [];
   for (const s of points.rows) {
+    // Back into the unit the entity states, through the same vocabulary.
     const values = await db.query<{ at: Date; value: number; quality: number }>(
-      `select at, value, quality from series_values where series_id = $1 order by at`, [s.id]);
+      `select w.at, case when $2::text is null then w.value else convert_unit(w.value, $3, $2) end as value, w.quality
+         from nexgen.window($1, '-infinity', 'infinity', 2147483647) w`,
+      [s.id, s.ha.converted ? s.ha.unit_of_measurement : null, s.unit]);
     for (const v of values.rows) {
       const state = v.quality === 3 ? 'unavailable'
         : s.ha.binary ? (v.value >= 1 ? 'on' : 'off')
-        : String(round(v.value / s.ha.factor));
+        : String(round(v.value));
       states.push({ entity_id: s.ha.entity_id, state, last_updated: new Date(v.at).toISOString() });
     }
   }
@@ -272,7 +281,7 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
       identifiers: r.ha.identifiers as [string, string][], connections: r.ha.connections as [string, string][],
     })),
     entities: points.rows.map(({ ha }) => {
-      const { binary: _b, factor: _f, ...entity } = ha;
+      const { binary: _b, converted: _c, ...entity } = ha;
       return entity;
     }),
     states,

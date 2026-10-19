@@ -16,18 +16,14 @@
 
 import type { Db } from '../formats/db.js';
 import type { Address } from '../formats/geocoding/index.js';
+import { store, type SeriesPoint } from './series.js';
 
 export type { Db };
+export * from './series.js';
 
 export interface Point {
   lon: number;
   lat: number;
-}
-
-/** One value at one instant, ISO 8601 with its offset, in the quantity's unit. */
-export interface SeriesPoint {
-  at: string;
-  value: number;
 }
 
 /** What a connector brings back for one quantity: ready for `storeSeries()`. */
@@ -37,6 +33,8 @@ export interface CollectedSeries {
   value_kind: 'interval' | 'instant' | 'cumulative';
   /** A Postgres interval (`1 hour`, `15 minutes`), null when irregular. */
   step: string | null;
+  /** The unit the values are in, by QUDT code or symbol (`Wh`, `°C`); the quantity's own when absent. `store()` converts. */
+  unit?: string;
   values: SeriesPoint[];
 }
 
@@ -108,10 +106,12 @@ export interface SeriesTarget {
 }
 
 /**
- * Writes what a connector brought back: finds or creates the series of that
- * object, quantity, kind, source, scenario and name, then inserts the values — into
- * `forecast_values` with their issue time for a forecast, into
- * `series_values` otherwise, where a value already present is replaced.
+ * Writes what a connector brought back through `store()`, the one write
+ * path: the series of that object, quantity, kind, source, scenario and
+ * name, found or created once (a different value kind or step is refused
+ * by name), the values converted from `series.unit`, with their quality,
+ * a forecast with its issue time. A value already present is replaced; an
+ * equal one is left as it is, and `inserted` counts the rows that changed.
  */
 export async function storeSeries(
   db: Db,
@@ -119,43 +119,9 @@ export async function storeSeries(
   series: CollectedSeries,
   options: { issuedAt?: string } = {},
 ): Promise<{ seriesId: string; inserted: number }> {
-  if (target.kind === 'forecast' && !options.issuedAt) {
-    throw new Error('issued_at_required: a forecast is stored with the time it was issued');
-  }
-  const found = await db.query<{ id: string }>(
-    `select id from series
-      where object_id = $1 and quantity_code = $2 and kind = $3 and source_code = $4
-        and scenario_id is not distinct from $5 and name is not distinct from $6
-      limit 1`,
-    [target.objectId, series.quantity_code, target.kind, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
-  );
-  let seriesId = found.rows[0]?.id;
-  if (!seriesId) {
-    const created = await db.query<{ id: string }>(
-      `insert into series (organisation_id, object_id, quantity_code, kind, value_kind, step, source_code, scenario_id, name)
-       values ($1, $2, $3, $4, $5, $6::interval, $7, $8, $9) returning id`,
-      [target.organisationId, target.objectId, series.quantity_code, target.kind, series.value_kind, series.step, target.sourceCode, target.scenarioId ?? null, target.name ?? null],
-    );
-    seriesId = created.rows[0].id;
-  }
-  if (series.values.length === 0) return { seriesId, inserted: 0 };
-
-  const ats = series.values.map((v) => v.at);
-  const values = series.values.map((v) => v.value);
-  if (target.kind === 'forecast') {
-    const r = await db.query(
-      `insert into forecast_values (series_id, at, issued_at, value)
-       select $1, unnest($2::timestamptz[]), $3, unnest($4::float8[])
-       on conflict do nothing`,
-      [seriesId, ats, options.issuedAt, values],
-    );
-    return { seriesId, inserted: (r as { affectedRows?: number }).affectedRows ?? series.values.length };
-  }
-  await db.query(
-    `insert into series_values (series_id, at, value)
-     select $1, unnest($2::timestamptz[]), unnest($3::float8[])
-     on conflict (series_id, at) do update set value = excluded.value, quality = 0`,
-    [seriesId, ats, values],
-  );
-  return { seriesId, inserted: series.values.length };
+  const stored = await store(db, {
+    object_id: target.objectId, quantity_code: series.quantity_code, kind: target.kind, value_kind: series.value_kind,
+    step: series.step, source_code: target.sourceCode, scenario_id: target.scenarioId ?? null, name: target.name ?? null,
+  }, series.values, { unit: series.unit ?? null, issuedAt: options.issuedAt ?? null });
+  return { seriesId: stored.seriesId, inserted: stored.changed };
 }

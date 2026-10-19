@@ -24,6 +24,7 @@
 
 import type { Db } from '../../formats/db.js';
 import type { CollectedSeries, SeriesPoint, WeatherProvider } from '../../connectors/index.js';
+import { store } from '../../connectors/series.js';
 import { openMeteo } from '../../connectors/open-meteo/index.js';
 import { pvgis, type PvgisSystem } from '../../connectors/pvgis/index.js';
 import { ENGINE_CONTRACT, describeEngine, runEngine, type EngineSpec } from '../../engines/runner.js';
@@ -595,13 +596,14 @@ async function recordRun(
     return { runId: started.run_id, results: done.rows[0].results };
   }
   const ids: Record<string, string> = {};
+  // The values are in the quantity's unit, as the engines' contract says:
+  // the `unit` an engine answers with is a label, not a conversion.
   for (const o of owned) {
-    const opened = await db.query<{ id: string }>(
-      `select open_series($1, $2, 'simulated', $3, $4::interval, null, null, $5, $6, null, '{}', $7) id`,
-      [o.objectId, o.series.quantity_code, o.series.value_kind, o.series.step, o.sourceCode, o.name ?? null, started.run_id]);
-    ids[o.key] = opened.rows[0].id;
-    await db.query(`select store_values($1, $2::timestamptz[], $3::float8[])`,
-      [ids[o.key], o.series.values.map((v) => v.at), o.series.values.map((v) => v.value)]);
+    const stored = await store(db, {
+      object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
+      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, run_id: started.run_id,
+    }, o.series.values);
+    ids[o.key] = stored.seriesId;
   }
   const final = results(ids);
   await db.query(`select finish_run($1, $2::jsonb)`, [started.run_id, JSON.stringify(final)]);
