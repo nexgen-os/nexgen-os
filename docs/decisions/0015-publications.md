@@ -1,66 +1,65 @@
-# 0015 — Publications: what the public reads, and how
+# 0015 — Nothing is public until an owner publishes it, and a publication is kept as published
 
-**Decided 14/10/2026. Withdrawn 16/10/2026**: the module shipped under the
-name `participation` is removed before 0.1, as it is not a priority of the
-foundation; the design below stays as the reference for a `publications`
-module when it comes back (the participants of a project are a core table,
-`participants`, and were never this module's subject). Builds on [0004](0004-deterministic-runs.md)
-(deterministic runs) and [0011](0011-external-data.md) (sources and their
-licences).
+> Status: accepted · 14/10/2026, rewritten 19/10/2026
 
 ## Context
 
-A city consulting its residents on a solar plan, a cooperative showing
-what its roofs would produce, a research partner citing a district study:
-each needs to show a scenario to people who have no account and never
-will. Everything in the core is read under row level security, by
-organisation. Opening a table, a site or an organisation to the anonymous
-role would make a part of the description public by a policy nobody
-re-reads, and would follow every later change of the rows.
+A city consulting its residents on a solar plan, a cooperative showing what
+its roofs would produce, a research partner citing a district study: each
+needs to show something to people who have no account and never will.
+Everything in the core is read under row level security, by organisation.
+Opening a table, a site or an organisation to the anonymous role would make
+part of the description public by a policy nobody re-reads, and would
+follow every later change of the rows: a resident would comment on a figure
+that is no longer the one shown.
 
 ## Decision
 
+**The anonymous role reaches nothing of the core or of a module schema.**
+No table, view or function of the model is granted to it, beyond the
+function that answers the schema version
+([0037](0037-the-schema-grants-its-own-rights.md)).
+
 **What the public reads is a publication: a document an owner chose to
-publish, kept as it was published.**
+publish.** Publishing is a gesture of an owner of the organisation, never a
+consequence of a policy or of a status on a row.
 
-- The `participation` module holds them, the module the plan of
-  `modules/README.md` gives public consultation to: the core does not
-  change. `participation.publications` holds one document per row: today an open GeoJSON
-  export of a site or a project (`formats/geojson`, `open: true`), with its
-  title, its licence (SPDX), its publisher and its date. The database
-  writes the publisher, the kind of subject, the author, the date and the
-  sha256 of the document itself; none of them is given.
-- Only an open export is taken: the document says `open: true`, so it
-  carries no street line, no serial number and nothing from a source that
-  may not be passed on. The sources it does draw on are listed inside it,
-  with their licences.
-- Owners publish, withdraw and delete. Editors and viewers read their
-  organisation's publications. The table has its own policies for that,
-  rather than `secure_table()`, which lets editors write. A publication never changes; its
-  withdrawal is the one change, made once.
-- The public reads one view, `participation_public.publications`: the
-  publications not withdrawn, without the organisation's internal
-  identifiers. `participation_public` is the only schema the `anon` role is
-  given; it reaches no table and no function of `nexgen` or of
-  `participation`. Through the API:
-  `GET /rest/v1/publications?id=eq.<id>&select=document` with the
-  `Accept-Profile: participation_public` header and the project's anonymous
-  key.
+**A publication is kept as it was published.** The document is frozen with
+its date, its publisher, its licence and the sha256 of its content, written
+by the database rather than given by the caller. A later change of the rows
+it was made from does not reach it; a new version is a new publication, and
+withdrawing one is its only change.
 
-## Why
+**An open document only.** A publication carries nothing from a source that
+may not be passed on, and lists the sources it draws on with their
+licences.
 
-- A snapshot is what a consultation needs: the residents comment on what
-  was shown, and the hash proves it later. A live view would change under
-  their comments.
-- One schema for the public, one view in it: what is public is read in one
-  place, and a new table of the core is never public by accident.
-- The view reads the table with its owner's rights; a database linter
-  reports it as a security definer view. That is the choice: its `where`
-  clause is the whole rule, and it is tested.
+**The public reads one schema of its own**, holding the publications not
+withdrawn, without the organisation's internal identifiers. It is the only
+schema the anonymous role is given, so that a new table of the core is
+never public by accident.
 
-## Not decided yet
+No module of the repository holds publications: an installation of the
+core and its modules makes nothing public.
 
-Publishing series, documents and files; an embeddable map and charts that
-read a publication; checking the publication's licence against the
-licences of the sources it draws on (today the document lists them, and
-the publisher decides).
+## What it forbids
+
+- A grant to the anonymous role on the core or on a module schema.
+- A live view of the model offered to the public.
+- A publication edited after it was published.
+- A published document that carries data its sources do not allow to pass
+  on.
+
+## What it replaced
+
+A `participation` module shipped on 14/10/2026 and removed before 0.1; the
+rule it carried stands without it. Its design is kept in
+[`docs/road-to-0.1.md`](../road-to-0.1.md).
+
+## See also
+
+- Inherits Ekwo OS 0037 (*A filed declaration is frozen and superseded, not
+  edited*), 0042 (*A document is shared by a link that is the whole
+  secret*) and 0066 (*A filing is proved by its hash, on a public ledger*).
+- [0011](0011-external-data.md) — sources and their licences.
+- [0037](0037-the-schema-grants-its-own-rights.md) — the closed surface.
