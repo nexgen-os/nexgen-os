@@ -1,8 +1,9 @@
 // The French pack: its rows load on the core — identifiers, sources, the
-// texts of the law and the rules they set, the grid operators, the task
-// templates of a roof installation and of an energy community — and the
-// national address register, kept as code in formats/geocoding, answers as a
-// geocoder of the core's shape, first in the chain for a French search.
+// task templates of a roof installation and of an energy community — and
+// the national address register, kept as code in formats/geocoding, answers
+// as a geocoder of the core's shape, first in the chain for a French search.
+// The texts of the law, the rules they set and the grid operators left the
+// pack with the 0.2 schema; the pack is redone on its new structure next.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '../formats/geocoding/index.js';
@@ -29,7 +30,7 @@ const somewhere = (code: string): Place => ({ address: { country: 'FR' }, lon: 0
 let db: PGlite;
 
 beforeAll(async () => {
-  db = await freshDatabase(['tasks'], ['fr']);
+  db = await freshDatabase(['community', 'grid', 'tasks'], ['fr']);
 });
 
 afterAll(async () => {
@@ -42,9 +43,9 @@ describe('the fr pack', () => {
     expect(rows.rows.map((r) => r.code)).toEqual(['ban', 'bd_topo', 'cadastre', 'enedis_data_connect', 'enedis_open_data', 'geo_api_gouv', 'legifrance', 'odre', 'operat', 'rnb', 'sirene']);
     const org = await organisation(db, 'Une commune', USER_A);
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Mairie', country: 'FR' });
-    const meter = await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' });
+    const meter = await insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' });
     expect(meter).toBeTruthy();
-    await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
+    await expect(insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
     const n = await one<{ n: number }>(db, `select count(*)::int n from id_schemes where published_by = 'pack:fr'`);
     expect(n.n).toBe(7);
     const siret = await one<{ ok: boolean; ko: boolean }>(db, `select '12345678901234' ~ pattern ok, '123' ~ pattern ko from id_schemes where code = 'siret'`);
@@ -53,40 +54,18 @@ describe('the fr pack', () => {
     expect(parcel.ok).toBe(true);
   });
 
-  it('says what the law of France sets, section by section, each rule from a text that is online', async () => {
-    const sections = await db.query<{ section: string; n: number }>(`select section, count(*)::int n from rules where country = 'FR' group by section order by section`);
-    expect(sections.rows).toEqual([
-      { section: 'addresses', n: 1 }, { section: 'compliance', n: 14 }, { section: 'data', n: 1 },
-      { section: 'energy_sharing', n: 12 }, { section: 'grid', n: 5 }, { section: 'support', n: 3 },
-    ]);
-    const unsourced = await db.query(`select r.code from rules r join legal_sources s on s.code = r.legal_source_code where s.url is null or s.reference = ''`);
-    expect(unsourced.rows).toEqual([]);
-    const orphans = await db.query(`select code from legal_sources where published_by = 'pack:fr' and code not in (select legal_source_code from rules union select legal_source_code from tasks.templates where legal_source_code is not null)`);
-    expect(orphans.rows).toEqual([]);
-  });
-
-  it('keeps the rules of a day apart: the 3 MW ceiling of a community before 22 February 2025, 5 MW since', async () => {
-    const before = await db.query<{ code: string; parameters: { max_power_kw_mainland: number } }>(`select code, parameters from rules_on('FR', 'energy_sharing', '2024-06-01') where code like 'fr_acc_power_cap%'`);
-    expect(before.rows).toEqual([{ code: 'fr_acc_power_cap_3mw', parameters: expect.objectContaining({ max_power_kw_mainland: 3000 }) }]);
-    const now = await db.query<{ code: string; parameters: { max_power_kw_mainland: number } }>(`select code, parameters from rules_on('FR', 'energy_sharing', '2026-10-16') where code like 'fr_acc_power_cap%'`);
-    expect(now.rows).toEqual([{ code: 'fr_acc_power_cap_5mw', parameters: expect.objectContaining({ max_power_kw_mainland: 5000 }) }]);
-    const perimeter = await one<{ parameters: { max_distance_m: number } }>(db, `select parameters from rules where code = 'fr_acc_perimeter_standard'`);
-    expect(perimeter.parameters.max_distance_m).toBe(2000);
-    const permits = await db.query<{ code: string }>(`select code from rules_on('FR', 'compliance', '2026-10-16') where code like 'fr_pv_ground_%' order by code`);
-    expect(permits.rows.map((r) => r.code)).toEqual(['fr_pv_ground_building_permit', 'fr_pv_ground_exempt', 'fr_pv_ground_prior_declaration']);
-  });
-
-  it('names the grid operators and what they cover', async () => {
-    const ops = await db.query<{ code: string; kind: string; regions: string[] }>(`select code, kind, regions from grid_operators where country = 'FR' order by kind, code`);
-    expect(ops.rows.map((o) => [o.code, o.kind])).toEqual([
-      ['enedis', 'dso'], ['es_reseaux', 'dso'], ['geg_reseaux', 'dso'], ['geredis', 'dso'], ['srd', 'dso'], ['urm', 'dso'], ['edf_sei', 'island'], ['rte', 'tso'],
-    ]);
-    expect(ops.rows.find((o) => o.code === 'edf_sei')?.regions).toContain('FR-20R');
+  it('keeps no law in the core: no texts, no rules, no operators outside the grid module', async () => {
+    const gone = await one<{ legal: string | null; rules: string | null; operators: string | null; rules_on: string | null }>(
+      db,
+      `select to_regclass('nexgen.legal_sources')::text legal, to_regclass('nexgen.rules')::text rules,
+              to_regclass('nexgen.grid_operators')::text operators, to_regprocedure('nexgen.rules_on(char, text, date)')::text rules_on`,
+    );
+    expect(gone).toEqual({ legal: null, rules: null, operators: null, rules_on: null });
   });
 
   it('plans the tasks of a French roof installation and of a French energy community from its templates', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
-    const roof = await insert(db, 'projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
+    const roof = await insert(db, 'community.projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
     await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'installed_power', '36'::jsonb, 'design')`, [roof]);
     const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
     expect(plan.p).toMatchObject({ created: 10, skipped: [] });
@@ -97,7 +76,7 @@ describe('the fr pack', () => {
     const consuel = await one<{ legal_reference: string; depends: string }>(db, `select tp.legal_reference, d.name depends from tasks.tasks t join tasks.templates tp on tp.id = t.template_id left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 and tp.code = 'pv_roof_consuel'`, [roof]);
     expect(consuel).toEqual({ legal_reference: 'D. 342-16 à D. 342-21', depends: 'Arrays mounted and wired' });
 
-    const community = await insert(db, 'projects', { organisation_id: org, name: 'Énergie partagée du bourg', country: 'FR', kind: 'energy_community', status: 'creation' });
+    const community = await insert(db, 'community.projects', { organisation_id: org, name: 'Énergie partagée du bourg', country: 'FR', kind: 'energy_community', status: 'creation' });
     const first = await one<{ p: { created: number; skipped: { code: string }[] } }>(db, 'select tasks.plan($1) p', [community]);
     expect(first.p.created).toBe(9);
     expect(first.p.skipped.map((s) => s.code)).toEqual(['acc_power_over_cap']);

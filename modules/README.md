@@ -8,11 +8,12 @@ is specific to a trade lives here, one folder and one schema per module.
 1. **One schema, and the core is not it.** A module depends on `nexgen` by
    foreign key; the core has no hook and no idea it exists.
 2. **Derive, never widen.** A module that needs more about a device adds a
-   table with the same id (`call derive_devices('energy.pv_systems',
+   table with the same id (`call derive_devices('solar.pv_systems',
    'solar')`); one that adds a kind of object declares it
-   (`call declare_object('architecture.floors', 'floor', '{building_id}')`)
-   so that attributes, sensors, series and documents attach to it.
-3. **Read the core freely, write it through `record_run()`.** A module may
+   (`call declare_object('grid.meters', 'meter', '{site_id}')`)
+   so that attributes, identifiers, links, series and documents attach to it.
+3. **Read the core freely, write it through its functions** (`record_run()`,
+   `open_series()`, `store_values()`, `link_objects()`…). A module may
    also publish vocabulary rows (device types, profiles, properties,
    quantities, link types, sources) with `published_by` set to its code.
 4. **Row level security on every table**, through `secure_table()`.
@@ -31,7 +32,9 @@ a program in any language, JSON in and out, that never reads the database.
 
 | Module | Objects it adds | Computes |
 |---|---|---|
-| `architecture` (shipped) | floors, spaces (rooms, zones, units) | the inside of a building after IFC and CityGML; BIM import and export through the format libraries |
+| `grid` (shipped) | connection points (`meters`) with the identifier their operator knows, and the operators of a country (`operators`, written by packs); a device behind a meter is a `behind_meter` link | the meters behind a participant; later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
+| `community` (shipped) | projects (an energy community, a portfolio, a study, a district plan) and participants, a site's role in a project over a period | who takes part in what, and behind which meters (with `grid`) |
+| `ekwo` (shipped, [0010](../docs/decisions/0010-ekwo-link.md)) | the accounting bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact | nothing: legal identity and invoicing stay on the accounting side |
 | `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
 | `solar` (schema shipped, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles | PV yield as a run that says its weather, period, conventions, models and losses, computed by PVGIS, by `pvwatts.ts` or by the pvlib engine ([0013](../docs/decisions/0013-external-engines.md)); IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
 | `storage` | batteries and their product physics (usable capacity, cycles, round-trip efficiency), hydrogen later | charge and discharge dispatch on the series `solar` and `consumption` produce |
@@ -43,7 +46,6 @@ a program in any language, JSON in and out, that never reads the database.
 | `generators` (later) | wind turbines, hydro, cogeneration, biomass and their curves | their yield, like `solar` for PV |
 | `heating` | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |
 | `thermal` | envelope elements and their U-values, thermal bridges, glazing | thermal simulation of the envelope, heat losses, energy performance inputs |
-| `grid` | grid operators, meter-data mandates, supply contracts, tariff components | retrieval of meter data from grid operators' hubs, tariff resolution |
 | `monitoring` | collection schedules and their runs, alarms (connections are core, connectors are libraries: [0011](../docs/decisions/0011-external-data.md)) | live readings from equipment and hubs, control through existing systems (Home Assistant, OpenEMS), battery dispatch, demand response |
 | `compliance` | requirements, checks, findings | regulatory analysis against the country packs: permits, solar obligations, protected zones, energy-sharing rules, performance certificates |
 | `tasks` (shipped, [0017](../docs/decisions/0017-tasks-as-data.md)) | phases of a project's life (study to decommissioning) and the roles that carry a task, as vocabularies; task templates per country, kind of project and role, with legal reference, documents and condition, published by the packs; tasks on a project, a site, a building, a surface or a device, with planned and actual dates, status, contact, dependency and source | `plan()`: the tasks of a project from the templates that match it, once; `progress()`: where a site or a project stands on a day |

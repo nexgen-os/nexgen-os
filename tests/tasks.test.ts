@@ -42,7 +42,7 @@ const plan = async (projectId: string, scenarioId: string | null = null): Promis
 const task = (fields: Record<string, unknown>) => insert(db, 'tasks.tasks', { organisation_id: ORG, ...fields });
 
 beforeAll(async () => {
-  db = await freshDatabase(['tasks']);
+  db = await freshDatabase(['community', 'grid', 'tasks']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
@@ -159,8 +159,8 @@ describe('where a project stands', () => {
   });
 
   it('sums a project up: its own tasks and those of every site taking part', async () => {
-    const project = await insert(db, 'projects', { organisation_id: ORG, name: 'Mont Noir solar works', country: 'FR', status: 'creation' });
-    await insert(db, 'participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
+    const project = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Mont Noir solar works', country: 'FR', status: 'creation' });
+    await insert(db, 'community.participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
     await task({ subject_id: project, phase: 'design', name: 'Grid study accepted', status: 'done', actual_start: '2025-11-03', actual_end: '2025-12-15' });
     const p = await progress(project, '2026-06-22');
     expect(p.total).toBe(8);
@@ -194,9 +194,9 @@ describe('what has to be done, from the templates of a country and a kind of pro
         ('dso_notification',   'pack:be', 'BE', 'pv_roof',          'grid_connection', 'owner',        'Installation notified to the grid operator',              'Règlement technique',             '{}', null, null, 10),
         ('yearly_inspection',  'farm',    null, null,               'operation',       'installer',    'Yearly inspection of the arrays',                         null,                              '{"Inspection report"}', null, null, 10)
     `);
-    roofFr = await insert(db, 'projects', { organisation_id: ORG, name: 'Barn roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
-    roofBe = await insert(db, 'projects', { organisation_id: ORG, name: 'Flemish barn roof', country: 'BE', kind: 'pv_roof', status: 'creation' });
-    community = await insert(db, 'projects', { organisation_id: ORG, name: 'Mont Noir community', country: 'FR', kind: 'energy_community', status: 'creation' });
+    roofFr = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Barn roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
+    roofBe = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Flemish barn roof', country: 'BE', kind: 'pv_roof', status: 'creation' });
+    community = await insert(db, 'community.projects', { organisation_id: ORG, name: 'Mont Noir community', country: 'FR', kind: 'energy_community', status: 'creation' });
   });
 
   it('keep a template well-formed: a known phase and role, a condition with a property, an operator and a number', async () => {
@@ -259,5 +259,11 @@ describe('what has to be done, from the templates of a country and a kind of pro
     const mine = await asUser(db, USER_A, () => plan(community));
     expect(mine).toMatchObject({ created: 0, existing: 2 });
     await expect(asUser(db, USER_B, () => plan(community))).rejects.toThrow(/^project_not_found/);
+  });
+});
+
+describe('the module itself', () => {
+  it('needs the community module, and says so by name', async () => {
+    await expect(freshDatabase(['tasks'])).rejects.toThrow(/module_required: tasks needs the community module/);
   });
 });
