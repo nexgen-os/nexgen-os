@@ -8,9 +8,51 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Moved
+
+The repository reads like the model; behaviour does not change. Old path →
+new path:
+
+- `supabase/migrations` → `core/migrations`, `supabase/seed` → `core/seed`;
+  "The model in one screen" moves from the README to `core/README.md`. The
+  installer reads the new paths and reads the names a 0.1 installation
+  recorded under `supabase/` as their `core/` names, so `doctor` and
+  `migrate` see nothing pending.
+- `formats/<f>` → `packages/formats/<f>` for `cityjson`, `geojson`,
+  `homeassistant`, `ifc`, `panond`, `parquet` and `weather-files`; each is an
+  npm package `@nexgen-os/<f>` (MIT) with its own `package.json`, `README`
+  and `LICENSE`.
+- `connectors/open-meteo`, `connectors/pvgis` → `packages/connectors/open-meteo`,
+  `packages/connectors/pvgis`.
+- `formats/geocoding` → one connector per service: `packages/connectors/nominatim`,
+  `photon`, `ban`, `geopunt`, `urbis`, `icar` (the former `walloon()`);
+  `belgium()` is gone, the caller keys the three by region.
+- `formats/db.ts`, `formats/geometry.ts`, `connectors/index.ts`,
+  `connectors/series.ts`, the address shape and `geocoderFor()` of
+  `formats/geocoding/index.ts`, `engines/runner.ts`, `engines/settlement.ts`,
+  `engines/pvlib/index.ts` → the new package `@nexgen-os/core`
+  (`packages/core`). `engines/` keeps the programs in other languages.
+- `sdk/python` → `packages/python`.
+- `modules/solar/*.ts` → `modules/solar/src/*.ts`.
+- `modules/ekwo` → `modules/accounting`: schema `accounting`, tables
+  `accounting.companies` and `accounting.contacts`, module code
+  `accounting`.
+- `site/` leaves the repository; `site/README.md` points to the new home.
+
+### Changed
+
+- The BAN geocoder returns `FR-75C`, the ISO 3166-2 code, for Paris.
+- An engine's series name their unit in the `units` vocabulary (`W/m²`,
+  `°C`); the solar module stores them through `store()`, which converts. The
+  settlement types no longer carry their own list of price units.
+- `doctor` names `series_partitions_missing`: weeks of `series_values` that
+  hold values with no weekly partition.
+- The README says where the line between Nexgen OS and invoicing is, and why
+  Ekwo OS is the accounting application it is built for.
+
 ### Added
 
-- The `settlement` request kind of the engines (`engines/settlement.ts`):
+- The `settlement` request kind of the engines (`packages/core/src/engines/settlement.ts`):
   contracts with their price signals and the series their volume is read
   from in, settlement lines out — energy, price and amount over each
   interval a price holds, who pays whom, in the contract's currency. How
