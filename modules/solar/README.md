@@ -30,6 +30,44 @@ through `record_run()`.
 `solar.system_kwp(system, scenario?)` gives the DC power of a system: the sum
 of its arrays, or its own `kwp_dc` when it has none.
 
+## Soiling of a place
+
+How much light dirt takes depends on the place — dust from a field or a
+road, birds, rain, a cleaning routine — rather than on a profile's modelling
+choices. `soiling_loss` (a fraction, `0.02` for 2 %) is an attribute of a
+PV array, of its PV system (a `device`) or of its site, attached like any
+other with its source and its period. `solar.soiling_of(object, at?,
+scenario?)` reads it through `parameter_of()`: the array's own, its
+system's, its site's, its organisation's; null when nobody says it.
+
+A yield run reads it for each array at the start of the first year asked
+and puts it in place of the profile's own `soiling` loss, at its rank: it
+replaces the 2 % of `pvsyst_like` and fills the null of `pvsol_like`. A
+profile that folds soiling into one aggregate loss (`system` of
+`pvgis_like` and `pvwatts`) keeps that loss whole, so that soiling is never
+counted twice; the run records, per array, the soiling found, where it was
+found, and `applied: false` with the reason. An engine request carries one
+list of losses: arrays whose soiling differs throw a named error
+(`losses_differ_between_arrays`); say the soiling on the system or the site
+for an engine run. A fraction outside [0, 1) throws `soiling_out_of_range`.
+
+## The parameters of a study, and where they live here
+
+What a PVsyst, PV\*SOL or PVWatts study declares about the place and its
+losses, and where it is held in this module:
+
+| Parameter | Here | Read by |
+|---|---|---|
+| tilt, azimuth | `surfaces`, or `solar.pv_arrays` (degrees clockwise from north) | every run |
+| mounting | `solar.pv_arrays.mounting` | PVGIS (`building` / `free`), engines (temperature parameters) |
+| far horizon | `solar.horizons` | not yet in the hourly shape (PVGIS's own reaches the annual through anchoring) |
+| ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its run says the array's albedo is not applied |
+| bifacial modules | `solar.pv_arrays.bifacial` | recorded `not modelled` by every run: no rear-side gain is applied |
+| soiling | `soiling_loss` on the array, the system or the site | every run, in place of the profile's `soiling` loss |
+| mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every run |
+| temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
+| degradation | `solar.pv_systems.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to a run |
+
 ## Yield profiles shipped
 
 | Code | Imitates | Choices |

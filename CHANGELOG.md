@@ -121,6 +121,16 @@ new path:
   pure Python, which shares in proportion to offtake and is meant to be
   copied; it refuses by name `participants_missing`, `series_missing`,
   `series_misaligned`, `key_unknown` and `rule_unknown`.
+- `solar`: the soiling of a place. `soiling_loss` (a fraction) is an
+  attribute of a PV array, its system or its site; `solar.soiling_of()`
+  reads it the nearest first. A yield run puts it in place of the profile's
+  `soiling` loss (`pvsyst_like`, `pvsol_like`) and records where it was
+  found; a profile with one aggregate loss keeps it whole and the run says
+  so. Named errors: `losses_differ_between_arrays` (an engine request
+  carries one list of losses), `soiling_out_of_range`. Migration
+  `modules/solar/migrations/0003_soiling.sql`.
+- `solar`: a `pvwatts` run says, per array, that the array's albedo is not
+  applied there (the ground reflection is the weather source's).
 - Nexgen OS and Ekwo OS on one database: `docs/with-ekwo-os.md` says how
   both are installed on one project, what each installer owns, what the
   `accounting` module holds, and that the schema name `ekwo` is Ekwo's.
