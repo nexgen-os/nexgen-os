@@ -77,7 +77,8 @@ parents. Attachments point to the registry; pages read the named tables.
   building, its parent space, elevation, height and geometry, the source it
   was described from and its `metadata` (`add_space`).
 - **surfaces** — a roof face, a facade, a ground area or a carport, on a
-  building or a site, with azimuth (degrees clockwise from true north) and
+  building or straight on a site (a ground-mounted plant, a field or a car
+  park has surfaces and no building), with azimuth (degrees clockwise from true north) and
   tilt; `add_surface` reads them from a 3D polygon when none is given.
 
 ### The shape of a place

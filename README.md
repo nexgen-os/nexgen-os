@@ -191,8 +191,8 @@ repository.
 ## Invoicing, and Ekwo OS
 
 Nexgen OS describes places, devices and series, and computes what moved and
-at what price. The [`sharing`](modules/README.md) module gives who received
-how much: allocation keys, and the volume of each participant over each
+at what price. The [`community`](modules/README.md) module gives who takes part, and
+who received how much: allocation keys, and the volume of each participant over each
 interval. The [`contracts`](modules/README.md) module gives under which
 contract and at which price: a supply, an injection, a physical or virtual
 PPA (power purchase agreement), an internal community tariff, each with its
