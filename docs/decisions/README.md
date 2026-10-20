@@ -87,6 +87,7 @@ describes; its record is written once the fix has shipped.
 ## Releases
 
 - [0040](0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) · A release has a tag, a schema version and a schema floor · accepted
+- [0041](0041-a-module-names-one-thing.md) · A module names one thing with its own physics, and there is no catch-all · accepted
 - [0005](0005-open-questions.md) · The core is AGPL, the libraries MIT, and a sign-off is enough to contribute · accepted
 
 ## Records of single modules
