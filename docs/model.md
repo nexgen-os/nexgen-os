@@ -74,7 +74,8 @@ parents. Attachments point to the registry; pages read the named tables.
 - **spaces** — the inside of a building, one tree
   ([0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md)):
   `floor` (with its `level`), `room`, `zone`, `unit`, each with its
-  building, its parent space, elevation, height and geometry (`add_space`).
+  building, its parent space, elevation, height and geometry, the source it
+  was described from and its `metadata` (`add_space`).
 - **surfaces** — a roof face, a facade, a ground area or a carport, on a
   building or a site, with azimuth (degrees clockwise from true north) and
   tilt; `add_surface` reads them from a 3D polygon when none is given.
@@ -117,7 +118,8 @@ key is refused (`place_key_unknown`).
   Type (from `device_types`), site, and where on it — building, space,
   surface — checked together by `devices_check`; catalogue product,
   manufacturer, model, rated power, unit count, status, installation and
-  removal dates. `install_device`, `move_device` (the place it leaves stays
+  removal dates. `install_device` (with the nameplate and `metadata` of the
+  file it was read from, when no product is named), `move_device` (the place it leaves stays
   as a `placed_in` link), `retire_device`, `replace_device` (a `replaces`
   link). Anything else about where it belongs — the meter it is behind, the
   zone it serves — is a link. A module derives the types it owns:
@@ -188,7 +190,7 @@ security; a role without a signed-in user reads nothing):
 | `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a run of a module (a validation module), with its method |
 | `coverage(series, from, to)` | the gaps of a regular series: bounds and count of the values it lacks |
 | `forecast_at(series, from, to, as_of?, horizon?)` | a forecast as known at `as_of`, or issued `horizon` before each instant, or its latest issue |
-| `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `packages/formats/parquet` writes as a file |
+| `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `exportSeriesParquet()` of `@nexgen-os/core` reads and `packages/formats/parquet` writes as a file |
 
 The same calls are typed for TypeScript in `packages/core/src/series.ts` and for
 Python in `packages/python` (rows by default; Arrow, pandas and Polars as
@@ -278,6 +280,26 @@ level. Any CRS is accepted on the way in, through GeoJSON `crs` or an SRID.
 `to_core_geometry()` transforms, validates and lifts the shape to 3D;
 `metric_srid()` gives the UTM zone of any shape, so `area_m2()` and
 distances are in metres anywhere, without a national grid.
+
+## Files in and out
+
+A file reaches the model in two steps
+([0035](decisions/0035-a-format-library-touches-no-database.md)): a
+format library of `packages/formats/` (MIT, no dependency on Nexgen OS)
+reads it into plain shapes, and an importer of `@nexgen-os/core` — or of
+the module that owns the rows — writes those shapes through the gestures
+above, with the source the caller names. An exporter reads the rows back
+into the same shapes, and the library writes the file.
+
+| File | Library | Importer, exporter |
+|---|---|---|
+| Home Assistant snapshot | `homeassistant`: `readHomeAssistant`, `writeHomeAssistant` | `importHomeAssistant`, `exportHomeAssistant` (core) |
+| CityJSON 2.0 | `cityjson`: `readCityJson`, `writeCityJson` | `importCityJson`, `exportCityJson` (core) |
+| IFC4, IFC2x3 | `ifc`: `readIfc` | `importIfc` (core) |
+| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core) |
+| EPW, TMY3 | `weather-files`: `readEpw`, `readTmy3`, `writeEpw` | `importWeatherFile`, `exportWeatherYear` (core) |
+| Parquet | `parquet`: `writeSeriesParquet` | `exportSeriesParquet` (core) |
+| PVsyst PAN, OND | `panond`: `readPan`, `readOnd` | `importProduct` (`modules/solar/src/products.ts`) |
 
 ## Security
 

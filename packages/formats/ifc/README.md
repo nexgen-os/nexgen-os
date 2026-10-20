@@ -1,39 +1,54 @@
-# `@nexgen-os/ifc` — IFC → Nexgen OS
+# `@nexgen-os/ifc` — IFC → plain shapes
 
 Reads the buildings of an [IFC](https://technical.buildingsmart.org/standards/ifc/)
-model — IFC4 or IFC2x3, as a STEP file — into the core. MIT, like every format library; the file is parsed by
-[web-ifc](https://github.com/ThatOpen/engine_web-ifc) (MPL-2.0, WebAssembly),
-which runs on Node as it is. IFC4 is tested on hand-written fixtures; IFC2x3
-shares the attributes read here but has not been tested on a file yet.
+model — IFC4 or IFC2x3, as a STEP file — into plain shapes, every
+coordinate in metres in the reference system the model is placed in. MIT;
+the file is parsed by [web-ifc](https://github.com/ThatOpen/engine_web-ifc)
+(MPL-2.0, WebAssembly), which runs on Node as it is, its one dependency.
+IFC4 is tested on hand-written fixtures; IFC2x3 shares the attributes read
+here but has not been tested on a file yet.
 
-| IFC | Nexgen OS | Notes |
+| IFC | `IfcModel` | Notes |
 |---|---|---|
-| `IfcMapConversion` + `IfcProjectedCRS` | the transform from model metres to the projected CRS, then WGS 84 | site position at `rooftop` precision |
-| else `IfcSite.RefLatitude` / `RefLongitude` / `RefElevation` | a transverse Mercator centred on the site's origin; north from the context's `TrueNorth`, else the site's X axis taken as east | site position at `parcel` precision |
-| else `options.origin` | the same, from `{ lon, lat, rotationDeg, elevation }` | the site is left alone; without it, `georeference_missing` |
-| `IfcUnitAssignment` | length and area factors | millimetres, feet and every SI prefix |
-| `IfcBuilding` | one row of `buildings` | name, `ElevationOfRefHeight` (else the lowest storey) as `elevation_m`, height from the top of its geometry; the attribute `year_built` from `Pset_BuildingCommon.YearOfConstruction`, with the file as its source |
-| ground-floor `IfcSlab` (`FLOOR`, `BASESLAB`), else exterior `IfcWall` boxes | `footprint` | union in plan; walls' holes filled; `footprint: 'none'` in the result without either |
-| `IfcBuildingStorey` | `spaces`, kind `floor` | `level` 0 at the storey closest to the building's 0.00, `elevation_m`, `height_m` to the next storey |
-| `IfcSpace` | `spaces`, kind `room`, under its floor | name from `LongName`, else `Name`; `height_m` from `Qto_SpaceBaseQuantities.Height`; the attribute `floor_area` from `NetFloorArea`, else `GrossFloorArea` |
-| `IfcRoof`, `IfcSlab` `ROOF` | `surfaces` of kind `roof`, one per face that looks up | 3D polygon, azimuth against true north and tilt by `orientation()` of [`../../core/src/geometry.ts`](../../core/src/geometry.ts), shared with CityJSON |
-| equipment whose class a device type names (`device_types.ifc_class`: `IfcSolarDevice`, `IfcElectricFlowStorageDevice`, `IfcFlowMeter`, `IfcBoiler`…) | one row of `devices` on the site | the type is the vocabulary's: a class several types share is told apart by `PredefinedType` when it names one (`BATTERY` → `battery`), else it takes the type they all refine (`IfcElectricGenerator` → `generator`), else it is skipped; `building_id` and `space_id` from the building and the room that contain it, `manufacturer` and `model` from `Pset_ManufacturerTypeInformation` (`ModelLabel`, else `ModelReference`), `serial_number` from `Pset_ManufacturerOccurrence`, a point from its placement when the model is georeferenced |
-| GlobalId | `external_ids`, scheme `ifc_guid` | on every row; a roof element with several faces names its first face |
-| attributes, property sets, quantity sets | `metadata.ifc` of buildings, floors, spaces, surfaces and devices | the building also keeps the file header, the units, the georeferencing block and the site |
-
-Every row and every attribute carries `source_code`: the model the file
-comes from, a `sources` row with its licence and attribution.
+| `IfcMapConversion` + `IfcProjectedCRS` | `georeference` `map_conversion`: the transform from model metres to the projected CRS (`srid`) | |
+| else `IfcSite.RefLatitude` / `RefLongitude` / `RefElevation` | `site_coordinates`: a transverse Mercator centred on the site's origin (`proj`); north from the context's `TrueNorth`, else the site's X axis taken as east | |
+| else `options.origin` | `none`: the same, from `{ lon, lat, rotationDeg, elevation }` | without it, `georeference_missing` |
+| `IfcUnitAssignment` | `units`: length and area factors | millimetres, feet and every SI prefix |
+| `IfcSite` | `site`: its origin and its description | |
+| `IfcBuilding` | `IfcBuilding` | name, `ElevationOfRefHeight` (else the lowest storey) as `elevation`, `height` to the top of its geometry, `yearOfConstruction` from `Pset_BuildingCommon` as the file says it |
+| ground-floor `IfcSlab` (`FLOOR`, `BASESLAB`), else exterior `IfcWall` boxes | `footprint`: its `source` and plan pieces to union | `none` without either |
+| `IfcBuildingStorey` | `floors` | `level` 0 at the storey closest to the building's 0.00, `elevation`, `height` to the next storey |
+| `IfcSpace` | `rooms` of its floor, else of the building | name from `LongName`, else `Name`; `height` from `Qto_SpaceBaseQuantities.Height`; `area` from `NetFloorArea`, else `GrossFloorArea`, in m² |
+| `IfcRoof`, `IfcSlab` `ROOF` | `roofs`, one per face that looks up | rings counter-clockwise seen from above; the element's GlobalId on its first face |
+| every other product | `products` | class, `PredefinedType`, name, manufacturer and model (`Pset_ManufacturerTypeInformation`), serial number (`Pset_ManufacturerOccurrence`), position, the building and the room that contain it |
+| attributes, property sets, quantity sets | `description` of every shape | with the file header (`header`) |
 
 ```ts
-import { importIfc } from '@nexgen-os/ifc';
+import { readIfc } from '@nexgen-os/ifc';
 
-const r = await importIfc(db, { organisationId, siteId }, bytes, { sourceCode: 'architect_model' });
-// r.georeference: 'map_conversion' | 'site_coordinates' | 'none'
-// r.counts: { buildings, floors, spaces, roofs, devices }; r.skipped: [{ entity, count, reason }]
+const model = await readIfc(bytes); // { georeference, units, site, buildings, products, skipped }
 ```
 
-A building already known to the organisation by its GlobalId is refused by
-name (`already_imported`), never duplicated.
+Refuses by name `not_ifc`, `invalid_ifc` (a building without a GlobalId),
+`crs_unknown` (a map conversion whose CRS is not an EPSG code) and
+`georeference_missing`. What it never does: decide which device type an IFC
+class is, transform to WGS 84, compute an azimuth, open a connection.
+
+Into Nexgen OS, `importIfc()` of `@nexgen-os/core` writes the shapes
+through the gestures of the core: the site placed by `locate_site()` at
+`rooftop` precision with a map conversion, `parcel` with the site's
+coordinates, when it had no position or a coarser one; the building by
+`add_building()` (footprint unioned in WGS 84, walls' holes filled), its
+year by `set_attribute()`; floors and rooms by `add_space()`, a room's
+area as the attribute `floor_area`; roof faces by `add_surface()` with
+azimuth against true north and tilt; each product whose class a device
+type names (`device_types.ifc_class`: `IfcSolarDevice`,
+`IfcElectricFlowStorageDevice`, `IfcFlowMeter`, `IfcBoiler`…) by
+`install_device()` — a class several types share told apart by
+`PredefinedType` (`BATTERY` → `battery`), else the type they all refine
+(`IfcElectricGenerator` → `generator`), else skipped; every GlobalId by
+`add_identifier()`, scheme `ifc_guid`. A building already known to the
+organisation by its GlobalId is refused (`already_imported`).
 
 Left alone, and reported in `skipped` by entity type: every other product
 (walls, doors, windows, furniture, vegetation, the MEP no device type

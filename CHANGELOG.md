@@ -41,6 +41,52 @@ new path:
 
 ### Changed
 
+- A format library touches no database
+  ([0035](docs/decisions/0035-a-format-library-touches-no-database.md)).
+  Each library of `packages/formats/` reads a file into plain shapes
+  declared in its own types and writes such shapes back; it imports nothing
+  of Nexgen OS, opens no connection and calls no network, and the hygiene
+  script checks it. What wrote the model moves to an importer of
+  `@nexgen-os/core` (`src/files/`), which writes through the gestures of the
+  schema, or of the module that owns the rows. A file is now read, then
+  imported:
+  - Home Assistant: `readHomeAssistant(snapshot)` → spaces, devices, points
+    and readings; `writeHomeAssistant(shapes)` → the snapshot.
+    `importHomeAssistant(db, { siteId, buildingId }, shapes)` and
+    `exportHomeAssistant(db, buildingId)` move to the core; the round trip
+    stays lossless through both layers.
+  - CityJSON: `readCityJson(doc, { srid })` and `writeCityJson(model)`;
+    `importCityJson(db, { siteId }, model, options)` and
+    `exportCityJson(db, { siteId })`, which returns the model, move to the
+    core. `sridOf()` is the library's; `orientation()` stays the core's.
+  - IFC: `readIfc(bytes, { origin })` returns the buildings, floors, rooms,
+    roof faces and products in the reference system the model is placed in;
+    `importIfc(db, { siteId }, model, options)` moves to the core and places
+    the site through `locate_site()`.
+  - GeoJSON: the library declares RFC 7946 and adds `writeGeoJson()` and
+    `readGeoJson()`; `exportGeoJson()` moves to the core, its collection
+    typed `GeoJsonExport`.
+  - Weather files: the library returns its own `WeatherSeries`;
+    `importWeatherFile()` moves to the core, `exportEpw()` becomes
+    `exportWeatherYear()` of the core, whose result `writeEpw()` writes.
+  - Parquet: `exportSeriesParquet()` and `serverParquetWriter()` move to the
+    core; the caller gives the writer (`write: writeSeriesParquet`).
+  - PAN and OND: `importProduct()` moves to `modules/solar/src/products.ts`.
+  The target of an importer is the site (its organisation is the site's);
+  a file whose buildings are known to the organisation is refused
+  (`already_imported`) before anything is written.
+- `add_building()` takes the metadata of the file a building was read from
+  and a scenario; `add_space()` its source and metadata; `add_surface()`
+  its metadata; `install_device()` a nameplate (manufacturer, model, serial
+  number) for a device of no catalogue product, its metadata and a status.
+  The parameters are added at the end, with defaults: existing calls keep
+  their meaning.
+- No format library depends on `@nexgen-os/core`; the core depends on
+  `cityjson`, `geojson`, `homeassistant` and `weather-files`, and on `ifc`
+  as an optional peer. The workspaces build formats first.
+- The fixtures of the format libraries move to
+  `packages/formats/<f>/tests/fixtures/`, with the tests that need no
+  database.
 - The BAN geocoder returns `FR-75C`, the ISO 3166-2 code, for Paris.
 - An engine's series name their unit in the `units` vocabulary (`W/m²`,
   `°C`); the solar module stores them through `store()`, which converts. The

@@ -1,13 +1,14 @@
-# `@nexgen-os/panond` — PAN and OND product files → Nexgen OS
+# `@nexgen-os/panond` — PAN and OND product files → plain products
 
 Reads the files PVsyst writes and manufacturers publish next to their
 datasheets — PAN for a PV module, OND for an inverter, in PVsyst's text
-format (version 6 and later) — into products of the directory with their
-physics. Read only: a PAN or OND file is never written (decision
-[0012](../../../docs/decisions/0012-solar-module.md)). MIT, like every format
-library; `parsePanOnd`, `readPan` and `readOnd` need no database.
+format (version 6 and later) — into a product and its physics. Read only:
+a PAN or OND file is never written (decision
+[0012](../../../docs/decisions/0012-solar-module.md)). MIT; no dependency,
+no database, no network. The table names the product's fields, and where
+the importer of the `solar` module writes them.
 
-| File | Nexgen OS | Notes |
+| File | Product, and its row in Nexgen OS | Notes |
 |---|---|---|
 | `Manufacturer`, `Model` | `device_directory.manufacturer`, `model_ref` | a product the directory already knows gains its physics |
 | PAN `PNom`, `Width` × `Height` | `unit_power_kw`, `unit_surface_m2` | |
@@ -20,15 +21,22 @@ library; `parsePanOnd`, `readPan` and `readOnd` need no database.
 | `Price`, `Currency`, `PriceDate` | left out | the line between open and paid data runs on prices |
 
 ```ts
-import { readPan, readOnd, importProduct } from '@nexgen-os/panond';
+import { readPan, readOnd } from '@nexgen-os/panond';
+import { importProduct } from '../modules/solar/src/products.js'; // the solar module, inside this repository
 
 const module = readPan(panText);
 await importProduct(db, module, { organisationId, sourceCode: null, fileName: 'module.PAN' });
 await importProduct(db, readOnd(ondText), { organisationId });
 ```
 
-A module imported this way runs as it is through the pvlib engine
-(`engines/pvlib`, DC model `pvsyst`) once an array names it.
+What it never does: look a product up, write a directory, open a
+connection. `importProduct()` of the `solar` module
+([`modules/solar/src/products.ts`](../../../modules/solar/src/products.ts))
+adds the product to `device_directory`, or gives its physics to the one the
+directory already knows by manufacturer and model, and refuses physics
+given twice (`already_imported`). A module imported this way runs as it is
+through the pvlib engine (`engines/pvlib`, DC model `pvsyst`) once an
+array names it.
 
 ## The diode currents
 
