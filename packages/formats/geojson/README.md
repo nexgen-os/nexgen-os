@@ -1,21 +1,43 @@
-# `@nexgen-os/geojson` — Nexgen OS → GeoJSON
+# `@nexgen-os/geojson` — GeoJSON ⇄ plain features
 
-Writes a site, or every site taking part in a project, as one
-[GeoJSON](https://www.rfc-editor.org/rfc/rfc7946) FeatureCollection: the
-format every web map, every GIS and every open-data portal reads. The
-places and the figures computed on them travel together, so that a
-scenario can be shown to the people it concerns. MIT, like every format
-library.
+[GeoJSON](https://www.rfc-editor.org/rfc/rfc7946) is the format every web
+map, every GIS and every open-data portal reads, and the one interchange
+format of places in Nexgen OS
+([0025](../../../docs/decisions/0025-a-place-has-one-shape.md)). This
+library declares the shapes of RFC 7946, writes features as one
+FeatureCollection with its `bbox` and the foreign members a writer adds, and
+reads a document — a FeatureCollection, a Feature or a bare geometry — back
+into features. MIT; no dependency, no database, no network.
 
 ```ts
-import { exportGeoJson } from '@nexgen-os/geojson';
+import { readGeoJson, writeGeoJson } from '@nexgen-os/geojson';
+
+const fc = writeGeoJson(features, { source: { code: 'urbis' } }); // type, bbox, features, then the members
+const { features, members, warnings } = readGeoJson(text);
+```
+
+`readGeoJson()` reports a member that is not a feature (`not_a_feature`)
+and a geometry of no RFC 7946 type (`geometry_unknown`) in `warnings` and
+keeps the rest; it refuses by name what is not GeoJSON (`not_geojson`). What
+it never does: transform or round coordinates, rewind a polygon, open a
+connection.
+
+## The export of a site or a project
+
+`exportGeoJson()` of `@nexgen-os/core` writes a site, or every site taking
+part in a project, as one FeatureCollection through `writeGeoJson()`: the
+places and the figures computed on them travel together, so that a
+scenario can be shown to the people it concerns.
+
+```ts
+import { exportGeoJson } from '@nexgen-os/core';
 
 const fc = await exportGeoJson(db, { siteId });                         // everything the user may read
 const open = await exportGeoJson(db, { projectId }, { open: true });    // what may be published
 const variant = await exportGeoJson(db, { siteId }, { scenarioId });    // a design variant over reality
 ```
 
-## What goes out
+### What goes out
 
 | Nexgen OS | Feature | Properties |
 |---|---|---|
@@ -39,7 +61,7 @@ results, exactly as `record_run()` kept them. The export computes nothing.
   on with its licence and attribution, and how many objects were withheld.
 - The same database gives the same document: no export time inside it.
 
-## The open export
+### The open export
 
 `open: true` is the document meant for the public — a citizens' portal, a
 consultation, an open-data catalogue:
@@ -57,10 +79,10 @@ consultation, an open-data catalogue:
 Whoever publishes still reads the document first: names of sites and
 buildings are written by people and may name people.
 
-## What it refuses
+### What it refuses
 
 Every refusal starts with its name: `target_required` (a `siteId` or a
 `projectId`, not both), `site_not_found`, `project_not_found` (absent, or
 not readable under row level security), `scenario_not_found`.
 
-Not yet: reading GeoJSON back in, meters and participants, series.
+Not yet: importing GeoJSON places into sites, meters and participants, series.

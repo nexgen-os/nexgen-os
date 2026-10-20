@@ -1,34 +1,34 @@
-# `@nexgen-os/homeassistant` — Home Assistant ⇄ Nexgen OS
+# `@nexgen-os/homeassistant` — Home Assistant ⇄ plain shapes
 
-Maps a Home Assistant instance — its floors, areas, devices, entities and
-the states its recorder keeps — onto a Nexgen OS building, and back, with no
-field lost. MIT, like every format library.
+Reads what a Home Assistant instance exports — its floors, areas, devices,
+entities and the states its recorder keeps — into plain shapes any tool can
+use, and writes the shapes back, with no field lost. MIT; no dependency.
 
-| Home Assistant | Nexgen OS | Notes |
+| Home Assistant | Shape | Notes |
 |---|---|---|
-| floor | `spaces`, kind `floor` | `level` = the floor's level, or its rank |
-| area | `spaces`, kind `room` | under its floor; straight in the building when it has no floor |
-| device | `devices` | type `sensor_box`, in its area's room (`space_id`); manufacturer, model, serial number as columns; identifiers, connections, versions, `via_device_id` in `metadata.ha` |
-| entity | `series` | one per entity, opened by `series_ensure()`: observed object = its device, else its area, else the building; `device_id` = its device; `name` = the entity id; `external_ref` = `homeassistant://<entity_id>` |
-| `device_class` + unit | `quantity_code` | temperature °C, humidity %, CO₂ ppm, power W/kW, energy Wh/kWh/MWh, battery %, irradiance W/m², volume and gas m³, occupancy; any other pair gets a quantity of its own, published by the library |
-| `state_class` | `series.value_kind` | `measurement` → `instant`; `total`, `total_increasing` → `cumulative` |
-| domain | `series.kind` | `number`, `climate`, `water_heater` → `setpoint`; `switch`, `light`, `cover`, `button`… → `command`; the rest → `measured` |
-| state | values | through `store()`, converted to the quantity's unit by the core's `units` vocabulary (W → kW, Wh → kWh); `on`/`off` → 1/0; `unavailable` / `unknown` → quality code 3, `missing` |
+| floor | `HomeSpace`, kind `floor` | `level` as the file says it, or null |
+| area | `HomeSpace`, kind `room` | `parent` = its floor, or null |
+| device | `HomeDevice` | `name` = the name a person gave it, else its own; manufacturer, model, serial number; `space` = its area |
+| entity | `HomePoint` | `device`, `space`; `deviceClass` and `unit` as stated; `role` from the domain (`number`, `climate`, `water_heater` → `setpoint`; `switch`, `light`, `cover`, `button`… → `command`; the rest → `measured`); `valueKind` from the state class (`total`, `total_increasing` → `cumulative`, else `instant`); `binary` for on/off domains |
+| state | `HomeReading` | `on`/`off` → 1/0; `unavailable`, `unknown` or not a number → `null` |
 
-Everything else an entity carries — `unique_id`, `platform`, `icon`,
-`entity_category`, `disabled_by`, original name and class, the original unit
-and whether the core converted it — travels in `series.metadata.ha`, so that
-`exportHomeAssistant()` returns the registry exactly as `importHomeAssistant()`
-received it. The one thing the round trip flattens: `unknown` comes back as
+Every field a shape has no field for (icons, aliases, identifiers,
+connections, versions, `via_device_id`, `unique_id`, `platform`,
+`entity_category`, `disabled_by`, original names and classes) travels in
+its `extra`, so that `writeHomeAssistant(readHomeAssistant(s))` deep-equals
+`s`. The one thing the round trip flattens: `unknown` comes back as
 `unavailable`.
 
 ```ts
-import { importHomeAssistant, exportHomeAssistant } from '@nexgen-os/homeassistant';
+import { readHomeAssistant, writeHomeAssistant } from '@nexgen-os/homeassistant';
 
-await importHomeAssistant(db, { organisationId, siteId, buildingId }, snapshot);
-const again = await exportHomeAssistant(db, buildingId); // deep-equals snapshot
+const home = readHomeAssistant(snapshot); // { spaces, devices, points }
+const again = writeHomeAssistant(home);   // deep-equals snapshot
 ```
 
-The library speaks SQL only, through a one-method `Db` interface, so it runs
-on PGlite, node-postgres or postgres.js, on a connection whose search path
-holds `nexgen`. Needs the core only: floors and rooms are spaces of the core.
+What it never does: convert a unit, guess a quantity, open a connection or
+call Home Assistant. Into Nexgen OS, `importHomeAssistant()` of
+`@nexgen-os/core` writes the shapes into a building — spaces through
+`add_space()`, devices through `install_device()`, one series per point
+through `series_ensure()`, the readings through `store()` converted by the
+`units` vocabulary — and `exportHomeAssistant()` reads them back.

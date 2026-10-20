@@ -66,9 +66,10 @@ Four things only you do here:
   way to read attributes, series and places;
 - **attach**: an attribute with its period, a document, an identifier, a
   link, a tag — always with its source, never a value you made up;
-- **import**: a file through a format library (`packages/formats/`), a place through
-  a geocoder, weather or readings through a connector (`packages/connectors/`), each
-  of which writes the provenance for you;
+- **import**: a file read by a format library (`packages/formats/`) and
+  written by its importer (`@nexgen-os/core`), a place through a geocoder,
+  weather or readings through a connector (`packages/connectors/`), each of
+  which writes the provenance for you;
 - **run**: a computation of a module, which lands as a run with its inputs
   and its engine version; the same inputs give the same figure, and a
   finished run never changes.

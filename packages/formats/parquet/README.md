@@ -1,10 +1,10 @@
-# `@nexgen-os/parquet` — series ⇄ Parquet
+# `@nexgen-os/parquet` — series rows → Parquet
 
-Writes the series of an installation as Parquet files, the files door of
+Writes rows of series as a Parquet file in memory, the files door of
 [decision 0014](../../../docs/decisions/0014-integrations-dashboards-warehouses-streams.md):
 one schema, read as it is by DuckDB, pandas, Polars, Spark, InfluxDB 3 or a
-data lake. MIT, like every format library; `writeSeriesParquet()` needs no
-database.
+data lake. MIT; its one dependency is Hyparquet Writer (MIT, pure
+JavaScript); no database, no network.
 
 | Column | Parquet type | Meaning |
 |---|---|---|
@@ -13,21 +13,25 @@ database.
 | `value` | `DOUBLE` | in the unit of the series' quantity |
 | `quality` | `INT32` | 0 measured, 1 estimated, 2 substituted, 3 missing; 100 and up a pack's codes |
 
-Rows are sorted by series and time, the order of `export_rows()`; the
-file's key-value metadata says `schema = nexgen-os.series.1`.
+Rows are written in the order given — by series and time, the order of
+`export_rows()`; the file's key-value metadata says
+`schema = nexgen-os.series.1`.
 
 ```ts
-import { exportSeriesParquet, writeSeriesParquet } from '@nexgen-os/parquet';
+import { writeSeriesParquet } from '@nexgen-os/parquet';
+import { exportSeriesParquet } from '@nexgen-os/core';
 
-// On the client, from export_rows(), on any host.
-const file = await exportSeriesParquet(db, { seriesIds, from: '2026-01-01T00:00:00Z', to: '2027-01-01T00:00:00Z' });
+const bytes = writeSeriesParquet(rows); // any rows of the schema, no database
+
+// From an installation: the rows of export_rows(), written on the client.
+const file = await exportSeriesParquet(db, { seriesIds, from: '2026-01-01T00:00:00Z', to: '2027-01-01T00:00:00Z', write: writeSeriesParquet });
 if (file.written === 'client') await writeFile('meters-2026.parquet', file.bytes);
 
 // By the server, when it has pg_parquet or pg_duckdb and a path it can write.
-await exportSeriesParquet(db, { seriesIds, from, to, serverPath: 's3://bucket/meters-2026.parquet' });
+await exportSeriesParquet(db, { seriesIds, from, to, serverPath: 's3://bucket/meters-2026.parquet', write: writeSeriesParquet });
 ```
 
-`exportSeriesParquet()` writes on the client unless the caller names a
+`exportSeriesParquet()` of `@nexgen-os/core` writes on the client unless the caller names a
 `serverPath` and the database has `pg_parquet` (preferred) or `pg_duckdb`;
 it detects them in `pg_extension` and never requires them. The caller's
 rights apply either way: `export_rows()` refuses by name a series the
