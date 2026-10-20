@@ -9,6 +9,7 @@ export type { Db } from './db.js';
 export { orientation, polygonWkt, closed, type Point as Vertex } from './geometry.js';
 export * from './address.js';
 export * from './series.js';
+export * from './time.js';
 export * from './connectors.js';
 export * from './engines/runner.js';
 export * from './engines/pvlib.js';

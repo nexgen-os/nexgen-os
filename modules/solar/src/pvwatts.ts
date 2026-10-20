@@ -29,7 +29,7 @@
 // 365-day grid (8,760 hours), 29 February left out. Nothing here reads a
 // database or the network.
 
-import type { SeriesPoint } from '@nexgen-os/core';
+import { offsetAt, type SeriesPoint } from '@nexgen-os/core';
 
 const HOUR_MS = 3_600_000;
 const MINUTE_MS = 60_000;
@@ -227,25 +227,7 @@ export function arrayEnergy(
 // 4. Typical year
 // ---------------------------------------------------------------------------
 
-const formatters = new Map<string, Intl.DateTimeFormat>();
 const standardOffsets = new Map<string, number>();
-
-/** Offset of a time zone from UTC at an instant, minutes east (Brussels in winter: 60). */
-function offsetAt(timeZone: string, ms: number): number {
-  let format = formatters.get(timeZone);
-  if (!format) {
-    try {
-      format = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' });
-    } catch {
-      throw new Error(`time_zone_unknown: ${timeZone} is not an IANA time zone`);
-    }
-    formatters.set(timeZone, format);
-  }
-  const name = format.formatToParts(new Date(ms)).find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
-  const m = /^GMT(?:([+-])(\d{2}):(\d{2}))?$/.exec(name);
-  if (!m) throw new Error(`time_zone_unknown: ${timeZone} gives the offset ${name}`);
-  return m[1] ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
-}
 
 /**
  * The standard offset of a time zone in a year, minutes east of UTC: the

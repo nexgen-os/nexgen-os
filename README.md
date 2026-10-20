@@ -157,7 +157,7 @@ and what each run records: [modules/solar/README.md](modules/solar/README.md).
 
 ```
 core/                  the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies, the model in one screen
-modules/               one Postgres schema per module (accounting, grid, community, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
+modules/               one Postgres schema per module (accounting, grid, community, consumption, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue

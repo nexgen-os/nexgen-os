@@ -98,6 +98,17 @@ new path:
 
 ### Added
 
+- The `consumption` module (schema `consumption`): load profiles as data
+  (`load_profiles`, by day shapes or by activity hours, with monthly
+  factors; `flat` ships), the activity hours of a site, a building or a
+  space in its local wall-clock time (`activity_hours`), and
+  `reconstructConsumption()` (`modules/consumption/src/curve.ts`), which
+  spreads the energy of a bill, or the site's `annual_consumption` over a
+  year, across the slots of the site's local days and records it as a run
+  whose `simulated` series belongs to it. `consumption.curve()` reads the
+  curve of a site measured first, reconstructed otherwise.
+- `offsetAt()` in `@nexgen-os/core`: the offset of a time zone at an
+  instant, through `Intl`, shared by `solar` and `consumption`.
 - Nexgen OS and Ekwo OS on one database: `docs/with-ekwo-os.md` says how
   both are installed on one project, what each installer owns, what the
   `accounting` module holds, and that the schema name `ekwo` is Ekwo's.
