@@ -1,6 +1,6 @@
 # `accounting` — the bridge to the accounting side
 
-Status: shipped with schema 0.2, decision [0010](../../docs/decisions/0010-ekwo-link.md). Schema: `ekwo`.
+Status: shipped with schema 0.2, decision [0010](../../docs/decisions/0010-ekwo-link.md). Schema: `accounting`.
 
 Who a company or a person legally is, how to reach them and how they are
 invoiced is kept by an accounting application; Ekwo OS is the open one built
