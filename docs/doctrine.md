@@ -4,6 +4,40 @@ The rules that hold, one line each, grouped by theme; each links to the
 record that says why, what it forbids and what it replaced. The full index,
 with the statuses, is in [`decisions/`](decisions/README.md).
 
+## The spirit
+
+Six sentences every record answers to, written the way the founder says
+them; Ekwo OS, the accounting core built on the same playbook, is the
+measure.
+
+- **Simple.** A repository that reads in one screen — the core, the modules,
+  the packs, the formats, the connectors, the engines — and nothing between
+  them ([README](../README.md), [0024](decisions/0024-one-language-per-layer.md)).
+- **Concrete.** The core names things of the trades — a site, a device, a
+  series — never an abstraction that stands for several
+  ([0006](decisions/0006-named-objects.md), [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
+- **Factorised.** Two objects that are one are merged; one shape of a place;
+  one way to write a series; one function per gesture; nothing implemented
+  twice ([0028](decisions/0028-two-objects-that-are-one-are-merged.md),
+  [0025](decisions/0025-a-place-has-one-shape.md),
+  [0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md),
+  [0018](decisions/0018-one-function-per-gesture.md)).
+- **Few tables, complete on the functions.** A column only for what every
+  row has, everything else attached; the actions of the trades are
+  functions of the schema, many of them, each one gesture
+  ([0019](decisions/0019-a-column-only-for-what-every-row-has.md),
+  [0001](decisions/0001-one-entity-table-attached-values.md),
+  [0018](decisions/0018-one-function-per-gesture.md)).
+- **A module is one thing.** Its own objects, its own physics, its own
+  schema, named after what it holds and never after a drawer
+  ([0041](decisions/0041-a-module-names-one-thing.md),
+  [0032](decisions/0032-a-module-has-its-own-schema.md)).
+- **A country is data, a figure is a run, a file is a library.** Packs
+  compiled into SQL, runs that never change, format libraries that touch no
+  database ([0020](decisions/0020-a-pack-holds-what-a-function-reads.md),
+  [0004](decisions/0004-deterministic-runs.md),
+  [0035](decisions/0035-a-format-library-touches-no-database.md)).
+
 ## Objects
 
 - [0006](decisions/0006-named-objects.md) The core names a few objects (the place, the device, the series), and everything else is attached to them
@@ -41,6 +75,7 @@ with the statuses, is in [`decisions/`](decisions/README.md).
 
 - [0032](decisions/0032-a-module-has-its-own-schema.md) A module has its own schema and writes the core through a function
 - [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
+- [0041](decisions/0041-a-module-names-one-thing.md) A module names one thing with its own physics, and there is no catch-all
 - Records of single modules: [0010](decisions/0010-ekwo-link.md) the accounting bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
 
 ## Packs
