@@ -1,5 +1,5 @@
-// Geometry shared by the format libraries: faces as rings of 3D points in a
-// projected CRS in metres, their WKT and their orientation. MIT.
+// Geometry shared by the importers: faces as rings of 3D points in a
+// projected CRS in metres, their WKT and their orientation.
 
 export type Point = [number, number, number];
 
@@ -37,11 +37,4 @@ export function orientation(ring: Point[]): { azimuth: number; tilt: number | nu
   const tilt = (Math.acos(nz / length) * 180) / Math.PI;
   const azimuth = ((Math.atan2(nx, ny) * 180) / Math.PI + 360) % 360;
   return { azimuth, tilt, normal: [nx / length, ny / length, nz / length] };
-}
-
-/** The EPSG code of a CRS name or URI (`https://www.opengis.net/def/crs/EPSG/0/7415`, `EPSG:28992`). */
-export function sridOf(referenceSystem: string | undefined): number | null {
-  if (!referenceSystem) return null;
-  const m = /EPSG\/\d+\/(\d+)\s*$/.exec(referenceSystem) ?? /EPSG:+(\d+)\s*$/i.exec(referenceSystem);
-  return m ? Number(m[1]) : null;
 }

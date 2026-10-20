@@ -1,36 +1,28 @@
-// IFC ⇄ Nexgen OS — the reading half.
+// IFC → plain shapes — the reading half.
 //
 // IFC (ISO 16739, buildingSMART) is how architects and engineers hand over
-// a building model. Each IfcBuilding becomes a row of `buildings`, each
-// IfcBuildingStorey a space of kind `floor` and each IfcSpace a space of
-// kind `room` under it, each roof face a `surfaces` row with its azimuth and
-// tilt — every row with the source it came from and the GlobalId it is
-// known by. The year of construction and the area of a room are attributes,
-// with that source. The model is placed on the globe by its
-// IfcMapConversion, else by its site's latitude and longitude. Property sets
-// and quantities the core has no column for travel in `metadata.ifc`, so
-// that nothing the file says about a building, a floor or a room is lost.
-// Equipment whose IFC class a device type names (`device_types.ifc_class`:
-// IfcSolarDevice, IfcBoiler, IfcFlowMeter…) becomes a device on the site, in
-// the building and the room that contain it, with its manufacturer, model
-// and serial number when the file gives them. The file is parsed by web-ifc
-// (MPL-2.0, WebAssembly). MIT, like every format library.
+// a building model. This library reads a model into plain shapes, every
+// coordinate in metres in the reference system the model is placed in:
+// each IfcBuilding with its footprint, elevation and height, its storeys
+// as floors and its IfcSpaces as rooms under them, the faces of its roofs
+// that look up; the equipment the file holds, with the building and the
+// room that contain it, its manufacturer, model and serial number; and
+// what it did not read, by entity and reason. The model is placed on the
+// globe by its IfcMapConversion, else by its site's latitude and
+// longitude, else by an origin the caller gives. Property sets and
+// quantities travel with each shape, so that nothing the file says about a
+// building, a floor, a room or a product is lost. The file is parsed by
+// web-ifc (MPL-2.0, WebAssembly).
+//
+// The library imports nothing of the model, opens no connection and calls
+// no network: which device type an IFC class is, and writing the shapes,
+// are an importer's.
+//
+// SPDX-License-Identifier: MIT
 
 import * as WebIFC from 'web-ifc';
-import type { Db } from '@nexgen-os/core';
-import { orientation, polygonWkt, sridOf, type Vertex as Point } from '@nexgen-os/core';
 
-export interface ImportTarget {
-  organisationId: string;
-  siteId: string;
-  scenarioId?: string | null;
-}
-
-export interface ImportOptions {
-  /** The `sources.code` the file comes from (an architect's model, a survey). */
-  sourceCode: string;
-  /** The profile every imported building gets. */
-  profile?: string | null;
+export interface ReadOptions {
   /**
    * Where the model's origin is, for a file that carries no georeference:
    * longitude and latitude in WGS 84, the angle in degrees from east to the
@@ -43,18 +35,112 @@ export interface ImportOptions {
 export type Georeference = 'map_conversion' | 'site_coordinates' | 'none';
 export type FootprintSource = 'slabs' | 'walls' | 'none';
 
-export interface ImportResult {
-  georeference: Georeference;
-  /** The CRS the model was placed in: `EPSG:28992`, or the local transverse Mercator built from the site's coordinates. */
-  crs: string;
-  /** What the site's position is worth: `rooftop` with a map conversion, `parcel` with the site's coordinates. */
-  locationPrecision: 'rooftop' | 'parcel' | null;
-  /** Whether the site's geometry and precision were set from the file (only when it had none, or a coarser one). */
-  siteUpdated: boolean;
+/** A point in metres: x, y in the reference system the model is placed in, z above its vertical datum. */
+export type Point = [number, number, number];
+
+/** What the file says of an object that no field of its shape holds: its entity, direct attributes, property and quantity sets. */
+export interface IfcDescription {
+  globalId: string | null;
+  entity: string;
+  attributes: Record<string, unknown>;
+  psets?: Record<string, Record<string, unknown>>;
+  quantities?: Record<string, Record<string, unknown>>;
+  [more: string]: unknown;
+}
+
+export interface IfcRoom {
+  globalId: string | null;
+  name: string;
+  /** Metres, from `Qto_SpaceBaseQuantities.Height`. */
+  height: number | null;
+  /** Square metres, the net floor area, else the gross one, of `Qto_SpaceBaseQuantities`. */
+  area: number | null;
+  description: IfcDescription;
+}
+
+export interface IfcFloor {
+  globalId: string | null;
+  name: string;
+  /** 0 for the storey closest to the building's 0.00, counted up and down from it. */
+  level: number;
+  /** Metres from the building's 0.00, as the storey says. */
+  elevation: number;
+  /** Metres to the next storey, or to the top of the building for the last one. */
+  height: number | null;
+  rooms: IfcRoom[];
+  description: IfcDescription;
+}
+
+/** A face of a roof that looks up. */
+export interface IfcRoofFace {
+  /** The element's GlobalId, on its first face only: a GlobalId names one object. */
+  globalId: string | null;
+  name: string;
+  /** Outer ring then holes, counter-clockwise seen from above. */
+  rings: Point[][];
+  description: IfcDescription;
+}
+
+export interface IfcBuilding {
+  globalId: string;
+  name: string;
+  /** Metres above the vertical datum: `ElevationOfRefHeight`, else the lowest storey's. */
+  elevation: number | null;
+  /** Metres from the building's 0.00 to its highest element, else between its lowest and highest storeys. */
+  height: number | null;
+  /** `Pset_BuildingCommon.YearOfConstruction`, as the file says it. */
+  yearOfConstruction: number | null;
+  /**
+   * The plan of the building as pieces to union: the ground-floor slabs'
+   * faces (`slabs`), else the exterior walls' boxes (`walls`, whose union
+   * leaves gaps where walls meet: grow them before, shrink them after),
+   * else nothing.
+   */
+  footprint: { source: FootprintSource; pieces: [number, number][][] };
+  floors: IfcFloor[];
+  /** Rooms on no storey: an atrium, a hall across floors. */
+  rooms: IfcRoom[];
+  roofs: IfcRoofFace[];
+  description: IfcDescription;
+}
+
+/** A product the shapes above do not hold: a piece of equipment, or what no reader has a place for. */
+export interface IfcProduct {
+  globalId: string | null;
+  entity: string;
+  predefinedType: string | null;
+  name: string;
+  manufacturer: string | null;
+  model: string | null;
+  serialNumber: string | null;
+  /** Its origin. */
+  position: Point;
+  /** The building and the room that contain it, by GlobalId. */
+  building: string | null;
+  room: string | null;
+  description: IfcDescription;
+}
+
+export interface IfcModel {
   schema: string;
-  buildings: { id: string; globalId: string; footprint: FootprintSource }[];
-  counts: { buildings: number; floors: number; spaces: number; roofs: number; devices: number };
-  /** Products of the file that did not become rows, by entity type and reason. */
+  /** FILE_DESCRIPTION, FILE_NAME and FILE_SCHEMA. */
+  header: Record<string, unknown>;
+  /** The project's length and area units, as factors to metres and square metres. */
+  units: { length: number; area: number };
+  georeference: {
+    kind: Georeference;
+    /** `EPSG:28992`, or the PROJ string of a local transverse Mercator built around the site's coordinates. */
+    crs: string;
+    srid: number | null;
+    proj: string | null;
+    /** The georeferencing block as the file gave it. */
+    block: Record<string, unknown>;
+  };
+  /** The origin of the first IfcSite (else of the model), and its description. */
+  site: { origin: Point; description: IfcDescription | null };
+  buildings: IfcBuilding[];
+  products: IfcProduct[];
+  /** Products read for another shape only, or that are in no building, by entity type and reason. */
   skipped: { entity: string; count: number; reason: string }[];
 }
 
@@ -65,7 +151,6 @@ type Triangle = [Point, Point, Point];
 interface Placement {
   kind: Georeference;
   crs: string;
-  precision: 'rooftop' | 'parcel' | null;
   /** EPSG code of the target CRS, or null when it is a PROJ string. */
   srid: number | null;
   proj: string | null;
@@ -83,15 +168,20 @@ interface Mesh {
   max: Point;
 }
 
-const PRECISION_RANK = ['rooftop', 'parcel', 'street', 'postal_code', 'city', 'region'];
-
 const SI_PREFIX: Record<string, number> = {
   EXA: 1e18, PETA: 1e15, TERA: 1e12, GIGA: 1e9, MEGA: 1e6, KILO: 1e3, HECTO: 1e2, DECA: 1e1,
   DECI: 1e-1, CENTI: 1e-2, MILLI: 1e-3, MICRO: 1e-6, NANO: 1e-9, PICO: 1e-12, FEMTO: 1e-15, ATTO: 1e-18,
 };
 
-/** Attributes left out of `metadata.ifc.attributes`: identity, ownership and geometry, which have their own place. */
+/** Attributes left out of a description's `attributes`: identity, ownership and geometry, which have their own place. */
 const OMITTED_ATTRIBUTES = new Set(['expressID', 'type', 'GlobalId', 'OwnerHistory', 'ObjectPlacement', 'Representation']);
+
+/** The EPSG code of a CRS name or URI (`https://www.opengis.net/def/crs/EPSG/0/7415`, `EPSG:28992`). */
+export function sridOf(referenceSystem: string | undefined): number | null {
+  if (!referenceSystem) return null;
+  const m = /EPSG\/\d+\/(\d+)\s*$/.exec(referenceSystem) ?? /EPSG:+(\d+)\s*$/i.exec(referenceSystem);
+  return m ? Number(m[1]) : null;
+}
 
 let api: Promise<WebIFC.IfcAPI> | null = null;
 
@@ -106,10 +196,16 @@ function ifcApi(): Promise<WebIFC.IfcAPI> {
 }
 
 // ---------------------------------------------------------------------------
-// Import
+// Read
 // ---------------------------------------------------------------------------
 
-export async function importIfc(db: Db, target: ImportTarget, file: Uint8Array, options: ImportOptions): Promise<ImportResult> {
+/**
+ * An IFC file as plain shapes. Refuses `not_ifc`, `invalid_ifc` (a
+ * building without a GlobalId), `crs_unknown` (a map conversion whose CRS
+ * is not an EPSG code) and `georeference_missing` (no map conversion, no
+ * site coordinates and no `options.origin`).
+ */
+export async function readIfc(file: Uint8Array, options: ReadOptions = {}): Promise<IfcModel> {
   const ifc = await ifcApi();
   let model: number;
   try {
@@ -119,78 +215,53 @@ export async function importIfc(db: Db, target: ImportTarget, file: Uint8Array, 
   }
   if (model < 0) throw new Error('not_ifc: web-ifc could not open the file');
   try {
-    return await read(db, target, new Model(ifc, model), options);
+    return read(new Model(ifc, model), options);
   } finally {
     ifc.CloseModel(model);
   }
 }
 
-async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptions): Promise<ImportResult> {
+function read(m: Model, options: ReadOptions): IfcModel {
   const schema = m.ifc.GetModelSchema(m.id);
   const projectId = m.ids(WebIFC.IFCPROJECT)[0];
   if (projectId === undefined) throw new Error('not_ifc: the file has no IfcProject');
   const units = unitsOf(m, m.line(projectId));
-  const placement = await placementOf(db, m, units, options);
+  const placement = placementOf(m, units, options);
 
   const relations = relationsOf(m);
   const properties = propertiesOf(m);
   const meshes = meshesOf(m);
   const header = headerOf(m, schema);
 
-  const result: ImportResult = {
-    georeference: placement.kind,
-    crs: placement.crs,
-    locationPrecision: placement.precision,
-    siteUpdated: false,
-    schema,
-    buildings: [],
-    counts: { buildings: 0, floors: 0, spaces: 0, roofs: 0, devices: 0 },
-    skipped: [],
-  };
   const seen = new Set<number>([projectId]);
+  const skipped: IfcModel['skipped'] = [];
   const skip = (id: number, reason: string) => {
     seen.add(id);
     const entity = m.typeName(id);
-    const known = result.skipped.find((s) => s.entity === entity && s.reason === reason);
+    const known = skipped.find((s) => s.entity === entity && s.reason === reason);
     if (known) known.count += 1;
-    else result.skipped.push({ entity, count: 1, reason });
+    else skipped.push({ entity, count: 1, reason });
   };
-  const describe = (id: number) => ({
+  const describe = (id: number): IfcDescription => ({
     globalId: text(m.line(id).GlobalId),
     entity: m.typeName(id),
     attributes: attributesOf(m, m.line(id)),
     ...(properties.get(id) ?? {}),
   });
 
-  // The site: its position, at the precision of the georeference, when the
-  // site had none or a coarser one.
   const siteIds = m.ids(WebIFC.IFCSITE);
   for (const id of siteIds) seen.add(id);
   const siteFrame = siteIds.length ? frameOf(m, m.line(siteIds[0]).ObjectPlacement, units.length) : null;
-  if (placement.precision) {
-    const origin = placement.toTarget(siteFrame?.o ?? [0, 0, 0]);
-    const site = await db.query<{ updated: boolean }>(
-      `update sites set geometry = ST_Force3D(${to4326('ST_MakePoint($2, $3, $4)', 5, 6)}),
-                        location_precision = $7, location_source_code = $8
-        where id = $1 and (geometry is null or array_position($9::text[], location_precision) > array_position($9::text[], $7::text))
-        returning true updated`,
-      [target.siteId, origin[0], origin[1], origin[2], placement.srid, placement.proj, placement.precision, options.sourceCode, PRECISION_RANK],
-    );
-    result.siteUpdated = site.rows.length > 0;
-  }
 
-  const buildingRows = new Map<number, string>();
-  const spaceRows = new Map<number, string>();
+  const buildings: IfcBuilding[] = [];
+  /** IFC building and room express ids, with the GlobalIds their shapes carry. */
+  const buildingIds = new Map<number, string>();
+  const roomIds = new Map<number, string | null>();
   for (const buildingId of m.ids(WebIFC.IFCBUILDING)) {
     seen.add(buildingId);
     const b = m.line(buildingId);
     const globalId = text(b.GlobalId);
     if (!globalId) throw new Error(`invalid_ifc: IfcBuilding #${buildingId} has no GlobalId`);
-    const already = await db.query<{ object_id: string }>(
-      `select object_id from external_ids where organisation_id = $1 and scheme = 'ifc_guid' and value = $2`,
-      [target.organisationId, globalId],
-    );
-    if (already.rows.length) throw new Error(`already_imported: IfcBuilding ${globalId} is object ${already.rows[0].object_id} of this organisation`);
 
     // Storeys in order of elevation; level 0 is the one closest to the
     // building's 0.00, the reference height storey elevations are given from.
@@ -211,128 +282,76 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
     const top = zs.length ? Math.max(...zs) : null;
     const height = top !== null ? top - zeroInModel : storeys.length > 1 ? storeys[storeys.length - 1].elevation - storeys[0].elevation : null;
     const pset = properties.get(buildingId)?.psets ?? {};
-    const year = integer(pset.Pset_BuildingCommon?.YearOfConstruction);
 
     // Footprint: the ground-floor slabs in plan, else the exterior walls'
-    // boxes with the holes they leave filled (grown by 5 cm while they are
-    // joined, so that walls that meet after rounding do), else nothing.
+    // boxes, else nothing.
     const lowest = storeys[0]?.id;
     const onLowest = lowest === undefined ? [] : [...relations.descendantsOf(lowest)];
     const floorSlabs = onLowest.filter((id) => m.typeName(id) === 'IfcSlab' && ['FLOOR', 'BASESLAB'].includes(enumOf(m.line(id).PredefinedType) ?? '') && meshes.get(id)?.triangles.length);
     const walls = elements.filter((id) => m.typeName(id).startsWith('IfcWall') && meshes.get(id)?.triangles.length);
     const exterior = walls.filter((id) => properties.get(id)?.psets.Pset_WallCommon?.IsExternal === true);
     const footprintWalls = exterior.length ? exterior : walls.filter((id) => onLowest.includes(id));
-    let footprint: FootprintSource = 'none';
-    let pieces: string[] = [];
+    const plan = (points: Point[]): [number, number][] => points.map((p) => [p[0], p[1]]);
+    let footprint: IfcBuilding['footprint'] = { source: 'none', pieces: [] };
     if (floorSlabs.length) {
-      footprint = 'slabs';
-      pieces = floorSlabs.flatMap((id) => meshes.get(id)!.triangles.filter((t) => Math.abs(normalOf(t)[2]) > 0.05).map((t) => planWkt(t.map(placement.toTarget))));
+      footprint = {
+        source: 'slabs',
+        pieces: floorSlabs.flatMap((id) => meshes.get(id)!.triangles.filter((t) => Math.abs(normalOf(t)[2]) > 0.05).map((t) => plan(t.map(placement.toTarget)))),
+      };
     } else if (footprintWalls.length) {
-      footprint = 'walls';
-      pieces = footprintWalls.map((id) => {
-        const { min, max } = meshes.get(id)!;
-        return planWkt([[min[0], min[1], 0], [max[0], min[1], 0], [max[0], max[1], 0], [min[0], max[1], 0]].map((p) => placement.toTarget(p as Point)));
-      });
+      footprint = {
+        source: 'walls',
+        pieces: footprintWalls.map((id) => {
+          const { min, max } = meshes.get(id)!;
+          return plan([[min[0], min[1], 0], [max[0], min[1], 0], [max[0], max[1], 0], [min[0], max[1], 0]].map((p) => placement.toTarget(p as Point)));
+        }),
+      };
     }
-
-    const metadata = {
-      ifc: {
-        ...describe(buildingId),
-        header,
-        units: { length: units.length, area: units.area },
-        georeference: { kind: placement.kind, crs: placement.crs, ...placement.block },
-        ...(siteIds.length ? { site: describe(siteIds[0]) } : {}),
-      },
-    };
-    const row = await db.query<{ id: string }>(
-      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m, source_code, metadata)
-       select $1, $2, $3, $4, $5,
-              case when g.u is null then null else
-                ST_Force3D(${to4326('ST_CollectionExtract(ST_MakeValid(g.u), 3)', 8, 9)}, coalesce($7, 0)) end,
-              $7, $10, $11, $12
-         from (select case when $13::boolean
-                        then (select ST_Buffer(ST_Collect(ST_MakePolygon(ST_ExteriorRing(d.geom))), -0.05, 'join=mitre') from ST_Dump(x.u) d)
-                        else x.u end u
-                 from (select ST_Union(case when $13::boolean then ST_Buffer(ST_GeomFromText(w), 0.05, 'join=mitre')
-                                            else ST_SnapToGrid(ST_GeomFromText(w), 0.001) end) u
-                         from unnest($6::text[]) w) x) g
-       returning id`,
-      [
-        target.organisationId, target.siteId, target.scenarioId ?? null,
-        text(b.Name) ?? text(b.LongName) ?? globalId, options.profile ?? null,
-        pieces, elevation !== null ? round(elevation, 3) : null, placement.srid, placement.proj,
-        height !== null && height >= 0 ? round(height, 3) : null,
-        options.sourceCode, JSON.stringify(metadata), footprint === 'walls',
-      ],
-    );
-    const id = row.rows[0].id;
-    await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'ifc_guid', $2)`, [id, globalId]);
-    // The year the file says the building was built, as an attribute with
-    // its source; its floors are described as spaces below.
-    if (year !== null && year >= 1000 && year <= 2200) {
-      await attribute(db, id, 'year_built', year, target.scenarioId ?? null, options.sourceCode);
-    }
-    result.buildings.push({ id, globalId, footprint });
-    buildingRows.set(buildingId, id);
-    result.counts.buildings += 1;
     for (const s of floorSlabs) skip(s, 'read for the footprint only');
-    if (footprint === 'walls') for (const w of footprintWalls) skip(w, 'read for the footprint only');
+    if (footprint.source === 'walls') for (const w of footprintWalls) skip(w, 'read for the footprint only');
 
-    // Floors and the rooms on them, one tree of spaces; rooms that are on
-    // no floor (an atrium, a hall across floors) stay at the top of the
-    // building. A room's area is an attribute, with the file as its source.
-    const insertSpace = async (spaceId: number, floorId: string | null) => {
+    // Floors and the rooms on them, one tree; rooms that are on no floor
+    // (an atrium, a hall across floors) stay at the top of the building.
+    const room = (spaceId: number): IfcRoom => {
       seen.add(spaceId);
       const sp = m.line(spaceId);
       const qto = properties.get(spaceId)?.quantities.Qto_SpaceBaseQuantities ?? {};
       const area = num(qto.NetFloorArea) ?? num(qto.GrossFloorArea);
-      const spaceHeight = num(qto.Height);
-      const space = await db.query<{ id: string }>(
-        `insert into spaces (organisation_id, building_id, parent_id, scenario_id, kind, name, height_m, source_code, metadata)
-         values ($1, $2, $3, $4, 'room', $5, $6, $7, $8) returning id`,
-        [
-          target.organisationId, id, floorId, target.scenarioId ?? null, text(sp.LongName) ?? text(sp.Name) ?? 'Space',
-          spaceHeight !== null ? round(spaceHeight * units.length, 3) : null,
-          options.sourceCode, JSON.stringify({ ifc: describe(spaceId) }),
-        ],
-      );
-      if (area !== null) await attribute(db, space.rows[0].id, 'floor_area', round(area * units.area, 2), target.scenarioId ?? null, options.sourceCode);
-      await externalId(db, space.rows[0].id, sp);
-      spaceRows.set(spaceId, space.rows[0].id);
-      result.counts.spaces += 1;
+      const roomHeight = num(qto.Height);
+      roomIds.set(spaceId, text(sp.GlobalId));
+      return {
+        globalId: text(sp.GlobalId),
+        name: text(sp.LongName) ?? text(sp.Name) ?? 'Space',
+        height: roomHeight !== null ? round(roomHeight * units.length, 3) : null,
+        area: area !== null ? round(area * units.area, 2) : null,
+        description: describe(spaceId),
+      };
     };
-    for (const [i, storey] of storeys.entries()) {
-      const spaces = [...relations.descendantsOf(storey.id)].filter((x) => m.typeName(x) === 'IfcSpace');
+    const floors: IfcFloor[] = storeys.map((storey, i) => {
       seen.add(storey.id);
       const s = m.line(storey.id);
       const next = storeys[i + 1]?.elevation ?? top;
-      const floor = await db.query<{ id: string }>(
-        `insert into spaces (organisation_id, building_id, scenario_id, kind, name, level, elevation_m, height_m, source_code, metadata)
-         values ($1, $2, $3, 'floor', $4, $5, $6, $7, $8, $9) returning id`,
-        [
-          target.organisationId, id, target.scenarioId ?? null,
-          text(s.Name) ?? text(s.LongName) ?? `Level ${i - ground}`, i - ground, round(storey.elevation, 3),
-          next !== null && next > storey.elevation ? round(next - storey.elevation, 3) : null,
-          options.sourceCode, JSON.stringify({ ifc: describe(storey.id) }),
-        ],
-      );
-      await externalId(db, floor.rows[0].id, s);
-      result.counts.floors += 1;
-      for (const spaceId of spaces) await insertSpace(spaceId, floor.rows[0].id);
-    }
-    for (const spaceId of relations.descendantsOf(buildingId)) {
-      if (m.typeName(spaceId) !== 'IfcSpace' || seen.has(spaceId)) continue;
-      await insertSpace(spaceId, null);
-    }
+      return {
+        globalId: text(s.GlobalId),
+        name: text(s.Name) ?? text(s.LongName) ?? `Level ${i - ground}`,
+        level: i - ground,
+        elevation: round(storey.elevation, 3),
+        height: next !== null && next > storey.elevation ? round(next - storey.elevation, 3) : null,
+        rooms: [...relations.descendantsOf(storey.id)].filter((x) => m.typeName(x) === 'IfcSpace').map(room),
+        description: describe(storey.id),
+      };
+    });
+    const rooms = [...relations.descendantsOf(buildingId)].filter((x) => m.typeName(x) === 'IfcSpace' && !seen.has(x)).map(room);
 
     // Roofs: an IfcRoof's own faces, else those of its parts, and every
-    // roof slab; the faces that look up become surfaces.
+    // roof slab; the faces that look up.
     const isRoof = (e: number) => m.typeName(e) === 'IfcRoof';
-    const roofs = elements
+    const roofElements = elements
       .filter((e) => isRoof(e) || (m.typeName(e) === 'IfcSlab' && enumOf(m.line(e).PredefinedType) === 'ROOF'))
       .sort((p, q) => Number(isRoof(q)) - Number(isRoof(p))); // roofs before their parts
+    const roofs: IfcRoofFace[] = [];
     const done = new Set<number>();
-    for (const roofId of roofs) {
+    for (const roofId of roofElements) {
       if (done.has(roofId)) continue;
       done.add(roofId);
       let sources = [roofId];
@@ -357,140 +376,78 @@ async function read(db: Db, target: ImportTarget, m: Model, options: ImportOptio
         }
         seen.add(source);
         const line = m.line(source);
+        const name = text(line.Name) ?? m.typeName(source);
         for (const [n, rings] of faces.entries()) {
-          const targetRings = rings.map((ring) => ring.map(placement.toTarget));
-          const { normal, tilt } = orientation(targetRings[0]);
-          const centre = targetRings[0].reduce((acc, p) => [acc[0] + p[0] / targetRings[0].length, acc[1] + p[1] / targetRings[0].length], [0, 0]);
-          const horizontal = Math.hypot(normal[0], normal[1]);
-          const sloped = tilt !== null && tilt >= 1 && horizontal > 0;
-          const name = text(line.Name) ?? m.typeName(source);
-          // Azimuth against true north, as the CityJSON library measures it:
-          // the face's centre and a point ten metres down its slope, both in WGS 84.
-          const surface = await db.query<{ id: string }>(
-            `insert into surfaces (organisation_id, building_id, scenario_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata)
-             values ($1, $2, $3, $4, 'roof', ${to4326('ST_GeomFromText($5)', 6, 7)},
-                     case when $8::boolean then round(degrees(ST_Azimuth(
-                       ${to4326('ST_MakePoint($9, $10)', 6, 7)}::geography,
-                       ${to4326('ST_MakePoint($11, $12)', 6, 7)}::geography))::numeric, 2) end,
-                     $13, $14, $15)
-             returning id`,
-            [
-              target.organisationId, id, target.scenarioId ?? null,
-              faces.length > 1 ? `${name} ${n + 1}` : name,
-              polygonWkt(targetRings), placement.srid, placement.proj,
-              sloped, centre[0], centre[1], centre[0] + (10 * normal[0]) / (horizontal || 1), centre[1] + (10 * normal[1]) / (horizontal || 1),
-              tilt !== null ? round(tilt, 2) : null,
-              options.sourceCode,
-              JSON.stringify({ ifc: { ...describe(source), face: n } }),
-            ],
-          );
-          // A GlobalId names one object: the element's first face carries it.
-          if (n === 0) await externalId(db, surface.rows[0].id, line);
-          result.counts.roofs += 1;
+          roofs.push({
+            globalId: n === 0 ? text(line.GlobalId) : null,
+            name: faces.length > 1 ? `${name} ${n + 1}` : name,
+            rings: rings.map((ring) => ring.map(placement.toTarget)),
+            description: { ...describe(source), face: n },
+          });
         }
       }
     }
+
+    buildingIds.set(buildingId, globalId);
+    buildings.push({
+      globalId,
+      name: text(b.Name) ?? text(b.LongName) ?? globalId,
+      elevation: elevation !== null ? round(elevation, 3) : null,
+      height: height !== null && height >= 0 ? round(height, 3) : null,
+      yearOfConstruction: num(pset.Pset_BuildingCommon?.YearOfConstruction),
+      footprint,
+      floors,
+      rooms,
+      roofs,
+      description: describe(buildingId),
+    });
   }
 
-  // Equipment: the device type is the vocabulary's, read by IFC class. A
-  // class several types share is told apart by the element's predefined
-  // type when it names one (BATTERY), else it takes the most specific type
-  // they all refine (an IfcElectricGenerator is a generator); with none in
-  // common, the element is skipped and says why.
-  const vocabulary = (await db.query<{ code: string; parent_code: string | null; ifc_class: string | null }>(
-    `select code, parent_code, ifc_class from device_types order by code`,
-  )).rows;
-  const parentOf = new Map(vocabulary.map((t) => [t.code, t.parent_code]));
-  const lineage = (code: string): string[] => {
-    const out: string[] = [];
-    for (let c: string | null | undefined = code; c && !out.includes(c); c = parentOf.get(c)) out.push(c);
-    return out;
-  };
-  const deviceTypeOf = (entity: string, predefined: string | null): string | null | 'ambiguous' => {
-    const candidates = vocabulary.filter((t) => t.ifc_class?.toLowerCase() === entity.toLowerCase()).map((t) => t.code);
-    if (candidates.length === 0) return null;
-    const named = predefined ? candidates.find((c) => c === predefined.toLowerCase()) : undefined;
-    if (named) return named;
-    if (candidates.length === 1) return candidates[0];
-    const lineages = candidates.map(lineage);
-    return lineages[0].find((c) => lineages.every((l) => l.includes(c))) ?? 'ambiguous';
-  };
-  const buildingOf = (id: number): string | null => {
-    for (const [ifcId, rowId] of buildingRows) if (relations.descendantsOf(ifcId).has(id)) return rowId;
+  // Every other product, with the building and the room that contain it:
+  // equipment, for a reader that knows which device an IFC class is. What is
+  // a storey, a room or a roof outside any building is skipped here.
+  const within = (ids: Map<number, string | null>, id: number): string | null => {
+    for (const [ifcId, globalId] of ids) if (relations.descendantsOf(ifcId).has(id)) return globalId;
     return null;
   };
-  const spaceOf = (id: number): string | null => {
-    for (const [ifcId, rowId] of spaceRows) if (relations.descendantsOf(ifcId).has(id)) return rowId;
-    return null;
-  };
-  for (const id of m.ids(WebIFC.IFCPRODUCT, true)) {
-    if (seen.has(id)) continue;
-    const line = m.line(id);
-    const deviceType = deviceTypeOf(m.typeName(id), enumOf(line.PredefinedType));
-    if (deviceType === null) continue;
-    if (deviceType === 'ambiguous') {
-      skip(id, 'several device types share this IFC class');
-      continue;
-    }
-    seen.add(id);
-    const pset = properties.get(id)?.psets ?? {};
-    const product = pset.Pset_ManufacturerTypeInformation ?? {};
-    const occurrence = pset.Pset_ManufacturerOccurrence ?? {};
-    const at = placement.precision ? placement.toTarget(frameOf(m, line.ObjectPlacement, units.length).o) : null;
-    const device = await db.query<{ id: string }>(
-      `insert into devices (organisation_id, site_id, building_id, space_id, scenario_id, name, device_type,
-                            manufacturer, model, serial_number, geometry, source_code, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-               case when $11::float8 is null then null else ST_Force3D(${to4326('ST_MakePoint($11, $12, $13)', 14, 15)}) end, $16, $17)
-       returning id`,
-      [
-        target.organisationId, target.siteId, buildingOf(id), spaceOf(id), target.scenarioId ?? null,
-        text(line.Name) ?? text(line.ObjectType) ?? m.typeName(id), deviceType,
-        text(product.Manufacturer), text(product.ModelLabel) ?? text(product.ModelReference), text(occurrence.SerialNumber),
-        at?.[0] ?? null, at?.[1] ?? null, at?.[2] ?? null, placement.srid, placement.proj,
-        options.sourceCode, JSON.stringify({ ifc: { ...describe(id), header } }),
-      ],
-    );
-    await externalId(db, device.rows[0].id, line);
-    result.counts.devices += 1;
-  }
-
-  // Everything else the file holds, by type.
+  const products: IfcProduct[] = [];
   for (const id of m.ids(WebIFC.IFCPRODUCT, true)) {
     if (seen.has(id)) continue;
     const type = m.typeName(id);
-    if (['IfcBuildingStorey', 'IfcSpace'].includes(type)) skip(id, 'not in a building');
-    else if (type === 'IfcRoof' || (type === 'IfcSlab' && enumOf(m.line(id).PredefinedType) === 'ROOF')) skip(id, 'not in a building');
-    else skip(id, 'no place in the core for this entity type');
+    const line = m.line(id);
+    if (['IfcBuildingStorey', 'IfcSpace', 'IfcRoof'].includes(type) || (type === 'IfcSlab' && enumOf(line.PredefinedType) === 'ROOF')) {
+      skip(id, 'not in a building');
+      continue;
+    }
+    const pset = properties.get(id)?.psets ?? {};
+    const product = pset.Pset_ManufacturerTypeInformation ?? {};
+    const occurrence = pset.Pset_ManufacturerOccurrence ?? {};
+    products.push({
+      globalId: text(line.GlobalId),
+      entity: type,
+      predefinedType: enumOf(line.PredefinedType),
+      name: text(line.Name) ?? text(line.ObjectType) ?? type,
+      manufacturer: text(product.Manufacturer),
+      model: text(product.ModelLabel) ?? text(product.ModelReference),
+      serialNumber: text(occurrence.SerialNumber),
+      position: placement.toTarget(frameOf(m, line.ObjectPlacement, units.length).o),
+      building: within(buildingIds, id),
+      room: within(roomIds, id),
+      description: describe(id),
+    });
   }
-  result.skipped.sort((p, q) => p.entity.localeCompare(q.entity) || p.reason.localeCompare(q.reason));
-  return result;
-}
+  skipped.sort((p, q) => p.entity.localeCompare(q.entity) || p.reason.localeCompare(q.reason));
 
-/** An attribute read from the file, with the file's source; history starts with it. */
-async function attribute(db: Db, objectId: string, property: string, value: number, scenarioId: string | null, sourceCode: string): Promise<void> {
-  await db.query(
-    `insert into attributes (object_id, property_code, value, scenario_id, source_code) values ($1, $2, $3::jsonb, $4, $5)`,
-    [objectId, property, JSON.stringify(value), scenarioId, sourceCode],
-  );
-}
-
-async function externalId(db: Db, objectId: string, line: Line): Promise<void> {
-  const globalId = text(line.GlobalId);
-  if (globalId) await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'ifc_guid', $2)`, [objectId, globalId]);
-}
-
-/**
- * A geometry in the target CRS taken to WGS 84: by its EPSG code, or by the
- * PROJ string of the local transverse Mercator built around the site's
- * coordinates. `k` and `p` are the positions of the two parameters.
- */
-function to4326(expr: string, k: number, p: number): string {
-  return `(case when $${k}::int is not null then ST_Transform(ST_SetSRID(${expr}, $${k}::int), 4326) else ST_Transform(${expr}, $${p}::text, 4326) end)`;
-}
-
-function planWkt(points: Point[]): string {
-  return `POLYGON((${[...points, points[0]].map((p) => `${p[0]} ${p[1]}`).join(',')}))`;
+  return {
+    schema,
+    header,
+    units,
+    georeference: { kind: placement.kind, crs: placement.crs, srid: placement.srid, proj: placement.proj, block: placement.block },
+    site: { origin: placement.toTarget(siteFrame?.o ?? [0, 0, 0]), description: siteIds.length ? describe(siteIds[0]) : null },
+    buildings,
+    products,
+    skipped,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -504,7 +461,7 @@ function planWkt(points: Point[]): string {
  * site's origin, with north from the model context's TrueNorth, else the
  * site's X axis taken as east. A file with neither needs `options.origin`.
  */
-async function placementOf(db: Db, m: Model, units: { length: number }, options: ImportOptions): Promise<Placement> {
+function placementOf(m: Model, units: { length: number }, options: ReadOptions): Placement {
   const conversions = m.ids(WebIFC.IFCMAPCONVERSION).map((id) => m.line(id));
   const conversion =
     conversions.find((c) => c.SourceCRS && text(m.line(c.SourceCRS.value).ContextType) === 'Model') ?? conversions[0];
@@ -513,8 +470,6 @@ async function placementOf(db: Db, m: Model, units: { length: number }, options:
     const name = text(crs.Name) ?? '';
     const srid = sridOf(name);
     if (!srid) throw new Error(`crs_unknown: the map conversion's CRS "${name}" is not an EPSG code`);
-    const known = await db.query<{ n: number }>('select count(*)::int n from spatial_ref_sys where srid = $1', [srid]);
-    if (known.rows[0].n === 0) throw new Error(`crs_unknown: EPSG:${srid} is not in spatial_ref_sys`);
     const mapUnit = crs.MapUnit ? unitFactor(m, crs.MapUnit.value) ?? 1 : 1;
     const e0 = num(conversion.Eastings) ?? 0;
     const n0 = num(conversion.Northings) ?? 0;
@@ -531,7 +486,6 @@ async function placementOf(db: Db, m: Model, units: { length: number }, options:
     return {
       kind: 'map_conversion',
       crs: `EPSG:${srid}`,
-      precision: 'rooftop',
       srid,
       proj: null,
       datum: h0 * mapUnit,
@@ -548,7 +502,7 @@ async function placementOf(db: Db, m: Model, units: { length: number }, options:
     const frame = frameOf(m, site.ObjectPlacement, units.length);
     const north = trueNorthOf(m);
     const theta = north !== null ? Math.PI / 2 - Math.atan2(north[1], north[0]) : -Math.atan2(frame.x[1], frame.x[0]);
-    return localPlacement('site_coordinates', 'parcel', lon, lat, theta, frame.o, elevation, {
+    return localPlacement('site_coordinates', lon, lat, theta, frame.o, elevation, {
       site: { RefLatitude: site.RefLatitude.value, RefLongitude: site.RefLongitude.value, RefElevation: num(site.RefElevation) },
       ...(north ? { trueNorth: north } : {}),
     });
@@ -556,19 +510,18 @@ async function placementOf(db: Db, m: Model, units: { length: number }, options:
 
   if (options.origin) {
     const { lon, lat, rotationDeg, elevation = 0 } = options.origin;
-    return localPlacement('none', null, lon, lat, (rotationDeg * Math.PI) / 180, [0, 0, 0], elevation, { origin: options.origin });
+    return localPlacement('none', lon, lat, (rotationDeg * Math.PI) / 180, [0, 0, 0], elevation, { origin: options.origin });
   }
   throw new Error('georeference_missing: the file has neither an IfcMapConversion nor IfcSite coordinates; give options.origin');
 }
 
 /** A transverse Mercator centred on the anchor: grid north is true north there, and the grid is in metres. */
-function localPlacement(kind: Georeference, precision: 'parcel' | null, lon: number, lat: number, theta: number, anchor: Point, elevation: number, block: Record<string, unknown>): Placement {
+function localPlacement(kind: Georeference, lon: number, lat: number, theta: number, anchor: Point, elevation: number, block: Record<string, unknown>): Placement {
   const [c, s] = [Math.cos(theta), Math.sin(theta)];
   const proj = `+proj=tmerc +lat_0=${lat} +lon_0=${lon} +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs`;
   return {
     kind,
     crs: proj,
-    precision,
     srid: null,
     proj,
     datum: elevation - anchor[2],
@@ -806,10 +759,6 @@ function num(v: any): number | null {
   const x = plain(v);
   const n = typeof x === 'string' ? Number(x) : x;
   return typeof n === 'number' && Number.isFinite(n) ? n : null;
-}
-function integer(v: unknown): number | null {
-  const n = num(v);
-  return n === null ? null : Math.round(n);
 }
 function enumOf(v: any): string | null {
   return v && typeof v === 'object' && typeof v.value === 'string' ? v.value : null;

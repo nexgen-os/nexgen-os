@@ -1,22 +1,15 @@
-// Parquet ⇄ the files door of Nexgen OS (decision 0014).
+// Series rows → Parquet.
 //
 // A file of series has one schema: the series, the instant in UTC, the
 // value in the unit of the series' quantity, and the quality code, sorted
-// by series and time — the rows of `export_rows()`. This library writes
-// them as a Parquet file on the client, with Hyparquet Writer (MIT, pure
-// JavaScript), so that it works on every host. Where the database has
-// `pg_parquet` or `pg_duckdb` and the caller names a path the server can
-// write to (a bucket, a mounted disk), the server writes the file itself
-// and nothing travels through the client; the extensions are detected,
-// never required.
+// by series and time. This library writes such rows as a Parquet file in
+// memory, with Hyparquet Writer (MIT, pure JavaScript), so that it works on
+// every host. It imports nothing else, opens no connection and calls no
+// network: which rows go in is the caller's.
 //
 // SPDX-License-Identifier: MIT
 
 import { parquetWriteBuffer } from 'hyparquet-writer';
-import type { Db } from '@nexgen-os/core';
-import { exportRows } from '@nexgen-os/core';
-
-export type { Db };
 
 /** One row of the files door. */
 export interface SeriesRow {
@@ -49,42 +42,4 @@ export function writeSeriesParquet(rows: SeriesRow[]): Uint8Array {
     kvMetadata: [{ key: 'schema', value: SERIES_FILE_SCHEMA }],
   });
   return new Uint8Array(buffer);
-}
-
-/** The server extension that writes Parquet, when the database has one. */
-export async function serverParquetWriter(db: Db): Promise<'pg_parquet' | 'pg_duckdb' | null> {
-  const r = await db.query<{ extname: 'pg_parquet' | 'pg_duckdb' }>(
-    `select extname from pg_extension where extname in ('pg_parquet', 'pg_duckdb') order by extname = 'pg_parquet' desc limit 1`);
-  return r.rows[0]?.extname ?? null;
-}
-
-export type ParquetExport =
-  | { written: 'client'; bytes: Uint8Array; rows: number }
-  | { written: 'server'; writer: 'pg_parquet' | 'pg_duckdb'; path: string };
-
-/**
- * Series between two instants as a Parquet file. With `serverPath` and a
- * server extension, the database writes the file at that path; otherwise
- * the rows are read through `export_rows()` and the file is written here.
- * Either way the caller's rights apply: `export_rows()` refuses a series
- * the caller may not read.
- */
-export async function exportSeriesParquet(
-  db: Db,
-  request: { seriesIds: string[]; from: string; to: string; serverPath?: string },
-): Promise<ParquetExport> {
-  const writer = request.serverPath ? await serverParquetWriter(db) : null;
-  if (writer && request.serverPath) {
-    // COPY takes no parameters: the statement is built by the server, every
-    // value quoted as a literal.
-    const option = writer === 'pg_parquet' ? `with (format 'parquet')` : `(format parquet)`;
-    const statement = await db.query<{ sql: string }>(
-      `select format('copy (select * from nexgen.export_rows(%L::uuid[], %L::timestamptz, %L::timestamptz)) to %L ' || $5,
-                     $1::uuid[], $2::text, $3::text, $4::text) as sql`,
-      [request.seriesIds, request.from, request.to, request.serverPath, option]);
-    await db.query(statement.rows[0].sql);
-    return { written: 'server', writer, path: request.serverPath };
-  }
-  const rows = await exportRows(db, request.seriesIds, request.from, request.to);
-  return { written: 'client', bytes: writeSeriesParquet(rows), rows: rows.length };
 }

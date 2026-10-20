@@ -1,29 +1,28 @@
-// PAN and OND product files → Nexgen OS.
+// PAN and OND product files → plain products.
 //
 // A PAN file describes a PV module and an OND file an inverter, in the text
 // format PVsyst writes since version 6 and manufacturers publish with their
 // datasheets. They are the way a product's physics travels between PVsyst,
 // PV*SOL, SAM and pvlib. They are read here, never written (decision 0012).
 //
-// A module lands as a product of `device_directory` (manufacturer, model,
-// unit power, surface) and its physics in `solar.module_products`: the
-// PVsyst one-diode model in pvlib's key names, so that a yield run through
-// the pvlib engine uses it as it is. PVsyst does not store the light current
+// A module reads as a product (manufacturer, model, unit power, surface)
+// and its physics: the PVsyst one-diode model in pvlib's key names, so that
+// pvlib uses it as it is. PVsyst does not store the light current
 // and the saturation current of the diode; they are solved here from the
 // short-circuit current and the open-circuit voltage at standard test
 // conditions, with the file's series and shunt resistances and diode factor,
 // so that the model gives back the file's Isc and Voc exactly.
 //
-// An inverter lands the same way, its physics in `solar.inverter_products`
-// with the model `ond`: the file's own keys, efficiency curves included, as
-// pvlib's `read_panond` gives them.
+// An inverter reads the same way, with the model `ond`: the file's own
+// keys, efficiency curves included, as pvlib's `read_panond` gives them.
 //
 // Prices, currencies and price dates that a file may carry are left out:
 // the line between open and paid data runs on prices, never on physics.
-
-import type { Db } from '@nexgen-os/core';
-
-export type { Db };
+//
+// The library imports nothing, opens no connection and calls no network:
+// adding a product to a directory is an importer's job.
+//
+// SPDX-License-Identifier: MIT
 
 /** A PVsyst object as read: its type, then its keys; blocks nest. */
 export interface PanOndObject {
@@ -233,51 +232,6 @@ export function readOnd(text: string): InverterFile {
     parameters: parameters as PanOndObject,
     metadata: { ond: withoutPrices(block as PanOndObject) },
   };
-}
-
-// ---------------------------------------------------------------------------
-// The database
-// ---------------------------------------------------------------------------
-
-/**
- * Adds a product read from a file to the directory with its physics. A
- * product the directory already knows by manufacturer and model (an
- * organisation's own, or a shared one when `organisationId` is null) gains
- * the physics; one that already has them is refused by name
- * (`already_imported`). `sourceCode` names where the file comes from (a
- * `sources` row: a manufacturer's datasheets, a product database).
- */
-export async function importProduct(
-  db: Db,
-  product: ModuleFile | InverterFile,
-  options: { organisationId: string | null; sourceCode?: string | null; fileName?: string | null },
-): Promise<{ productId: string; created: boolean }> {
-  const physics = product.kind === 'module' ? 'solar.module_products' : 'solar.inverter_products';
-  const known = await db.query<{ id: string; has_physics: boolean }>(
-    `select d.id, exists (select 1 from ${physics} p where p.id = d.id) as has_physics
-       from device_directory d
-      where d.organisation_id is not distinct from $1 and d.manufacturer = $2 and d.model_ref = $3`,
-    [options.organisationId, product.manufacturer, product.model_ref],
-  );
-  if (known.rows[0]?.has_physics) {
-    throw new Error(`already_imported: ${product.manufacturer} ${product.model_ref} has its ${product.kind} physics`);
-  }
-  let productId = known.rows[0]?.id;
-  const created = !productId;
-  if (!productId) {
-    const inserted = await db.query<{ id: string }>(
-      `insert into device_directory (organisation_id, device_type, manufacturer, model_ref, unit_power_kw, unit_surface_m2)
-       values ($1, $2, $3, $4, $5, $6) returning id`,
-      [options.organisationId, product.kind === 'module' ? 'solar' : 'inverter', product.manufacturer, product.model_ref, product.unit_power_kw, product.unit_surface_m2],
-    );
-    productId = inserted.rows[0].id;
-  }
-  const metadata = options.fileName ? { ...product.metadata, file: options.fileName } : product.metadata;
-  await db.query(
-    `insert into ${physics} (id, model, parameters, source_code, metadata) values ($1, $2, $3, $4, $5)`,
-    [productId, product.model, JSON.stringify(product.parameters), options.sourceCode ?? null, JSON.stringify(metadata)],
-  );
-  return { productId, created };
 }
 
 // ---------------------------------------------------------------------------
