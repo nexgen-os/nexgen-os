@@ -1,10 +1,11 @@
-// An IFC4 model of a house — the way an architect hands it over — lands as
-// a building on its site, with its floors, its spaces and their areas, its
+// An IFC4 model of a house — the way an architect hands it over — read by
+// the format library and written by the core's importer, lands as a
+// building on its site, with its floors, its spaces and their areas, its
 // roof face with azimuth and tilt against true north, the GlobalId of each
 // row and every property set the core has no column for.
 //
-// The two fixtures under tests/fixtures/ describe the same house, written by
-// hand and commented in the files themselves:
+// The fixtures, in packages/formats/ifc/tests/fixtures/, describe the same
+// house, written by hand and commented in the files themselves:
 // - ifc-house-map-conversion.ifc: lengths in metres, an IfcMapConversion to
 //   RD New (EPSG:28992) with its false origin at (121000, 487000) and the
 //   model's X axis 30° counter-clockwise from grid east; a base slab of
@@ -27,10 +28,15 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { importIfc } from '@nexgen-os/ifc';
+import { readIfc, type ReadOptions } from '@nexgen-os/ifc';
+import { importIfc as importModel, type IfcImportOptions, type IfcTarget } from '@nexgen-os/core';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
-const fixture = (name: string) => readFile(join(repoRoot, 'tests', 'fixtures', name)).then((b) => new Uint8Array(b));
+const fixture = (name: string) => readFile(join(repoRoot, 'packages', 'formats', 'ifc', 'tests', 'fixtures', name)).then((b) => new Uint8Array(b));
+
+// The file through the format library, then the model through the core's importer.
+const importIfc = async (target: IfcTarget, file: Uint8Array, options: IfcImportOptions & ReadOptions) =>
+  importModel(db, target, await readIfc(file, { origin: options.origin }), options);
 
 let db: PGlite;
 let org: string;
@@ -106,7 +112,7 @@ describe('an IFC4 model with an IfcMapConversion', () => {
 
   it('lands as a building near 4.89° E, 52.37° N at rooftop precision, with its footprint from the base slab', async () => {
     site = await newSite(org, 'Canal house');
-    const r = await importIfc(db, { organisationId: org, siteId: site }, mapFile, { sourceCode: 'architect_model', profile: 'residential' });
+    const r = await importIfc({ siteId: site }, mapFile, { sourceCode: 'architect_model', profile: 'residential' });
     expect(r.georeference).toBe('map_conversion');
     expect(r.crs).toBe('EPSG:28992');
     expect(r.locationPrecision).toBe('rooftop');
@@ -176,9 +182,9 @@ describe('an IFC4 model with an IfcMapConversion', () => {
 
   it('reports what it left out, by entity type and reason, and refuses the same file twice', async () => {
     const again = await newSite(org, 'Canal house, again');
-    await expect(importIfc(db, { organisationId: org, siteId: again }, mapFile, { sourceCode: 'architect_model' })).rejects.toThrow(/already_imported/);
+    await expect(importIfc({ siteId: again }, mapFile, { sourceCode: 'architect_model' })).rejects.toThrow(/already_imported/);
     const other = await organisation(db, 'Another architect', USER_A);
-    const r = await importIfc(db, { organisationId: other, siteId: await newSite(other, 'Canal house') }, mapFile, { sourceCode: 'architect_model' });
+    const r = await importIfc({ siteId: await newSite(other, 'Canal house') }, mapFile, { sourceCode: 'architect_model' });
     expect(r.skipped).toEqual([
       { entity: 'IfcGeographicElement', count: 1, reason: 'no place in the core for this entity type' },
       { entity: 'IfcSlab', count: 1, reason: 'read for the footprint only' },
@@ -190,7 +196,7 @@ describe('an IFC4 model with its equipment', () => {
   it('lands each piece of equipment as a device of the type its IFC class names, in the building that contains it', async () => {
     const installer = await organisation(db, 'An installer', USER_A);
     const site = await newSite(installer, 'Canal house with its equipment');
-    const r = await importIfc(db, { organisationId: installer, siteId: site }, await fixture('ifc-house-equipment.ifc'), { sourceCode: 'architect_model' });
+    const r = await importIfc({ siteId: site }, await fixture('ifc-house-equipment.ifc'), { sourceCode: 'architect_model' });
     expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1, devices: 4 });
     expect(r.skipped).toEqual([
       { entity: 'IfcGeographicElement', count: 1, reason: 'no place in the core for this entity type' },
@@ -229,7 +235,7 @@ describe('an IFC4 model in millimetres placed by its site’s coordinates', () =
   it('lands at parcel precision, at the same place as the map conversion puts it, with its footprint from the exterior walls', async () => {
     const other = await organisation(db, 'A surveyor', USER_A);
     const site = await newSite(other, 'Canal house');
-    const r = await importIfc(db, { organisationId: other, siteId: site }, siteFile, { sourceCode: 'architect_model' });
+    const r = await importIfc({ siteId: site }, siteFile, { sourceCode: 'architect_model' });
     expect(r.georeference).toBe('site_coordinates');
     expect(r.crs).toMatch(/^\+proj=tmerc \+lat_0=52\.369826/);
     expect(r.locationPrecision).toBe('parcel');
@@ -274,14 +280,14 @@ describe('an IFC model with no georeference', () => {
 
   it('is refused by name', async () => {
     const other = await organisation(db, 'A draughtsman', USER_A);
-    await expect(importIfc(db, { organisationId: other, siteId: await newSite(other, 'Somewhere') }, placeless(), { sourceCode: 'architect_model' }))
+    await expect(importIfc({ siteId: await newSite(other, 'Somewhere') }, placeless(), { sourceCode: 'architect_model' }))
       .rejects.toThrow(/georeference_missing/);
   });
 
   it('lands where options.origin says, and leaves the site’s position alone', async () => {
     const other = await organisation(db, 'A draughtsman, with a map', USER_A);
     const site = await newSite(other, 'Canal house');
-    const r = await importIfc(db, { organisationId: other, siteId: site }, placeless(), {
+    const r = await importIfc({ siteId: site }, placeless(), {
       sourceCode: 'architect_model',
       origin: { lon: 4.887971, lat: 52.369826, rotationDeg: 30 },
     });
@@ -297,7 +303,7 @@ describe('an IFC model with no georeference', () => {
   });
 
   it('is refused by name when it is not IFC at all', async () => {
-    await expect(importIfc(db, { organisationId: org, siteId: await newSite(org, 'Nowhere') }, new TextEncoder().encode('not a STEP file'), { sourceCode: 'architect_model' }))
+    await expect(importIfc({ siteId: await newSite(org, 'Nowhere') }, new TextEncoder().encode('not a STEP file'), { sourceCode: 'architect_model' }))
       .rejects.toThrow(/not_ifc/);
   });
 });

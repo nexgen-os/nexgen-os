@@ -1,0 +1,89 @@
+{
+ "type": "CityJSON",
+ "version": "2.0",
+ "transform": {
+  "scale": [ 0.001, 0.001, 0.001 ],
+  "translate": [ 121000, 487000, 0 ]
+ },
+ "metadata": {
+  "referenceSystem": "https://www.opengis.net/def/crs/EPSG/0/28992"
+ },
+ "CityObjects": {
+  "NL.IMBAG.Pand.0363100012345678": {
+   "type": "Building",
+   "attributes": {
+    "measuredHeight": 9.5,
+    "storeysAboveGround": 2,
+    "yearOfConstruction": 1962,
+    "b3_dak_type": "multiple horizontal",
+    "identificatie": "NL.IMBAG.Pand.0363100012345678"
+   },
+   "geometry": [
+    {
+     "type": "Solid",
+     "lod": "2.2",
+     "boundaries": [
+      [
+       [
+        [ 0, 3, 2, 1 ] ],
+       [
+        [ 0, 1, 5, 4 ] ],
+       [
+        [ 2, 3, 7, 6 ] ],
+       [
+        [ 3, 0, 4, 7 ] ],
+       [
+        [ 1, 2, 6, 5 ] ],
+       [
+        [ 4, 5, 9, 8 ] ],
+       [
+        [ 7, 8, 9, 6 ] ],
+       [
+        [ 4, 8, 7 ] ],
+       [
+        [ 6, 9, 5 ] ] ] ],
+     "semantics": {
+      "surfaces": [
+       {
+        "type": "GroundSurface"
+       },
+       {
+        "type": "WallSurface"
+       },
+       {
+        "type": "RoofSurface",
+        "b3_azimut": 180,
+        "b3_hellingshoek": 49.4
+       },
+       {
+        "type": "RoofSurface",
+        "b3_azimut": 0,
+        "b3_hellingshoek": 49.4
+       } ],
+      "values": [
+       [ 0, 1, 1, 1, 1, 2, 3, 1, 1 ] ]
+     }
+    } ]
+  },
+  "NL.IMBAG.Pand.0363100012345678-0": {
+   "type": "BuildingPart",
+   "parents": [
+    "NL.IMBAG.Pand.0363100012345678" ]
+  },
+  "some-tree": {
+   "type": "SolitaryVegetationObject",
+   "geometry": []
+  }
+ },
+ "vertices": [
+  [ 0, 0, 2000 ],
+  [ 10000, 0, 2000 ],
+  [ 10000, 6000, 2000 ],
+  [ 0, 6000, 2000 ],
+  [ 0, 0, 8000 ],
+  [ 10000, 0, 8000 ],
+  [ 10000, 6000, 8000 ],
+  [ 0, 6000, 8000 ],
+  [ 0, 3000, 11500 ],
+  [ 10000, 3000, 11500 ] ]
+}

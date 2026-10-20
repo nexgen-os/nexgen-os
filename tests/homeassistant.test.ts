@@ -1,65 +1,18 @@
-// A Home Assistant home goes in, comes back out identical, and lands on the
-// right objects with the right quantities, units and kinds in between.
+// A Home Assistant home goes in through the format library and the core's
+// importer, comes back out identical through the exporter and the library,
+// and lands on the right objects with the right quantities, units and kinds
+// in between.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation, square } from './helpers/db.js';
-import { exportHomeAssistant, importHomeAssistant, type HaSnapshot, type ImportResult } from '@nexgen-os/homeassistant';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
+import { readHomeAssistant, writeHomeAssistant, type HaSnapshot } from '@nexgen-os/homeassistant';
+import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '@nexgen-os/core';
 
-const snapshot: HaSnapshot = {
-  floors: [
-    { floor_id: 'ground', name: 'Ground floor', level: 0, icon: 'mdi:home-floor-0', aliases: ['rez'] },
-    { floor_id: 'first', name: 'First floor', level: 1, icon: null, aliases: [] },
-  ],
-  areas: [
-    { area_id: 'living_room', name: 'Living room', floor_id: 'ground', icon: 'mdi:sofa', aliases: ['salon'] },
-    { area_id: 'kitchen', name: 'Kitchen', floor_id: 'ground', icon: null, aliases: [] },
-    { area_id: 'bedroom', name: 'Bedroom', floor_id: 'first', icon: null, aliases: [] },
-    { area_id: 'garage', name: 'Garage', floor_id: null, icon: 'mdi:garage', aliases: [] },
-  ],
-  devices: [
-    { id: 'dev-inverter', name: 'SUN2000-4KTL', name_by_user: 'Inverter', manufacturer: 'Huawei', model: 'SUN2000-4KTL-L1', sw_version: 'V200R001C00SPC120', hw_version: null,
-      serial_number: 'HV2240012345', area_id: 'garage', via_device_id: null, identifiers: [['huawei_solar', 'HV2240012345']], connections: [['mac', 'aa:bb:cc:dd:ee:01']] },
-    { id: 'dev-thermostat', name: 'Living room thermostat', name_by_user: null, manufacturer: 'Netatmo', model: 'NATherm1', sw_version: '2.1', hw_version: 'B',
-      serial_number: null, area_id: 'living_room', via_device_id: 'dev-relay', identifiers: [['netatmo', '70:ee:50:aa:bb:cc']], connections: [] },
-    { id: 'dev-relay', name: 'Netatmo relay', name_by_user: null, manufacturer: 'Netatmo', model: 'NAPlug', sw_version: null, hw_version: null,
-      serial_number: null, area_id: null, via_device_id: null, identifiers: [['netatmo', '70:ee:50:00:00:01']], connections: [] },
-  ],
-  entities: [
-    { entity_id: 'sensor.inverter_active_power', unique_id: 'HV2240012345-active_power', platform: 'huawei_solar', name: null, original_name: 'Active power', device_id: 'dev-inverter', area_id: null,
-      device_class: 'power', original_device_class: 'power', state_class: 'measurement', unit_of_measurement: 'W', icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'sensor.inverter_total_yield', unique_id: 'HV2240012345-total_yield', platform: 'huawei_solar', name: 'PV yield', original_name: 'Total yield', device_id: 'dev-inverter', area_id: null,
-      device_class: 'energy', original_device_class: 'energy', state_class: 'total_increasing', unit_of_measurement: 'kWh', icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'sensor.living_room_temperature', unique_id: 'netatmo-temp-1', platform: 'netatmo', name: null, original_name: 'Temperature', device_id: 'dev-thermostat', area_id: null,
-      device_class: 'temperature', original_device_class: 'temperature', state_class: 'measurement', unit_of_measurement: '°C', icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'climate.living_room', unique_id: 'netatmo-climate-1', platform: 'netatmo', name: null, original_name: 'Living room', device_id: 'dev-thermostat', area_id: null,
-      device_class: null, original_device_class: null, state_class: null, unit_of_measurement: '°C', icon: 'mdi:thermostat', entity_category: null, disabled_by: null },
-    { entity_id: 'sensor.kitchen_co2', unique_id: 'aranet-co2-7', platform: 'aranet', name: 'Kitchen CO2', original_name: 'CO2', device_id: null, area_id: 'kitchen',
-      device_class: 'carbon_dioxide', original_device_class: 'carbon_dioxide', state_class: 'measurement', unit_of_measurement: 'ppm', icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'binary_sensor.bedroom_motion', unique_id: 'aqara-motion-3', platform: 'zha', name: null, original_name: 'Motion', device_id: null, area_id: 'bedroom',
-      device_class: 'occupancy', original_device_class: 'motion', state_class: null, unit_of_measurement: null, icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'sensor.thermostat_battery', unique_id: 'netatmo-batt-1', platform: 'netatmo', name: null, original_name: 'Battery', device_id: 'dev-thermostat', area_id: null,
-      device_class: 'battery', original_device_class: 'battery', state_class: 'measurement', unit_of_measurement: '%', icon: null, entity_category: 'diagnostic', disabled_by: null },
-    { entity_id: 'switch.garage_heater', unique_id: 'shelly-1-garage', platform: 'shelly', name: 'Garage heater', original_name: 'Switch', device_id: null, area_id: 'garage',
-      device_class: null, original_device_class: null, state_class: null, unit_of_measurement: null, icon: null, entity_category: null, disabled_by: null },
-    { entity_id: 'sensor.outdoor_noise', unique_id: 'netatmo-noise-1', platform: 'netatmo', name: null, original_name: 'Noise', device_id: null, area_id: null,
-      device_class: 'sound_pressure', original_device_class: 'sound_pressure', state_class: 'measurement', unit_of_measurement: 'dB', icon: null, entity_category: null, disabled_by: 'user' },
-  ],
-  states: [
-    { entity_id: 'sensor.inverter_active_power', state: '2345', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'sensor.inverter_active_power', state: '3120.5', last_updated: '2026-06-21T11:00:00.000Z' },
-    { entity_id: 'sensor.inverter_active_power', state: 'unavailable', last_updated: '2026-06-21T12:00:00.000Z' },
-    { entity_id: 'sensor.inverter_total_yield', state: '8123.4', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'sensor.inverter_total_yield', state: '8126.1', last_updated: '2026-06-21T11:00:00.000Z' },
-    { entity_id: 'sensor.living_room_temperature', state: '21.3', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'climate.living_room', state: '20', last_updated: '2026-06-21T06:00:00.000Z' },
-    { entity_id: 'sensor.kitchen_co2', state: '812', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'binary_sensor.bedroom_motion', state: 'on', last_updated: '2026-06-21T07:12:00.000Z' },
-    { entity_id: 'binary_sensor.bedroom_motion', state: 'off', last_updated: '2026-06-21T07:20:00.000Z' },
-    { entity_id: 'sensor.thermostat_battery', state: '87', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'switch.garage_heater', state: 'off', last_updated: '2026-06-21T10:00:00.000Z' },
-    { entity_id: 'sensor.outdoor_noise', state: '41', last_updated: '2026-06-21T10:00:00.000Z' },
-  ],
-};
+// The home of the format library's own tests: two floors, four areas,
+// three devices, nine entities and their recorder states.
+const snapshot = JSON.parse(readFileSync(join(repoRoot, 'packages/formats/homeassistant/tests/fixtures/home.json'), 'utf8')) as HaSnapshot;
 
 const sortSnapshot = (s: HaSnapshot): HaSnapshot => ({
   floors: [...s.floors].sort((a, b) => a.floor_id.localeCompare(b.floor_id)),
@@ -72,14 +25,14 @@ const sortSnapshot = (s: HaSnapshot): HaSnapshot => ({
 let db: PGlite;
 let org: string;
 let building: string;
-let imported: ImportResult;
+let imported: HomeImport;
 
 beforeAll(async () => {
   db = await freshDatabase();
   org = await organisation(db, 'A home');
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
   building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
-  imported = await importHomeAssistant(db, { organisationId: org, siteId: site, buildingId: building }, snapshot);
+  imported = await importHomeAssistant(db, { siteId: site, buildingId: building }, readHomeAssistant(snapshot));
 });
 
 afterAll(async () => {
@@ -156,7 +109,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
   });
 
   it('comes back out identical', async () => {
-    const again = await exportHomeAssistant(db, building);
+    const again = writeHomeAssistant(await exportHomeAssistant(db, building));
     expect(sortSnapshot(again)).toEqual(sortSnapshot(snapshot));
   });
 });

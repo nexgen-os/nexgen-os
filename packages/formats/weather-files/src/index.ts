@@ -1,4 +1,4 @@
-// Weather files ⇄ Nexgen OS: EPW (EnergyPlus Weather) in and out, TMY3 in.
+// Weather files ⇄ hourly series: EPW (EnergyPlus Weather) in and out, TMY3 in.
 //
 // EPW is how a typical year travels between solar and building tools: PVGIS,
 // Meteonorm, climate.onebuilding.org and EnergyPlus write it, PVsyst, PV*SOL,
@@ -6,14 +6,14 @@
 // Database that many older studies still carry. Both give one row per hour.
 //
 // Three conventions are kept straight here so that nobody downstream has to
-// know them (decision 0012):
+// know them:
 //   - both formats stamp an hour at its END, in local STANDARD time (no
-//     daylight saving), hours 1 to 24; the core dates an interval value
-//     (irradiance) at its start and an instant value (temperature, wind) at
-//     its instant, both in UTC;
+//     daylight saving), hours 1 to 24; the series returned date an interval
+//     value (irradiance) at its start and an instant value (temperature,
+//     wind) at its instant, both in UTC;
 //   - a typical year is made of months from different years; it lands on one
 //     calendar year (`options.year`, by default the latest year it was made
-//     from) as a `simulated` series named after the years it comes from;
+//     from), and says so (`typical`, `years`);
 //   - a missing value (EPW 9999, 99.9, 999; TMY3 -9900) is left out, never
 //     filled.
 //
@@ -23,12 +23,43 @@
 // name (`time_offset_suspect`) with the offset its irradiance implies. PVGIS
 // writes its EPW hours in UTC under a header that gives the local offset;
 // `utcOffsetHours: 0` reads such a file right.
-
-import { storeSeries, type CollectedSeries, type Db, type SeriesPoint } from '@nexgen-os/core';
-
-export type { Db };
+//
+// The library imports nothing, opens no connection and calls no network:
+// what a file holds is returned as plain series, and storing them is an
+// importer's job.
+//
+// SPDX-License-Identifier: MIT
 
 export type WeatherQuantity = 'ghi' | 'dni' | 'dhi' | 'temperature' | 'wind_speed';
+
+/** The quantities both formats carry, in the order they are returned. */
+export const WEATHER_QUANTITIES: readonly WeatherQuantity[] = ['ghi', 'dni', 'dhi', 'temperature', 'wind_speed'];
+
+/** A value at the start of its hour (`interval`) or at its instant, in UTC. */
+export interface WeatherPoint {
+  at: string;
+  value: number;
+}
+
+/** One quantity of a file as a series. */
+export interface WeatherSeries {
+  quantity_code: string;
+  /** `interval` from `at` for one `step` (irradiance), `instant` at `at` (temperature, wind). */
+  value_kind: 'interval' | 'instant' | 'cumulative';
+  /** `1 hour`: both formats give one row per hour. */
+  step: string | null;
+  /** The unit the values are in, by its QUDT code: `W-PER-M2`, `DEG_C`, `M-PER-SEC`. */
+  unit?: string;
+  values: WeatherPoint[];
+}
+
+/** What `writeEpw()` writes: one calendar year of series at a location. */
+export interface WeatherYear {
+  location: WeatherFileLocation;
+  series: WeatherSeries[];
+  year: number;
+  comment?: string;
+}
 
 export interface WeatherFileLocation {
   name: string | null;
@@ -64,8 +95,8 @@ export interface WeatherFile {
   /** The calendar year a typical year was laid on; null for real years. */
   year: number | null;
   /** `ghi`, `dni`, `dhi` (W/m², hour intervals), `temperature` (°C) and `wind_speed` (m/s) (instants), when the file has them. */
-  series: CollectedSeries[];
-  /** Fields of the file that hold data but have no place in the core yet. */
+  series: WeatherSeries[];
+  /** Fields of the file that hold data and are not among the five quantities read. */
   skipped: string[];
   /** Values the file marks as missing, per quantity: left out. */
   missing: Partial<Record<WeatherQuantity, number>>;
@@ -81,12 +112,11 @@ export interface ReadOptions {
 
 const HOUR_MS = 3_600_000;
 const INTERVAL: WeatherQuantity[] = ['ghi', 'dni', 'dhi'];
-const ORDER: WeatherQuantity[] = ['ghi', 'dni', 'dhi', 'temperature', 'wind_speed'];
+const ORDER = WEATHER_QUANTITIES;
 /**
- * The unit each quantity is written in by both formats, by its code in the
- * core's `units` vocabulary: `store()` converts from it and refuses a unit
- * that does not measure the quantity. An hour's radiation in Wh/m² is the
- * hour's mean irradiance in W/m².
+ * The unit each quantity is written in by both formats, by its QUDT code:
+ * a reader converts from it. An hour's radiation in Wh/m² is the hour's
+ * mean irradiance in W/m².
  */
 const UNITS: Record<WeatherQuantity, string> = { ghi: 'W-PER-M2', dni: 'W-PER-M2', dhi: 'W-PER-M2', temperature: 'DEG_C', wind_speed: 'M-PER-SEC' };
 
@@ -105,8 +135,8 @@ interface Row {
 
 /**
  * EPW data fields after the date, minute and flags (field 6 onward), in
- * order, with the value that marks them missing. The core carries five;
- * the others are written back as missing.
+ * order, with the value that marks them missing. Five are read; the others
+ * are written back as missing.
  */
 const EPW_FIELDS: { name: string; quantity?: WeatherQuantity; missing: number }[] = [
   { name: 'dry_bulb_temperature', quantity: 'temperature', missing: 99.9 },
@@ -143,7 +173,7 @@ const EPW_FIELDS: { name: string; quantity?: WeatherQuantity; missing: number }[
 const EPW_NOT_DATA = new Set(['present_weather_observation', 'present_weather_codes']);
 const EPW_FLAGS = '?9?9?9?9E0?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9*9*9?9?9?9';
 
-/** An EPW file as series in the core's conventions. */
+/** An EPW file as series dated at their start (intervals) or instant, in UTC. */
 export function readEpw(text: string, options: ReadOptions = {}): WeatherFile {
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
   const header = lines[0]?.split(',') ?? [];
@@ -191,7 +221,7 @@ export function readEpw(text: string, options: ReadOptions = {}): WeatherFile {
  * rerun the same weather. Hours without a value are written missing; 29
  * February is written only when the series have values that day.
  */
-export function writeEpw(input: { location: WeatherFileLocation; series: CollectedSeries[]; year: number; comment?: string }): string {
+export function writeEpw(input: WeatherYear): string {
   const { location, year } = input;
   const offsetMs = location.utc_offset_hours * HOUR_MS;
   const byQuantity = new Map<string, Map<number, number>>();
@@ -228,7 +258,7 @@ export function writeEpw(input: { location: WeatherFileLocation; series: Collect
     'TYPICAL/EXTREME PERIODS,0',
     'GROUND TEMPERATURES,0',
     `HOLIDAYS/DAYLIGHT SAVINGS,${leap && febHas29 ? 'Yes' : 'No'},0,0,0`,
-    `COMMENTS 1,${(input.comment ?? 'Written by Nexgen OS').replace(/[\r\n]/g, ' ')}`,
+    `COMMENTS 1,${(input.comment ?? 'Written by @nexgen-os/weather-files').replace(/[\r\n]/g, ' ')}`,
     'COMMENTS 2,Hours in local standard time; missing values carry the EPW missing codes',
     `DATA PERIODS,1,1,Data,${weekday},1/1,12/31`,
     ...out,
@@ -248,7 +278,7 @@ const TMY3_COLUMNS: Record<WeatherQuantity, string> = {
 };
 const TMY3_SKIPPED = ['Dew-point (C)', 'RHum (%)', 'Pressure (mbar)', 'Wdir (degrees)', 'Alb (unitless)', 'Pwat (cm)', 'AOD (unitless)', 'Lprecip depth (mm)'];
 
-/** A TMY3 file of the National Solar Radiation Database as series in the core's conventions. */
+/** A TMY3 file of the National Solar Radiation Database as series dated at their start (intervals) or instant, in UTC. */
 export function readTmy3(text: string, options: ReadOptions = {}): WeatherFile {
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
   const meta = csv(lines[0] ?? '');
@@ -304,7 +334,7 @@ function toWeatherFile(format: WeatherFile['format'], location: WeatherFileLocat
   const year = typical ? options.year ?? years[years.length - 1] : null;
   const offsetMs = location.utc_offset_hours * HOUR_MS;
 
-  const points = new Map<WeatherQuantity, SeriesPoint[]>(ORDER.map((q) => [q, []]));
+  const points = new Map<WeatherQuantity, WeatherPoint[]>(ORDER.map((q) => [q, []]));
   const missing: WeatherFile['missing'] = {};
   const instants = new Set<number>();
   for (const r of rows) {
@@ -327,7 +357,7 @@ function toWeatherFile(format: WeatherFile['format'], location: WeatherFileLocat
     }
   }
 
-  const series: CollectedSeries[] = ORDER.filter((q) => rows.some((r) => r.values[q] !== undefined)).map((q) => ({
+  const series: WeatherSeries[] = ORDER.filter((q) => rows.some((r) => r.values[q] !== undefined)).map((q) => ({
     quantity_code: q,
     value_kind: INTERVAL.includes(q) ? 'interval' : 'instant',
     step: '1 hour',
@@ -365,72 +395,6 @@ function impliedOffset(rows: Row[], location: WeatherFileLocation): number | nul
   const solarNoon = 12 + location.utc_offset_hours - location.lon / 15;
   const shift = sum / weight - solarNoon;
   return Math.abs(shift) <= 0.5 ? location.utc_offset_hours : location.utc_offset_hours + Math.round(shift);
-}
-
-// ---------------------------------------------------------------------------
-// The database
-// ---------------------------------------------------------------------------
-
-export interface WeatherTarget {
-  organisationId: string;
-  /** The object the weather is about: a weather point, a site. */
-  objectId: string;
-}
-
-/**
- * Stores what a file holds on an object, one series per quantity, with the
- * source the caller names (the `sources` row of the dataset: `pvgis`, a
- * station network, a licensed model). A typical year is `simulated` and
- * named after its years (`typical year 2005-2020`); real years are
- * `measured` and unnamed, unless told otherwise. Importing the same file
- * again replaces the values.
- */
-export async function importWeatherFile(
-  db: Db,
-  target: WeatherTarget,
-  file: WeatherFile,
-  options: { sourceCode: string; kind?: 'measured' | 'simulated'; name?: string | null },
-): Promise<{ series: { quantity_code: string; seriesId: string; inserted: number }[]; warnings: WeatherFileWarning[] }> {
-  const kind = options.kind ?? (file.typical ? 'simulated' : 'measured');
-  const name = options.name !== undefined ? options.name : file.typical ? `typical year ${file.years[0]}-${file.years[file.years.length - 1]}` : null;
-  const series = [];
-  for (const s of file.series) {
-    const stored = await storeSeries(db, { organisationId: target.organisationId, objectId: target.objectId, sourceCode: options.sourceCode, kind, name }, s);
-    series.push({ quantity_code: s.quantity_code, ...stored });
-  }
-  return { series, warnings: file.warnings };
-}
-
-/**
- * The weather series of an object, read through `resample()`, written as an
- * EPW file for one calendar year in the location's standard time. The
- * series are those of the source, kind and name given; a quantity the
- * object does not have is written missing.
- */
-export async function exportEpw(
-  db: Db,
-  request: { objectId: string; sourceCode: string; kind: 'measured' | 'simulated'; name?: string | null; year: number; location: WeatherFileLocation; comment?: string },
-): Promise<string> {
-  const found = await db.query<{ id: string; quantity_code: string; value_kind: CollectedSeries['value_kind'] }>(
-    `select id, quantity_code, value_kind from series
-      where object_id = $1 and source_code = $2 and kind = $3 and name is not distinct from $4
-        and quantity_code = any($5)`,
-    [request.objectId, request.sourceCode, request.kind, request.name ?? null, ORDER],
-  );
-  const offsetMs = request.location.utc_offset_hours * HOUR_MS;
-  const from = new Date(Date.UTC(request.year, 0, 1) - offsetMs).toISOString();
-  const to = new Date(Date.UTC(request.year + 1, 0, 1) - offsetMs + HOUR_MS).toISOString();
-  const series: CollectedSeries[] = [];
-  for (const s of found.rows) {
-    const values = await db.query<{ bucket: string | Date; value: number }>(`select bucket, value from resample($1, $2, $3, '1 hour')`, [s.id, from, to]);
-    series.push({
-      quantity_code: s.quantity_code,
-      value_kind: s.value_kind,
-      step: '1 hour',
-      values: values.rows.map((v) => ({ at: new Date(v.bucket).toISOString(), value: v.value })),
-    });
-  }
-  return writeEpw({ location: request.location, series, year: request.year, comment: request.comment });
 }
 
 // ---------------------------------------------------------------------------

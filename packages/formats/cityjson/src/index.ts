@@ -1,19 +1,18 @@
-// CityJSON 2.0 ⇄ Nexgen OS.
+// CityJSON 2.0 ⇄ plain shapes.
 //
 // CityJSON (https://www.cityjson.org, OGC community standard) is how cities
 // and national 3D models publish buildings: 3DBAG for the Netherlands, UrbIS
 // for Brussels, the CityGML LoD2 datasets of German states once converted.
-// A Building and its BuildingParts become one row of `buildings` — footprint,
-// elevation, height — with its floors and year as attributes, and its roof
-// and wall faces become rows of `surfaces` with their azimuth and tilt, each
-// with the source it came from and the CityObject id it is known by.
-// Attributes the core has no place for travel in `metadata.cityjson`, so
-// that the export gives them back. MIT, like every format library.
-
-import type { Db } from '@nexgen-os/core';
-import { orientation, polygonWkt, sridOf, type Vertex as Point } from '@nexgen-os/core';
-
-export { orientation, sridOf };
+// This library reads the Buildings of a document — with their
+// BuildingParts — into plain shapes: the CityGML attributes, the faces that
+// make the footprint, the semantic faces of the finest level of detail,
+// every coordinate resolved in the file's reference system. It writes such
+// shapes back as a CityJSON 2.0 document: a LoD 1 solid, LoD 2 semantic
+// surfaces, the attributes. It computes no figure: a height, an azimuth or
+// a tilt is the reader's business. It imports nothing, opens no connection
+// and calls no network.
+//
+// SPDX-License-Identifier: MIT
 
 export interface CityJsonTransform {
   scale: [number, number, number];
@@ -51,160 +50,127 @@ export interface CityJsonDocument {
   [key: string]: unknown;
 }
 
-export interface ImportTarget {
-  organisationId: string;
-  siteId: string;
-  scenarioId?: string | null;
+// ---------------------------------------------------------------------------
+// The plain shapes
+// ---------------------------------------------------------------------------
+
+/** A point in the document's reference system: x, y, z. */
+export type Point = [number, number, number];
+/** A ring, not closed (CityJSON's convention: the last point is not the first repeated). */
+export type Ring = Point[];
+/** An outer ring, then its holes. */
+export type Polygon = Ring[];
+
+/** A face with its semantics: `RoofSurface`, `WallSurface`, `GroundSurface`… */
+export interface CitySurface {
+  /** The CityGML type of the semantic surface. */
+  type: string;
+  lod: number;
+  polygon: Polygon;
+  /** The semantic surface's attributes (3DBAG's `b3_*`, a `name`), its type left out. */
+  attributes: Record<string, unknown>;
 }
 
-export interface ImportOptions {
-  /** The `sources.code` the file comes from (a city model, a national dataset). */
-  sourceCode: string;
-  /** EPSG code of the file's coordinates, when its metadata does not say or says a compound CRS the installation cannot transform. */
+/** A Building, as the file says it. */
+export interface CityBuilding {
+  /** The CityObject id. */
+  id: string;
+  /** `attributes.name`, when the file gives one. */
+  name: string | null;
+  measuredHeight: number | null;
+  storeysAboveGround: number | null;
+  storeysBelowGround: number | null;
+  yearOfConstruction: number | null;
+  /** Every other attribute of the CityObject, as the file writes it. */
+  attributes: Record<string, unknown>;
+  /** The faces whose plan is the footprint: ground surfaces, else the LoD 0 faces, else every face (read); the plan of the building (written as its ground surface). */
+  footprint: Polygon[];
+  /** The semantic faces of the finest level of detail that has semantics (read); the LoD 2 surfaces (written). */
+  surfaces: CitySurface[];
+  /** The BuildingParts the building is made of, by id (read only). */
+  parts?: string[];
+  /** The levels of detail the file gives, in order (read only). */
+  lods?: number[];
+  /** The lowest and highest z of the building's outer rings (read only); null without geometry. */
+  zRange?: [number, number] | null;
+  /** The faces of a LoD 1 solid (written only). */
+  solid?: Polygon[];
+}
+
+export interface CityModel {
+  /** The EPSG code of the coordinates. */
+  srid: number;
+  buildings: CityBuilding[];
+  /** CityObjects of other types than Building and BuildingPart, left alone (read only). */
+  skipped?: string[];
+}
+
+export interface ReadOptions {
+  /** EPSG code of the file's coordinates, when its metadata does not say, or says a compound CRS a reader cannot transform. */
   srid?: number;
-  /** The profile every imported building gets, when the file does not say. */
-  profile?: string | null;
 }
 
-export interface ImportResult {
-  buildings: { id: string; cityObjectId: string }[];
-  surfaces: number;
-  /** CityObjects of other types, left alone. */
-  skipped: string[];
+/** The EPSG code of a CRS name or URI (`https://www.opengis.net/def/crs/EPSG/0/7415`, `EPSG:28992`). */
+export function sridOf(referenceSystem: string | undefined): number | null {
+  if (!referenceSystem) return null;
+  const m = /EPSG\/\d+\/(\d+)\s*$/.exec(referenceSystem) ?? /EPSG:+(\d+)\s*$/i.exec(referenceSystem);
+  return m ? Number(m[1]) : null;
 }
 
-/** CityGML attributes the core has a column for. */
-const ATTRIBUTE_COLUMNS = ['measuredHeight', 'storeysAboveGround', 'storeysBelowGround', 'yearOfConstruction', 'name'] as const;
+// ---------------------------------------------------------------------------
+// Read
+// ---------------------------------------------------------------------------
 
-/** Semantic surface types and the kind of `surfaces` they become; the others shape the footprint or are left out. */
-const SURFACE_KINDS: Record<string, 'roof' | 'facade'> = {
-  RoofSurface: 'roof',
-  OuterFloorSurface: 'roof',
-  WallSurface: 'facade',
-};
+/** CityGML attributes the shape has a field for. */
+const NAMED_ATTRIBUTES = ['measuredHeight', 'storeysAboveGround', 'storeysBelowGround', 'yearOfConstruction', 'name'];
 
 interface Face {
-  /** Outer ring then holes, each a closed-or-not list of points in the file's CRS. */
-  rings: Point[][];
+  rings: Ring[];
   semantic: SemanticSurface | null;
   lod: number;
 }
 
-// ---------------------------------------------------------------------------
-// Import
-// ---------------------------------------------------------------------------
-
-export async function importCityJson(db: Db, target: ImportTarget, doc: CityJsonDocument, options: ImportOptions): Promise<ImportResult> {
-  if (doc.type !== 'CityJSON') throw new Error('not_cityjson: the document is not a CityJSON file');
+/** The Buildings of a document. Refuses `not_cityjson`, and `crs_required` when neither the file nor the options name the reference system. */
+export function readCityJson(doc: CityJsonDocument, options: ReadOptions = {}): CityModel {
+  if (doc?.type !== 'CityJSON') throw new Error('not_cityjson: the document is not a CityJSON file');
   const srid = options.srid ?? sridOf(doc.metadata?.referenceSystem);
   if (!srid) throw new Error('crs_required: the file names no reference system; give options.srid');
-  const known = await db.query<{ n: number }>('select count(*)::int n from spatial_ref_sys where srid = $1', [srid]);
-  if (known.rows[0].n === 0) throw new Error(`crs_unknown: EPSG:${srid} is not in spatial_ref_sys`);
-
   const vertices = resolveVertices(doc);
-  const result: ImportResult = { buildings: [], surfaces: 0, skipped: [] };
-
+  const model: CityModel = { srid, buildings: [], skipped: [] };
   for (const [id, object] of Object.entries(doc.CityObjects)) {
     if (object.type !== 'Building') {
-      if (object.type !== 'BuildingPart') result.skipped.push(id);
+      if (object.type !== 'BuildingPart') model.skipped!.push(id);
       continue;
-    }
-    const already = await db.query<{ object_id: string }>(
-      `select object_id from external_ids where organisation_id = $1 and scheme = 'cityjson' and value = $2`,
-      [target.organisationId, id],
-    );
-    if (already.rows.length) {
-      throw new Error(`already_imported: ${id} is building ${already.rows[0].object_id} of this organisation`);
     }
     const parts = (object.children ?? []).filter((c) => doc.CityObjects[c]?.type === 'BuildingPart');
     const faces = [object, ...parts.map((p) => doc.CityObjects[p])].flatMap((o) => facesOf(o, vertices));
-    const attributes = { ...(object.attributes ?? {}) };
-    const extra: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(attributes)) if (!(ATTRIBUTE_COLUMNS as readonly string[]).includes(k)) extra[k] = v;
-
+    const all = object.attributes ?? {};
+    const attributes: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(all)) if (!NAMED_ATTRIBUTES.includes(k)) attributes[k] = v;
     const zs = faces.flatMap((f) => f.rings[0].map((p) => p[2]));
-    const minZ = zs.length ? Math.min(...zs) : null;
-    const maxZ = zs.length ? Math.max(...zs) : null;
-    const measured = numberOrNull(attributes.measuredHeight);
-    const height = measured ?? (minZ !== null && maxZ !== null ? round(maxZ - minZ, 3) : null);
-    const elevation = minZ !== null ? round(minZ, 3) : null;
-
-    const footprintFaces = footprintFacesOf(faces);
-    const footprintWkts = footprintFaces.map((f) => polygonWkt(f.rings));
-    const lods = [...new Set(faces.map((f) => f.lod))].sort((a, b) => a - b);
-
-    const building = await db.query<{ id: string }>(
-      `insert into buildings (organisation_id, site_id, scenario_id, name, profile, footprint, elevation_m, height_m, source_code, metadata)
-       select $1, $2, $3, $4, $5,
-              case when g.u is null then null else
-                ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($7, 0)), $8), 4326) end,
-              $7, $9, $10, $11
-         from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($6::text[]) w) g
-       returning id`,
-      [
-        target.organisationId, target.siteId, target.scenarioId ?? null,
-        stringOrNull(attributes.name) ?? id, options.profile ?? null,
-        footprintWkts, elevation, srid, height,
-        options.sourceCode,
-        JSON.stringify({ cityjson: { id, type: object.type, parts, lods, attributes: extra } }),
-      ],
-    );
-    const buildingId = building.rows[0].id;
-    result.buildings.push({ id: buildingId, cityObjectId: id });
-
-    // Floors and year, as the file says them: attributes with their source.
-    for (const [property, value] of [
-      ['floors_above_ground', integerOrNull(attributes.storeysAboveGround)],
-      ['floors_below_ground', integerOrNull(attributes.storeysBelowGround)],
-      ['year_built', integerOrNull(attributes.yearOfConstruction)],
-    ] as const) {
-      if (value === null) continue;
-      await db.query(
-        `insert into attributes (object_id, property_code, value, scenario_id, source_code) values ($1, $2, $3::jsonb, $4, $5)`,
-        [buildingId, property, JSON.stringify(value), target.scenarioId ?? null, options.sourceCode],
-      );
-    }
-
-    await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'cityjson', $2)`, [buildingId, id]);
-
-    // Roof and wall faces of the finest level of detail that has semantics.
     const semanticLods = [...new Set(faces.filter((f) => f.semantic).map((f) => f.lod))];
     const bestLod = semanticLods.length ? Math.max(...semanticLods) : null;
-    let n = 0;
-    for (const face of faces) {
-      if (face.lod !== bestLod || !face.semantic) continue;
-      const kind = SURFACE_KINDS[face.semantic.type];
-      if (!kind) continue;
-      n += 1;
-      const { normal, tilt } = orientation(face.rings[0]);
-      const { type, ...semanticAttributes } = face.semantic;
-      // The azimuth is measured against true north, not the grid's: a point
-      // ten metres down the slope from the face's centre, both taken to
-      // WGS 84, give the bearing whatever the projection's convergence.
-      const centre = face.rings[0].reduce((acc, p) => [acc[0] + p[0] / face.rings[0].length, acc[1] + p[1] / face.rings[0].length], [0, 0]);
-      const horizontal = Math.hypot(normal[0], normal[1]);
-      const sloped = tilt !== null && tilt >= 1 && horizontal > 0;
-      await db.query(
-        `insert into surfaces (organisation_id, building_id, scenario_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata)
-         values ($1, $2, $3, $4, $5, ST_Transform(ST_SetSRID(ST_GeomFromText($6), $7), 4326),
-                 case when $8::boolean then round(degrees(ST_Azimuth(
-                   ST_Transform(ST_SetSRID(ST_MakePoint($9, $10), $7), 4326)::geography,
-                   ST_Transform(ST_SetSRID(ST_MakePoint($11, $12), $7), 4326)::geography))::numeric, 2) end,
-                 $13, $14, $15)`,
-        [
-          target.organisationId, buildingId, target.scenarioId ?? null,
-          stringOrNull(semanticAttributes.name) ?? `${type} ${n}`, kind,
-          polygonWkt(face.rings), srid,
-          sloped, centre[0], centre[1], centre[0] + (10 * normal[0]) / (horizontal || 1), centre[1] + (10 * normal[1]) / (horizontal || 1),
-          tilt !== null ? round(tilt, 2) : null,
-          options.sourceCode,
-          JSON.stringify({ cityjson: { lod: face.lod, type, attributes: semanticAttributes } }),
-        ],
-      );
-    }
-    result.surfaces += n;
+    model.buildings.push({
+      id,
+      name: stringOrNull(all.name),
+      measuredHeight: numberOrNull(all.measuredHeight),
+      storeysAboveGround: numberOrNull(all.storeysAboveGround),
+      storeysBelowGround: numberOrNull(all.storeysBelowGround),
+      yearOfConstruction: numberOrNull(all.yearOfConstruction),
+      attributes,
+      footprint: footprintFacesOf(faces).map((f) => f.rings),
+      surfaces: faces
+        .filter((f) => f.semantic && f.lod === bestLod)
+        .map((f) => {
+          const { type, ...rest } = f.semantic!;
+          return { type, lod: f.lod, polygon: f.rings, attributes: rest };
+        }),
+      parts,
+      lods: [...new Set(faces.map((f) => f.lod))].sort((a, b) => a - b),
+      zRange: zs.length ? [Math.min(...zs), Math.max(...zs)] : null,
+    });
   }
-  return result;
+  return model;
 }
 
 function resolveVertices(doc: CityJsonDocument): Point[] {
@@ -248,67 +214,20 @@ function footprintFacesOf(faces: Face[]): Face[] {
 }
 
 // ---------------------------------------------------------------------------
-// Export
+// Write
 // ---------------------------------------------------------------------------
 
-export interface ExportOptions {
-  /** EPSG code of the output; default: the UTM zone of the site. */
-  srid?: number;
-}
-
-interface BuildingRow {
-  id: string;
-  name: string;
-  elevation_m: string | null;
-  height_m: string | null;
-  attributes: { floors_above_ground?: number; floors_below_ground?: number; year_built?: number };
-  metadata: { cityjson?: { id?: string; attributes?: Record<string, unknown> } };
-  city_id: string | null;
-  srid: number;
-  footprint: string | null;
-  volume: string[] | null;
-}
-
-interface SurfaceRow {
-  building_id: string;
-  name: string;
-  kind: string;
-  metadata: { cityjson?: { type?: string; attributes?: Record<string, unknown> } };
-  geometry: string;
-}
-
 /**
- * The buildings of a site as a CityJSON 2.0 document: LoD 1 solid from the
- * footprint and height, LoD 2 surfaces from `surfaces` when there are any,
- * CityGML attributes from the columns and the attributes, and the file's own
- * attributes back from `metadata.cityjson`.
+ * Buildings as a CityJSON 2.0 document: a LoD 1 `Solid` from `solid`, a
+ * LoD 2 `MultiSurface` with the footprint as its ground surface and the
+ * surfaces with their semantics, the named attributes as CityGML writes
+ * them and the others as they came. Vertices are integers in millimetres,
+ * through the transform.
  */
-export async function exportCityJson(db: Db, where: { siteId: string }, options: ExportOptions = {}): Promise<CityJsonDocument> {
-  const buildings = await db.query<BuildingRow>(
-    `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from buildings where site_id = $1)) srid)
-     select b.id, b.name, b.elevation_m, b.height_m, attributes_of(b.id) attributes, b.metadata,
-            (select value from external_ids e where e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
-            s.srid,
-            ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
-            (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(building_volume(b.id)) d) volume
-       from buildings b, s
-      where b.site_id = $1 and b.scenario_id is null
-      order by b.created_at, b.id`,
-    [where.siteId, options.srid ?? null],
-  );
-  if (buildings.rows.length === 0) throw new Error('nothing_to_export: the site has no building');
-  const srid = buildings.rows[0].srid;
-  const surfaces = await db.query<SurfaceRow>(
-    `select f.building_id, f.name, f.kind, f.metadata, ST_AsGeoJSON(ST_Transform(f.geometry, $2::int)) geometry
-       from surfaces f join buildings b on b.id = f.building_id
-      where b.site_id = $1 and f.scenario_id is null and f.geometry is not null
-      order by f.created_at, f.id`,
-    [where.siteId, srid],
-  );
-
+export function writeCityJson(model: CityModel): CityJsonDocument {
   const vertexIndex = new Map<string, number>();
   const vertices: number[][] = [];
-  const vertex = (p: number[]): number => {
+  const vertex = (p: Point): number => {
     const key = p.map((c) => Math.round(c * 1000)).join(',');
     let i = vertexIndex.get(key);
     if (i === undefined) {
@@ -318,44 +237,37 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
     }
     return i;
   };
-  const ringIndices = (ring: number[][]): number[] => {
-    const pts = ring.slice(0, -1); // GeoJSON rings are closed; CityJSON rings are not
-    return pts.map(vertex);
-  };
-  const polygonIndices = (geojson: string): number[][] => (JSON.parse(geojson) as { coordinates: number[][][] }).coordinates.map(ringIndices);
+  const indices = (polygon: Polygon): number[][] => polygon.map((ring) => ring.map(vertex));
 
   const CityObjects: Record<string, CityObject> = {};
-  for (const b of buildings.rows) {
-    const id = b.city_id ?? b.metadata.cityjson?.id ?? b.id;
-    const attributes: Record<string, unknown> = { ...(b.metadata.cityjson?.attributes ?? {}) };
-    if (b.name !== id) attributes.name = b.name;
-    if (b.height_m !== null) attributes.measuredHeight = Number(b.height_m);
-    if (b.attributes.floors_above_ground !== undefined) attributes.storeysAboveGround = b.attributes.floors_above_ground;
-    if (b.attributes.floors_below_ground !== undefined) attributes.storeysBelowGround = b.attributes.floors_below_ground;
-    if (b.attributes.year_built !== undefined) attributes.yearOfConstruction = b.attributes.year_built;
+  for (const b of model.buildings) {
+    const attributes: Record<string, unknown> = { ...b.attributes };
+    if (b.name !== null) attributes.name = b.name;
+    if (b.measuredHeight !== null) attributes.measuredHeight = b.measuredHeight;
+    if (b.storeysAboveGround !== null) attributes.storeysAboveGround = b.storeysAboveGround;
+    if (b.storeysBelowGround !== null) attributes.storeysBelowGround = b.storeysBelowGround;
+    if (b.yearOfConstruction !== null) attributes.yearOfConstruction = b.yearOfConstruction;
 
     const geometry: CityJsonGeometry[] = [];
-    if (b.volume && b.volume.length) {
-      geometry.push({ type: 'Solid', lod: '1', boundaries: [b.volume.map((face) => polygonIndices(face))] });
-    }
-    const own = surfaces.rows.filter((s) => s.building_id === b.id);
-    if (own.length) {
+    if (b.solid?.length) geometry.push({ type: 'Solid', lod: '1', boundaries: [b.solid.map(indices)] });
+    if (b.surfaces.length) {
       const semanticSurfaces: SemanticSurface[] = [];
       const values: number[] = [];
       const boundaries: number[][][] = [];
-      if (b.footprint) {
-        boundaries.push(polygonIndices(b.footprint).map((ring) => ring.reverse()));
+      // A ground surface faces down: its rings run the other way round from its plan.
+      for (const plan of b.footprint) {
+        boundaries.push(indices(plan.map((ring) => [...ring].reverse())));
         semanticSurfaces.push({ type: 'GroundSurface' });
-        values.push(0);
+        values.push(semanticSurfaces.length - 1);
       }
-      for (const s of own) {
-        boundaries.push(polygonIndices(s.geometry));
-        semanticSurfaces.push({ type: s.metadata.cityjson?.type ?? (s.kind === 'roof' ? 'RoofSurface' : 'WallSurface'), ...(s.metadata.cityjson?.attributes ?? {}), name: s.name });
+      for (const s of b.surfaces) {
+        boundaries.push(indices(s.polygon));
+        semanticSurfaces.push({ type: s.type, ...s.attributes });
         values.push(semanticSurfaces.length - 1);
       }
       geometry.push({ type: 'MultiSurface', lod: '2', boundaries, semantics: { surfaces: semanticSurfaces, values } });
     }
-    CityObjects[id] = { type: 'Building', attributes, geometry };
+    CityObjects[b.id] = { type: 'Building', attributes, geometry };
   }
 
   const mins = [0, 1, 2].map((k) => Math.min(...vertices.map((v) => v[k])));
@@ -365,7 +277,7 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
     version: '2.0',
     transform: { scale: [0.001, 0.001, 0.001], translate: [mins[0] / 1000, mins[1] / 1000, mins[2] / 1000] },
     metadata: {
-      referenceSystem: `https://www.opengis.net/def/crs/EPSG/0/${srid}`,
+      referenceSystem: `https://www.opengis.net/def/crs/EPSG/0/${model.srid}`,
       geographicalExtent: [mins[0] / 1000, mins[1] / 1000, mins[2] / 1000, maxs[0] / 1000, maxs[1] / 1000, maxs[2] / 1000],
     },
     CityObjects,
@@ -378,14 +290,6 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
 function numberOrNull(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
-function integerOrNull(v: unknown): number | null {
-  const n = numberOrNull(v);
-  return n === null ? null : Math.round(n);
-}
 function stringOrNull(v: unknown): string | null {
   return typeof v === 'string' && v.trim() !== '' ? v : null;
-}
-function round(n: number, digits: number): number {
-  const f = 10 ** digits;
-  return Math.round(n * f) / f;
 }

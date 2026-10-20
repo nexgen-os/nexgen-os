@@ -8,7 +8,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { bbox, exportGeoJson, type Feature, type FeatureCollection } from '@nexgen-os/geojson';
+import { bbox, type Feature } from '@nexgen-os/geojson';
+import { exportGeoJson, type FeatureProperties, type GeoJsonExport as FeatureCollection } from '@nexgen-os/core';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
@@ -55,7 +56,7 @@ afterAll(async () => {
   await db.close();
 });
 
-const byId = (fc: FeatureCollection, id: string): Feature => {
+const byId = (fc: FeatureCollection, id: string): Feature<FeatureProperties> => {
   const f = fc.features.find((x) => x.id === id);
   if (!f) throw new Error(`no feature ${id}`);
   return f;
