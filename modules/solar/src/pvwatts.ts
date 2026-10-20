@@ -188,6 +188,25 @@ export function remainingAfterLosses(losses: { code: string; pct: number | null 
 }
 
 /**
+ * The losses of a profile with the soiling of a place: the fraction an
+ * array, its system or its site says (`soiling_loss`, 0.02 for 2 %) takes
+ * the place of the profile's `soiling` loss, at its rank, as a percentage.
+ * A profile without a `soiling` loss of its own folds it into an aggregate
+ * (PVGIS's and PVWatts's `system`): its losses stay as they are and
+ * `applied` is false, so that the soiling is never counted twice.
+ */
+export function withSoiling<L extends { code: string; pct: number | null }>(
+  losses: L[],
+  soilingFraction: number | null,
+): { losses: (L | { code: 'soiling'; pct: number })[]; applied: boolean } {
+  if (soilingFraction === null) return { losses, applied: false };
+  if (!(soilingFraction >= 0 && soilingFraction < 1)) throw new Error(`soiling_out_of_range: ${soilingFraction}; soiling_loss is a fraction, 0 to 1 (0.02 for 2 %)`);
+  if (!losses.some((l) => l.code === 'soiling')) return { losses, applied: false };
+  const pct = Math.round(soilingFraction * 100 * 1e9) / 1e9;
+  return { losses: losses.map((l) => (l.code === 'soiling' ? { code: 'soiling' as const, pct } : l)), applied: true };
+}
+
+/**
  * γ as given, when it lies in [`GAMMA_PDC_MIN`, `GAMMA_PDC_MAX`]; otherwise
  * throws a named error (`gamma_out_of_range`).
  */

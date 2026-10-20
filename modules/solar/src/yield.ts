@@ -45,6 +45,7 @@ import {
   toYearGrid,
   total,
   typicalYear,
+  withSoiling,
   withinLocalYears,
 } from './pvwatts.js';
 import { sandiaFromOnd } from './inverter.js';
@@ -134,6 +135,20 @@ interface PvArray extends Omit<ArrayRow, 'azimuth_deg' | 'tilt_deg' | 'kwp_dc' |
   azimuth_deg: number;
   tilt_deg: number;
   albedo: number | null;
+  /** The soiling the place says (`solar.soiling_of`), null when none does. */
+  soiling: Soiling | null;
+}
+
+/** A `soiling_loss` as `parameter_of()` resolves it: the value and where it was found. */
+interface Soiling {
+  value: number;
+  level: string;
+  object_id?: string;
+  country?: string;
+  region?: string;
+  source_code: string | null;
+  reference: string | null;
+  valid_from: string | null;
 }
 
 interface ProfileRow {
@@ -176,7 +191,7 @@ export async function runYield(db: Db, request: YieldRequest, clients: YieldClie
   }
   if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
   // `pvwatts` and the engines cut days and months in the site's local calendar.
-  const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined);
+  const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined, request.years);
   if (request.engine) return runWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
   return profileCode === 'pvgis_like'
     ? runPvgisLike(db, request, context, given.pvgis ?? pvgis())
@@ -184,7 +199,7 @@ export async function runYield(db: Db, request: YieldRequest, clients: YieldClie
 }
 
 /** The system, its position, its arrays (or one for the whole system) and the profile, checked. */
-async function loadContext(db: Db, pvSystemId: string, profileCode: string, needsTimeZone: boolean): Promise<Context> {
+async function loadContext(db: Db, pvSystemId: string, profileCode: string, needsTimeZone: boolean, years: { from: number }): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
       `select d.organisation_id, d.site_id, s.time_zone, p.kwp_dc,
@@ -232,15 +247,47 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
       module_model: null, module_parameters: null, module_count: null, modules_per_string: null, strings: null, inverter_product_id: null, inverter_model: null, inverter_parameters: null, inverter_count: null,
     }];
   }
-  const arrays = rows.map((a) => {
+  const arrays: PvArray[] = [];
+  for (const a of rows) {
     if (a.azimuth_deg === null || a.tilt_deg === null) throw new Error(`array_without_orientation: ${a.name}`);
     if (a.kwp_dc === null || Number(a.kwp_dc) <= 0) throw new Error(`array_without_power: ${a.name}`);
-    return {
+    arrays.push({
       ...a, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg),
       gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc), albedo: a.albedo === null ? null : Number(a.albedo),
-    };
-  });
+      soiling: await soilingOf(db, a.id ?? pvSystemId, years.from),
+    });
+  }
   return { system, where: { lon: system.lon, lat: system.lat }, profile, arrays, kwp: arrays.reduce((s, a) => s + a.kwp, 0) };
+}
+
+/**
+ * The soiling an array (or the system, for the array of a system described
+ * without arrays) is computed with, as it holds at the start of the first
+ * year asked: its own, its system's, its site's, its organisation's, its
+ * pack's; null when none says it.
+ */
+async function soilingOf(db: Db, objectId: string, fromYear: number): Promise<Soiling | null> {
+  const row = (await db.query<{ soiling: Soiling | null }>(
+    `select solar.soiling_of($1, make_timestamptz($2, 1, 1, 0, 0, 0, 'UTC')) soiling`, [objectId, fromYear])).rows[0];
+  return row.soiling ? { ...row.soiling, value: Number(row.soiling.value) } : null;
+}
+
+/** The losses an array is computed with: the profile's, with the place's soiling in place of the profile's. */
+function lossesOf(profile: ProfileRow, a: PvArray): { code: string; pct: number | null }[] {
+  return withSoiling(profile.losses, a.soiling?.value ?? null).losses;
+}
+
+/** What a run records of an array's soiling: the place's, where it was found, and whether it was applied. */
+function soilingInput(profile: ProfileRow, a: PvArray): Record<string, unknown> {
+  if (!a.soiling) return {};
+  const { applied } = withSoiling(profile.losses, a.soiling.value);
+  const { value, ...found } = a.soiling;
+  return {
+    soiling: {
+      fraction: value, ...found, applied,
+      ...(applied ? {} : { why: 'the profile has no soiling loss of its own; its aggregate loss includes one' }),
+    },
+  };
 }
 
 /** The days of weather a run reads for whole local years: one day more on each side, the values outside cut later. */
@@ -261,12 +308,11 @@ function pvgisSpec(a: PvArray, systemLossPct: number): PvgisSystem {
 }
 
 async function runPvgisLike(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, client: PvgisClient): Promise<YieldResult> {
-  // PVGIS takes one aggregate loss.
-  const systemLoss = profile.losses.reduce((sum, l) => sum + Number(l.pct), 0);
+  // PVGIS takes one aggregate loss per array.
   const perArray = [];
   for (const a of arrays) {
-    const spec = pvgisSpec(a, systemLoss);
-    perArray.push({ spec, answer: await client.hourly(where, spec, request.years, { raddatabase: request.raddatabase }) });
+    const spec = pvgisSpec(a, round(lossesOf(profile, a).reduce((sum, l) => sum + Number(l.pct), 0)));
+    perArray.push({ array: a, spec, answer: await client.hourly(where, spec, request.years, { raddatabase: request.raddatabase }) });
   }
 
   // Energies add up across arrays, hour by hour; the temperature is the site's, taken once.
@@ -287,7 +333,10 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
     {
       profile: 'pvgis_like',
       weather: { source: client.source_code, radiation_db: radiationDb, meteo_db: perArray[0].answer.meta.meteo_db, years: request.years, horizon: perArray[0].answer.meta.horizon },
-      arrays: perArray.map((x) => ({ kwp: x.spec.kwp, azimuth_deg: x.spec.azimuth_deg, tilt_deg: x.spec.tilt_deg, mounting: x.spec.mounting })),
+      arrays: perArray.map((x) => ({
+        kwp: x.spec.kwp, azimuth_deg: x.spec.azimuth_deg, tilt_deg: x.spec.tilt_deg, mounting: x.spec.mounting,
+        ...soilingInput(profile, x.array), ...(x.array.soiling ? { system_loss_pct: x.spec.system_loss_pct } : {}),
+      })),
       losses: profile.losses,
       conventions: CONVENTIONS,
     },
@@ -317,6 +366,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const perArray = [];
   for (const a of arrays) {
     const { gamma, source: gammaSource } = gammaOf(a, request);
+    const remaining = a.soiling ? remainingAfterLosses(lossesOf(profile, a)) : remainingFraction;
     const answer = await weather.history(where, period.from, period.to, {
       quantities: ['poa_irradiance', 'temperature', 'wind_speed'], tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL,
     });
@@ -326,14 +376,14 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       if (t) siteTemperature = { ...t, values: local(t.values) };
     }
     const { hours, stats } = cleanWeather(alignWeather(local(read('poa_irradiance')), read('temperature'), read('wind_speed')));
-    const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, remainingFraction });
+    const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, remainingFraction: remaining });
     const modelled = multiYearMeanAnnual(toYearGrid(energy, timeZone));
     let anchoring: { annual_kwh: number; factor: number; radiation_db: string; meteo_db: string } | null = null;
     if (anchored) {
-      const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - remainingFraction) * 100)), { raddatabase: request.raddatabase });
+      const yearly = await reference.yearly(where, pvgisSpec(a, round((1 - remaining) * 100)), { raddatabase: request.raddatabase });
       anchoring = { annual_kwh: yearly.annual_kwh, factor: anchoringFactor(yearly.annual_kwh, modelled), radiation_db: yearly.meta.radiation_db, meteo_db: yearly.meta.meteo_db };
     }
-    perArray.push({ array: a, gamma, gammaSource, hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
+    perArray.push({ array: a, remaining, gamma, gammaSource, hours: hours.length, stats, modelled, anchoring, energy: anchoring ? scaled(energy, anchoring.factor) : energy });
   }
 
   // Energies add up across arrays, hour by hour. The typical months are
@@ -390,6 +440,8 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       arrays: perArray.map((x) => ({
         name: x.array.name, kwp: x.array.kwp, azimuth_deg: x.array.azimuth_deg, tilt_deg: x.array.tilt_deg, mounting: x.array.mounting,
         ...(x.array.bifacial ? { bifacial: 'not modelled' } : {}),
+        ...(x.array.albedo !== null ? { albedo: 'not applied: the ground reflection is the weather source\'s transposition' } : {}),
+        ...soilingInput(profile, x.array), ...(x.array.soiling ? { remaining_fraction: round(x.remaining) } : {}),
         gamma_pdc: x.gamma, gamma_source: x.gammaSource, hours: x.hours, cleaning: x.stats,
         modelled_annual_kwh: round(x.modelled), anchoring_factor: x.anchoring ? round(x.anchoring.factor) : null,
       })),
@@ -438,6 +490,19 @@ function engineModule(a: PvArray, request: YieldRequest): Pick<PvYieldArray, 'mo
   }
   // PVWatts scales linearly with pdc0: the array as one module of its whole power.
   return { module: { model: 'pvwatts', parameters: { pdc0: a.kwp * 1000, gamma_pdc: gammaOf(a, request).gamma } }, modules_per_string: 1, strings: 1 };
+}
+
+/**
+ * The one list of losses an engine request carries: every array's must be
+ * the same (`losses_differ_between_arrays` otherwise), which a soiling said
+ * by the system or its site, rather than by one array, gives.
+ */
+function engineLosses(profile: ProfileRow, arrays: PvArray[]): { code: string; pct: number | null }[] {
+  const lists = arrays.map((a) => lossesOf(profile, a));
+  const first = JSON.stringify(lists[0]);
+  const other = lists.findIndex((l) => JSON.stringify(l) !== first);
+  if (other > 0) throw new Error(`losses_differ_between_arrays: ${arrays[0].name} and ${arrays[other].name} have different soiling; an engine request carries one list of losses`);
+  return lists[0];
 }
 
 /** The one inverter of the system as the engine sees it, or none (`no_loss`) when no array names one. */
@@ -494,12 +559,13 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
     }
   }
 
+  const losses = engineLosses(profile, arrays);
   const engineRequest: PvYieldRequest = {
     kind: 'pv_yield',
     site: { lat: where.lat, lon: where.lon, time_zone: timeZone },
     arrays: arrays.map((a) => ({ name: a.name, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: a.mounting as PvYieldArray['mounting'], albedo: a.albedo, ...engineModule(a, request) })),
     inverter: engineInverter(arrays),
-    losses: profile.losses.map((l) => ({ code: l.code, fraction: l.pct === null ? null : Number(l.pct) / 100 })),
+    losses: losses.map((l) => ({ code: l.code, fraction: l.pct === null ? null : Number(l.pct) / 100 })),
     models: {
       decomposition: profile.decomposition_model === 'none' ? null : profile.decomposition_model,
       transposition: profile.transposition_model,
@@ -551,10 +617,11 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
       arrays: arrays.map((a, i) => ({
         name: a.name, kwp: a.kwp, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: a.mounting,
         module_model: engineRequest.arrays[i].module.model, ...(a.bifacial ? { bifacial: 'not modelled' } : {}),
+        ...soilingInput(profile, a),
       })),
       inverter: { ...engineRequest.inverter, ...(arrays[0].inverter_model === 'ond' ? { fitted_from: 'ond' } : {}) },
       model: answer.result.meta,
-      losses: profile.losses,
+      losses,
       conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the site\'s time zone' },
     },
     owned,
