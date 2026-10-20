@@ -1,7 +1,6 @@
 # `solar` — photovoltaic systems and what a yield is computed from
 
-Decision [0012](../../docs/decisions/0012-solar-module.md); research:
-[docs/research/solar-tools.md](../../docs/research/solar-tools.md).
+Decision [0012](../../docs/decisions/0012-solar-module.md).
 
 A PV yield is comparable with a PVsyst, PV\*SOL or PVGIS result only when it
 says which weather, which period, which time convention, which models and

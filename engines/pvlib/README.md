@@ -52,8 +52,7 @@ answers the rest (`nexgen_pvlib`, Python, pandas, numpy, scipy).
 | `weather` | `temperature` and `wind_speed` (instants or interval means); irradiance as `ghi` (with or without `dni` and `dhi`) for the site, or `poa_irradiance` for the site or for each array (`"array": "<name>"`), as interval means. The irradiance series sets the intervals; they must be regular |
 
 **Temperature per mounting** (`pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS`).
-PVsyst's U-values are the ones its documentation
-§ 1.2 reads from PVsyst's help: free-standing 29, semi-integrated 20,
+PVsyst's U-values are the ones read from PVsyst's help: free-standing 29, semi-integrated 20,
 insulated back 15, all with Uv 0; a roof-parallel array is ventilated from
 below like PVsyst's semi-integrated case. SAPM uses Sandia's open rack,
 close mount and insulated back sets. Faiman has no published values per
