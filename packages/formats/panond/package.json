@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/panond",
   "version": "0.1.0",
-  "description": "PVsyst PAN and OND files read into Nexgen OS as device directory products.",
+  "description": "PVsyst PAN and OND files read into plain products: the module one-diode model in pvlib's keys, the inverter efficiency curves. No database, no dependency.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,8 +30,5 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
-  },
-  "dependencies": {
-    "@nexgen-os/core": "^0.1.0"
   }
 }

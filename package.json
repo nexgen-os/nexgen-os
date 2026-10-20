@@ -11,7 +11,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "npm run build -w @nexgen-os/core && npm run build --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
     "release:check": "node scripts/check-trusted-publishing.mjs",
     "release:publish": "node scripts/publish.mjs"
   },
@@ -25,9 +25,9 @@
     "vitest": "5.0.3"
   },
   "workspaces": [
-    "packages/cli",
-    "packages/core",
     "packages/formats/*",
-    "packages/connectors/*"
+    "packages/core",
+    "packages/connectors/*",
+    "packages/cli"
   ]
 }

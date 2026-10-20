@@ -9,6 +9,9 @@
 // 3. English only in code and documentation: no French diacritics in
 //    identifiers, comments or docs (examples may carry local names).
 // 4. Every migration and every function sets its search path.
+// 5. A format library touches no database and nothing of Nexgen OS: no
+//    import of another package of the repository, no query, no network
+//    call (decision 0035).
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -74,6 +77,16 @@ for (const f of files.filter((f) => /migrations\/.*\.sql$/.test(f) || /seed\/.*\
       problems.push(`${rel(f)}: a function without its search path: ${fn.split('\n')[0].slice(0, 80)}`);
     }
   }
+}
+
+// 5. format libraries
+for (const f of files.filter((f) => /^packages\/formats\/[^/]+\/src\/.*\.ts$/.test(rel(f)))) {
+  const lines = readFileSync(f, 'utf8').split('\n');
+  lines.forEach((line, i) => {
+    if (/from '(@nexgen-os\/|\.\.\/\.\.\/)/.test(line) || /\.query\s*[(<]/.test(line) || /\bfetch\s*\(/.test(line)) {
+      problems.push(`${rel(f)}:${i + 1}: a format library reaches beyond its file: ${line.trim().slice(0, 80)}`);
+    }
+  });
 }
 
 if (problems.length) {

@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/geojson",
   "version": "0.1.0",
-  "description": "A Nexgen OS site or project written as a GeoJSON FeatureCollection, with an open variant.",
+  "description": "GeoJSON (RFC 7946) features written as a FeatureCollection with its bounding box, and read back with what could not be read reported. No database, no dependency.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,8 +30,5 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
-  },
-  "dependencies": {
-    "@nexgen-os/core": "^0.1.0"
   }
 }
