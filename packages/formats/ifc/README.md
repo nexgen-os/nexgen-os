@@ -60,7 +60,7 @@ geometry of spaces.
 
 This library reads only. Writing a site back out as IFC4 would need: a
 GlobalId for rows that came from elsewhere (derived from their UUID, as
-`docs/research/bim-3d.md` proposes), the spatial tree rebuilt from
+the IFC research notes propose), the spatial tree rebuilt from
 `buildings` and `spaces`, an
 `IfcMapConversion` from the site's UTM zone, geometry for the building (an
 extruded footprint) and its roof surfaces (`IfcPolygonalFaceSet`), and the

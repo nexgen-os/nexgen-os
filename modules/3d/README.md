@@ -1,7 +1,6 @@
 # `3d` — the shape of what is built
 
 Status: proposed, decision [0008](../../docs/decisions/0008-3d-module.md).
-Research: [docs/research/3d-geo.md](../../docs/research/3d-geo.md).
 Schema: `three_d`.
 
 What it adds to the core: `three_d.models` (georeferenced glTF, IFC,

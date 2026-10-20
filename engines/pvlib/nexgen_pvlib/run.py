@@ -24,7 +24,7 @@ KINDS = ["pv_yield"]
 
 # The mountings of `solar.pv_arrays`, mapped to the temperature parameters
 # pvlib publishes (pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS). PVsyst's
-# U-values per mounting are the ones docs/research/solar-tools.md section 1.2
+# U-values per mounting are the ones PVsyst's documentation
 # reads from PVsyst's help: free-standing 29, semi-integrated 20, insulated
 # back 15, all with Uv 0; pvlib carries the same three. A roof-parallel
 # array on a pitched roof is ventilated from below like PVsyst's
