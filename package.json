@@ -2,7 +2,7 @@
   "name": "nexgen-os-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "An open foundation for describing places, buildings and the things in them \u2014 in 3D, over time \u2014 so that energy, architecture and compliance tools can share one model.",
+  "description": "An open foundation for describing places, buildings and the things in them — in 3D, over time — so that energy, architecture and compliance tools can share one model.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "engines": {
@@ -20,6 +20,7 @@
     "@electric-sql/pglite-postgis": "0.2.8",
     "@electric-sql/pglite-socket": "0.2.11",
     "@types/node": "22.20.5",
+    "ekwo-os": "0.16.0",
     "hyparquet": "1.31.5",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
