@@ -1,8 +1,6 @@
 # 0007 — Series live in plain Postgres, on any host
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026 · Research:
-> [time-series-scale.md](../research/time-series-scale.md),
-> [audit-series.md](../research/audit-series.md)
+> Status: accepted · 12/10/2026, rewritten 19/10/2026
 
 ## Context
 

@@ -62,4 +62,3 @@ same day, is this rule.
 - Inherits Ekwo OS 0024 (*A tax follows the territory of the parties*),
   translated: a rule follows the region of the place.
 - [0011](0011-external-data.md) — sources and their coverage.
-- [`docs/research/geocoders-compared.md`](../research/geocoders-compared.md).

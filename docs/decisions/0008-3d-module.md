@@ -61,5 +61,4 @@ the [road map](../road-to-0.1.md).
 - [0003](0003-geometry-wgs84-3d-utm.md) — the frame of all geometry.
 - [0035](0035-a-format-library-touches-no-database.md) — the readers of IFC,
   CityJSON and 3D Tiles are format libraries.
-- [`docs/research/3d-geo.md`](../research/3d-geo.md), [`docs/research/bim-3d.md`](../research/bim-3d.md).
 - [`modules/3d/README.md`](../../modules/3d/README.md).
