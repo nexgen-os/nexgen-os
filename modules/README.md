@@ -30,6 +30,8 @@ A module computes in TypeScript or hands a computation to an external
 engine (`engines/`, decision [0013](../docs/decisions/0013-external-engines.md)):
 a program in any language, JSON in and out, that never reads the database.
 
+What an owner publishes is the core's, not a module's: a frozen document and a schema of its own
+for the anonymous role ([0015](../docs/decisions/0015-publications.md)).
 What a country requires is never a module: the rules and defaults are in the packs,
 and `tasks` carries what has to be done, with its legal reference and its condition.
 
@@ -46,10 +48,9 @@ and `tasks` carries what has to be done, with its legal reference and its condit
 | `contracts` (proposed) | supply, injection, physical or virtual PPA and internal community tariff contracts, with their parties and their price signals (fixed, indexed, cap, floor) | under which contract and at which price: the contract and the price signal in force over each interval, read by the settlement engine; no invoice, which is [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os)'s |
 | `flexibility` (later) | flexible loads, offers, activations | demand response, aggregation, dispatch across sites |
 | `weather` | weather points (grid cells, stations) sites are linked to, weather models as sources with their coverage, the rule that picks one per place | the weather series every other module reads: observed, typical year, forecast; the choice of model resolved per site from the installation, the pack, the organisation, the project |
-| `generators` (later) | wind turbines, hydro, cogeneration, biomass and their curves | their yield, like `solar` for PV |
+| `wind` (later) | wind turbines and their product physics (power curve, hub height, rotor), wind series at hub height | their yield as a run, like `solar` for PV; hydro gets its own module the day a project needs it, cogeneration and biomass are sources of heat |
 | `heating` | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |
 | `thermal` | envelope elements and their U-values, thermal bridges, glazing | thermal simulation of the envelope, heat losses, energy performance inputs |
 | `monitoring` | collection schedules and their runs, alarms (connections are core, connectors are libraries: [0011](../docs/decisions/0011-external-data.md)) | live readings from equipment and hubs, control through existing systems (Home Assistant, OpenEMS), battery dispatch, demand response |
 | `tasks` (shipped, [0017](../docs/decisions/0017-tasks-as-data.md)) | phases of a project's life (study to decommissioning) and the roles that carry a task, as vocabularies; task templates per country, kind of project and role, with legal reference, documents and condition, published by the packs; tasks on a project, a site, a building, a surface or a device, with planned and actual dates, status, contact, dependency and source | `plan()`: the tasks of a project from the templates that match it, once; `progress()`: where a site or a project stands on a day |
-| `publications` (later) | documents an owner made public: an open export of a site or a project, kept as published with its licence and hash; public consultations and contributions after that | what anyone reads without an account, through one public schema, the only one the anonymous role is given; designed in [0015](../docs/decisions/0015-publications.md), withdrawn before 0.1 |
 | `kpis` | indicators as data (a formula over series or rollups, a period, a unit), targets and trajectories | the indicators of a site, a project or a portfolio of sites, written back as series of the core through `store()` |
