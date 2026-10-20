@@ -166,7 +166,7 @@ packages/connectors/   one MIT package per outside service: weather (open-meteo,
 packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
 engines/               external computations in other languages, JSON in and out (pvlib, optional), MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
-docs/                  model, decisions, research, how a release is cut
+docs/                  model, decisions, how a release is cut
 scripts/               hygiene, and what a release publishes
 tests/                 the core's tests, the examples, the modules, the packages, the packs, the engines
 ```

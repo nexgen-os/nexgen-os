@@ -183,7 +183,7 @@ used to carry are kept here, each under the record that holds its rule.
 The doctrine of 19 October 2026 ([`docs/doctrine.md`](doctrine.md)) is
 written before the moves that bring the code to it. Each move is a pull
 request of its own, the suite green at every step; the numbers are the
-decisions of the [audit summary](research/audit-summary.md).
+decisions of the audit of 19 October 2026.
 
 - [ ] **The core of three notions** (1–8, 18, 30, 31, 36): the grid and the
   community as modules, the law out of the repository, sensors folded into

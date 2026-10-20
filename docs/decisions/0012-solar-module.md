@@ -1,7 +1,6 @@
 # 0012 — A yield says what it was computed from
 
 > Status: accepted · 13/10/2026, rewritten 19/10/2026 · a record of the modules
-> Research: [docs/research/solar-tools.md](../research/solar-tools.md)
 
 ## Context
 
