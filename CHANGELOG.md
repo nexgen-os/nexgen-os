@@ -98,6 +98,12 @@ new path:
 
 ### Added
 
+- Nexgen OS and Ekwo OS on one database: `docs/with-ekwo-os.md` says how
+  both are installed on one project, what each installer owns, what the
+  `accounting` module holds, and that the schema name `ekwo` is Ekwo's.
+  `tests/cross-install.test.ts` installs the Ekwo OS core from its published
+  package and the Nexgen OS core with `accounting`, in both orders, and finds
+  no collision, each side's grants intact and one member reading both.
 - The `settlement` request kind of the engines (`packages/core/src/engines/settlement.ts`):
   contracts with their price signals and the series their volume is read
   from in, settlement lines out — energy, price and amount over each
