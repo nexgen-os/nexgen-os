@@ -239,10 +239,10 @@ describe('the curve of a site', () => {
     expect(days.rows[0].series_id).toBe(measured);
     // Before the readings start, a reconstruction still answers; before any curve, nothing does.
     const before = await one<{ s: string | null; kind: string }>(
-      db, `select s, (select kind from series where id = s) kind from consumption.curve_series($1, '2026-01-05', '2026-01-12') s`, [SITE]);
+      db, `select s, (select kind from series where id = s) kind from consumption.curve_series($1, '2026-01-05T00:00:00+01:00', '2026-01-12T00:00:00+01:00') s`, [SITE]);
     expect(before.s).not.toBe(measured);
     expect(before.kind).toBe('simulated');
-    const december = await one<{ s: string | null }>(db, `select consumption.curve_series($1, '2025-12-01', '2025-12-08') s`, [SITE]);
+    const december = await one<{ s: string | null }>(db, `select consumption.curve_series($1, '2025-12-01T00:00:00+01:00', '2025-12-08T00:00:00+01:00') s`, [SITE]);
     expect(december.s).toBeNull();
   });
 });
@@ -261,11 +261,11 @@ describe('activity hours', () => {
       expect((await db.query('select id from consumption.activity_hours')).rows).toEqual([]);
       await expect(db.query(`insert into consumption.activity_hours (organisation_id, object_id, weekday, opens, closes) values ($1, $2, 1, '08:00', '18:00')`, [ORG, SITE]))
         .rejects.toThrow(/object_not_found/);
-      expect((await db.query(`select * from consumption.curve($1, '2026-01-12', '2026-01-19', '1 day')`, [SITE])).rows).toEqual([]);
+      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [SITE])).rows).toEqual([]);
     });
     await asUser(db, USER_A, async () => {
       expect((await db.query('select id from consumption.activity_hours')).rows.length).toBe(6);
-      expect((await db.query(`select * from consumption.curve($1, '2026-01-12', '2026-01-19', '1 day')`, [SITE])).rows).toHaveLength(7);
+      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [SITE])).rows).toHaveLength(7);
     });
   });
 });
