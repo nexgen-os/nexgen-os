@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/ifc",
   "version": "0.1.0",
-  "description": "IFC4 and IFC2x3 buildings, storeys, spaces and roofs read into Nexgen OS.",
+  "description": "IFC4 and IFC2x3 buildings, storeys, spaces, roof faces and equipment read into plain shapes, placed in their reference system. No database.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,7 +32,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/core": "^0.1.0",
     "web-ifc": "0.0.78"
   }
 }

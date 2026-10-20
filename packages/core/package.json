@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/core",
   "version": "0.1.0",
-  "description": "What the code of Nexgen OS shares: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the engine glue.",
+  "description": "What the code of Nexgen OS shares: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue, and the importers and exporters of the file formats.",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
@@ -30,5 +30,19 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
+  },
+  "dependencies": {
+    "@nexgen-os/cityjson": "^0.1.0",
+    "@nexgen-os/geojson": "^0.1.0",
+    "@nexgen-os/homeassistant": "^0.1.0",
+    "@nexgen-os/weather-files": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@nexgen-os/ifc": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@nexgen-os/ifc": {
+      "optional": true
+    }
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/cityjson",
   "version": "0.1.0",
-  "description": "CityJSON 2.0 buildings, footprints and roof and wall surfaces to and from Nexgen OS.",
+  "description": "CityJSON 2.0 buildings read into plain shapes — attributes, footprint faces, semantic surfaces — and written back. No database, no dependency.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,8 +30,5 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
-  },
-  "dependencies": {
-    "@nexgen-os/core": "^0.1.0"
   }
 }
