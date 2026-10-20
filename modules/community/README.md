@@ -18,4 +18,8 @@ grouped, a group having no site of its own.
 | `community.leave_project()` | a participant leaves on a day, and may join again; refuses `participant_not_in_project` |
 | `community.participant_meters()` | the connection points behind a participant, groups included; needs the `grid` module (`module_required`) |
 
+Next: the allocation keys of a participant as its attributes, the volumes allocated to it as
+series of the core, and the contract of a sharing engine — what a `sharing` module would have
+held lives here, beside the participants it describes.
+
 The `tasks` module depends on it. Install: `npx nexgen-os init --modules community`.

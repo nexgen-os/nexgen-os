@@ -22,7 +22,9 @@ space is a vocabulary row, never a new table.
 **A device is placed by columns, on the few places a device can be.** A
 device always belongs to a site; it may say, more precisely, the building,
 the surface (a roof face, a facade, a ground area) or the space it is in or
-on. These places are few and known, so they are columns, checked together:
+on. A site is not always built: a ground-mounted PV plant, a field, a car
+park or a pond is a site whose surfaces lie on the ground, with no building
+at all, and its devices are placed on those surfaces. These places are few and known, so they are columns, checked together:
 the building of the surface or of the space is the device's building, and
 all of them are on the device's site.
 
