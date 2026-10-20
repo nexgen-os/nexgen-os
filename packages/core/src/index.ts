@@ -14,4 +14,5 @@ export * from './connectors.js';
 export * from './engines/runner.js';
 export * from './engines/pvlib.js';
 export * from './engines/settlement.js';
+export * from './engines/sharing.js';
 export * from './files/index.js';

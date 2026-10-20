@@ -12,6 +12,7 @@ database. Decision [0013](../docs/decisions/0013-external-engines.md).
 |---|---|---|---|
 | [`pvlib`](pvlib/README.md) | `pv_yield` | Python 3.9+ with pvlib, pandas, numpy | MIT (pvlib itself is BSD-3) |
 | [`settlement_example`](settlement-example/README.md) | `settlement` | Python 3.9+, no dependency | MIT |
+| [`sharing_example`](sharing-example/README.md) | `energy_sharing` | Python 3.9+, no dependency | MIT |
 
 Engines are optional. An installation without any runs everything else;
 a run that asks for an engine that is not installed is refused by name
@@ -108,6 +109,21 @@ that any engine accepting it answers in.
   no invoice comes out of an engine: a line goes to Ekwo (decision
   [0010](../docs/decisions/0010-ekwo-link.md)).
   [`settlement-example`](settlement-example/README.md) is one to copy.
+- `energy_sharing` ([`sharing.ts`](../packages/core/src/engines/sharing.ts)): the
+  participants of a sharing over a period (`from`, `to`, `step`), each with
+  its role, its attributes (`allocation_share`, `allocation_rank`…) and its
+  metered `offtake_energy` and `injection_energy`, kWh per step; the
+  allocation key as the project holds it (`method`, `parameters`) and the
+  rules of the country or the project passed as they are (`rules`). Out,
+  for each participant and step, what it received from the sharing
+  (`shared_offtake_energy`) and gave to it (`shared_injection_energy`),
+  what is left for its supplier and the grid (`offtake_energy`,
+  `injection_energy`), the totals and `meta`. How energy is shared — in
+  proportion, by fixed shares, in order, in a cascade from a site to its
+  community — is the engine's own; the `community` module runs it on a
+  project (`modules/community/src/sharing.ts`).
+  [`sharing-example`](sharing-example/README.md), in proportion to offtake,
+  is one to copy.
 
 ## Finding an engine
 

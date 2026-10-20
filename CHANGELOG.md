@@ -109,6 +109,18 @@ new path:
   curve of a site measured first, reconstructed otherwise.
 - `offsetAt()` in `@nexgen-os/core`: the offset of a time zone at an
   instant, through `Intl`, shared by `solar` and `consumption`.
+- Energy sharing in the `community` module (migration `0002_sharing.sql`,
+  module 0.2.0, decision 0041): the properties `allocation_key` (of a
+  project), `allocation_share` and `allocation_rank` (of a participant),
+  the quantities `shared_offtake_energy` and `shared_injection_energy`, and
+  `runSharing()` (`modules/community/src/sharing.ts`), which hands the
+  participants' metered offtake and injection, the key and the rules to an
+  engine and stores its answer as series of a run on each participant.
+- The `energy_sharing` request kind of the engines
+  (`packages/core/src/engines/sharing.ts`), and `engines/sharing-example`,
+  pure Python, which shares in proportion to offtake and is meant to be
+  copied; it refuses by name `participants_missing`, `series_missing`,
+  `series_misaligned`, `key_unknown` and `rule_unknown`.
 - Nexgen OS and Ekwo OS on one database: `docs/with-ekwo-os.md` says how
   both are installed on one project, what each installer owns, what the
   `accounting` module holds, and that the schema name `ekwo` is Ekwo's.

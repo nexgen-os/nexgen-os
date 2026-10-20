@@ -84,13 +84,9 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
   ('00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-examples/community/statutes-2024.pdf', 'application/pdf', 'notary'),
   ('00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-examples/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
 
--- The month's settlement, computed by the sharing module and handed to Ekwo:
--- the run keeps the lines and the Ekwo document ids they became.
-insert into modules (code, name, version, schema_name, requires_core_min) values
-  ('sharing', 'Sharing', '0.1.0', 'sharing', '0.1.0')
-on conflict (code) do nothing;
-
-select record_run('sharing', 'settlement-0.1.0', '00000000-0000-4000-8000-000300000020', null,
+-- The month's settlement, computed in the community module and handed to
+-- Ekwo: the run keeps the lines and the Ekwo document ids they became.
+select record_run('community', 'settlement-0.1.0', '00000000-0000-4000-8000-000300000020', null,
   '{"period": "2026-05", "allocation": "proportional", "price_eur_mwh": 95}',
   '{"shared_kwh": 18420, "lines": [
      {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95, "ekwo_document_id": "22222222-2222-4222-8222-222222222201"},
