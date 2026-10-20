@@ -227,7 +227,10 @@ create or replace function install_device(
   p_installed_on    date default null,
   p_source_code     text default null,
   p_unit_count      integer default 1,
-  p_scenario_id     uuid default null
+  p_scenario_id     uuid default null,
+  p_nameplate       jsonb default '{}',
+  p_metadata        jsonb default '{}',
+  p_status          text default null
 )
 returns uuid
 language plpgsql
@@ -253,21 +256,22 @@ begin
     end if;
   end if;
   insert into devices (id, organisation_id, site_id, building_id, space_id, surface_id, geometry, name, device_type,
-                       directory_id, manufacturer, model, rated_power_kw, unit_count, installation_date, source_code,
-                       status, scenario_id)
+                       directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date, source_code,
+                       status, metadata, scenario_id)
   values (v_id, s.organisation_id, p_site_id,
           (p_placement->>'building_id')::uuid, (p_placement->>'space_id')::uuid, (p_placement->>'surface_id')::uuid,
           case when jsonb_typeof(p_placement->'geometry') = 'object' then ST_GeomFromGeoJSON(p_placement->'geometry') end,
-          p_name, p_device_type, p_directory_id, p.manufacturer, p.model_ref,
+          p_name, p_device_type, p_directory_id,
+          coalesce(p.manufacturer, p_nameplate->>'manufacturer'), coalesce(p.model_ref, p_nameplate->>'model'), p_nameplate->>'serial_number',
           coalesce(p_rated_power_kw, p.unit_power_kw * p_unit_count), p_unit_count, p_installed_on, p_source_code,
-          case when p_installed_on is null or p_installed_on > current_date then 'planned' else 'in_service' end,
-          coalesce(p_scenario_id, s.scenario_id));
+          coalesce(p_status, case when p_installed_on is null or p_installed_on > current_date then 'planned' else 'in_service' end),
+          coalesce(p_metadata, '{}'), coalesce(p_scenario_id, s.scenario_id));
   return v_id;
 end;
 $$;
 
-comment on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid) is
-  'Installs a device on a site, placed in a building, a space or on a surface, as an instance of a product when one is named (its manufacturer, model and power by default). Planned until its installation date. Refuses device_type_unknown and the device_*_mismatch of its placement. Returns its id.';
+comment on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text) is
+  'Installs a device on a site, placed in a building, a space or on a surface, as an instance of a product when one is named (its manufacturer, model and power by default), else with the manufacturer, model and serial number of its nameplate; the metadata carry what the file it was read from says and no column holds. In the status given, else planned until its installation date. Refuses device_type_unknown and the device_*_mismatch of its placement. Returns its id.';
 
 -- The placement a device leaves is kept as a dated `placed_in` link to the
 -- finest place it had, so where it was stays readable.
@@ -375,6 +379,6 @@ comment on function replace_device(uuid, date, uuid, text, text) is
   'Replaces a device on a day: a new device in the same place (of another product when one is named), a replaces link to the old one, which is retired. Refuses device_retired. Returns the new id.';
 
 grant execute on function derived_device_check() to service_role;
-grant execute on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid),
+grant execute on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text),
   move_device(uuid, jsonb, timestamptz), retire_device(uuid, date), replace_device(uuid, date, uuid, text, text)
   to authenticated, service_role;
