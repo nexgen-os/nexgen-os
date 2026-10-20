@@ -951,7 +951,9 @@ create or replace function add_building(
   p_elevation_m  numeric default null,
   p_height_m     numeric default null,
   p_profile      text default null,
-  p_source_code  text default null
+  p_source_code  text default null,
+  p_metadata     jsonb default '{}',
+  p_scenario_id  uuid default null
 )
 returns uuid
 language plpgsql
@@ -966,14 +968,15 @@ begin
   if not found then
     raise exception 'site_not_found: %', p_site_id using errcode = 'no_data_found';
   end if;
-  insert into buildings (id, organisation_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, scenario_id)
-  values (v_id, s.organisation_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_profile, p_source_code, s.scenario_id);
+  insert into buildings (id, organisation_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, metadata, scenario_id)
+  values (v_id, s.organisation_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_profile, p_source_code,
+          coalesce(p_metadata, '{}'), coalesce(p_scenario_id, s.scenario_id));
   return v_id;
 end;
 $$;
 
-comment on function add_building(uuid, text, geometry, numeric, numeric, text, text) is
-  'Describes a building on a site, in the site''s organisation and scenario. Refuses invalid_geometry. Returns its id.';
+comment on function add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid) is
+  'Describes a building on a site, in the site''s organisation and in its scenario, or in the scenario given (a variant that adds a building to a site as it is). The metadata carry what the file it was read from says and no column holds. Refuses invalid_geometry. Returns its id.';
 
 create or replace function add_space(
   p_building_id  uuid,
@@ -983,7 +986,9 @@ create or replace function add_space(
   p_level        integer default null,
   p_geometry     geometry default null,
   p_elevation_m  numeric default null,
-  p_height_m     numeric default null
+  p_height_m     numeric default null,
+  p_source_code  text default null,
+  p_metadata     jsonb default '{}'
 )
 returns uuid
 language plpgsql
@@ -998,14 +1003,16 @@ begin
   if not found then
     raise exception 'building_not_found: %', p_building_id using errcode = 'no_data_found';
   end if;
-  insert into spaces (id, organisation_id, building_id, parent_id, kind, name, level, geometry, elevation_m, height_m, scenario_id)
-  values (v_id, b.organisation_id, p_building_id, p_parent_id, p_kind, p_name, p_level, p_geometry, p_elevation_m, p_height_m, b.scenario_id);
+  insert into spaces (id, organisation_id, building_id, parent_id, kind, name, level, geometry, elevation_m, height_m,
+                      source_code, metadata, scenario_id)
+  values (v_id, b.organisation_id, p_building_id, p_parent_id, p_kind, p_name, p_level, p_geometry, p_elevation_m, p_height_m,
+          p_source_code, coalesce(p_metadata, '{}'), b.scenario_id);
   return v_id;
 end;
 $$;
 
-comment on function add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric) is
-  'Describes a floor, a room, a zone or a unit of a building, under another space when a parent is given. Refuses space_outside_building, space_cycle. Returns its id.';
+comment on function add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb) is
+  'Describes a floor, a room, a zone or a unit of a building, under another space when a parent is given, with the source it came from and the metadata of its file. Refuses space_outside_building, space_cycle. Returns its id.';
 
 -- A roof face, a facade, a ground area, a carport. Without an orientation
 -- given, it is derived from the face's 3D polygon.
@@ -1016,7 +1023,8 @@ create or replace function add_surface(
   p_geometry     geometry default null,
   p_azimuth_deg  numeric default null,
   p_tilt_deg     numeric default null,
-  p_source_code  text default null
+  p_source_code  text default null,
+  p_metadata     jsonb default '{}'
 )
 returns uuid
 language plpgsql
@@ -1041,16 +1049,16 @@ begin
     p_azimuth_deg := derived.azimuth_deg;
     p_tilt_deg := derived.tilt_deg;
   end if;
-  insert into surfaces (id, organisation_id, building_id, site_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, scenario_id)
+  insert into surfaces (id, organisation_id, building_id, site_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata, scenario_id)
   values (v_id, host.organisation_id,
           case when host.kind = 'building' then p_host_id end, case when host.kind = 'site' then p_host_id end,
-          p_name, p_kind, g, p_azimuth_deg, p_tilt_deg, p_source_code, host.scenario_id);
+          p_name, p_kind, g, p_azimuth_deg, p_tilt_deg, p_source_code, coalesce(p_metadata, '{}'), host.scenario_id);
   return v_id;
 end;
 $$;
 
-comment on function add_surface(uuid, text, text, geometry, numeric, numeric, text) is
-  'Describes a roof face, a facade, a ground area or a carport on a building or a site; a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
+comment on function add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb) is
+  'Describes a roof face, a facade, a ground area or a carport on a building or a site, in its host''s scenario; a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
 
 -- ---------------------------------------------------------------------------
 -- Row level security of what is not an object
@@ -1072,7 +1080,7 @@ grant execute on function metric_srid(geometry), area_m2(geometry), to_core_geom
   ancestor_of(uuid, text), ancestors_of(uuid), site_of(uuid), building_of(uuid), country_of(uuid),
   place_check(jsonb), place_of(uuid),
   create_scenario(uuid, text, uuid, text), create_site(uuid, text, jsonb, text, text, uuid), locate_site(uuid, jsonb),
-  add_building(uuid, text, geometry, numeric, numeric, text, text),
-  add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric),
-  add_surface(uuid, text, text, geometry, numeric, numeric, text)
+  add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid),
+  add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb),
+  add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb)
   to authenticated, service_role;
