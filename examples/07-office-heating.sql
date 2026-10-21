@@ -1,19 +1,24 @@
 -- Example 7 — an office building and its heating, in Munich. Needs the
 -- `building` module.
 --
--- A property company's site, an office block with four facades and their
--- U-values, a gas boiler and a heat pump in service, a gas meter and an
--- electricity meter, the heating setpoint of the building, the boiler's flow
+-- A property company is the participant of its own heating study: it
+-- carries the place, a gas meter and an electricity meter, and behind them
+-- a gas boiler and a heat pump in service; the `building` module describes
+-- the office block with four facades and their U-values; the heating setpoint of the building, the boiler's flow
 -- temperature, a winter week of gas consumption, and a scenario replacing
 -- the boiler by a second heat pump after the facades are insulated.
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000700000001', 'Isar Immobilien GmbH');
 
-insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
-  ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', 'Rosenheimer Straße 145', 'DE', 'Rosenheimer Straße 145', '81671', 'München', 'DE-BY', 'office');
+insert into projects (id, organisation_id, name, kind, country, status) values
+  ('00000000-0000-4000-8000-000700000005', '00000000-0000-4000-8000-000700000001', 'Heating renewal', 'study', 'DE', 'active');
 
-insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into participants (id, organisation_id, project_id, name, role, country, street, postal_code, city, region, profile) values
+  ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000005',
+   'Rosenheimer Straße 145', 'consumer', 'DE', 'Rosenheimer Straße 145', '81671', 'München', 'DE-BY', 'office');
+
+insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Office block', 'office',
    ST_GeomFromText('POLYGON((11.6070 48.1240, 11.6076 48.1240, 11.6076 48.1243, 11.6070 48.1243, 11.6070 48.1240))', 4326), 520, 21);
 
@@ -38,11 +43,11 @@ insert into attributes (object_kind, object_id, property_code, value, source) va
   ('building', '00000000-0000-4000-8000-000700000020', 'floor_area', '5400', 'as-built drawings'),
   ('building', '00000000-0000-4000-8000-000700000020', 'energy_label', '"F"', 'energy certificate 2022');
 
-insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
+insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
   ('00000000-0000-4000-8000-000700000042', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Gas', '400000000000000312', 'gs1_gsrn', 'gas', 'offtake');
 
-insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, installation_date) values
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, status, installation_date) values
   ('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Gas condensing boiler', 'boiler', 'Viessmann', 'Vitocrossal 300', 320, 'in_service', '2008-09-15'),
   ('00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
@@ -50,18 +55,12 @@ insert into devices (id, organisation_id, site_id, name, device_type, manufactur
   ('00000000-0000-4000-8000-000700000053', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Air handling unit', 'hvac', 'Trox', 'X-CUBE 25', 18, 'in_service', '2015-05-20');
 
--- All three are in the office block.
-select building.place_device(d, '00000000-0000-4000-8000-000700000020')
-  from unnest(array['00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000052',
-                    '00000000-0000-4000-8000-000700000053']::uuid[]) d;
-
+-- All three are the company's, behind its two meters, and serve the office
+-- block.
 insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
   ('device', '00000000-0000-4000-8000-000700000051', 'serves', 'building', '00000000-0000-4000-8000-000700000020'),
   ('device', '00000000-0000-4000-8000-000700000052', 'serves', 'building', '00000000-0000-4000-8000-000700000020'),
   ('device', '00000000-0000-4000-8000-000700000053', 'serves', 'building', '00000000-0000-4000-8000-000700000020');
-select connect_device('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000042');
-select connect_device(d, '00000000-0000-4000-8000-000700000041')
-  from unnest(array['00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000053']::uuid[]) d;
 
 -- The points the building management system reads and writes, one series
 -- each: a winter week of hourly gas consumption at the gas meter, in m³;
@@ -92,11 +91,9 @@ insert into attributes (object_kind, object_id, property_code, value, scenario_i
 select 'surface', id, 'u_value', '0.24', '00000000-0000-4000-8000-000700000080', 'insulation design 2026'
   from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 
-insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
   ('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Heat pump 2', 'heat_pump', 'Viessmann', 'Vitocal 300-A Pro', 160, 'planned', '00000000-0000-4000-8000-000700000080');
-select building.place_device('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000020');
-select connect_device('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000041');
 
 insert into modules (code, name, version, schema_name, requires_core_min) values
   ('thermal', 'Thermal', '0.1.0', 'thermal', '0.1.0')
@@ -117,5 +114,5 @@ select record_run('thermal', 'heat-loss-0.1.0', 'building', '00000000-0000-4000-
 --   select coalesce(s.name, 'as is') variant, r.results->>'heat_loss_kw' kw from runs r left join scenarios s on s.id = r.scenario_id
 --    where r.subject_id = '00000000-0000-4000-8000-000700000020' order by 1;
 
--- Daily readings are cut in the site's time zone.
-update sites set time_zone = 'Europe/Berlin' where organisation_id = '00000000-0000-4000-8000-000700000001';
+-- Daily readings are cut in the participant's time zone.
+update participants set time_zone = 'Europe/Berlin' where organisation_id = '00000000-0000-4000-8000-000700000001';

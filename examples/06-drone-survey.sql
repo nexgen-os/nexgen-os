@@ -1,6 +1,8 @@
 -- Example 6 — a roof surveyed by drone, in Bologna. Needs the `building` module.
 --
--- A surveyor's organisation, a client's site with a factory hall, a drone
+-- A surveyor's organisation, its client as the participant of a solar
+-- study, carrying the place, whose factory hall is described by the
+-- `building` module, a drone
 -- flight whose outputs are documents (orthophoto, photos, video), the roof
 -- faces measured on the orthophoto with the survey as their source, a
 -- point cloud kept as a document, and the identifiers the
@@ -12,10 +14,14 @@ insert into organisations (id, name) values
 insert into contacts (id, organisation_id, name, kind) values
   ('00000000-0000-4000-8000-000600000005', '00000000-0000-4000-8000-000600000001', 'Meccanica Felsinea SpA', 'company');
 
-insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
-  ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', 'Felsinea plant', 'IT', 'Via Emilia Levante 210', '40139', 'Bologna', 'IT-45', 'industrial');
+-- The client answers for the place in the surveyor's solar study.
+insert into projects (id, organisation_id, name, kind, country, status) values
+  ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Felsinea — rooftop solar study', 'study', 'IT', 'simulation');
+insert into participants (id, organisation_id, project_id, name, role, contact_id, status, country, street, postal_code, city, region, profile) values
+  ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', 'Meccanica Felsinea', 'prosumer',
+   '00000000-0000-4000-8000-000600000005', 'simulation', 'IT', 'Via Emilia Levante 210', '40139', 'Bologna', 'IT-45', 'industrial');
 
-insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000600000020', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000010', 'Hall A', 'industrial',
    ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11);
 
@@ -56,12 +62,6 @@ insert into attributes (object_kind, object_id, property_code, value, source_cod
   ('building', '00000000-0000-4000-8000-000600000020', 'floors_above_ground', '1', 'rae_drone_survey', 'seen on the oblique photos'),
   ('surface', '00000000-0000-4000-8000-000600000033', 'is_external', 'true', null, 'survey');
 
--- The client answers for the site in the surveyor's solar study.
-insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Felsinea — rooftop solar study', 'study', 'IT', 'simulation');
-insert into participants (organisation_id, project_id, site_id, name, role, contact_id, status) values
-  ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000010', 'Meccanica Felsinea', 'prosumer', '00000000-0000-4000-8000-000600000005', 'simulation');
-
 -- Queries a page would run
 -- What the flight produced:
 --   select name, kind, media_type, captured_at, metadata from documents where source_code = 'rae_drone_survey' order by name;
@@ -72,5 +72,5 @@ insert into participants (organisation_id, project_id, site_id, name, role, cont
 --   select distinct src.name, src.license, src.attribution from attributes a join sources src on src.code = a.source_code
 --    where a.object_id in (select id from building.surfaces where building_id = '00000000-0000-4000-8000-000600000020');
 
--- Daily readings are cut in the site's time zone.
-update sites set time_zone = 'Europe/Rome' where organisation_id = '00000000-0000-4000-8000-000600000001';
+-- Daily readings are cut in the participant's time zone.
+update participants set time_zone = 'Europe/Rome' where organisation_id = '00000000-0000-4000-8000-000600000001';

@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { freshDatabase, one, repoRoot } from './helpers/db.js';
 
 const EXPECTED: Record<string, { modules: string[]; kinds: Record<string, number>; series: number; runs: number }> = {
-  '01-house-pv-battery.sql':   { modules: [], kinds: { organisation: 1, site: 1, meter: 1, device: 4 }, series: 3, runs: 1 },
-  '02-school-architecture.sql': { modules: ['building'], kinds: { organisation: 1, site: 1, building: 1, space: 7, device: 5 }, series: 13, runs: 0 },
-  '03-energy-community.sql':   { modules: ['billing', 'community', 'grid'], kinds: { organisation: 1, project: 1, site: 4, meter: 4, participant: 5, device: 1 }, series: 4, runs: 1 },
-  '04-farm-solar.sql':         { modules: [], kinds: { organisation: 1, site: 1, meter: 2, device: 5 }, series: 0, runs: 3 },
+  '01-house-pv-battery.sql':   { modules: [], kinds: { organisation: 1, project: 1, participant: 1, meter: 1, device: 4 }, series: 3, runs: 1 },
+  '02-school-architecture.sql': { modules: ['building'], kinds: { organisation: 1, project: 1, participant: 1, building: 1, space: 7, device: 5 }, series: 13, runs: 0 },
+  '03-energy-community.sql':   { modules: ['billing', 'community', 'grid'], kinds: { organisation: 1, project: 1, meter: 4, participant: 5, device: 1 }, series: 4, runs: 1 },
+  '04-farm-solar.sql':         { modules: [], kinds: { organisation: 1, project: 1, participant: 1, meter: 2, device: 5 }, series: 0, runs: 3 },
   '05-district-open-data.sql': { modules: ['building'], kinds: { organisation: 1, project: 1, site: 8, building: 6, surface: 6, participant: 6 }, series: 0, runs: 0 },
-  '06-drone-survey.sql':       { modules: ['building'], kinds: { organisation: 1, project: 1, site: 1, building: 1, surface: 3, participant: 1 }, series: 0, runs: 0 },
-  '07-office-heating.sql':     { modules: ['building'], kinds: { organisation: 1, site: 1, building: 1, surface: 5, meter: 2, device: 4 }, series: 3, runs: 2 },
+  '06-drone-survey.sql':       { modules: ['building'], kinds: { organisation: 1, project: 1, building: 1, surface: 3, participant: 1 }, series: 0, runs: 0 },
+  '07-office-heating.sql':     { modules: ['building'], kinds: { organisation: 1, project: 1, participant: 1, building: 1, surface: 5, meter: 2, device: 4 }, series: 3, runs: 2 },
 };
 
 const dir = join(repoRoot, 'examples');
@@ -40,21 +40,21 @@ describe('the examples', () => {
         const objects = await everyObject(db);
         const kinds = await db.query<{ kind: string; n: number }>(`with o as (${objects}) select kind, count(*)::int n from o group by kind`);
         expect(Object.fromEntries(kinds.rows.map((r) => [r.kind, r.n]))).toEqual(EXPECTED[file].kinds);
-        // Everything is somewhere, but what is not a place: the organisation,
-        // a project, a group of participants.
+        // Everything belongs to a participant, but the organisation and a
+        // project; a participant is its own.
         const counts = await one<{ series: number; values: number; runs: number; orphans: number }>(
           db,
           `with o as (${objects})
            select (select count(*)::int from series) series,
                   (select count(*)::int from series_values) values,
                   (select count(*)::int from runs) runs,
-                  (select count(*)::int from o where site_of(o.kind, o.id) is null and o.kind not in ('organisation', 'project', 'participant')) orphans`,
+                  (select count(*)::int from o where participant_of(o.kind, o.id) is null and o.kind not in ('organisation', 'project')) orphans`,
         );
         expect(counts.series).toBe(EXPECTED[file].series);
         expect(counts.runs).toBe(EXPECTED[file].runs);
         expect(counts.orphans).toBe(0);
         if (counts.series > 0) expect(counts.values).toBeGreaterThan(0);
-        // The country of everything that is somewhere is the one the example says.
+        // The country of everything with a place is the one the example says.
         const countries = await db.query<{ c: string }>(`with o as (${objects}) select distinct country_of(kind, id) c from o where country_of(kind, id) is not null`);
         expect(countries.rows).toHaveLength(1);
       } finally {
