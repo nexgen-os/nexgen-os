@@ -3,9 +3,10 @@
 Status: shipped with schema 0.3. Schema: `grid`.
 
 The connection point is the core's: `meters`, the identifier its operator
-knows on a site, what it can do (take, inject, both) and the period that
-identifier names it, with `declare_meter()` and `close_meter()`; a device
-behind it names it in `devices.meter_id` ([docs/model.md](../../docs/model.md)).
+knows, carried by a participant, what it can do (take, inject, both) and
+the period that identifier names it, with `declare_meter()` and
+`close_meter()`; the devices of that participant are behind it
+([docs/model.md](../../docs/model.md)).
 This module starts from that meter and adds what the grid knows about it
 (decision [0042](../../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)):
 who runs the grid, and how each point is connected to it.

@@ -366,6 +366,71 @@ names its object's kind (decision 0044; 0001, 0006, 0023, 0026, 0029 and
   `@nexgen-os/core`; the Python client's `site_of()`, `country_of()` and
   `attach()` take the kind.
 
+The participant is the node: it carries the place, the meters and the
+devices, and every module starts from it (decision 0045; 0006, 0008, 0021,
+0022, 0025, 0029, 0042 and 0044 completed, 0026 rewritten: a device is not
+placed for now). The core names six objects: the organisation, the
+project, the participant, the meter, the device, the series. Rewritten in
+place, with no upgrade from the earlier 0.3.0 drafts, which nothing
+installed:
+
+- `sites` leaves the core. Its place columns move to `participants`,
+  column for column (`country`, `street`, `address_extra`, `postal_code`,
+  `city`, `region`, `time_zone`, `geometry`, `location_precision`,
+  `location_source_code`, `profile`; `participants_region_check`,
+  `participants_location_precision`); a participant without a place is a
+  group (`participants_group_has_no_place`) and carries no meter and no
+  device (`participant_group_carries`). `participants.site_id` is gone.
+- `join_project(project, name, place, role, contact, join_date, status,
+  time_zone, profile, parent)` takes the place in its one shape, the time
+  zone defaulting from the region, else the country, from the pack;
+  `create_site()` is gone. `locate_site()` → `locate_participant()`
+  (`participant_is_group`, `country_is_final`); `place_of(participant)`.
+- `site_of(kind, id)` → `participant_of(kind, id)`, over the core's kinds,
+  a module answering for its own (`building.participant_of()`,
+  `solar.participant_of()`); `country_of()` and the time zone of a series
+  read it. `parameter_of()` cascades device → participant → its group →
+  project → organisation → the region, then the country, of the
+  participant's place.
+- `meters.participant_id` is not null and `meters.site_id` is gone;
+  `declare_meter(participant, identifier, scheme, …)`; `assign_meter()`
+  moves a meter to another participant, the one it leaves kept as a
+  `carried_by` link.
+- `devices.participant_id` is not null; `devices.site_id`,
+  `devices.meter_id`, `devices.geometry`, `connect_device()` and the
+  `behind_meter` link type are gone. A device is behind the meters of its
+  participant (`participant_meters()`); `install_device(participant, type,
+  name, …)` loses `p_geometry` and `p_meter_id`.
+- The `building` module: `building.sites` is the ground of a participant
+  (parcel, area, use; kind `site`, `building.add_site()`);
+  `building.buildings.participant_id` is not null and `site_id` names its
+  ground when it is described (`building_site_of_other_participant`);
+  surfaces stand on a building or a ground. `building.devices`,
+  `place_device()`, `move_device()`, `place_array()` and the `placed_in`
+  and `placed_on` link types are gone; `building.parameter_of()` reads the
+  spaces, the building and the ground above an object, then the core from
+  its participant.
+- `weather.source_for()` and `weather.point_for()` take a participant
+  (`participant_without_position`); `consumption.curve()` is a
+  participant's; `tasks.progress()` sums a participant or a project; a
+  `solar.horizons` row is on a participant or a surface
+  (`horizon_on_participant_or_surface_only`); the yield and the
+  performance indicators read the participant's point and time zone.
+- Importers: CityJSON and IFC write buildings for the participant the
+  caller names (`participantId`); IFC places it again and keeps where the
+  model puts a device in the device's metadata; Home Assistant installs
+  devices under the participant and its rooms as spaces.
+  `exportGeoJson({ participantId | projectId })`: participants are
+  features at their place, devices have no geometry, the module adds the
+  ground, the buildings and the surfaces. `placeFields()` replaces
+  `siteFields()`.
+- `nexgen-os status` counts participants; the Python client reads
+  `participants()` and `participant_of()`.
+- The seven examples describe participants: 01 a house and 04 a farm, one
+  participant with its meters and devices; 03 four participants carrying
+  their meter; 02, 05, 06 and 07 their buildings with the `building` module.
+- Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model, in the README, the manifesto, the page on Nexgen, `AGENTS.md` and the installer's page.
+
 ### Changed — schema 0.2.0: the place, the device and the series
 
 The core migrations are rewritten in place, since nothing was installed

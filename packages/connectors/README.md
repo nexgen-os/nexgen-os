@@ -24,10 +24,10 @@ A connector comes in one of two kinds:
 
 | Interface | Answers with | Lands on |
 |---|---|---|
-| `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the site, every issue kept; history as `measured` or `simulated` values |
+| `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the participant or its weather point, every issue kept; history as `measured` or `simulated` values |
 | `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter |
-| `PlacesProvider` | places around a point, with their external identifier, address and attributes | `sites` / `buildings`, `external_ids`, `attributes` with `source_code` |
-| `Geocoder` (in [`@nexgen-os/core`](../core/src/address.ts)) | an address ⇄ a point | the site's address and point, with precision and source |
+| `PlacesProvider` | places around a point, with their external identifier, address and attributes | `participants` / `building.buildings`, `external_ids`, `attributes` with `source_code` |
+| `Geocoder` (in [`@nexgen-os/core`](../core/src/address.ts)) | an address ⇄ a point | the participant's address and point, with precision and source |
 
 `storeSeries(db, target, series, { issuedAt })` writes what a weather or
 meter connector returned through `store()`, the one write path of the core:

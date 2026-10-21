@@ -35,10 +35,11 @@ Refuses by name `not_ifc`, `invalid_ifc` (a building without a GlobalId),
 class is, transform to WGS 84, compute an azimuth, open a connection.
 
 Into Nexgen OS, `importIfc()` of the `building` module (`modules/building/src`) writes
-the shapes through the gestures of the core and of the module: the site
-placed by `locate_site()` at
-`rooftop` precision with a map conversion, `parcel` with the site's
-coordinates, when it had no position or a coarser one; the building by
+the shapes through the gestures of the core and of the module, under the
+participant the caller names: the participant placed again by
+`locate_participant()` at `rooftop` precision with a map conversion,
+`parcel` with the IfcSite's coordinates, when it had no position or a
+coarser one; the building by
 `building.add_building()` (footprint unioned in WGS 84, walls' holes
 filled), its year by `set_attribute()`; floors and rooms by
 `building.add_space()`, a room's area as the attribute `floor_area`; roof
@@ -46,8 +47,9 @@ faces by `building.add_surface()` with
 azimuth against true north and tilt; each product whose class a device
 type names (`device_types.ifc_class`: `IfcSolarDevice`,
 `IfcElectricFlowStorageDevice`, `IfcFlowMeter`, `IfcBoiler`…) by
-`install_device()`, placed in its building or room by
-`building.place_device()` — a class several types share told apart by
+`install_device()` under the participant, the building, the room and the
+position the model gives it kept in its metadata (a device is not placed)
+— a class several types share told apart by
 `PredefinedType` (`BATTERY` → `battery`), else the type they all refine
 (`IfcElectricGenerator` → `generator`), else skipped; every GlobalId by
 `add_identifier()`, scheme `ifc_guid`. A building already known to the

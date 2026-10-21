@@ -5,9 +5,9 @@
 says where this repository stops, so that nobody confuses the open
 foundation with the commercial product built on it.*
 
-**Nexgen OS** is the open-source foundation: a schema, vocabularies, modules,
-packs, format libraries and connectors — a reference language for describing
-places, what is on them and what they produce. It belongs to the project
+**Nexgen OS** is the open-source foundation. Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model. It is a schema,
+vocabularies, modules, packs, format libraries and connectors — a reference
+language for describing places, what is on them and what they produce. It belongs to the project
 and its organisation on GitHub; anyone can install it, read it, extend it.
 
 **Nexgen** is the commercial platform of WeSmart (Newide in Belgium,

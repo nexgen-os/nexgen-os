@@ -22,19 +22,19 @@ keeps the rest; it refuses by name what is not GeoJSON (`not_geojson`). What
 it never does: transform or round coordinates, rewind a polygon, open a
 connection.
 
-## The export of a site or a project
+## The export of a participant or a project
 
-`exportGeoJson()` of `@nexgen-os/core` writes a site, or every site taking
-part in a project, as one FeatureCollection through `writeGeoJson()`: the
+`exportGeoJson()` of `@nexgen-os/core` writes a participant, or every
+participant taking part in a project, as one FeatureCollection through `writeGeoJson()`: the
 places and the figures computed on them travel together, so that a
 scenario can be shown to the people it concerns.
 
 ```ts
 import { exportGeoJson } from '@nexgen-os/core';
 
-const fc = await exportGeoJson(db, { siteId });                         // everything the user may read
+const fc = await exportGeoJson(db, { participantId });                  // everything the user may read
 const open = await exportGeoJson(db, { projectId }, { open: true });    // what may be published
-const variant = await exportGeoJson(db, { siteId }, { scenarioId });    // a design variant over reality
+const variant = await exportGeoJson(db, { participantId }, { scenarioId }); // a design variant over reality
 ```
 
 ### What goes out
@@ -42,10 +42,11 @@ const variant = await exportGeoJson(db, { siteId }, { scenarioId });    // a des
 | Nexgen OS | Feature | Properties |
 |---|---|---|
 | the project (`projectId`) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
-| each site | its parcel or point | address fields, `time_zone`, `location_precision`, `location_source_code`, `profile`; the municipality code among its identifiers |
-| each building, with the `building` module | its footprint | `site_id`, `elevation_m`, `height_m`, `status`, `source_code`; floors and year among its attributes |
-| each surface, with the `building` module | its face, or `null` | `surface_kind`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `source_code`; the material among its attributes |
-| each device | its point or area, or `null` | `device_type`, `site_id`, with the `building` module its placement (`building_id`, `space_id`, `surface_id`), `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
+| each participant with a place | its point or outline | `project_id`, `role`, `status`, address fields, `time_zone`, `location_precision`, `location_source_code`, `profile`; the municipality code among its identifiers |
+| its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `profile`, `area_m2`, `source_code` |
+| each building, with the `building` module | its footprint | `participant_id`, `site_id`, `elevation_m`, `height_m`, `status`, `source_code`; floors and year among its attributes |
+| each surface, with the `building` module | its face, or `null` | `surface_kind`, `participant_id`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `source_code`; the material among its attributes |
+| each device | `null`: a device is not placed | `device_type`, `participant_id`, `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
 
 Every feature also carries its `attributes` (read by `attributes_of()` at
 the moment asked, in the scenario asked), its `external_ids` and the `runs`
@@ -71,18 +72,18 @@ consultation, an open-data catalogue:
 - serial numbers and `metadata` go;
 - an object described by a source whose licence forbids passing it on
   (`sources.redistributable = false`) is withheld, with everything on it;
-  a site placed by such a source keeps its address and loses its shape;
+  a participant placed by such a source keeps its address and loses its shape;
 - attributes and identifiers from such a source go;
 - the runs stay: a scenario shown to the public is its figures beside its
   places.
 
-Whoever publishes still reads the document first: names of sites and
+Whoever publishes still reads the document first: names of participants and
 buildings are written by people and may name people.
 
 ### What it refuses
 
-Every refusal starts with its name: `target_required` (a `siteId` or a
-`projectId`, not both), `site_not_found`, `project_not_found` (absent, or
+Every refusal starts with its name: `target_required` (a `participantId` or a
+`projectId`, not both), `participant_not_found`, `project_not_found` (absent, or
 not readable under row level security), `scenario_not_found`.
 
-Not yet: importing GeoJSON places into sites, meters and participants, series.
+Not yet: importing GeoJSON places into participants, meters, series.

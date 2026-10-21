@@ -36,7 +36,7 @@ elevation, height), `set_attribute()` (floors, year), `add_identifier()`
 (scheme `cityjson`) and `building.add_surface()` (roof and wall faces,
 azimuth against true north), refusing
 a building already imported (`already_imported`); `exportCityJson()` reads
-a site's buildings back, in its UTM zone, and the export lands the same way
+a participant's buildings back, in their UTM zone, and the export lands the same way
 when imported again.
 
 Left alone: textures and materials, extensions.

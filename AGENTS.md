@@ -6,12 +6,13 @@ need to do that without guessing. Humans are welcome to read it too.
 
 ## What Nexgen OS is
 
-Nexgen OS is **open source software** (AGPL-3.0 for the core and the modules,
-MIT for the format libraries and the connectors): a description of the
-world — sites, buildings, roof faces, meters, participants, devices, sensors,
-series over time — in a Postgres database the user owns, on their own
+Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model
+([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
+It is **open source software** (AGPL-3.0 for the core and the modules,
+MIT for the format libraries and the connectors), in a Postgres database
+the user owns, on their own
 [Supabase](https://supabase.com) project, with PostGIS. Modules add what a
-trade computes (`architecture`, `weather`, `solar`…), packs add what a
+trade computes (`building`, `weather`, `solar`…), packs add what a
 country decides, libraries read and write the formats of the trades, and
 connectors read the outside world (weather, registers, grid operators).
 
@@ -62,10 +63,10 @@ Four things only you do here:
 - **read**: the tables of the core and the modules, through SQL or the REST
   API Supabase gives the schema (`nexgen`, and one schema per module), or
   from Python through the client in `packages/python`;
-  `attributes_of()`, `resample()`, `site_of(kind, id)`, `country_of(kind, id)`
+  `attributes_of()`, `resample()`, `participant_of(kind, id)`, `country_of(kind, id)`
   are the one way to read attributes, series and places;
 - **attach**: an attribute with its period, a document, an identifier, a
-  link, a tag — always naming its object by kind and id (`'site'`,
+  link, a tag — always naming its object by kind and id (`'participant'`,
   `'device'`, `'surface'`…, the rows of `kinds`), always with its source,
   never a value you made up;
 - **import**: a file read by a format library (`packages/formats/`) and
@@ -83,7 +84,7 @@ Four things only you do here:
 - store a secret: a `sources` or `connectors` row names a secret, the
   installation's vault holds it;
 - assume a country, a currency, a language, a time zone: they are data of
-  the site, the project and the pack;
+  the participant's place, the project and the pack;
 - store an azimuth in another convention than degrees clockwise from true
   north, or a series value dated at the end of its interval;
 - send the data anywhere the person did not configure, or make any of it
@@ -91,14 +92,15 @@ Four things only you do here:
 
 ## A first session, in five steps
 
-1. **Find the organisation and the site**: `select id, name from organisations`;
-   `select id, name, country, time_zone, location_precision from sites`.
-   A site without a time zone has no daily readings; say so.
+1. **Find the organisation, the project and the participant**: `select id, name from organisations`;
+   `select id, name, project_id, country, time_zone, location_precision from participants`.
+   A participant without a time zone has no daily readings; say so.
 2. **Learn the vocabulary before writing**: `device_types`, `quantities`
    (code and unit), `property_defs` (what an attribute may hold),
    `sources` (what exists outside, with its licence), `id_schemes`.
-3. **Describe, with a source**: the site and its meters, the participants
-   of a project carrying them; with the `building` module, a building with its
+3. **Describe, with a source**: the participants of a project with their
+   place, the meters they carry and the devices behind them; with the
+   `building` module, a building with its
    footprint from a CityJSON file (`packages/formats/cityjson`), a roof face
    with its azimuth and tilt; a PV system and its arrays, each with its own
    orientation; the geocoder for an address.
@@ -111,7 +113,7 @@ Four things only you do here:
 ## When the database says no
 
 Every refusal is named: `invalid_identifier`, `time_zone_required`,
-`series_not_found`, `forecast_values_required`, `array_outside_system_site`,
+`series_not_found`, `forecast_values_required`, `participant_group_carries`,
 `weather_source_unknown`, `already_imported`, `crs_required`… The name says
 what to fix. Report it with the name; do not retry blindly.
 

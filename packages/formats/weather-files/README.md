@@ -37,7 +37,7 @@ const epw = writeEpw(await exportWeatherYear(db, { objectId: pointOrSite, source
 
 What it never does: store a series, convert a unit, fill a missing value.
 Into Nexgen OS, `importWeatherFile()` of `@nexgen-os/core` stores the series
-on the object named — a weather point of the `weather` module or a site —
+on the object named — a weather point of the `weather` module or a participant —
 through `store()`, converted by the `units` vocabulary, with the `sources`
 row the caller names: a typical year `simulated` and named
 `typical year <first>-<last>`, a real year `measured`; importing the same

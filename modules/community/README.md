@@ -2,7 +2,7 @@
 
 Status: shipped with schema 0.3. Schema: `community`.
 
-The project and the sites taking part in it are the core's: `projects`,
+The project and the participants taking part in it are the core's: `projects`,
 `participants`, `join_project()`, `leave_project()` and
 `participant_meters()` ([docs/model.md](../../docs/model.md), decision
 [0042](../../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
