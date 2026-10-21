@@ -1,14 +1,18 @@
 # The core model
 
-The core names seven objects, in the order a page walks them:
-organisation → project → participant → site → meter → device → series
+The core names six objects, in the order a page walks them:
+organisation → project → participant → meter and device → series
 ([0006](decisions/0006-named-objects.md)); and the engine that attaches
-everything else to any of them. The site is geolocated, not described: its
-buildings, floors, rooms and roof faces, and where a device sits among
-them, are the `building` module's ([0008](decisions/0008-3d-module.md)). A trade that needs
-more adds a module with its own schema, starting from one of these objects
-([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)); a
-country adds a pack.
+everything else to any of them. The participant is the node
+([0045](decisions/0045-the-participant-is-the-node.md)): it carries the
+place, geolocated but not described, the meters and the devices behind
+them, and every module starts from it. Its ground, its buildings, floors,
+rooms and roof faces are the `building` module's
+([0008](decisions/0008-3d-module.md)); a device is not placed
+([0026](decisions/0026-a-device-is-not-placed-for-now.md)). A trade that
+needs more adds a module with its own schema, starting from one of these
+objects ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md));
+a country adds a pack.
 
 ```mermaid
 erDiagram
@@ -17,12 +21,8 @@ erDiagram
   organisations ||--o{ projects : "works on"
   projects ||--o{ participants : "takes part"
   participants ||--o{ participants : "groups"
-  sites ||--o{ participants : "as"
-  organisations ||--o{ sites : owns
-  sites ||--o{ meters : "connected by"
   participants ||--o{ meters : carries
-  meters ||--o{ devices : "behind"
-  sites ||--o{ devices : installed
+  participants ||--o{ devices : "behind its meters"
   device_directory ||--o{ devices : "instance of"
   kinds ||--o{ series : "observed (kind, id)"
   devices ||--o{ series : "measures, is set"
@@ -34,7 +34,7 @@ erDiagram
   kinds ||--o{ links : "subject / object (kind, id)"
   kinds ||--o{ documents : "files (kind, id)"
   kinds ||--o{ runs : "subject (kind, id)"
-  scenarios ||--o{ sites : "only in"
+  scenarios ||--o{ participants : "only in"
   modules ||--o{ runs : computed
   countries ||--o{ regions : "subdivided in"
   countries ||--o{ defaults : decides
@@ -45,29 +45,27 @@ The hierarchy is the foreign keys, and nothing mirrors it
 ([0044](decisions/0044-there-is-no-registry.md)). An attachment — an
 attribute, an identifier, a link, a document, a series, a run — names its
 object by its kind and its id: `kinds` holds one row per kind with its table
-(`organisation`, `project`, `participant`, `site`, `meter`, `device`,
-`series`, `run`, and those modules publish: `building`, `space`,
-`surface`, `pv_array`, `task`, `weather_point`), written by plain inserts.
+(`organisation`, `project`, `participant`, `meter`, `device`, `series`,
+`run`, and those modules publish: `site`, `building`, `space`, `surface`,
+`pv_array`, `task`, `weather_point`), written by plain inserts.
 `object_organisation(kind, id)` reads an object's organisation in its
 table; `drop_attachments()`, after delete on the table of each kind, takes
-away what was attached to the row. `site_of(kind, id)` and
+away what was attached to the row. `participant_of(kind, id)` and
 `parameter_of(kind, id, …)` follow the core's foreign keys; a module
-answers for its own kinds (`building.site_of`, `solar.site_of`). Pages read
-the named tables.
+answers for its own kinds (`building.participant_of`,
+`solar.participant_of`). Pages read the named tables.
 
 The `building` module, beside the core:
 
 ```mermaid
 erDiagram
-  sites ||--o{ buildings : holds
+  participants ||--o{ sites : "its ground"
+  participants ||--o{ buildings : "its buildings"
+  sites ||--o{ buildings : "stands on"
   buildings ||--o{ spaces : "floors, rooms, zones, units"
   spaces ||--o{ spaces : "inside"
   buildings ||--o{ surfaces : "roof faces, facades"
   sites ||--o{ surfaces : "ground areas"
-  devices ||--o| building_devices : "placed"
-  buildings ||--o{ building_devices : in
-  spaces ||--o{ building_devices : in
-  surfaces ||--o{ building_devices : on
   participants }o--o{ spaces : "occupies (link)"
 ```
 
@@ -93,60 +91,67 @@ erDiagram
   `simulation` to `archived` and its dates. The allocation key of a
   community, the installed power of a portfolio are attributes; the tasks of
   its works are the `tasks` module's.
-- **participants** — an actor of a project on a site, `producer`,
-  `consumer` or `prosumer`, with the contact who answers for it (the owner,
-  the tenant, the company), its status and the period it takes part. The
-  participant groups the devices behind the same meter: seen from the grid,
-  everything *behind the meter* is the participant's, and everything in
-  front of it — the network, the market, the community's allocation — is the
-  project's or the grid module's. It is
-  the whole site or one occupant of it — a building, a floor, one flat:
-  several participants share a site, one per occupant or per meter, and the
-  level of the building each occupies is an `occupies` link the `building` module
-  holds. It carries its meters (`meters.participant_id`) and groups the
-  devices behind them; a participant without a site groups others (two
-  tenants of one landlord, a campus), of the same project. A participant is
-  in one project. `join_project`, `leave_project`;
+- **participants** — the node of a project
+  ([0045](decisions/0045-the-participant-is-the-node.md)): an actor — a
+  household, a company, a tenant, a PV plant — `producer`, `consumer` or
+  `prosumer`, with the contact who answers for it (the owner, the tenant,
+  the company), its status and the period it takes part. It carries the
+  place (below), its meters (`meters.participant_id`) and the devices
+  behind them (`devices.participant_id`): seen from the grid, everything
+  *behind the meter* is the participant's, and everything in front of it —
+  the network, the market, the community's allocation — is the project's or
+  the grid module's. Two flats of one building are two participants, each
+  with its address line and its meter; the floor or the unit each occupies
+  is an `occupies` link the `building` module holds. A participant without
+  a place groups others (two tenants of one landlord, a campus), of the
+  same project, and carries no meter and no device
+  (`participant_group_carries`). A participant is in one project.
+  `join_project`, `locate_participant`, `leave_project`;
   `participant_meters(participant)` lists the connection points it carries,
   groups included.
 
 ## Where
 
-- **sites** — the place a person owns, rents or operates, in the one
-  standard shape of a place ([0025](decisions/0025-a-place-has-one-shape.md)),
-  with a time zone and a profile (what it is used for). `create_site()`
-  takes the shape below and defaults the time zone to the region's, else the
-  country's first, from the pack; `locate_site()` places it again from a
-  geocoder's answer; `place_of(site)` gives it back. Everything on a site
-  inherits its country: `country_of(kind, id)`, `site_of(kind, id)`. A site is geolocated,
-  not described.
+The place is the participant's, in the one standard shape of a place
+([0025](decisions/0025-a-place-has-one-shape.md)): its address, its point
+or outline on the map, its time zone and its profile (what it is used for).
+`join_project()` takes the shape below and defaults the time zone to the
+region's, else the country's first, from the pack; `locate_participant()`
+places it again from a geocoder's answer; `place_of(participant)` gives it
+back. Everything of a participant inherits its country:
+`country_of(kind, id)`, `participant_of(kind, id)`. The place is
+geolocated, not described.
 
-What is built on a site is the `building` module's (`building`,
+What the place physically is belongs to the `building` module (`building`,
 [0008](decisions/0008-3d-module.md)), when it is installed:
 
-- **building.buildings** — footprint, elevation, height, profile, status, the
+- **building.sites** — the ground of a participant: a parcel or a plot
+  with its outline, the area a register gives, its use, its source
+  (`building.add_site`). A ground-mounted plant, a field or a car park is a
+  ground with surfaces and no building.
+- **building.buildings** — a building of a participant, on its ground when
+  it is described: footprint, elevation, height, profile, status, the
   source it was described from and, in `metadata`, what that source said
   beyond the columns. `building.building_volume()` extrudes the footprint.
   Its year, label, material and floor counts are attributes the module
   publishes.
 - **building.spaces** — the inside of a building, one tree
-  ([0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md)):
+  ([0026](decisions/0026-a-device-is-not-placed-for-now.md)):
   `floor` (with its `level`), `room`, `zone`, `unit`, each with its
   building, its parent space, elevation, height and geometry, the source it
   was described from and its `metadata` (`building.add_space`). A
   participant occupies a building, a floor or a unit (`occupies`).
 - **building.surfaces** — a roof face, a facade, a ground area or a carport,
-  on a building or straight on a site (a ground-mounted plant, a field or a
-  car park has surfaces and no building), with azimuth (degrees clockwise
+  on a building or straight on the ground, with azimuth (degrees clockwise
   from true north) and tilt; `building.add_surface` reads them from a 3D
   polygon when none is given.
 
 ### The shape of a place
 
 Every geocoder, importer, connector and the command line produce this one
-JSON object, and `sites` stores it in columns of the same names. A place
-travels between systems as a GeoJSON feature whose properties are these keys
-(`packages/formats/geojson`).
+JSON object, and `participants` stores it in columns of the same names. A
+place travels between systems as a GeoJSON feature whose properties are
+these keys (`packages/formats/geojson`).
 
 ```json
 {
@@ -168,47 +173,44 @@ travels between systems as a GeoJSON feature whose properties are these keys
 geometry is WGS 84 with its height; `location_precision` is `rooftop`,
 `parcel`, `street`, `postal_code`, `city` or `region`; `location_source_code`
 names a row of `sources`; `identifiers` (a municipality code, a cadastral
-parcel, an address register id) become `external_ids` of the site. Any other
-key is refused (`place_key_unknown`).
+parcel, an address register id) become `external_ids` of the participant.
+Any other key is refused (`place_key_unknown`).
 
 ## Connected by
 
-- **meters** — the connection point of a site to a network (electricity,
-  gas, heat, water), the frontier between the grid and the place (IEC CIM
-  *UsagePoint*): the identifier its operator knows and its scheme (a GS1
-  GSRN, or a scheme a pack publishes, checked by `identifier_valid`), what
-  it can do (`offtake`, `injection`, `both`) and the period that identifier
-  names it, and the participant of its site that carries it
-  (`participant_id`). `declare_meter` refuses `invalid_identifier` and
-  `meter_already_open`; `assign_meter` gives it to another participant of
-  its site, the one it leaves kept as a dated `carried_by` link
-  (`meter_participant_site_mismatch` for a participant elsewhere, a group
-  included); `close_meter` ends the period when the register retires the
-  number. Its subscribed power is an attribute. The physical
+- **meters** — the connection point of a participant to a network
+  (electricity, gas, heat, water), the frontier between the grid and the
+  place (IEC CIM *UsagePoint*): the identifier its operator knows and its
+  scheme (a GS1 GSRN, or a scheme a pack publishes, checked by
+  `identifier_valid`), what it can do (`offtake`, `injection`, `both`), the
+  period that identifier names it, and the participant that carries it
+  (`participant_id`); one per participant, exceptionally several.
+  `declare_meter` refuses `invalid_identifier`, `meter_already_open` and a
+  group (`participant_group_carries`); `assign_meter` gives it to another
+  participant (a new tenant), the one it leaves kept as a dated
+  `carried_by` link; `close_meter` ends the period when the register
+  retires the number. Its subscribed power is an attribute. The physical
   meter is a device of type `meter` and can be swapped; who operates the
   point and how it is connected are the `grid` module's (`grid.meters`).
 
 ## What
 
-- **devices** — anything installed, including the instruments that measure:
-  a PV system, a battery, a heat pump, a meter, a thermometer
+- **devices** — anything a participant has behind its meters, including
+  the instruments that measure: a PV system, a battery, a charger, a heat
+  pump, a meter, a thermometer, a weather station
   ([0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
-  Type (from `device_types`), site, a point or the area it covers,
-  catalogue product, manufacturer, model, rated power, unit count, status,
-  installation and removal dates, and the meter of its site it is behind
-  (`meter_id`, checked by `devices_check`; none for an instrument that
-  measures nothing on the grid side). `install_device` (with the nameplate
-  and `metadata` of the file it was read from, when no product is named,
-  its GeoJSON geometry and its meter), `connect_device` (the meter it leaves
-  stays as a `behind_meter` link: the column is today, the links are the
-  history), `retire_device`, `replace_device` (a `replaces` link, same
-  site, same meter). Where on its site it is — the building, the room, the
-  roof face — is a placement of the `building` module
-  (`building.place_device`, `building.move_device`, the place it leaves kept
-  as a `placed_in` link); anything else about where it belongs — the zone
-  it serves — is a link. A module derives the types it owns:
-  `call derive_devices('solar.pv_systems', 'solar')` makes a table with the
-  same id, refused for any other type.
+  Its participant, type (from `device_types`), catalogue product,
+  manufacturer, model, rated power, unit count, status, installation and
+  removal dates. One device has as many series as it measures. It is not
+  placed: where it sits in a building is not described for now, and what a
+  file said about it stays in its `metadata`
+  ([0026](decisions/0026-a-device-is-not-placed-for-now.md)).
+  `install_device` (with the nameplate and `metadata` of the file it was
+  read from, when no product is named), `retire_device`, `replace_device`
+  (a `replaces` link, same participant); anything else about where it
+  belongs — the building it serves — is a link. A module derives the types
+  it owns: `call derive_devices('solar.pv_systems', 'solar')` makes a table
+  with the same id, refused for any other type.
 - **device_directory** — products: manufacturer, model, unit power,
   capacity, price. Shared rows (`organisation_id` null) come from modules and
   packs.
@@ -256,7 +258,7 @@ format libraries, the modules, `record_run()` and the Python client all
 call it.
 
 **Aggregates are derived.** **series_rollups** holds hourly (UTC) and daily
-(the site's time zone) aggregates: count, sum, minimum, maximum, last value,
+(the participant's time zone) aggregates: count, sum, minimum, maximum, last value,
 and for a register its consumption. `series_rollup()` drains the dirty
 hours and computes them again from the values; pg_cron runs it every minute
 where it is installed, elsewhere whoever maintains the installation calls
@@ -268,7 +270,7 @@ security; a role without a signed-in user reads nothing):
 
 | Function | Answers |
 |---|---|
-| `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the site's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets and are fresh |
+| `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the participant's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets and are fresh |
 | `nexgen.window(series, from, to, limit?)` | the stored values in time order: how an index is read (`window` is a reserved word: call it qualified) |
 | `latest(series[])` | the last value that is not missing, one row per series |
 | `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a run of a module (a validation module), with its method |
@@ -295,7 +297,7 @@ optional extras).
 
 Every attachment names its object by its kind and its id (`object_kind`,
 `object_id`; a link names its subject the same way), and every gesture
-takes both: `set_attribute('site', id, …)`, `link_objects('device', id,
+takes both: `set_attribute('participant', id, …)`, `link_objects('device', id,
 'serves', 'building', id)`. The organisation it is stored in is the
 object's; an object that is not found, of a kind nobody published, or of
 another organisation is refused by name (`object_not_found`,
@@ -311,9 +313,9 @@ deletes what was attached to it.
   and opens the next; `attributes_of(object, at, scenario)` reads them.
 - **external_ids** — unique per scheme in an organisation, checked against
   the scheme's pattern, with validity (`add_identifier`).
-- **links** — typed and dated (`serves`, `shades`, `owns`, `behind_meter`,
-  `carried_by`, and the modules' own: `occupies`, `placed_in`, `placed_on`
-  of `building`…); the link type may require kinds on either side
+- **links** — typed and dated (`serves`, `shades`, `owns`, `feeds`,
+  `carried_by`, and the modules' own: `occupies` of `building`,
+  `weather_from` of `weather`…); the link type may require kinds on either side
   (`link_objects`, `end_link`). Splits, merges and replacements are links
   too: `split_into`, `merged_into`, `replaces` (`split_object`,
   `merge_objects`). Identifiers never encode anything and are never reused.
@@ -337,15 +339,16 @@ deletes what was attached to it.
 - **`parameter_of(kind, object, property, at, scenario)`** — the one resolution of
   a parameter ([0021](decisions/0021-one-cascade-of-defaults.md)): the
   object's own attribute, its parents' nearest first along the core's
-  foreign keys (`parents_of()`: a device's site, meter, participant and
-  project), its organisation's
-  attribute, its region's default, its country's — `{value, level,
+  foreign keys (`parents_of()`: a device's participant, its group and its
+  project), its organisation's attribute, then the default of the region and
+  of the country of the participant's place — `{value, level,
   source_code, reference, valid_from}`. There is no global level: nothing
   found is `parameter_missing` naming the property and the level reached; a
   country that decides no single value answers `parameter_not_decided` with
-  its reference. A run records what it read. A module that places an object
-  among its own resolves through them first: `building.parameter_of()` reads
-  a placed device's space, surface and building, then asks the core.
+  its reference. A run records what it read. A module resolves its own kinds
+  through what it describes first: `building.parameter_of()` reads a space's
+  spaces, its building and its ground, then asks the core from the
+  participant.
 
 All three are written by the packs (`nexgen-os pack build`) and read by
 everyone signed in.
@@ -353,7 +356,7 @@ everyone signed in.
 ## Vocabularies
 
 `device_types` (with the module that derives each), `profiles` (uses of a
-building or a site), `link_types`, `quantities` (one unit each, QUDT),
+building or a place), `link_types`, `quantities` (one unit each, QUDT),
 `units` (QUDT codes and symbols, with the factor and offset of each),
 `property_defs` (bSDD / IFC, including the values packs publish),
 `tags` (Haystack), `id_schemes` and `sources` (the external APIs, datasets,
@@ -370,7 +373,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
-| `building` | `building` | the physical description of a site: `buildings`, `spaces` (floors, rooms, zones, units, one tree) and `surfaces` (roof faces, facades, ground areas) as kinds of object, `devices` (the building side of a device of the core: where on its site it is, with the device's id), the `occupies` link of a participant on a building, a floor or a unit, the `placed_on` link of a PV array on a face, the importers of CityJSON, IFC and Home Assistant homes |
+| `building` | `building` | the physical description of the place of a participant: `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree) and `surfaces` (roof faces, facades, ground areas) as kinds of object, the `occupies` link of a participant on a building, a floor or a unit, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 

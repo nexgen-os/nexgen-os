@@ -20,7 +20,7 @@ that person; row level security decides what it sees and changes, by
 organisation. There is no agent role and no back door.
 
 **An agent uses the same gestures as everyone.** It reads through the read
-functions (`attributes_of()`, `resample()`, `site_of()`, `country_of()`),
+functions (`attributes_of()`, `resample()`, `participant_of()`, `country_of()`),
 attaches with a source, imports through the format libraries and the
 connectors, and computes by starting a run of a module. A tool an agent is
 given (a command line, an MCP server) calls those gestures and computes

@@ -1,6 +1,6 @@
 # 0042 — A module starts from an object of the core and enriches it
 
-> Status: accepted · 21/10/2026
+> Status: accepted · 21/10/2026, completed the same day
 
 ## Context
 
@@ -24,19 +24,19 @@ three forms and no other:
 - **a derived table**, with the same id as the core object it enriches:
   `solar.pv_systems` derives devices of type `solar` through
   `derive_devices()`, `grid.meters` adds the operator and the voltage
-  level of a meter, `building.devices` says where on its site a device is,
-  `billing.companies` is keyed by the organisation's
+  level of a meter, `billing.companies` is keyed by the organisation's
   own id. A derived table that is the module's side of a core object carries
   that object's name in the module schema — `grid.meters` is the meter as the
   grid sees it, `billing.contacts` the contact as the invoicing side sees it: one
   word per thing across schemas — and a derived table that holds a subtype
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object:
-  `solar.pv_arrays` belongs to a PV system, `building.buildings` stands on
-  a site — a kind of object of the module, inserted in `kinds`, for which
-  the module answers `site_of()` — or, for a table about an object of any
-  kind, a kind column referencing `kinds` beside the object's id:
-  `tasks.tasks` is about a project, a site, a building or a device
+  `solar.pv_arrays` belongs to a PV system, `building.sites` and
+  `building.buildings` belong to a participant — kinds of object of the
+  module, inserted in `kinds`, for which the module answers
+  `participant_of()` — or, for a table about an object of any kind, a kind
+  column referencing `kinds` beside the object's id: `tasks.tasks` is about
+  a project, a participant, a building or a device
   ([0044](0044-there-is-no-registry.md));
 - **vocabulary rows** in the core's vocabularies, marked with the module in
   `published_by`: the `allocation_key` property of `community`, the
@@ -50,11 +50,14 @@ organisation and keeps to the rule. `nexgen-os doctor` checks it on every
 installation and names the table that does not (`module_table_detached`).
 
 **The objects every installation walks are the core's**: organisation →
-project → participant → site → meter → device → series
+project → participant → meter and device → series
 ([0006](0006-named-objects.md)). A module enriches any of them; none of
-them is a module's. The physical description of a site — its buildings,
-spaces and surfaces, where a device sits among them — is the `building`
-module's.
+them is a module's. **The participant is the node every module starts
+from** ([0045](0045-the-participant-is-the-node.md)): the physical
+description of its place — its ground, its buildings, spaces and surfaces
+— is the `building` module's, the grid side of its meters `grid`'s, its
+bills `billing`'s, its share of a community `community`'s, its tasks
+`tasks`', its weather `weather`'s.
 
 **The examples say which modules they need, and need no more.** Examples
 01 (a house) and 04 (a farm) need the core only; 03 (an energy community)
@@ -83,11 +86,15 @@ own, the grid side of it; `community` kept energy
 sharing; the `behind_meter` link became `devices.meter_id`, the link
 keeping the history. The same release moved `buildings`, `spaces` and
 `surfaces` and the placement of a device from the core to the `building` module,
-and `solar.pv_arrays.surface_id` became a `placed_on` link.
+and `solar.pv_arrays.surface_id` became a `placed_on` link; then `sites`
+left the core, `devices.meter_id`, `building.devices` and the `placed_on`
+link were withdrawn, and the participant became the node
+([0045](0045-the-participant-is-the-node.md)).
 
 ## See also
 
-- [0006](0006-named-objects.md) — the seven objects of the core.
+- [0006](0006-named-objects.md) — the six objects of the core.
+- [0045](0045-the-participant-is-the-node.md) — the participant is the node.
 - [0032](0032-a-module-has-its-own-schema.md) — what a module is, in the
   database.
 - [0041](0041-a-module-names-one-thing.md) — what a module names.

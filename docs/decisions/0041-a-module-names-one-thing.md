@@ -47,7 +47,7 @@ registry row.
 
 **A site is not always built.** A ground-mounted PV plant, a field, a car
 park or a pond is a site whose surfaces lie on the ground, with no building
-at all ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md)); a
+at all ([0026](0026-a-device-is-not-placed-for-now.md)); a
 module's vocabulary and documentation never assume a roof.
 
 ## What it forbids

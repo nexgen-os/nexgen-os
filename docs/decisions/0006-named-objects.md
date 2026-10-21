@@ -1,6 +1,6 @@
 # 0006 — The core names a few objects, and everything else is attached to them
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026 and 21/10/2026
+> Status: accepted · 12/10/2026, rewritten 19/10/2026 and twice on 21/10/2026
 
 ## Context
 
@@ -27,33 +27,32 @@ trade is chosen ([0042](0042-a-module-starts-from-an-object-of-the-core.md)).
 
 ## Decision
 
-**The core names seven objects, in the words of the trades**, in the order a
-page walks them:
+**The core names six objects, in the words of the trades**, in the order a
+page walks them ([0045](0045-the-participant-is-the-node.md)):
 
 - **the organisation**: who owns the data, with its members
   ([0023](0023-an-organisation-is-an-object.md));
 - **the project**: what a person works on — an energy community, a
   portfolio, a study, a construction site, a district plan — with its
   country and its lifecycle;
-- **the participant**: an actor of a project on a site (producer,
-  consumer, prosumer) — the whole site or one occupant of it, a building, a
-  floor, a flat — with the contact who answers for it and its period; it
-  carries its meters and groups the devices behind them, several
-  participants share a site, and a participant without a site groups
-  others;
-- **the place**: the site, with its address, its point or parcel and its
-  time zone ([0025](0025-a-place-has-one-shape.md)), geolocated but not
-  described. What it physically is — its buildings, their floors, rooms
-  and units, their roof faces and facades, where a device sits among them —
-  is the description of a building, the `building` module's
-  ([0008](0008-3d-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
-- **the meter**: the connection point of a site to a network, under the
-  identifier its operator knows (an EAN, a PRM, a GSRN), carried by a
-  participant of the site, the frontier between the grid and the place;
-- **the device**: anything installed on the place, from a PV system to a
-  physical meter or a probe, an instance of a product of the catalogue,
-  behind a meter when it is on the grid side
+- **the participant**: the node of a project — an actor, a household, a
+  company, a tenant, a PV plant — as producer, consumer or prosumer, with
+  the contact who answers for it and its period. It carries the place: its
+  address, its point on the map and its time zone
+  ([0025](0025-a-place-has-one-shape.md)), geolocated but not described;
+  what the place physically is — its ground, its buildings, their floors,
+  rooms and units, their roof faces and facades — is the `building`
+  module's ([0008](0008-3d-module.md)). It carries its meters and groups
+  the devices behind them; a participant without a place groups others;
+- **the meter**: the connection point of a participant to a network, under
+  the identifier its operator knows (an EAN, a PRM, a GSRN), the frontier
+  between the grid and the place; one per participant, exceptionally
+  several;
+- **the device**: anything a participant has behind its meters, from a PV
+  system to a physical meter or a probe, an instance of a product of the
+  catalogue; it is not placed for now
   ([0022](0022-the-instrument-is-a-device-the-point-is-the-series.md),
+  [0026](0026-a-device-is-not-placed-for-now.md),
   [0027](0027-a-product-is-a-catalogue-entry.md));
 - **the series**: a quantity over time, measured, simulated or forecast,
   belonging to one object ([0029](0029-a-series-belongs-to-an-object.md)).
@@ -65,7 +64,7 @@ external data ([0011](0011-external-data.md)).
 
 **Every object is a table with the columns that object always has**
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
-`from sites`, never `from entities where class = 'site'`.
+`from participants`, never `from entities where class = 'participant'`.
 
 **Everything else is attached, by kind and id.** Attributes with their
 period and source, external identifiers, dated links, documents, series
@@ -87,8 +86,8 @@ modules beside `solar` and `building`; the objects themselves — the meter, the
 project, the participant — are the core's, and a module starts from them
 ([0042](0042-a-module-starts-from-an-object-of-the-core.md)). The physical
 description of a place is a trade too, the territory of BIM and CityGML:
-the `building` module holds the buildings, spaces and surfaces and publishes
-them as kinds of object of its own.
+the `building` module holds the ground, the buildings, spaces and surfaces
+of a participant and publishes them as kinds of object of its own.
 The law is not held in the open repository.
 
 ## What it forbids
@@ -109,8 +108,10 @@ sensors in it (19/10/2026), then the 0.2 core, which named three notions —
 the place, the device, the series — and held the project, the participant
 and the connection point in the `community` and `grid` modules (21/10/2026);
 the same day, the buildings, spaces and surfaces of the 0.2 core left it
-for the `building` module, and the participant became an actor at any level of a
-building, carrying its meters. Until 0.3 the attachments went through a
+for the `building` module; then `sites` left the core too, its place for the
+participant and its ground for the `building` module, and the participant
+became the node that carries the place, the meters and the devices
+([0045](0045-the-participant-is-the-node.md)). Until 0.3 the attachments went through a
 registry of every object, `objects`, which 0.3 removed
 ([0044](0044-there-is-no-registry.md)).
 
