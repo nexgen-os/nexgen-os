@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, repoRoot, square, participant } from './helpers/db.js';
 import { readHomeAssistant, writeHomeAssistant, type HaSnapshot } from '@nexgen-os/homeassistant';
 import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '../modules/building/src/index.js';
 
@@ -30,9 +30,9 @@ let imported: HomeImport;
 beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A home');
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
-  building = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
-  imported = await importHomeAssistant(db, { siteId: site, buildingId: building }, readHomeAssistant(snapshot));
+  const home = await participant(db, { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
+  building = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
+  imported = await importHomeAssistant(db, { participantId: home, buildingId: building }, readHomeAssistant(snapshot));
 });
 
 afterAll(async () => {
@@ -40,14 +40,14 @@ afterAll(async () => {
 });
 
 describe('a Home Assistant home in Nexgen OS', () => {
-  it('lands floors and areas on one tree of spaces, devices in their rooms, entities on series', async () => {
+  it('lands floors and areas on one tree of spaces, devices under the participant with their room in their metadata, entities on series', async () => {
     const r = await db.query<{ kind: string; n: number }>(
       `select 'building' kind, count(*)::int n from building.buildings where organisation_id = $1
        union all select 'device', count(*)::int from devices where organisation_id = $1
        union all select 'organisation', count(*)::int from organisations where id = $1
-       union all select 'site', count(*)::int from sites where organisation_id = $1
+       union all select 'participant', count(*)::int from participants where organisation_id = $1
        union all select 'space', count(*)::int from building.spaces where organisation_id = $1`, [org]);
-    expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, organisation: 1, site: 1, space: 6 });
+    expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, organisation: 1, participant: 1, space: 6 });
     const rooms = await db.query<{ name: string; kind: string; floor: string | null }>(
       `select s.name, s.kind, f.name floor from building.spaces s left join building.spaces f on f.id = s.parent_id where s.building_id = $1 order by s.kind, s.name`, [building]);
     expect(rooms.rows).toEqual([
@@ -58,13 +58,15 @@ describe('a Home Assistant home in Nexgen OS', () => {
       { name: 'Kitchen', kind: 'room', floor: 'Ground floor' },
       { name: 'Living room', kind: 'room', floor: 'Ground floor' },
     ]);
-    const placed = await db.query<{ name: string; room: string | null; building: boolean }>(
-      `select d.name, s.name room, p.building_id = $1 building
-         from devices d join building.devices p on p.device_id = d.id left join building.spaces s on s.id = p.space_id order by d.name`, [building]);
-    expect(placed.rows).toEqual([
-      { name: 'Inverter', room: 'Garage', building: true },
-      { name: 'Living room thermostat', room: 'Living room', building: true },
-      { name: 'Netatmo relay', room: null, building: true },
+    const devices = await db.query<{ name: string; room: string | null; participant: boolean }>(
+      `select d.name, s.name room, d.participant_id = b.participant_id participant
+         from devices d join building.buildings b on b.id = $1
+         left join building.spaces s on s.building_id = b.id and s.metadata->'ha'->>'key' = d.metadata->'ha'->>'space'
+        order by d.name`, [building]);
+    expect(devices.rows).toEqual([
+      { name: 'Inverter', room: 'Garage', participant: true },
+      { name: 'Living room thermostat', room: 'Living room', participant: true },
+      { name: 'Netatmo relay', room: null, participant: true },
     ]);
   });
 

@@ -14,7 +14,7 @@ import { geopunt } from '@nexgen-os/geopunt';
 import { icar as walloon } from '@nexgen-os/icar';
 import { urbis } from '@nexgen-os/urbis';
 import { checkPacks } from '../packages/cli/src/index.js';
-import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const recorded = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8')) as unknown;
 /** Answers each URL with the first recorded body whose key it contains; an empty answer otherwise. */
@@ -58,7 +58,7 @@ afterAll(async () => {
 
 describe('the be pack', () => {
   const p = async (site: string, property: string, at = '2026-10-20') =>
-    (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('site', $1, $2, $3) p", [site, property, at])).p;
+    (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
   const siteIn = async (org: string, region: string) =>
     (await one<{ id: string }>(db, `select create_site($1, $2, jsonb_build_object('country', 'BE', 'region', $3::text)) id`, [org, `A site in ${region}`, region])).id;
 
@@ -71,7 +71,7 @@ describe('the be pack', () => {
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
     const org = await organisation(db, 'Une commune', USER_A);
     const site = await siteIn(org, 'BE-WAL');
-    expect((await one<{ time_zone: string }>(db, 'select time_zone from sites where id = $1', [site])).time_zone).toBe('Europe/Brussels');
+    expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [site])).time_zone).toBe('Europe/Brussels');
     await expect(db.query(`select create_site($1, 'Nowhere', '{"country": "BE", "region": "BE-XXX"}')`, [org])).rejects.toThrow(/region_unknown: BE-XXX/);
   });
 
@@ -104,13 +104,13 @@ describe('the be pack', () => {
     const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:be' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['enterprise_number', 'icar_address', 'nis', 'urbis_building', 'vlaanderen_address', 'vlaanderen_building']);
     const org = await organisation(db, 'Een gemeente', USER_A);
-    const site = await insert(db, 'sites', { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
+    const site = await participant(db, { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
     // The municipality is an identifier of the site under the pack's scheme.
-    await db.query(`select add_identifier('site', $1, 'nis', '44021')`, [site]);
-    await expect(db.query(`select add_identifier('site', $1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
+    await db.query(`select add_identifier('participant', $1, 'nis', '44021')`, [site]);
+    await expect(db.query(`select add_identifier('participant', $1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
     expect((await one<{ place: { identifiers: unknown[] } }>(db, 'select place_of($1) place', [site])).place.identifiers).toEqual([{ scheme: 'nis', value: '44021' }]);
-    expect(await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
-    await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
+    expect(await insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
     const nis = await db.query<{ ok: boolean }>(
       `select v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );

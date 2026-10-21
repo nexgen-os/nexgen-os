@@ -3,7 +3,7 @@
 // the four yield profiles, and who sees what.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_B, asUser, freshDatabase, insert, one, organisation, square } from './helpers/db.js';
+import { USER_B, asUser, freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -18,9 +18,9 @@ let inverterProduct: string;
 beforeAll(async () => {
   db = await freshDatabase(['building', 'solar']);
   org = await organisation(db, 'A family');
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
+  site = await participant(db, { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'building.buildings', {
-    organisation_id: org, site_id: site, name: 'House', footprint: square(-5.98, 37.39, 10, 8), height_m: 7.5,
+    organisation_id: org, participant_id: site, name: 'House', footprint: square(-5.98, 37.39, 10, 8), height_m: 7.5,
   });
   south = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
@@ -29,7 +29,7 @@ beforeAll(async () => {
     organisation_id: org, building_id: house, name: 'West roof face', kind: 'roof', azimuth_deg: 270, tilt_deg: 25,
   });
   pv = await insert(db, 'devices', {
-    organisation_id: org, site_id: site, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
+    organisation_id: org, participant_id: site, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
   });
   await db.query('select building.place_device($1, $2)', [pv, house]);
   moduleProduct = await insert(db, 'device_directory', {
@@ -70,7 +70,7 @@ describe('the solar module', () => {
       [pv],
     );
     expect(r).toEqual({ name: 'PV system', organisation_id: org, grid_connection: 'self_consumption' });
-    const battery = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Battery', device_type: 'battery' });
+    const battery = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Battery', device_type: 'battery' });
     await expect(db.query('insert into solar.pv_systems (id) values ($1)', [battery])).rejects.toThrow(/device_type_mismatch/);
     await expect(
       db.query(`update solar.pv_systems set grid_connection = 'sometimes' where id = $1`, [pv]),
@@ -128,9 +128,9 @@ describe('the solar module', () => {
   });
 
   it('throws a named error (`array_outside_system_site`) for an array on a surface of another site', async () => {
-    const other = await insert(db, 'sites', { organisation_id: org, name: 'Barn', country: 'ES' });
+    const other = await participant(db, { organisation_id: org, name: 'Barn', country: 'ES' });
     const ground = await insert(db, 'building.surfaces', {
-      organisation_id: org, site_id: other, name: 'Field', kind: 'ground', azimuth_deg: 180, tilt_deg: 0,
+      organisation_id: org, participant_id: other, name: 'Field', kind: 'ground', azimuth_deg: 180, tilt_deg: 0,
     });
     const stray = await insert(db, 'solar.pv_arrays', { organisation_id: org, pv_system_id: pv, name: 'Stray', azimuth_deg: 180, tilt_deg: 10 });
     await expect(db.query('select building.place_array($1, $2)', [stray, ground])).rejects.toThrow(/array_outside_system_site/);
@@ -190,7 +190,7 @@ describe('product physics', () => {
 describe('horizons', () => {
   it('keeps a far horizon on the site, azimuth from north', async () => {
     await db.query(
-      `insert into solar.horizons (object_kind, object_id, profile, source_code) values ('site', $1, '[[0, 2], [90, 5.5], [180, 1], [270, 8]]', 'pvgis')`,
+      `insert into solar.horizons (object_kind, object_id, profile, source_code) values ('participant', $1, '[[0, 2], [90, 5.5], [180, 1], [270, 8]]', 'pvgis')`,
       [site],
     );
     const r = await one<{ organisation_id: string; n: number }>(

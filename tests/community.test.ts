@@ -7,7 +7,7 @@
 // connection point, and the values of a register.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -21,7 +21,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A cooperative');
   project = await insert(db, 'projects', { organisation_id: org, name: 'Harbour community', kind: 'energy_community', country: 'NL', status: 'active' });
   for (const n of [1, 2, 3]) {
-    const site = await insert(db, 'sites', { organisation_id: org, name: `Unit ${n}`, country: 'NL', city: 'Rotterdam', time_zone: 'Europe/Amsterdam', profile: 'warehouse' });
+    const site = await participant(db, { organisation_id: org, name: `Unit ${n}`, country: 'NL', city: 'Rotterdam', time_zone: 'Europe/Amsterdam', profile: 'warehouse' });
     const meter = (await one<{ id: string }>(db, `select declare_meter($1, $2, 'gs1_gsrn') id`, [site, `87100000000000000${n}`])).id;
     const tenant = await insert(db, 'contacts', { organisation_id: org, name: `Tenant ${n}`, kind: 'company' });
     const participant = (await one<{ id: string }>(
@@ -31,11 +31,11 @@ beforeAll(async () => {
     meters.push(meter);
     participants.push(participant);
   }
-  const plant = await insert(db, 'sites', { organisation_id: org, name: 'Roof plant', country: 'NL', profile: 'plant' });
-  const plantMeter = await insert(db, 'meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
-  const array = await insert(db, 'devices', { organisation_id: org, site_id: plant, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
+  const plant = await participant(db, { organisation_id: org, name: 'Roof plant', country: 'NL', profile: 'plant' });
+  const plantMeter = await insert(db, 'meters', { organisation_id: org, participant_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
+  const array = await insert(db, 'devices', { organisation_id: org, participant_id: plant, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
   await db.query(`select connect_device($1, $2)`, [array, plantMeter]);
-  const producer = await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
+  const producer = await insert(db, 'participants', { organisation_id: org, project_id: project, participant_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
   await db.query(`select assign_meter($1, $2)`, [plantMeter, producer]);
 });
 
@@ -115,11 +115,11 @@ describe('an energy community', () => {
 
   it('records who owns a site for a period, and refuses a link whose kinds do not fit', async () => {
     await db.query(
-      `select link_objects('participant', $1, 'owns', 'site', $2, '2025-01-01')`,
+      `select link_objects('participant', $1, 'owns', 'participant', $2, '2025-01-01')`,
       [participants[0], sites[0]],
     );
     await expect(
-      db.query(`select link_objects('site', $1, 'owns', 'site', $2)`, [sites[0], sites[1]]),
+      db.query(`select link_objects('participant', $1, 'owns', 'participant', $2)`, [sites[0], sites[1]]),
     ).rejects.toThrow(/link_subject_kind/);
   });
 
@@ -142,7 +142,7 @@ describe('an energy community', () => {
 
   it('lets the same site take part in a second project', async () => {
     const portfolio = await insert(db, 'projects', { organisation_id: org, name: 'Harbour portfolio', kind: 'portfolio', country: 'NL' });
-    const again = await insert(db, 'participants', { organisation_id: org, project_id: portfolio, site_id: sites[0], name: 'Unit 1', role: 'consumer' });
+    const again = await insert(db, 'participants', { organisation_id: org, project_id: portfolio, participant_id: sites[0], name: 'Unit 1', role: 'consumer' });
     const r = await one<{ n: number }>(db, 'select count(*)::int n from participants where site_id = $1', [sites[0]]);
     expect(again).toBeTruthy();
     expect(r.n).toBe(2);

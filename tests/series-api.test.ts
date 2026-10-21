@@ -6,7 +6,7 @@
 // of a role that carries no signed-in user.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 import { convertUnit, coverage, exportRows, fill, forecastAt, latest, resample, store, window } from '@nexgen-os/core';
 
 let db: PGlite;
@@ -21,8 +21,8 @@ beforeAll(async () => {
   db = await freshDatabase();
   org = await organisation(db, 'A utility', USER_A);
   await organisation(db, 'Another', USER_B);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
+  site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
 });
 
 afterAll(async () => {
@@ -119,7 +119,7 @@ describe('a cumulative register', () => {
 describe('rollups', () => {
   let s: string;
   beforeAll(async () => {
-    s = (await store(db, { object_kind: 'site', object_id: site, quantity_code: 'production_energy', step: '15 minutes', source_code: 'pvgis' },
+    s = (await store(db, { object_kind: 'participant', object_id: site, quantity_code: 'production_energy', step: '15 minutes', source_code: 'pvgis' },
       at('2026-06-01T00:00:00+02:00', 96 * 31, 15).map((t, i) => ({ at: t, value: (i % 96) / 4 })))).seriesId;
   });
 
@@ -150,15 +150,15 @@ describe('rollups', () => {
 
 describe('buckets', () => {
   it('fall on the local hours of a half-hour time zone', async () => {
-    const india = await insert(db, 'sites', { organisation_id: org, name: 'Pune', country: 'IN', time_zone: 'Asia/Kolkata' });
-    const s = (await store(db, { object_kind: 'site', object_id: india, quantity_code: 'production_energy', step: '30 minutes', source_code: 'pvgis' },
+    const india = await participant(db, { organisation_id: org, name: 'Pune', country: 'IN', time_zone: 'Asia/Kolkata' });
+    const s = (await store(db, { object_kind: 'participant', object_id: india, quantity_code: 'production_energy', step: '30 minutes', source_code: 'pvgis' },
       at('2026-05-04T08:00:00+05:30', 4, 30).map((t) => ({ at: t, value: 1 })))).seriesId;
     const r = await resample(db, s, '2026-05-04T08:00:00+05:30', '2026-05-04T10:00:00+05:30', '1 hour');
     expect(r.map((b) => [b.bucket, b.value])).toEqual([['2026-05-04T02:30:00.000Z', 2], ['2026-05-04T03:30:00.000Z', 2]]);
   });
 
   it('honour a step of several days, and refuse one that mixes calendar units', async () => {
-    const s = (await store(db, { object_kind: 'site', object_id: site, quantity_code: 'offtake_energy', step: '1 day', source_code: 'pvgis' },
+    const s = (await store(db, { object_kind: 'participant', object_id: site, quantity_code: 'offtake_energy', step: '1 day', source_code: 'pvgis' },
       Array.from({ length: 6 }, (_, i) => ({ at: `2026-03-0${i + 1}T00:00:00+01:00`, value: 1 })))).seriesId;
     const r = await resample(db, s, '2026-03-01T00:00:00+01:00', '2026-03-07T00:00:00+01:00', '2 days');
     expect(r.map((b) => b.value)).toEqual([2, 2, 2]);
@@ -199,7 +199,7 @@ describe('gaps', () => {
 
 describe('a forecast', () => {
   it('is read as known at a time, or at a horizon before each instant', async () => {
-    const identity = { object_kind: 'site', object_id: site, quantity_code: 'temperature', kind: 'forecast' as const, value_kind: 'instant' as const, step: '1 hour', source_code: 'open_meteo' };
+    const identity = { object_kind: 'participant', object_id: site, quantity_code: 'temperature', kind: 'forecast' as const, value_kind: 'instant' as const, step: '1 hour', source_code: 'open_meteo' };
     const hours = at('2026-05-07T12:00:00Z', 3, 60);
     const s = (await store(db, identity, hours.map((t) => ({ at: t, value: 10 })), { issuedAt: '2026-05-06T06:00:00Z' })).seriesId;
     await store(db, s, hours.map((t) => ({ at: t, value: 12 })), { issuedAt: '2026-05-07T06:00:00Z' });

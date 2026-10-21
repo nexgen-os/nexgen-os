@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { parquetMetadata, parquetReadObjects } from 'hyparquet';
-import { USER_A, freshDatabase, insert, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, organisation, participant } from './helpers/db.js';
 import { exportSeriesParquet, serverParquetWriter, store } from '@nexgen-os/core';
 import { SERIES_FILE_SCHEMA, writeSeriesParquet } from '@nexgen-os/parquet';
 
@@ -16,8 +16,8 @@ let series: string;
 beforeAll(async () => {
   db = await freshDatabase();
   const org = await organisation(db, 'A utility', USER_A);
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  series = (await store(db, { object_kind: 'site', object_id: site, quantity_code: 'offtake_energy', step: '15 minutes' }, [
+  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  series = (await store(db, { object_kind: 'participant', object_id: site, quantity_code: 'offtake_energy', step: '15 minutes' }, [
     { at: '2026-05-04T08:00:00Z', value: 0.25 },
     { at: '2026-05-04T08:15:00Z', value: 0.5, quality: 1 },
     { at: '2026-05-04T08:30:00Z', value: 0, quality: 3 },

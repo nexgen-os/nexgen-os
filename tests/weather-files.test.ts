@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readEpw, writeEpw, type WeatherFile } from '@nexgen-os/weather-files';
 import { exportWeatherYear, importWeatherFile } from '@nexgen-os/core';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(`${repoRoot}/packages/formats/weather-files/tests/fixtures/${name}`, 'utf8');
 const valuesOf = (file: WeatherFile, quantity: string) => file.series.find((s) => s.quantity_code === quantity)!.values;
@@ -20,7 +20,7 @@ describe('a weather file in the database', () => {
   beforeAll(async () => {
     db = await freshDatabase(['solar']);
     org = await organisation(db, 'A cooperative', USER_A);
-    site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   });
 
   afterAll(async () => {
@@ -29,9 +29,9 @@ describe('a weather file in the database', () => {
 
   it('stores a typical year as simulated series named after its years, with their source, and replaces them on a second import', async () => {
     const file = readEpw(await fixture('pvgis-tmy-brussels-3-days.epw'), { utcOffsetHours: 0 });
-    const first = await importWeatherFile(db, { organisationId: org, objectKind: 'site', objectId: site }, file, { sourceCode: 'pvgis' });
+    const first = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: site }, file, { sourceCode: 'pvgis' });
     expect(first.series.map((s) => [s.quantity_code, s.inserted])).toEqual([['ghi', 72], ['dni', 72], ['dhi', 72], ['temperature', 72], ['wind_speed', 72]]);
-    const again = await importWeatherFile(db, { organisationId: org, objectKind: 'site', objectId: site }, file, { sourceCode: 'pvgis' });
+    const again = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: site }, file, { sourceCode: 'pvgis' });
     expect(again.series.map((s) => s.seriesId)).toEqual(first.series.map((s) => s.seriesId));
 
     const stored = await one<{ n: number; kinds: string[]; names: string[]; sources: string[]; values: number }>(db, `

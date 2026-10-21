@@ -10,7 +10,7 @@ import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis } from '@nexgen-os/pvgis';
 import { remainingAfterLosses, withSoiling } from '../modules/solar/src/pvwatts.js';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 
 const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/connectors/fake.mjs`, 'pv_yield'] };
@@ -49,8 +49,8 @@ async function soiling(kind: string, objectId: string, value: number, source: st
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
+  site = await participant(db, { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
   east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
@@ -63,10 +63,10 @@ afterAll(async () => {
 describe('solar.soiling_of', () => {
   it('is null while nobody says it, then the nearest value with where it was found', async () => {
     expect((await one<{ s: unknown }>(db, 'select solar.soiling_of($1) s', [south])).s).toBeNull();
-    await soiling('site', site, 0.05, 'dust from the farmyard, survey of 2026-06');
+    await soiling('participant', site, 0.05, 'dust from the farmyard, survey of 2026-06');
     const fromSite = (await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [south])).s;
-    expect(fromSite).toMatchObject({ value: 0.05, level: 'site', object_id: site, reference: 'dust from the farmyard, survey of 2026-06' });
-    expect((await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [system])).s).toMatchObject({ value: 0.05, level: 'site' });
+    expect(fromSite).toMatchObject({ value: 0.05, level: 'participant', object_id: site, reference: 'dust from the farmyard, survey of 2026-06' });
+    expect((await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [system])).s).toMatchObject({ value: 0.05, level: 'participant' });
   });
 
   it('refuses a value outside 0 to 1 and an object the property does not apply to', async () => {
@@ -88,7 +88,7 @@ describe('a yield run with the soiling of the place', () => {
     expect(asked.map((u) => new URL(u).searchParams.get('loss'))).toEqual(['14', '14']);
     const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from runs where id = $1', [result.runId]);
     expect(run.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
-    expect(run.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'site', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
+    expect(run.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'participant', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
   });
 
   it('sends the place\'s soiling to an engine in place of the profile\'s (pvsyst_like), and records it', async () => {
@@ -101,8 +101,8 @@ describe('a yield run with the soiling of the place', () => {
     expect(run.inputs.losses.find((l) => l.code === 'soiling')).toEqual({ code: 'soiling', pct: 5 });
     expect(run.inputs.losses.map((l) => l.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
     expect(run.inputs.arrays.map((a) => a.soiling)).toEqual([
-      expect.objectContaining({ fraction: 0.05, level: 'site', applied: true }),
-      expect.objectContaining({ fraction: 0.05, level: 'site', applied: true }),
+      expect.objectContaining({ fraction: 0.05, level: 'participant', applied: true }),
+      expect.objectContaining({ fraction: 0.05, level: 'participant', applied: true }),
     ]);
   });
 

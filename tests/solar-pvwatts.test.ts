@@ -33,7 +33,7 @@ import {
   withinLocalYears,
 } from '../modules/solar/src/pvwatts.js';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
 const FAIMAN = { u0: 25, u1: 6.84 };
@@ -292,8 +292,8 @@ describe('a pvwatts yield run', () => {
   beforeAll(async () => {
     db = await freshDatabase(['solar']);
     org = await organisation(db, 'A cooperative', USER_A);
-    site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+    site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
     // The south array's modules have PVWatts parameters; the east array's have none and are bifacial.
     const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
@@ -398,8 +398,8 @@ describe('a pvwatts yield run', () => {
   it('throws named errors for an array whose γ nobody gives, a γ out of its bounds, and a site without a time zone', async () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, clients())).rejects.toThrow(/gamma_unknown: array East/);
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: 0.0035 }, clients())).rejects.toThrow(/gamma_out_of_range: 0.0035/);
-    const somewhere = await insert(db, 'sites', { organisation_id: org, name: 'Somewhere', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    const device = await insert(db, 'devices', { organisation_id: org, site_id: somewhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
+    const somewhere = await participant(db, { organisation_id: org, name: 'Somewhere', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    const device = await insert(db, 'devices', { organisation_id: org, participant_id: somewhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
     await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients())).rejects.toThrow(/time_zone_required/);
   });
