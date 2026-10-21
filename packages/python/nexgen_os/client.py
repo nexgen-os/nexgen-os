@@ -232,14 +232,14 @@ class Nexgen:
         """A value converted between two units of the core's vocabulary, by code or symbol."""
         return self._one("select nexgen.convert_unit(%s, %s, %s)", (value, from_unit, to_unit))
 
-    def site_of(self, object_id: str) -> Optional[str]:
-        """The site an object is on, whatever its kind; ``None`` for an object that is not somewhere."""
-        site = self._one("select nexgen.site_of(%s::uuid)", (object_id,))
+    def site_of(self, kind: str, object_id: str) -> Optional[str]:
+        """The site an object (its kind and its id) is on; ``None`` for an object that is not somewhere."""
+        site = self._one("select nexgen.site_of(%s, %s::uuid)", (kind, object_id))
         return None if site is None else str(site)
 
-    def country_of(self, object_id: str) -> Optional[str]:
-        """The country of the site an object is on (ISO 3166-1 alpha-2), None when it is on none."""
-        return self._one("select nexgen.country_of(%s::uuid)", (object_id,))
+    def country_of(self, kind: str, object_id: str) -> Optional[str]:
+        """The country of the site an object (its kind and its id) is on (ISO 3166-1 alpha-2), None when it is on none."""
+        return self._one("select nexgen.country_of(%s, %s::uuid)", (kind, object_id))
 
     # -- writing values ----------------------------------------------------
 
@@ -254,7 +254,7 @@ class Nexgen:
         """Writes values through ``store()``, the one write path.
 
         ``series`` is a series id, or its identity as the keys of
-        ``series_ensure()`` (``object_id``, ``quantity_code``, ``kind``,
+        ``series_ensure()`` (``object_kind``, ``object_id``, ``quantity_code``, ``kind``,
         ``value_kind``, ``step``, ``source_code``, ``name``...), created once.
         ``values`` are ``(at, value)`` or ``(at, value, quality)`` tuples, or
         mappings with those keys, in ``unit`` (the quantity's when ``None``).
@@ -294,6 +294,7 @@ class Nexgen:
 
     def attach(
         self,
+        kind: str,
         object_id: str,
         property_code: str,
         value: Any,
@@ -304,7 +305,7 @@ class Nexgen:
         valid_to: Optional[datetime] = None,
         scenario_id: Optional[str] = None,
     ) -> str:
-        """Attaches an attribute to an object, over a period, with where it comes from; returns its id.
+        """Attaches an attribute to an object (its kind and its id), over a period, with where it comes from; returns its id.
 
         ``value`` is a JSON value in the unit of the property's quantity.
         A value without a source is refused (``source_required``): nothing is
@@ -317,10 +318,10 @@ class Nexgen:
         return str(
             self._one(
                 """insert into nexgen.attributes
-                          (object_id, property_code, value, source, source_code, valid_from, valid_to, scenario_id)
-                   values (%s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz, %s::uuid)
+                          (object_kind, object_id, property_code, value, source, source_code, valid_from, valid_to, scenario_id)
+                   values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz, %s::uuid)
                    returning id""",
-                (object_id, property_code, Jsonb(value), source, source_code, valid_from, valid_to, scenario_id),
+                (kind, object_id, property_code, Jsonb(value), source, source_code, valid_from, valid_to, scenario_id),
             )
         )
 

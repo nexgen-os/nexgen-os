@@ -32,7 +32,7 @@ beforeAll(async () => {
   const meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
   const other = await insert(db, 'devices', { organisation_id: org, site_id: elsewhere, name: 'Meter', device_type: 'meter' });
   const series = (object: string) =>
-    insert(db, 'series', { organisation_id: org, object_id: object, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
+    insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: object, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   const energy = await series(meter);
   const unplaced = await series(other);
   // Two local days in June, 1 kWh per quarter-hour, dated at the start of each interval.

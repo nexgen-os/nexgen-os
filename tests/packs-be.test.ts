@@ -58,7 +58,7 @@ afterAll(async () => {
 
 describe('the be pack', () => {
   const p = async (site: string, property: string, at = '2026-10-20') =>
-    (await one<{ p: Record<string, unknown> }>(db, 'select parameter_of($1, $2, $3) p', [site, property, at])).p;
+    (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('site', $1, $2, $3) p", [site, property, at])).p;
   const siteIn = async (org: string, region: string) =>
     (await one<{ id: string }>(db, `select create_site($1, $2, jsonb_build_object('country', 'BE', 'region', $3::text)) id`, [org, `A site in ${region}`, region])).id;
 
@@ -106,8 +106,8 @@ describe('the be pack', () => {
     const org = await organisation(db, 'Een gemeente', USER_A);
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
     // The municipality is an identifier of the site under the pack's scheme.
-    await db.query(`select add_identifier($1, 'nis', '44021')`, [site]);
-    await expect(db.query(`select add_identifier($1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
+    await db.query(`select add_identifier('site', $1, 'nis', '44021')`, [site]);
+    await expect(db.query(`select add_identifier('site', $1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
     expect((await one<{ place: { identifiers: unknown[] } }>(db, 'select place_of($1) place', [site])).place.identifiers).toEqual([{ scheme: 'nis', value: '44021' }]);
     expect(await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
     await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
@@ -143,7 +143,7 @@ describe('the be pack', () => {
     expect(await p(brussels, 'grid_fees_and_taxes')).toMatchObject({ value: 199.5 });
     await expect(p(flanders, 'pv_specific_yield_fallback')).rejects.toThrow(/parameter_missing: pv_specific_yield_fallback .* reached country BE/);
     // An organisation that knows better holds the property as an attribute, and wins.
-    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'metering_step', '"PT5M"'::jsonb, 'supply contract')`, [org]);
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'metering_step', '"PT5M"'::jsonb, 'supply contract')`, [org]);
     expect(await p(wallonia, 'metering_step')).toMatchObject({ value: 'PT5M', level: 'organisation' });
   });
 

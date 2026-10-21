@@ -38,9 +38,9 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.nexgen.sites(str(uuid.uuid4())), [])
 
     def test_places_an_object(self):
-        self.assertEqual(self.nexgen.site_of(FIXTURE["meter"]), FIXTURE["site"])
-        self.assertEqual(self.nexgen.country_of(FIXTURE["meter"]), FIXTURE["country"])
-        self.assertIsNone(self.nexgen.site_of(str(uuid.uuid4())))
+        self.assertEqual(self.nexgen.site_of("device", FIXTURE["meter"]), FIXTURE["site"])
+        self.assertEqual(self.nexgen.country_of("device", FIXTURE["meter"]), FIXTURE["country"])
+        self.assertIsNone(self.nexgen.site_of("device", str(uuid.uuid4())))
 
     def test_resamples_by_day_in_the_site_time_zone(self):
         days = self.nexgen.resample(
@@ -68,7 +68,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.nexgen.schema_version(), FIXTURE["schema_version"])
 
     def test_stores_through_the_one_write_path_and_reads_the_values_back(self):
-        identity = {"object_id": FIXTURE["meter"], "quantity_code": "consumption_energy", "step": "1 hour"}
+        identity = {"object_kind": "device", "object_id": FIXTURE["meter"], "quantity_code": "consumption_energy", "step": "1 hour"}
         start = datetime(2026, 6, 3, 8, tzinfo=UTC)
         values = [(start + timedelta(hours=i), 500.0 * (i + 1)) for i in range(3)]
         stored = self.nexgen.store(identity, values, unit="Wh")
@@ -99,25 +99,25 @@ class ClientTest(unittest.TestCase):
     def test_attaches_with_a_period_and_a_source_and_reads_it_back(self):
         site = FIXTURE["site"]
         first = self.nexgen.attach(
-            site, "annual_consumption", 41000, source="2025 invoices",
+            "site", site, "annual_consumption", 41000, source="2025 invoices",
             valid_from=datetime(2025, 1, 1, tzinfo=UTC), valid_to=datetime(2026, 1, 1, tzinfo=UTC),
         )
-        self.nexgen.attach(site, "annual_consumption", 38500, source="2026 invoices", valid_from=datetime(2026, 1, 1, tzinfo=UTC))
+        self.nexgen.attach("site", site, "annual_consumption", 38500, source="2026 invoices", valid_from=datetime(2026, 1, 1, tzinfo=UTC))
         uuid.UUID(first)
         self.assertEqual(self.nexgen.attributes_of(site, datetime(2025, 6, 1, tzinfo=UTC)), {"annual_consumption": 41000})
         self.assertEqual(self.nexgen.attributes_of(site), {"annual_consumption": 38500})
         self.assertEqual(self.nexgen.attributes_of(site, datetime(2024, 6, 1, tzinfo=UTC)), {})
 
         with self.assertRaises(NexgenError) as refused:
-            self.nexgen.attach(site, "annual_consumption", 1, source="a guess", valid_from=datetime(2025, 6, 1, tzinfo=UTC))
+            self.nexgen.attach("site", site, "annual_consumption", 1, source="a guess", valid_from=datetime(2025, 6, 1, tzinfo=UTC))
         self.assertEqual(refused.exception.code, "overlapping_value")
         with self.assertRaises(NexgenError) as refused:
-            self.nexgen.attach(FIXTURE["meter"], "annual_consumption", -5, source="a reading")
+            self.nexgen.attach("device", FIXTURE["meter"], "annual_consumption", -5, source="a reading")
         self.assertIn(refused.exception.code, ("property_not_applicable", "invalid_value"))
 
     def test_refuses_a_value_without_a_source(self):
         with self.assertRaises(NexgenError) as refused:
-            self.nexgen.attach(FIXTURE["site"], "annual_consumption", 1)
+            self.nexgen.attach("site", FIXTURE["site"], "annual_consumption", 1)
         self.assertEqual(refused.exception.code, "source_required")
 
 

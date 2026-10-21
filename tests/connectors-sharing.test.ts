@@ -94,8 +94,8 @@ describe('energy sharing in a project, as a run', () => {
     db = await freshDatabase(['billing', 'community', 'grid']);
     await db.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
     await db.query(
-      `insert into attributes (object_id, property_code, value, valid_from, valid_to, source)
-       values ($1, 'allocation_key', '{"method": "proportional", "parameters": {}}', '2026-01-01T00:00:00+01:00', '2027-01-01T00:00:00+01:00', 'general assembly 2025')`,
+      `insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source)
+       values ('project', $1, 'allocation_key', '{"method": "proportional", "parameters": {}}', '2026-01-01T00:00:00+01:00', '2027-01-01T00:00:00+01:00', 'general assembly 2025')`,
       [PROJECT],
     );
   });
@@ -154,11 +154,11 @@ describe('energy sharing in a project, as a run', () => {
   });
 
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
-    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
     const r = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
     const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [r.runId]);
     expect(run.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
-    await expect(db.query(`insert into attributes (object_id, property_code, value) values ($1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
+    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
       .rejects.toThrow(/allocation_share/);
   });
 
@@ -175,7 +175,7 @@ describe('energy sharing in a project, as a run', () => {
     await expect(runSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_outside_period/);
     await expect(runSharing(db, { projectId: PROJECT, ...day, engine: fake })).rejects.toThrow(/^engine_kind_unsupported: fake accepts echo, pv_yield, not energy_sharing$/);
     await db.query(
-      `insert into attributes (object_id, property_code, value, valid_from, source) values ($1, 'allocation_key', '{"method": "fixed", "parameters": {}}', '2027-01-01T00:00:00+01:00', 'general assembly 2026')`,
+      `insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values ('project', $1, 'allocation_key', '{"method": "fixed", "parameters": {}}', '2027-01-01T00:00:00+01:00', 'general assembly 2026')`,
       [PROJECT],
     );
     await expect(runSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_changes_in_period/);

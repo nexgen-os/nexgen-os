@@ -24,7 +24,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
         print(site["name"], site["country"], site["time_zone"])
 
     site = nexgen.sites()[0]["id"]
-    nexgen.attach(site, "annual_consumption", 41000, source="2025 invoices",
+    nexgen.attach("site", site, "annual_consumption", 41000, source="2025 invoices",
                   valid_from=datetime(2025, 1, 1, tzinfo=timezone.utc),
                   valid_to=datetime(2026, 1, 1, tzinfo=timezone.utc))
     print(nexgen.attributes_of(site, datetime(2025, 6, 1, tzinfo=timezone.utc)))
@@ -53,8 +53,8 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | `forecast_at(series_id, start, end, as_of=None, horizon=None)`, `export_rows(series_ids, start, end)` | a forecast as it was known; the rows of a Parquet file |
 | `store(series, values, *, unit=None, issued_at=None)` | the one write path: a series id or its identity, `(at, value[, quality])` tuples in `unit`; returns `Stored(series_id, changed)` |
 | `convert_unit(value, from_unit, to_unit)` | a conversion of the core's `units` vocabulary |
-| `site_of(object_id)`, `country_of(object_id)` | the site an object is on, the country whose rules apply |
-| `attach(object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None, scenario_id=None)` | one attribute, with its period and where it comes from; returns its id |
+| `site_of(kind, object_id)`, `country_of(kind, object_id)` | the site an object is on, the country whose rules apply |
+| `attach(kind, object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None, scenario_id=None)` | one attribute, with its period and where it comes from; returns its id |
 
 Values are in the unit of the property's quantity (`quantities`), series
 values are dated at the start of their interval, instants are

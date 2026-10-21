@@ -97,7 +97,7 @@ describe('the fr pack', () => {
     const brest = (await one<{ id: string }>(db, `select create_site($1, 'Port de Brest', '{"country": "FR", "region": "FR-29"}') id`, [org])).id;
     const ajaccio = (await one<{ id: string }>(db, `select create_site($1, 'Port d''Ajaccio', '{"country": "FR", "region": "FR-2A"}') id`, [org])).id;
     const p = async (site: string, property: string, at = '2026-10-20') =>
-      (await one<{ p: Record<string, unknown> }>(db, 'select parameter_of($1, $2, $3) p', [site, property, at])).p;
+      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('site', $1, $2, $3) p", [site, property, at])).p;
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT30M', level: 'country', source_code: 'fr_enedis_load_curve_collection' });
     expect(await p(brest, 'bidding_zone')).toMatchObject({ value: '10YFR-RTE------C', level: 'country' });
     await expect(p(ajaccio, 'bidding_zone')).rejects.toThrow(/parameter_not_decided: bidding_zone in FR-2A/);
@@ -107,7 +107,7 @@ describe('the fr pack', () => {
     await expect(p(brest, 'offpeak_hours')).rejects.toThrow(/parameter_not_decided: offpeak_hours in FR: Pages 1-2/);
     await expect(p(brest, 'pv_specific_yield_fallback')).rejects.toThrow(/parameter_missing: pv_specific_yield_fallback .* reached country FR/);
     // An organisation that knows better holds the property as an attribute, and wins.
-    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'metering_step', '"PT10M"'::jsonb, 'supply contract')`, [org]);
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'metering_step', '"PT10M"'::jsonb, 'supply contract')`, [org]);
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT10M', level: 'organisation' });
     const voltage = await one<{ levels: { code: string }[] }>(db, `select value levels from defaults where country = 'FR' and property_code = 'voltage_levels'`);
     expect(voltage.levels.map((l) => l.code)).toEqual(['tbt', 'bt', 'hta', 'htb']);
