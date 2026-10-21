@@ -31,7 +31,7 @@ const WEEKDAYS_8_TO_18 = [1, 2, 3, 4, 5].map((weekday) => ({ weekday, opens: '08
 const localHour = (at: string) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' }).format(new Date(at)));
 
 beforeAll(async () => {
-  db = await freshDatabase(['grid', 'consumption']);
+  db = await freshDatabase(['3d', 'grid', 'consumption']);
   await db.exec(await readFile(join(repoRoot, 'examples', '07-office-heating.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
