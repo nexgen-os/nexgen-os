@@ -245,7 +245,7 @@ export interface StatusReport {
   schemaVersion: string | null;
   modules: string[];
   packs: string[];
-  counts: Record<'organisations' | 'sites' | 'buildings' | 'series', number | null>;
+  counts: Record<'organisations' | 'sites' | 'devices' | 'series', number | null>;
 }
 
 export async function status(db: SqlClient): Promise<StatusReport> {
@@ -257,7 +257,7 @@ export async function status(db: SqlClient): Promise<StatusReport> {
     counts: {
       organisations: await count(db, 'organisations'),
       sites: await count(db, 'sites'),
-      buildings: await count(db, 'buildings'),
+      devices: await count(db, 'devices'),
       series: await count(db, 'series'),
     },
   };

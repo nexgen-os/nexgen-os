@@ -7,7 +7,8 @@
 -- object row names itself as organisation and belongs to no scenario.
 --
 -- `object_kinds` is a vocabulary: one row per kind of object, written by
--- `declare_object()` in migrations, read by everyone signed in. The last
+-- `declare_object()` in migrations, read by everyone signed in; so is
+-- `object_parent_tables`, written by `declare_parents()`. The last
 -- statement checks that every table of the schema has row level security,
 -- which `nexgen-os doctor` reports for an installation too.
 
@@ -41,6 +42,9 @@ create trigger organisations_register
 alter table object_kinds enable row level security;
 create policy object_kinds_read on object_kinds for select to authenticated using (true);
 grant select on object_kinds to authenticated, service_role;
+alter table object_parent_tables enable row level security;
+create policy object_parent_tables_read on object_parent_tables for select to authenticated using (true);
+grant select on object_parent_tables to authenticated, service_role;
 
 do $$
 declare

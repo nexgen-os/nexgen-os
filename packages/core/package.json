@@ -32,17 +32,7 @@
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
   },
   "dependencies": {
-    "@nexgen-os/cityjson": "^0.1.0",
     "@nexgen-os/geojson": "^0.1.0",
-    "@nexgen-os/homeassistant": "^0.1.0",
     "@nexgen-os/weather-files": "^0.1.0"
-  },
-  "peerDependencies": {
-    "@nexgen-os/ifc": "^0.1.0"
-  },
-  "peerDependenciesMeta": {
-    "@nexgen-os/ifc": {
-      "optional": true
-    }
   }
 }

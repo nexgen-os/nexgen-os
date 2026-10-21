@@ -32,7 +32,7 @@ create table if not exists schema_migrations (
   name        text primary key,
   scope       text not null,
   applied_at  timestamptz not null default now(),
-  constraint schema_migrations_scope_format check (scope ~ '^(core|module:[a-z][a-z0-9_]*|pack:[a-z]{2})$')
+  constraint schema_migrations_scope_format check (scope ~ '^(core|module:[a-z0-9][a-z0-9_]*|pack:[a-z]{2})$')
 );
 
 comment on table schema_migrations is

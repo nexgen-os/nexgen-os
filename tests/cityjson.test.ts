@@ -5,7 +5,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readCityJson, sridOf, writeCityJson, type CityJsonDocument } from '@nexgen-os/cityjson';
-import { exportCityJson, importCityJson as importModel, orientation, type CityJsonImportOptions, type CityJsonTarget } from '@nexgen-os/core';
+import { orientation } from '@nexgen-os/core';
+import { exportCityJson, importCityJson as importModel, type CityJsonImportOptions, type CityJsonTarget } from '../modules/3d/src/index.js';
 import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 // A gabled house, 10 m by 6 m, ground at 2 m, eaves at 8 m, ridge at 11.5 m,
@@ -67,7 +68,7 @@ let org: string;
 let site: string;
 
 beforeAll(async () => {
-  db = await freshDatabase();
+  db = await freshDatabase(['3d']);
   org = await organisation(db, 'A city', USER_A);
   await db.query(`insert into sources (code, name, kind, license, attribution, countries) values ('city_model', 'City 3D model', 'file', 'CC-BY-4.0', '© The city', '{NL}')`);
   site = await insert(db, 'sites', { organisation_id: org, name: 'Canal house', country: 'NL', time_zone: 'Europe/Amsterdam' });
@@ -106,7 +107,7 @@ describe('a CityJSON building', () => {
               area_m2(b.footprint)::float area, b.source_code source, b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
               (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
               ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat
-         from buildings b where b.id = $1`,
+         from three_d.buildings b where b.id = $1`,
       [buildingId],
     );
     expect(b.name).toBe('NL.IMBAG.Pand.0363100012345678');
@@ -122,10 +123,10 @@ describe('a CityJSON building', () => {
     expect(b.lat).toBeCloseTo(52.37, 1);
   });
 
-  it('turns roof and wall faces into surfaces with azimuth and tilt, the ground face into the footprint only', async () => {
+  it('turns roof and wall faces into three_d.surfaces with azimuth and tilt, the ground face into the footprint only', async () => {
     const r = await db.query<{ kind: string; azimuth: number | null; tilt: number; type: string; zmax: number }>(
       `select kind, azimuth_deg::float azimuth, tilt_deg::float tilt, metadata->'cityjson'->>'type' type, ST_ZMax(geometry)::float zmax
-         from surfaces where building_id = $1 order by kind, azimuth_deg nulls first, name`,
+         from three_d.surfaces where building_id = $1 order by kind, azimuth_deg nulls first, name`,
       [buildingId],
     );
     // Against true north: RD New's grid north is 0.4° off at Amsterdam, so the pitches read 179.6° and 359.6°.
@@ -158,8 +159,8 @@ describe('a CityJSON building', () => {
       `select b.height_m::float height, area_m2(b.footprint)::float area,
               (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
               b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
-              (select string_agg((round(azimuth_deg)::int % 360)::text || '/' || round(tilt_deg)::int::text, ',' order by round(azimuth_deg)::int % 360) from surfaces where building_id = b.id and kind = 'roof') roofs
-         from buildings b where b.id = $1`,
+              (select string_agg((round(azimuth_deg)::int % 360)::text || '/' || round(tilt_deg)::int::text, ',' order by round(azimuth_deg)::int % 360) from three_d.surfaces where building_id = b.id and kind = 'roof') roofs
+         from three_d.buildings b where b.id = $1`,
       [r.buildings[0].id],
     );
     expect(b.height).toBe(9.5);

@@ -8,7 +8,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { pvgis } from '@nexgen-os/pvgis';
 import type { Fetch } from '@nexgen-os/core';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -20,14 +20,11 @@ beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
   site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  const building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Hall', footprint: square(4.35, 50.85, 30, 20), height_m: 8 });
-  const south = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'South pitch', kind: 'roof', azimuth_deg: 180, tilt_deg: 30 });
-  const east = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'East pitch', kind: 'roof', azimuth_deg: 90, tilt_deg: 30 });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, building_id: building, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   // One statement each: arrays are read in the order they were created, and one statement gives both the same time.
-  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'South', 'roof_parallel', 20)`, [org, system, south]);
-  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'East', 'roof_parallel', 10)`, [org, system, east]);
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10)`, [org, system]);
 });
 
 afterAll(async () => {

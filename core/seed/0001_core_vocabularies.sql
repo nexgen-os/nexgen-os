@@ -62,14 +62,12 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
   ('shades',    'shades',         'is shaded by',    null,             null,                 null,          null,                      'The subject casts shade on the object.'),
   ('adjacent_to','is adjacent to','is adjacent to',  null,             null,                 null,          'IfcRelSpaceBoundary',     'The two objects share a boundary.'),
   ('owns',      'owns',           'is owned by',     '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Ownership: an organisation, or a participant whose contact owns the object.'),
-  ('occupies',  'occupies',       'is occupied by',  '{organisation,participant}', null,     null,          'IfcRelOccupiesSpaces',    'Occupation: a tenant, a resident, for a period.'),
   ('operates',  'operates',       'is operated by',  '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Operation and maintenance responsibility.'),
   -- What became of an object. Identifiers never encode anything and are
   -- never reused: a split, a merge, a replacement is a dated link.
   ('split_into', 'was split into', 'was split from', null,            null,                 null,          null,                      'The subject was divided into the object (a parcel split by the cadastre); one link per part.'),
   ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
   ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
-  ('placed_in', 'was placed in',  'held',            '{device}',       '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure', 'Where a device was before it moved, over the period it was there.'),
   ('behind_meter', 'was behind',  'had behind it',   '{device}',       '{meter}',            null,          null,                      'The connection point a device was behind before it was connected to another one, over the period it was there (devices.meter_id holds today''s).'),
   ('carried_by', 'was carried by', 'carried',        '{meter}',        '{participant}',      null,          null,                      'The participant that carried a connection point before another one did, over the period it did (meters.participant_id holds today''s).');
 
@@ -166,21 +164,13 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 -- ---------------------------------------------------------------------------
 -- Property definitions: attributes beyond the columns (bSDD / IFC property
 -- sets where they exist). Kinds refer to objects.kind. A fact a column holds
--- is never repeated here: the use of a building is its `profile`, a
--- device's power its `rated_power_kw`, its commissioning its
--- `installation_date`.
+-- is never repeated here: the use of a site is its `profile`, a device's
+-- power its `rated_power_kw`, its commissioning its `installation_date`.
+-- What describes a building or a roof face (its year, floors, label,
+-- material) is published by the `3d` module with its kinds.
 -- ---------------------------------------------------------------------------
 
 insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
-  ('floor_area',     'Gross floor area',      'number',  'area',   0,    null, null, '{building,space}',    'Qto_BuildingBaseQuantities', 'GrossFloorArea'),
-  ('energy_label',         'Energy label',          'text',    null,     null, null, '{A+,A,B,C,D,E,F,G}', '{building}', null,               null),
-  ('year_built',           'Year of construction',  'integer', null,     1000, 2200, null, '{building}',          'Pset_BuildingCommon',        'YearOfConstruction'),
-  ('floors_above_ground',  'Floors above ground',   'integer', null,     0,    null, null, '{building}',          'Pset_BuildingCommon',        'NumberOfStoreys'),
-  ('floors_below_ground',  'Floors below ground',   'integer', null,     0,    null, null, '{building}',          null,                         null),
-  ('roof_area',            'Roof area',             'number',  'area',   0,    null, null, '{surface}',           'Qto_RoofBaseQuantities',     'GrossArea'),
-  ('material',             'Material',              'text',    null,     null, null, null, '{surface}',           'Pset_MaterialCommon',        'Name'),
-  ('u_value','Thermal transmittance', 'number',  'u_value', 0, null, null, '{surface}', 'Pset_WallCommon',        'ThermalTransmittance'),
-  ('is_external',          'Is external',           'boolean', null,     null, null, null, '{surface}',           'Pset_WallCommon',            'IsExternal'),
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
   -- The sum over a site or a project; a device's own is its rated power.

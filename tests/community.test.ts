@@ -113,13 +113,13 @@ describe('an energy community', () => {
     expect(reissued.id).not.toBe(meters[2]);
   });
 
-  it('records who occupies a site for a period, and refuses a link whose kinds do not fit', async () => {
+  it('records who owns a site for a period, and refuses a link whose kinds do not fit', async () => {
     await db.query(
-      `insert into links (subject_id, type_code, object_id, valid_from) values ($1, 'occupies', $2, '2025-01-01')`,
+      `insert into links (subject_id, type_code, object_id, valid_from) values ($1, 'owns', $2, '2025-01-01')`,
       [participants[0], sites[0]],
     );
     await expect(
-      db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'occupies', $2)`, [sites[0], sites[1]]),
+      db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'owns', $2)`, [sites[0], sites[1]]),
     ).rejects.toThrow(/link_subject_kind/);
   });
 

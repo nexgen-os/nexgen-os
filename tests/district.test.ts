@@ -18,7 +18,7 @@ const utmFootprint = (x: number, y: number) => ({
 });
 
 beforeAll(async () => {
-  db = await freshDatabase(['community']);
+  db = await freshDatabase(['3d', 'community']);
   org = await organisation(db, 'A city');
   const outline = await one<{ g: string }>(
     db,
@@ -29,7 +29,7 @@ beforeAll(async () => {
   });
   for (const [i, x] of [236100, 236300, 236500].entries()) {
     const site = await insert(db, 'sites', { organisation_id: org, name: `Plot ${i + 1}`, country: 'SN', city: 'Dakar' });
-    const b = await insert(db, 'buildings', {
+    const b = await insert(db, 'three_d.buildings', {
       organisation_id: org, site_id: site, name: `Building ${i + 1}`, footprint: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
     });
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
@@ -37,7 +37,7 @@ beforeAll(async () => {
   }
   // One building outside the district, to prove the spatial query.
   const outside = await insert(db, 'sites', { organisation_id: org, name: 'Far plot', country: 'SN' });
-  await insert(db, 'buildings', { organisation_id: org, site_id: outside, name: 'Outside', footprint: utmFootprint(240000, 1640000), height_m: 6 });
+  await insert(db, 'three_d.buildings', { organisation_id: org, site_id: outside, name: 'Outside', footprint: utmFootprint(240000, 1640000), height_m: 6 });
 });
 
 afterAll(async () => {
@@ -48,7 +48,7 @@ describe('a district from open data', () => {
   it('normalises a projected footprint to WGS 84 3D and keeps its area in metres', async () => {
     const r = await one<{ srid: number; dims: number; area: string }>(
       db,
-      `select ST_SRID(footprint) srid, ST_NDims(footprint) dims, area_m2(footprint) area from buildings where name = 'Building 1'`,
+      `select ST_SRID(footprint) srid, ST_NDims(footprint) dims, area_m2(footprint) area from three_d.buildings where name = 'Building 1'`,
     );
     expect(r.srid).toBe(4326);
     expect(r.dims).toBe(3);
@@ -57,7 +57,7 @@ describe('a district from open data', () => {
 
   it('finds the buildings inside the district perimeter', async () => {
     const r = await db.query<{ name: string }>(
-      `select b.name from buildings b, projects p
+      `select b.name from three_d.buildings b, projects p
         where p.id = $1 and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry))
         order by b.name`,
       [district],
@@ -68,22 +68,22 @@ describe('a district from open data', () => {
   it('finds a building by its OpenStreetMap identifier', async () => {
     const r = await one<{ name: string }>(
       db,
-      `select b.name from external_ids x join buildings b on b.id = x.object_id where x.scheme = 'osm' and x.value = 'way/1001'`,
+      `select b.name from external_ids x join three_d.buildings b on b.id = x.object_id where x.scheme = 'osm' and x.value = 'way/1001'`,
     );
     expect(r.name).toBe('Building 2');
   });
 
   it('refuses the same identifier on two objects', async () => {
-    const b3 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 3'`);
+    const b3 = await one<{ id: string }>(db, `select id from three_d.buildings where name = 'Building 3'`);
     await expect(
       db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', 'way/1001')`, [b3.id]),
     ).rejects.toThrow(/duplicate key/);
   });
 
   it('records a tall building shading the roof of its neighbour', async () => {
-    const b3 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 3'`);
-    const b2 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 2'`);
-    const roof = await insert(db, 'surfaces', { organisation_id: org, building_id: b2.id, name: 'Roof 2', kind: 'roof', tilt_deg: 0 });
+    const b3 = await one<{ id: string }>(db, `select id from three_d.buildings where name = 'Building 3'`);
+    const b2 = await one<{ id: string }>(db, `select id from three_d.buildings where name = 'Building 2'`);
+    const roof = await insert(db, 'three_d.surfaces', { organisation_id: org, building_id: b2.id, name: 'Roof 2', kind: 'roof', tilt_deg: 0 });
     await db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'shades', $2)`, [b3.id, roof]);
     const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'shades'`);
     expect(r.n).toBe(1);
@@ -108,7 +108,7 @@ describe('a district from open data', () => {
     await db.query(`select merge_objects(array[$1, $2]::uuid[], $3)`, [p2, p3, merged]);
     const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'merged_into' and object_id = $1`, [merged]);
     expect(r.n).toBe(2);
-    const b1 = await one<{ id: string }>(db, `select id from buildings where name = 'Building 1'`);
+    const b1 = await one<{ id: string }>(db, `select id from three_d.buildings where name = 'Building 1'`);
     await expect(db.query(`select merge_objects(array[$1]::uuid[], $2)`, [b1.id, merged])).rejects.toThrow(/object_kind_mismatch/);
     const elsewhere = await organisation(db, 'Another city');
     const theirs = await insert(db, 'sites', { organisation_id: elsewhere, name: 'Their plot', country: 'SN' });

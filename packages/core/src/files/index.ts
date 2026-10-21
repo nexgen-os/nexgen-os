@@ -5,9 +5,6 @@
  * is written here, one way
  * ([0035](../../../../docs/decisions/0035-a-format-library-touches-no-database.md)).
  */
-export * from './cityjson.js';
-export * from './homeassistant.js';
 export * from './geojson.js';
 export * from './weather-files.js';
 export * from './parquet.js';
-export * from './ifc.js';

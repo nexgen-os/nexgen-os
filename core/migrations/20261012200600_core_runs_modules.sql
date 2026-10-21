@@ -23,11 +23,11 @@ create table modules (
   requires_core_min text not null,
   description       text,
   installed_at      timestamptz not null default now(),
-  constraint modules_code_format check (code ~ '^[a-z][a-z0-9_]*$')
+  constraint modules_code_format check (code ~ '^[a-z0-9][a-z0-9_]*$')
 );
 
 comment on table modules is
-  'Modules installed beside the core, one Postgres schema each. The last statement of a module''s first migration writes its row here.';
+  'Modules installed beside the core, one Postgres schema each. A module''s first migration writes its row here.';
 
 create table runs (
   id               uuid primary key default gen_random_uuid(),

@@ -1,18 +1,19 @@
 -- Nexgen OS — core: scenarios, the object registry, and the places.
 --
--- The core names its objects: a site, a building, a space, a surface, a
--- device. Each is a table with the columns it always has. What every object
+-- The core names its objects: an organisation, a project, a participant, a
+-- site, a meter, a device. Each is a table with the columns it always has. What every object
 -- shares — an id, an organisation, a scenario — is kept once in `objects`,
 -- the registry every attachment (attributes, identifiers, links, documents,
 -- series, runs) points to. The registry is plumbing: a page reads
--- `from buildings`, never `from objects`.
+-- `from sites`, never `from objects`.
 --
--- The places are the 3D skeleton the rest hangs on:
---
---   sites       a place with an address, a point or a parcel, a time zone
---   buildings   a footprint, an elevation, a height
---   spaces      floors, rooms, zones and units of a building, one tree
---   surfaces    roof faces, facades, ground areas, carports
+-- The place of the core is the site: an address, a point or a parcel, a
+-- time zone, geolocated but not described. What a place physically is —
+-- its buildings, their floors, rooms and units, their roof faces and
+-- facades, where a device sits among them — is the description of a
+-- building, the `3d` module's (decision 0008), which declares its own kinds
+-- of object with `declare_object()` and is found by `site_of()` like any
+-- other.
 --
 -- Geometry is stored in WGS 84 (EPSG:4326), always three-dimensional, Z in
 -- metres above sea level. Any CRS is accepted on the way in. Metric
@@ -52,8 +53,8 @@ create trigger scenarios_set_updated_at
 
 create table objects (
   id               uuid primary key,
-  -- organisation, site, building, space, surface, device — and the kinds
-  -- modules register (meter, project, participant, pv_array, task…).
+  -- organisation, project, participant, site, meter, device — and the
+  -- kinds modules register (building, space, surface, pv_array, task…).
   kind             text not null,
   organisation_id  uuid not null references organisations(id) on delete cascade,
   scenario_id      uuid references scenarios(id) on delete cascade,
@@ -78,6 +79,23 @@ create table object_kinds (
 
 comment on table object_kinds is
   'One row per kind of object: the table that holds it and the columns leading to its parents, in order of preference. Filled by declare_object().';
+
+-- Parents a module gives to a kind it does not own, through a table of its
+-- own keyed by the object's id: where on its site a device is placed, for
+-- one. Read before the kind's own columns, the finest place first, so that
+-- `site_of()`, `ancestor_of()` and the cascade of `parameter_of()` walk
+-- through it without the core knowing the module.
+create table object_parent_tables (
+  kind            text not null references object_kinds(kind) on delete cascade,
+  table_name      text not null,
+  key_column      text not null,
+  parent_columns  text[] not null,
+  published_by    text not null,
+  primary key (kind, table_name)
+);
+
+comment on table object_parent_tables is
+  'Parents a module gives to a kind of object it does not own: the module table keyed by the object''s id and its columns leading to the parents, in order of preference, read before the kind''s own. Filled by declare_parents().';
 
 -- BEFORE INSERT / UPDATE / AFTER DELETE on every named table. tg_argv[0] is
 -- the kind. Registers the row, keeps organisation fixed and scenario in sync.
@@ -152,9 +170,18 @@ as $$
 declare
   n   text := replace(p_table, '.', '_');
   col text;
+  v_by text := 'core';
 begin
+  -- A kind of a module's schema is published by the module that owns it,
+  -- under its code, which may differ from the schema's name (`3d` owns
+  -- `three_d`); `modules` is created after this function, hence the
+  -- dynamic query.
+  if position('.' in p_table) > 0 then
+    execute 'select code from modules where schema_name = $1' into v_by using split_part(p_table, '.', 1);
+    v_by := coalesce(v_by, split_part(p_table, '.', 1));
+  end if;
   insert into object_kinds (kind, table_name, parent_columns, published_by)
-  values (p_kind, p_table, p_parents, case when position('.' in p_table) > 0 then split_part(p_table, '.', 1) else 'core' end)
+  values (p_kind, p_table, p_parents, v_by)
   on conflict (kind) do update set table_name = excluded.table_name, parent_columns = excluded.parent_columns, published_by = excluded.published_by;
   execute format('create trigger %I before insert or update on %s for each row execute function register_object(%L)',
                  n || '_register', p_table, p_kind);
@@ -172,7 +199,66 @@ end;
 $$;
 
 comment on procedure declare_object(text, text, text[]) is
-  'Declares a named table as a kind of object, with its parent columns in order of preference: `call declare_object(''solar.pv_arrays'', ''pv_array'', ''{pv_system_id,surface_id}'')`.';
+  'Declares a named table as a kind of object, with its parent columns in order of preference: `call declare_object(''solar.pv_arrays'', ''pv_array'', ''{pv_system_id}'')`. A kind declared by a module is published by the module that owns the schema.';
+
+create or replace procedure declare_parents(p_table text, p_kind text, p_key text, p_parents text[])
+language plpgsql
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_by text;
+begin
+  execute 'select code from modules where schema_name = $1' into v_by using split_part(p_table, '.', 1);
+  insert into object_parent_tables (kind, table_name, key_column, parent_columns, published_by)
+  values (p_kind, p_table, p_key, p_parents, coalesce(v_by, split_part(p_table, '.', 1)))
+  on conflict (kind, table_name) do update set key_column = excluded.key_column, parent_columns = excluded.parent_columns;
+end;
+$$;
+
+comment on procedure declare_parents(text, text, text, text[]) is
+  'Declares a module table, keyed by the id of an object of a kind the module does not own, as giving that object parents: `call declare_parents(''<schema>.placements'', ''device'', ''device_id'', ''{<finest>,<coarsest>}'')`, the parents in order of preference.';
+
+-- The parents of an object, in order of preference: those the modules give
+-- it, then its own columns.
+create or replace function parents_of(p_object_id uuid)
+returns table (parent_id uuid)
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  k    text;
+  r    record;
+  col  text;
+  p    uuid;
+begin
+  select o.kind into k from objects o where o.id = p_object_id;
+  for r in
+    select x.table_name, x.key_column, x.parent_columns from object_parent_tables x where x.kind = k
+     order by x.table_name
+  loop
+    foreach col in array r.parent_columns loop
+      execute format('select %I from %s where %I = $1', col, r.table_name, r.key_column) into p using p_object_id;
+      if p is not null and p <> p_object_id then
+        parent_id := p;
+        return next;
+      end if;
+    end loop;
+  end loop;
+  for r in select ok.table_name, ok.parent_columns from object_kinds ok where ok.kind = k loop
+    foreach col in array r.parent_columns loop
+      execute format('select %I from %s where id = $1', col, r.table_name) into p using p_object_id;
+      if p is not null and p <> p_object_id then
+        parent_id := p;
+        return next;
+      end if;
+    end loop;
+  end loop;
+end;
+$$;
+
+comment on function parents_of(uuid) is
+  'The direct parents of an object, in order of preference: those module tables give it (object_parent_tables), then its own parent columns (object_kinds).';
 
 -- ---------------------------------------------------------------------------
 -- Geometry helpers
@@ -265,104 +351,6 @@ $$;
 comment on function normalize_geometry() is
   'Trigger of every geometry column: the value goes through to_core_geometry().';
 
--- Vertical faces of a footprint between two heights, plus floor and roof:
--- the level-of-detail 1 block. Derived, never stored.
-create or replace function footprint_volume(p_footprint geometry, p_base numeric, p_top numeric)
-returns geometry
-language plpgsql
-immutable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  ring   geometry;
-  faces  text[] := '{}';
-  pts    geometry[];
-  i      int;
-  a      geometry;
-  b      geometry;
-begin
-  if p_footprint is null or p_top is null or GeometryType(ST_Force2D(p_footprint)) <> 'POLYGON' then
-    return null;
-  end if;
-  ring := ST_ExteriorRing(ST_ForceRHR(ST_Force2D(p_footprint)));
-  select array_agg(d.geom order by d.path) into pts from ST_DumpPoints(ring) d;
-  faces := faces || format('((%s))', (
-    select string_agg(format('%s %s %s', ST_X(p), ST_Y(p), p_base), ',') from unnest(pts) p
-  ));
-  faces := faces || format('((%s))', (
-    select string_agg(format('%s %s %s', ST_X(p), ST_Y(p), p_top), ',' order by ord desc)
-      from unnest(pts) with ordinality as u(p, ord)
-  ));
-  for i in 1 .. array_length(pts, 1) - 1 loop
-    a := pts[i];
-    b := pts[i + 1];
-    faces := faces || format('((%s %s %s,%s %s %s,%s %s %s,%s %s %s,%s %s %s))',
-      ST_X(a), ST_Y(a), p_base, ST_X(a), ST_Y(a), p_top, ST_X(b), ST_Y(b), p_top,
-      ST_X(b), ST_Y(b), p_base, ST_X(a), ST_Y(a), p_base);
-  end loop;
-  return ST_SetSRID(ST_GeomFromText('POLYHEDRALSURFACE Z (' || array_to_string(faces, ',') || ')'), 4326);
-end;
-$$;
-
-comment on function footprint_volume(geometry, numeric, numeric) is
-  'The level-of-detail 1 block of a footprint between two heights, as a polyhedral surface.';
-
--- The orientation of a planar face from its 3D polygon: the normal of its
--- outer ring (Newell's method) in the UTM zone it falls in, turned to face
--- up; tilt from horizontal, azimuth clockwise from true north, measured on
--- the ellipsoid between the face's centre and a point down its slope. Null
--- when the polygon has no height, and the azimuth of a flat face is null.
-create or replace function surface_orientation(p_geom geometry, out azimuth_deg numeric, out tilt_deg numeric)
-language plpgsql
-immutable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  srid  int;
-  m     geometry;
-  pts   geometry[];
-  nx    float8 := 0;
-  ny    float8 := 0;
-  nz    float8 := 0;
-  h     float8;
-  c     geometry;
-  i     int;
-begin
-  if p_geom is null or not ST_HasZ(p_geom) or GeometryType(p_geom) not in ('POLYGON', 'MULTIPOLYGON') then
-    return;
-  end if;
-  srid := metric_srid(p_geom);
-  m := ST_Transform(ST_GeometryN(p_geom, 1), srid);
-  select array_agg(d.geom order by d.path) into pts from ST_DumpPoints(ST_ExteriorRing(m)) d;
-  for i in 1 .. array_length(pts, 1) - 1 loop
-    nx := nx + (ST_Y(pts[i]) - ST_Y(pts[i + 1])) * (ST_Z(pts[i]) + ST_Z(pts[i + 1]));
-    ny := ny + (ST_Z(pts[i]) - ST_Z(pts[i + 1])) * (ST_X(pts[i]) + ST_X(pts[i + 1]));
-    nz := nz + (ST_X(pts[i]) - ST_X(pts[i + 1])) * (ST_Y(pts[i]) + ST_Y(pts[i + 1]));
-  end loop;
-  if nx = 0 and ny = 0 and nz = 0 then
-    return;
-  end if;
-  if nz < 0 then
-    nx := -nx; ny := -ny; nz := -nz;
-  end if;
-  h := sqrt(nx * nx + ny * ny);
-  tilt_deg := round(degrees(atan2(h, nz))::numeric, 2);
-  if tilt_deg < 1 then
-    return;
-  end if;
-  c := ST_Centroid(ST_Force2D(m));
-  azimuth_deg := round(degrees(ST_Azimuth(
-    ST_Transform(c, 4326)::geography,
-    ST_Transform(ST_Translate(c, 10 * nx / h, 10 * ny / h), 4326)::geography))::numeric, 2);
-  if azimuth_deg >= 360 then
-    azimuth_deg := azimuth_deg - 360;
-  end if;
-end;
-$$;
-
-comment on function surface_orientation(geometry) is
-  'Azimuth (degrees clockwise from true north) and tilt (degrees from horizontal) of a planar 3D polygon. Null when the polygon has no height; the azimuth of a flat face is null.';
-
 -- ---------------------------------------------------------------------------
 -- sites — a place with an address.
 -- ---------------------------------------------------------------------------
@@ -441,192 +429,6 @@ create trigger sites_check before insert or update of time_zone on sites
 call declare_object('sites', 'site');
 
 -- ---------------------------------------------------------------------------
--- buildings
--- ---------------------------------------------------------------------------
-
-create table buildings (
-  id                   uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
-  organisation_id      uuid not null references organisations(id) on delete cascade,
-  site_id              uuid not null references sites(id) on delete cascade,
-  name                 text not null,
-  profile              text references profiles(code),
-  -- The outline on the ground. With elevation and height it gives the
-  -- level-of-detail 1 block (`building_volume`).
-  footprint            geometry,
-  elevation_m          numeric(9, 3),
-  height_m             numeric(9, 3),
-  -- Where the description comes from (a cadastre, a 3D city model, a
-  -- survey), and what that source said beyond these columns. The year of
-  -- construction and the number of floors are attributes, with their
-  -- period and their source; described floors are spaces.
-  source_code          text references sources(code),
-  metadata             jsonb not null default '{}',
-  status               text not null default 'in_service',
-  tags                 text[] not null default '{}',
-  scenario_id          uuid references scenarios(id) on delete cascade,
-  created_at           timestamptz not null default now(),
-  updated_at           timestamptz not null default now(),
-  constraint buildings_name_not_blank check (btrim(name) <> ''),
-  constraint buildings_height_positive check (height_m is null or height_m >= 0),
-  constraint buildings_status check (status in ('planned', 'under_construction', 'in_service', 'out_of_service', 'demolished')),
-  constraint buildings_footprint_core check (footprint is null or (ST_SRID(footprint) = 4326 and ST_NDims(footprint) = 3)),
-  constraint buildings_tags_known check (tags_known(tags))
-);
-
-comment on table buildings is
-  'A building on a site: footprint, elevation, height, use, lifecycle (CityGML Building, IfcBuilding). Its floors, rooms, zones and units are spaces; its 3D files are the 3d module''s.';
-
-create index buildings_site_idx on buildings (site_id);
-create index buildings_footprint_idx on buildings using gist (footprint);
-create trigger buildings_normalize before insert or update of footprint on buildings
-  for each row execute function normalize_geometry('footprint');
-call declare_object('buildings', 'building', '{site_id}');
-
-create or replace function building_volume(p_building_id uuid)
-returns geometry
-language sql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-  select footprint_volume(b.footprint, coalesce(b.elevation_m, 0), coalesce(b.elevation_m, 0) + b.height_m)
-    from buildings b where b.id = p_building_id;
-$$;
-
-comment on function building_volume(uuid) is
-  'Level-of-detail 1 block of a building: its footprint extruded from its elevation by its height. Derived, never stored.';
-
--- ---------------------------------------------------------------------------
--- spaces — the inside of a building, one tree.
--- ---------------------------------------------------------------------------
-
-create table spaces (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
-  organisation_id  uuid not null references organisations(id) on delete cascade,
-  building_id      uuid not null references buildings(id) on delete cascade,
-  -- The space it is part of: a room on a floor, a room in a zone, a unit
-  -- on a floor. Null for a floor, and for a space that spans floors or
-  -- whose floor is not described (an atrium, a duplex, a hall).
-  parent_id        uuid references spaces(id) on delete cascade,
-  -- floor: a storey; room: a bounded room; zone: a grouping (a thermal
-  -- zone, a fire compartment); unit: a flat, a shop, an office let whole.
-  kind             text not null,
-  name             text not null,
-  -- For a floor: 0 is the ground floor, negative below ground.
-  level            integer,
-  elevation_m      numeric(9, 3),
-  height_m         numeric(9, 3),
-  -- Plan outline, when known.
-  geometry         geometry,
-  source_code      text references sources(code),
-  metadata         jsonb not null default '{}',
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now(),
-  constraint spaces_name_not_blank check (btrim(name) <> ''),
-  constraint spaces_kind check (kind in ('floor', 'room', 'zone', 'unit')),
-  constraint spaces_level_for_floors check ((kind = 'floor') = (level is not null)),
-  constraint spaces_floor_at_top check (kind <> 'floor' or parent_id is null),
-  constraint spaces_not_own_parent check (parent_id is distinct from id),
-  constraint spaces_height_positive check (height_m is null or height_m >= 0),
-  constraint spaces_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint spaces_tags_known check (tags_known(tags))
-);
-
-comment on table spaces is
-  'The spatial structure inside a building, one tree: floors (IfcBuildingStorey, CityGML Storey), rooms (IfcSpace, CityGML BuildingRoom, Brick Room), zones and units. A device is placed in a space; a series observes one.';
-
-create unique index spaces_one_floor_per_level on spaces (building_id, level, scenario_id) nulls not distinct where kind = 'floor';
-create index spaces_building_idx on spaces (building_id);
-create index spaces_parent_idx on spaces (parent_id);
-create index spaces_geometry_idx on spaces using gist (geometry);
-create trigger spaces_normalize before insert or update of geometry on spaces
-  for each row execute function normalize_geometry('geometry');
-
--- A space and the space it is part of are in the same building, and the
--- tree has no loop.
-create or replace function spaces_check()
-returns trigger
-language plpgsql
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  p spaces%rowtype;
-begin
-  if new.parent_id is null then
-    return new;
-  end if;
-  select * into p from spaces where id = new.parent_id;
-  if found and p.building_id <> new.building_id then
-    raise exception 'space_outside_building: % is in another building than %', new.name, p.name
-      using errcode = 'check_violation';
-  end if;
-  if exists (
-    with recursive up as (
-      select s.id, s.parent_id from spaces s where s.id = new.parent_id
-      union
-      select s.id, s.parent_id from spaces s join up on s.id = up.parent_id
-    )
-    select 1 from up where up.id = new.id
-  ) then
-    raise exception 'space_cycle: % would contain itself', new.name using errcode = 'check_violation';
-  end if;
-  return new;
-end;
-$$;
-
-comment on function spaces_check() is
-  'BEFORE INSERT / UPDATE on spaces: the parent is in the same building (space_outside_building) and the tree has no loop (space_cycle).';
-
-create trigger spaces_check before insert or update of parent_id, building_id on spaces
-  for each row execute function spaces_check();
-call declare_object('spaces', 'space', '{parent_id,building_id}');
-
--- ---------------------------------------------------------------------------
--- surfaces — the planar things something is mounted on.
--- ---------------------------------------------------------------------------
-
-create table surfaces (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
-  organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- On a building (a roof face, a facade) or straight on a site (a ground
-  -- area, a car park).
-  building_id      uuid references buildings(id) on delete cascade,
-  site_id          uuid references sites(id) on delete cascade,
-  name             text not null,
-  kind             text not null,
-  -- The face itself, as a 3D polygon when it is known, or its plan outline.
-  geometry         geometry,
-  -- Orientation in degrees: azimuth clockwise from true north (180 = facing
-  -- south), tilt from horizontal (0 = flat). The material is an attribute.
-  azimuth_deg      numeric(6, 2),
-  tilt_deg         numeric(5, 2),
-  source_code      text references sources(code),
-  metadata         jsonb not null default '{}',
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now(),
-  constraint surfaces_name_not_blank check (btrim(name) <> ''),
-  constraint surfaces_kind check (kind in ('roof', 'facade', 'ground', 'carport')),
-  constraint surfaces_one_host check ((building_id is null) <> (site_id is null)),
-  constraint surfaces_azimuth_range check (azimuth_deg is null or (azimuth_deg >= 0 and azimuth_deg < 360)),
-  constraint surfaces_tilt_range check (tilt_deg is null or (tilt_deg >= 0 and tilt_deg <= 180)),
-  constraint surfaces_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint surfaces_tags_known check (tags_known(tags))
-);
-
-comment on table surfaces is
-  'A roof face, a facade, a ground area or a carport: the planar thing a device is mounted on, with its azimuth and tilt (CityGML RoofSurface / WallSurface).';
-
-create index surfaces_building_idx on surfaces (building_id);
-create index surfaces_site_idx on surfaces (site_id);
-create index surfaces_geometry_idx on surfaces using gist (geometry);
-create trigger surfaces_normalize before insert or update of geometry on surfaces
-  for each row execute function normalize_geometry('geometry');
-call declare_object('surfaces', 'surface', '{building_id,site_id}');
-
--- ---------------------------------------------------------------------------
 -- Where an object is.
 -- ---------------------------------------------------------------------------
 
@@ -642,9 +444,6 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   k       text;
-  t       text;
-  cols    text[];
-  col     text;
   parent  uuid;
   found   uuid;
 begin
@@ -657,17 +456,10 @@ begin
   elsif k = p_kind then
     return p_object_id;
   end if;
-  select ok.table_name, ok.parent_columns into t, cols from object_kinds ok where ok.kind = k;
-  if t is null then
-    return null;
-  end if;
-  foreach col in array cols loop
-    execute format('select %I from %s where id = $1', col, t) into parent using p_object_id;
-    if parent is not null and parent <> p_object_id then
-      found := ancestor_of(parent, p_kind);
-      if found is not null then
-        return found;
-      end if;
+  for parent in select parent_id from parents_of(p_object_id) loop
+    found := ancestor_of(parent, p_kind);
+    if found is not null then
+      return found;
     end if;
   end loop;
   return null;
@@ -675,7 +467,7 @@ end;
 $$;
 
 comment on function ancestor_of(uuid, text) is
-  'The object itself when it is of the kind asked, else the nearest object of that kind above it along its parent columns; null when none.';
+  'The object itself when it is of the kind asked, else the nearest object of that kind above it along its parents (parents_of); null when none.';
 
 -- Every object above an object, nearest first: the parents named by its
 -- parent columns, then theirs. `parameter_of()` walks it.
@@ -691,22 +483,14 @@ declare
   seen      uuid[] := array[p_object_id];
   d         integer := 0;
   o         uuid;
-  k         text;
-  t         text;
-  cols      text[];
-  col       text;
   parent    uuid;
 begin
   while cardinality(frontier) > 0 loop
     d := d + 1;
     upcoming := '{}';
     foreach o in array frontier loop
-      select ob.kind into k from objects ob where ob.id = o;
-      select ok.table_name, ok.parent_columns into t, cols from object_kinds ok where ok.kind = k;
-      continue when t is null;
-      foreach col in array cols loop
-        execute format('select %I from %s where id = $1', col, t) into parent using o;
-        if parent is not null and not parent = any (seen) then
+      for parent in select parent_id from parents_of(o) loop
+        if not parent = any (seen) then
           seen := seen || parent;
           upcoming := upcoming || parent;
           object_id := parent;
@@ -722,7 +506,7 @@ end;
 $$;
 
 comment on function ancestors_of(uuid) is
-  'Every object above an object along the parent columns of object_kinds, nearest first, each once, with its kind and its depth.';
+  'Every object above an object along its parents (parents_of), nearest first, each once, with its kind and its depth.';
 
 create or replace function site_of(p_object_id uuid)
 returns uuid
@@ -735,18 +519,6 @@ $$;
 
 comment on function site_of(uuid) is
   'The site an object is on, whatever its kind. Null for an object that is not somewhere (an organisation, a weather point).';
-
-create or replace function building_of(p_object_id uuid)
-returns uuid
-language sql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-  select ancestor_of(p_object_id, 'building');
-$$;
-
-comment on function building_of(uuid) is
-  'The building an object is in or on — a space, a surface, a device — whatever its kind. Null when it is in none.';
 
 create or replace function country_of(p_object_id uuid)
 returns char(2)
@@ -944,122 +716,6 @@ $$;
 comment on function locate_site(uuid, jsonb) is
   'Places a site again from a place in the standard shape: the keys given replace, the others are kept, identifiers are added. Refuses country_is_final, invalid_geometry.';
 
-create or replace function add_building(
-  p_site_id      uuid,
-  p_name         text,
-  p_footprint    geometry default null,
-  p_elevation_m  numeric default null,
-  p_height_m     numeric default null,
-  p_profile      text default null,
-  p_source_code  text default null,
-  p_metadata     jsonb default '{}',
-  p_scenario_id  uuid default null
-)
-returns uuid
-language plpgsql
-security invoker
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  v_id uuid := gen_random_uuid();
-  s    sites%rowtype;
-begin
-  select * into s from sites where id = p_site_id;
-  if not found then
-    raise exception 'site_not_found: %', p_site_id using errcode = 'no_data_found';
-  end if;
-  insert into buildings (id, organisation_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, metadata, scenario_id)
-  values (v_id, s.organisation_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_profile, p_source_code,
-          coalesce(p_metadata, '{}'), coalesce(p_scenario_id, s.scenario_id));
-  return v_id;
-end;
-$$;
-
-comment on function add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid) is
-  'Describes a building on a site, in the site''s organisation and in its scenario, or in the scenario given (a variant that adds a building to a site as it is). The metadata carry what the file it was read from says and no column holds. Refuses invalid_geometry. Returns its id.';
-
-create or replace function add_space(
-  p_building_id  uuid,
-  p_kind         text,
-  p_name         text,
-  p_parent_id    uuid default null,
-  p_level        integer default null,
-  p_geometry     geometry default null,
-  p_elevation_m  numeric default null,
-  p_height_m     numeric default null,
-  p_source_code  text default null,
-  p_metadata     jsonb default '{}'
-)
-returns uuid
-language plpgsql
-security invoker
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  v_id uuid := gen_random_uuid();
-  b    buildings%rowtype;
-begin
-  select * into b from buildings where id = p_building_id;
-  if not found then
-    raise exception 'building_not_found: %', p_building_id using errcode = 'no_data_found';
-  end if;
-  insert into spaces (id, organisation_id, building_id, parent_id, kind, name, level, geometry, elevation_m, height_m,
-                      source_code, metadata, scenario_id)
-  values (v_id, b.organisation_id, p_building_id, p_parent_id, p_kind, p_name, p_level, p_geometry, p_elevation_m, p_height_m,
-          p_source_code, coalesce(p_metadata, '{}'), b.scenario_id);
-  return v_id;
-end;
-$$;
-
-comment on function add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb) is
-  'Describes a floor, a room, a zone or a unit of a building, under another space when a parent is given, with the source it came from and the metadata of its file. Refuses space_outside_building, space_cycle. Returns its id.';
-
--- A roof face, a facade, a ground area, a carport. Without an orientation
--- given, it is derived from the face's 3D polygon.
-create or replace function add_surface(
-  p_host_id      uuid,
-  p_kind         text,
-  p_name         text,
-  p_geometry     geometry default null,
-  p_azimuth_deg  numeric default null,
-  p_tilt_deg     numeric default null,
-  p_source_code  text default null,
-  p_metadata     jsonb default '{}'
-)
-returns uuid
-language plpgsql
-security invoker
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  v_id    uuid := gen_random_uuid();
-  host    objects%rowtype;
-  g       geometry := to_core_geometry(p_geometry);
-  derived record;
-begin
-  select * into host from objects where id = p_host_id;
-  if not found or host.kind not in ('building', 'site') then
-    raise exception 'surface_host_kind: a surface is on a building or a site' using errcode = 'check_violation';
-  end if;
-  if p_azimuth_deg is null and p_tilt_deg is null and p_kind in ('roof', 'facade') then
-    select * into derived from surface_orientation(g);
-    if derived.tilt_deg is null then
-      raise exception 'orientation_unknown: give an azimuth and a tilt, or a 3D polygon of the face' using errcode = 'invalid_parameter_value';
-    end if;
-    p_azimuth_deg := derived.azimuth_deg;
-    p_tilt_deg := derived.tilt_deg;
-  end if;
-  insert into surfaces (id, organisation_id, building_id, site_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata, scenario_id)
-  values (v_id, host.organisation_id,
-          case when host.kind = 'building' then p_host_id end, case when host.kind = 'site' then p_host_id end,
-          p_name, p_kind, g, p_azimuth_deg, p_tilt_deg, p_source_code, coalesce(p_metadata, '{}'), host.scenario_id);
-  return v_id;
-end;
-$$;
-
-comment on function add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb) is
-  'Describes a roof face, a facade, a ground area or a carport on a building or a site, in its host''s scenario; a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
-
 -- ---------------------------------------------------------------------------
 -- Row level security of what is not an object
 -- ---------------------------------------------------------------------------
@@ -1076,11 +732,7 @@ create policy objects_write on objects
 grant select, insert, update, delete on objects to authenticated, service_role;
 
 grant execute on function metric_srid(geometry), area_m2(geometry), to_core_geometry(geometry),
-  footprint_volume(geometry, numeric, numeric), surface_orientation(geometry), building_volume(uuid),
-  ancestor_of(uuid, text), ancestors_of(uuid), site_of(uuid), building_of(uuid), country_of(uuid),
+  parents_of(uuid), ancestor_of(uuid, text), ancestors_of(uuid), site_of(uuid), country_of(uuid),
   place_check(jsonb), place_of(uuid),
-  create_scenario(uuid, text, uuid, text), create_site(uuid, text, jsonb, text, text, uuid), locate_site(uuid, jsonb),
-  add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid),
-  add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb),
-  add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb)
+  create_scenario(uuid, text, uuid, text), create_site(uuid, text, jsonb, text, text, uuid), locate_site(uuid, jsonb)
   to authenticated, service_role;

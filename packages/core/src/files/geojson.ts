@@ -2,8 +2,9 @@
  * A site, or every site taking part in a project, as one GeoJSON
  * FeatureCollection, written by `@nexgen-os/geojson`.
  *
- * The project's perimeter, the sites, their buildings, their roof faces,
- * facades and ground areas, their devices, each a feature with its
+ * The project's perimeter, the sites, their devices and — when the `3d`
+ * module is installed — their buildings, their roof faces, facades and
+ * ground areas and where each device is placed, each a feature with its
  * columns, its attributes (`attributes_of()`), the identifiers it is known
  * by and the runs computed on it, so that a scenario can be shown beside
  * the places it is about. Coordinates are WGS 84 longitude, latitude and
@@ -159,28 +160,38 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   if (target.siteId && sites.rows.length === 0) throw new Error(`site_not_found: ${target.siteId}`);
   const found = sites.rows.map((s) => s.id);
 
-  const buildings = await db.query<Row>(
-    `select b.id, b.name, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
-            b.status, b.tags, b.source_code, b.metadata,
-            ${geojson('b.footprint')} geometry
-       from buildings b where b.site_id = any($1::uuid[]) and ${visible('b')}
-      order by b.created_at, b.id`,
-    [found, chain],
-  );
-  const surfaces = await db.query<Row>(
-    `select f.id, f.name, f.kind surface_kind, coalesce(f.site_id, b.site_id) site_id, f.building_id,
-            f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.tags, f.source_code, f.metadata,
-            ${geojson('f.geometry')} geometry
-       from surfaces f left join buildings b on b.id = f.building_id
-      where coalesce(f.site_id, b.site_id) = any($1::uuid[]) and ${visible('f')}
-      order by f.created_at, f.id`,
-    [found, chain],
-  );
+  // The physical description of the sites is the `3d` module's, read only
+  // where it is installed.
+  const described = (await db.query<{ installed: boolean }>(`select to_regclass('three_d.buildings') is not null installed`)).rows[0].installed;
+  const buildings = described
+    ? (await db.query<Row>(
+        `select b.id, b.name, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
+                b.status, b.tags, b.source_code, b.metadata,
+                ${geojson('b.footprint')} geometry
+           from three_d.buildings b where b.site_id = any($1::uuid[]) and ${visible('b')}
+          order by b.created_at, b.id`,
+        [found, chain],
+      )).rows
+    : [];
+  const surfaces = described
+    ? (await db.query<Row>(
+        `select f.id, f.name, f.kind surface_kind, coalesce(f.site_id, b.site_id) site_id, f.building_id,
+                f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.tags, f.source_code, f.metadata,
+                ${geojson('f.geometry')} geometry
+           from three_d.surfaces f left join three_d.buildings b on b.id = f.building_id
+          where coalesce(f.site_id, b.site_id) = any($1::uuid[]) and ${visible('f')}
+          order by f.created_at, f.id`,
+        [found, chain],
+      )).rows
+    : [];
   const devices = await db.query<Row>(
-    `select d.id, d.name, d.device_type, d.site_id, d.building_id, d.space_id, d.surface_id, d.manufacturer, d.model, d.serial_number,
+    `select d.id, d.name, d.device_type, d.site_id,
+            ${described ? 'p.building_id, p.space_id, p.surface_id,' : ''}
+            d.manufacturer, d.model, d.serial_number,
             d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text, d.tags, d.metadata,
             d.source_code, ${geojson('d.geometry')} geometry
-       from devices d where d.site_id = any($1::uuid[]) and ${visible('d')}
+       from devices d ${described ? 'left join three_d.placements p on p.device_id = d.id' : ''}
+      where d.site_id = any($1::uuid[]) and ${visible('d')}
       order by d.created_at, d.id`,
     [found, chain],
   );
@@ -188,8 +199,8 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const all: [FeatureKind, Row][] = [
     ...projects.map((r) => ['project', r] as [FeatureKind, Row]),
     ...sites.rows.map((r) => ['site', r] as [FeatureKind, Row]),
-    ...buildings.rows.map((r) => ['building', r] as [FeatureKind, Row]),
-    ...surfaces.rows.map((r) => ['surface', r] as [FeatureKind, Row]),
+    ...buildings.map((r) => ['building', r] as [FeatureKind, Row]),
+    ...surfaces.map((r) => ['surface', r] as [FeatureKind, Row]),
     ...devices.rows.map((r) => ['device', r] as [FeatureKind, Row]),
   ];
   const ids = all.map(([, r]) => r.id);

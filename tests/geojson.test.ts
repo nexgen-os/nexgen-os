@@ -1,5 +1,6 @@
-// A site goes out as GeoJSON any web map reads: the farm of example 4, its
-// buildings, roof faces, ground area and arrays, with their attributes,
+// A site goes out as GeoJSON any web map reads: the farm of example 4 and
+// its arrays, with the buildings, roof faces and ground area the `3d`
+// module describes (tests/fixtures/farm-3d.sql), with their attributes,
 // identifiers and yield runs, and the sources it owes. The open export
 // leaves out the street, the serial numbers and whatever came from a source
 // that may not be passed on; a scenario shows what it adds; a project goes
@@ -24,8 +25,9 @@ let shedRoof: string;
 let shedArray: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['community', 'grid']);
+  db = await freshDatabase(['3d', 'community', 'grid']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
+  await db.exec(await readFile(join(repoRoot, 'tests', 'fixtures', 'farm-3d.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
   await organisation(db, 'A neighbour', USER_B);
@@ -42,14 +44,15 @@ beforeAll(async () => {
     [BARN],
   );
   // A shed described from that layer, its roof and the array on it.
-  shed = await insert(db, 'buildings', {
+  shed = await insert(db, 'three_d.buildings', {
     organisation_id: ORG, site_id: SITE, name: 'Shed', source_code: 'roof_layer', height_m: 4,
     footprint: { type: 'Polygon', coordinates: [[[2.7212, 50.7716], [2.7212, 50.7718], [2.7214, 50.7718], [2.7214, 50.7716], [2.7212, 50.7716]]] },
   });
-  shedRoof = await insert(db, 'surfaces', { organisation_id: ORG, building_id: shed, name: 'Shed roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20, source_code: 'roof_layer' });
+  shedRoof = await insert(db, 'three_d.surfaces', { organisation_id: ORG, building_id: shed, name: 'Shed roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20, source_code: 'roof_layer' });
   shedArray = await insert(db, 'devices', {
-    organisation_id: ORG, site_id: SITE, building_id: shed, surface_id: shedRoof, name: 'Shed array', device_type: 'solar', rated_power_kw: 6, serial_number: 'SN-0042',
+    organisation_id: ORG, site_id: SITE, name: 'Shed array', device_type: 'solar', rated_power_kw: 6, serial_number: 'SN-0042',
   });
+  await db.query('select three_d.place_device($1, $2, null, $3)', [shedArray, shed, shedRoof]);
 });
 
 afterAll(async () => {

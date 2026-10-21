@@ -2,10 +2,11 @@
  * A Home Assistant home in the model, and back.
  *
  * `@nexgen-os/homeassistant` reads a snapshot into plain shapes; this
- * importer writes them through the gestures of the core, and the exporter
+ * importer writes them through the gestures of the core and of the `3d`
+ * module, and the exporter
  * reads a building back into the same shapes:
  *
- *   space   → `add_space()`, kind floor or room (a floor's level is the
+ *   space   → `three_d.add_space()`, kind floor or room (a floor's level is the
  *             file's, else its rank)
  *   device  → `install_device()`, type `sensor_box`, in its room, with its
  *             nameplate, in service
@@ -19,8 +20,8 @@
  * that the export gives the shapes back as they came.
  */
 import type { Home, HomeDevice, HomePoint, HomeSpace } from '@nexgen-os/homeassistant';
-import type { Db } from '../db.js';
-import { store } from '../series.js';
+import type { Db } from '@nexgen-os/core';
+import { store } from '@nexgen-os/core';
 
 export const HOMEASSISTANT_SOURCE = 'homeassistant';
 
@@ -93,23 +94,25 @@ export async function importHomeAssistant(db: Db, target: HomeTarget, home: Home
   const floors = home.spaces.filter((s) => s.kind === 'floor');
   for (const [i, s] of floors.entries()) {
     spaces.set(s.key, await id(db,
-      `select add_space($1, 'floor', $2, null, $3, null, null, null, $4, $5) id`,
+      `select three_d.add_space($1, 'floor', $2, null, $3, null, null, null, $4, $5) id`,
       [buildingId, s.name, s.level ?? i, HOMEASSISTANT_SOURCE, { ha: { key: s.key, level: s.level, extra: s.extra } }]));
   }
   for (const s of home.spaces.filter((x) => x.kind === 'room')) {
     spaces.set(s.key, await id(db,
-      `select add_space($1, 'room', $2, $3, null, null, null, null, $4, $5) id`,
+      `select three_d.add_space($1, 'room', $2, $3, null, null, null, null, $4, $5) id`,
       [buildingId, s.name, (s.parent && spaces.get(s.parent)) || null, HOMEASSISTANT_SOURCE, { ha: { key: s.key, parent: s.parent, extra: s.extra } }]));
   }
 
   const devices = new Map<string, string>();
   for (const d of home.devices) {
     const room = (d.space && spaces.get(d.space)) || null;
-    devices.set(d.key, await id(db,
-      `select install_device($1, 'sensor_box', $2, $3, p_source_code => $4, p_nameplate => $5, p_metadata => $6, p_status => 'in_service') id`,
-      [siteId, d.name, room ? { space_id: room } : { building_id: buildingId }, HOMEASSISTANT_SOURCE,
+    const device = await id(db,
+      `select install_device($1, 'sensor_box', $2, p_source_code => $3, p_nameplate => $4, p_metadata => $5, p_status => 'in_service') id`,
+      [siteId, d.name, HOMEASSISTANT_SOURCE,
        { manufacturer: d.manufacturer, model: d.model, serial_number: d.serialNumber },
-       { ha: { key: d.key, space: d.space, extra: d.extra } }]));
+       { ha: { key: d.key, space: d.space, extra: d.extra } }]);
+    await db.query('select three_d.place_device($1, $2, $3)', [device, buildingId, room]);
+    devices.set(d.key, device);
   }
 
   // One series per point, whether the recorder kept states for it or not:
@@ -147,19 +150,21 @@ interface Stored<T> {
 /** A building read back as a home: the spaces, devices and points an import wrote, with their readings in the units they came in. */
 export async function exportHomeAssistant(db: Db, buildingId: string): Promise<Home> {
   const floors = await db.query<Stored<{ key: string; level: number | null; extra: Record<string, unknown> }>>(
-    `select name, metadata->'ha' ha from spaces where building_id = $1 and kind = 'floor' and metadata ? 'ha' order by level`, [buildingId]);
+    `select name, metadata->'ha' ha from three_d.spaces where building_id = $1 and kind = 'floor' and metadata ? 'ha' order by level`, [buildingId]);
   const rooms = await db.query<Stored<{ key: string; parent: string | null; extra: Record<string, unknown> }>>(
-    `select name, metadata->'ha' ha from spaces where building_id = $1 and kind = 'room' and metadata ? 'ha' order by name`, [buildingId]);
+    `select name, metadata->'ha' ha from three_d.spaces where building_id = $1 and kind = 'room' and metadata ? 'ha' order by name`, [buildingId]);
   const devices = await db.query<Stored<{ key: string; space: string | null; extra: Record<string, unknown> }> & {
     manufacturer: string | null; model: string | null; serial_number: string | null;
   }>(
-    `select name, metadata->'ha' ha, manufacturer, model, serial_number from devices where building_id = $1 and metadata ? 'ha' order by name`,
+    `select d.name, d.metadata->'ha' ha, d.manufacturer, d.model, d.serial_number
+       from devices d join three_d.placements p on p.device_id = d.id
+      where p.building_id = $1 and d.metadata ? 'ha' order by d.name`,
     [buildingId]);
   const points = await db.query<{ id: string; unit: string; quantity: string; kind: HomePoint['role']; value_kind: HomePoint['valueKind'];
     ha: { key: string; device: string | null; space: string | null; unit: string | null; binary: boolean; converted: boolean; extra: Record<string, unknown> } }>(
     `select se.id, q.unit, se.quantity_code quantity, se.kind, se.value_kind, se.metadata->'ha' ha
        from series se join quantities q on q.code = se.quantity_code
-      where se.metadata ? 'ha' and building_of(se.object_id) = $1
+      where se.metadata ? 'ha' and three_d.building_of(se.object_id) = $1
       order by se.metadata->'ha'->>'key'`, [buildingId]);
 
   const spaces: HomeSpace[] = [

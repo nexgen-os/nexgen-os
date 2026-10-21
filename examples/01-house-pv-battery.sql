@@ -1,11 +1,12 @@
 -- Example 1 — a house with a PV system, in Seville. Needs the core only.
 --
--- A family's site, a house with two roof faces, a connection point, a PV
--- system on the south face behind the meter, an inverter and a smart meter
--- whose readings are series, a day of quarter-hour production, an energy
--- label that changed after insulation, a drone video and the permit as
--- documents, a battery in a scenario, and a production estimate recorded as
--- a run.
+-- A family's site — the house and its plot, at its address — a connection
+-- point, a PV system behind the meter, an inverter and a smart meter whose
+-- readings are series, a day of quarter-hour production, a drone video and
+-- the permit as documents, a battery in a scenario, and a production
+-- estimate recorded as a run with the orientation it assumed. The house as
+-- a building, its roof faces and its energy label are a physical
+-- description, the `3d` module's (examples 02, 05, 06, 07).
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000100000001', 'The Moreno family');
@@ -14,24 +15,15 @@ insert into sites (id, organisation_id, name, country, street, postal_code, city
   ('00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000001', 'Calle Betis 14', 'ES', 'Calle Betis 14', '41010', 'Sevilla', 'residential',
    ST_GeomFromText('POLYGON((-5.9962 37.3845, -5.9959 37.3845, -5.9959 37.3848, -5.9962 37.3848, -5.9962 37.3845))', 4326));
 
-insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
-  ('00000000-0000-4000-8000-000100000020', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', 'House', 'residential',
-   ST_GeomFromText('POLYGON((-5.99615 37.38455, -5.99595 37.38455, -5.99595 37.38470, -5.99615 37.38470, -5.99615 37.38455))', 4326),
-   11, 7.5);
-
-insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg) values
-  ('00000000-0000-4000-8000-000100000031', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'South roof face', 'roof', 180, 30),
-  ('00000000-0000-4000-8000-000100000032', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'North roof face', 'roof', 0, 30);
-
 insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000100000040', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', 'Supply point', '843000000000000123', 'gs1_gsrn', 'electricity', 'both');
 
-insert into devices (id, organisation_id, site_id, building_id, surface_id, name, device_type, manufacturer, model, rated_power_kw, unit_count, installation_date, tags) values
-  ('00000000-0000-4000-8000-000100000051', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000020', '00000000-0000-4000-8000-000100000031',
+insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, unit_count, installation_date, tags) values
+  ('00000000-0000-4000-8000-000100000051', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
    'PV system', 'solar', 'Trina', 'Vertex S 425', 3.825, 9, '2024-05-10', '{solar,electric}'),
-  ('00000000-0000-4000-8000-000100000052', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000020', null,
+  ('00000000-0000-4000-8000-000100000052', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
    'Inverter', 'inverter', 'Huawei', 'SUN2000-4KTL', 4, 1, '2024-05-10', '{electric}'),
-  ('00000000-0000-4000-8000-000100000053', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', null, null,
+  ('00000000-0000-4000-8000-000100000053', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
    'Smart meter', 'meter', 'Sagemcom', 'T211', null, 1, '2020-02-01', '{electric}');
 
 -- The PV system feeds the inverter, which feeds the connection point; all
@@ -68,36 +60,30 @@ select store('00000000-0000-4000-8000-000100000072', array_agg(d order by d),
              array_agg((48210 + 6.2 * (extract(epoch from d - '2026-06-01'::timestamptz) / 86400))::float8 order by d))
   from generate_series('2026-06-01'::timestamptz, '2026-06-30', '1 day') d;
 
--- The energy label, before and after the insulation works of 2025.
+-- What the household takes in a year, from its invoices.
 insert into attributes (object_id, property_code, value, valid_from, valid_to, source) values
-  ('00000000-0000-4000-8000-000100000020', 'energy_label', '"E"', null, '2025-09-01', 'energy performance certificate 2019'),
-  ('00000000-0000-4000-8000-000100000020', 'energy_label', '"C"', '2025-09-01', null, 'energy performance certificate 2025'),
-  ('00000000-0000-4000-8000-000100000020', 'floor_area', '142', null, null, 'cadastre'),
-  ('00000000-0000-4000-8000-000100000020', 'year_built', '1998', null, null, 'cadastre'),
-  ('00000000-0000-4000-8000-000100000020', 'floors_above_ground', '2', null, null, 'cadastre'),
-  ('00000000-0000-4000-8000-000100000031', 'material', '"tiles"', null, null, 'drone survey'),
-  ('00000000-0000-4000-8000-000100000032', 'material', '"tiles"', null, null, 'drone survey'),
-  ('00000000-0000-4000-8000-000100000031', 'roof_area', '38.5', null, null, 'measured on the drone orthophoto'),
   ('00000000-0000-4000-8000-000100000010', 'annual_consumption', '4300', null, null, 'supplier invoices 2025');
 
 insert into documents (object_id, name, kind, uri, media_type, source, captured_at) values
-  ('00000000-0000-4000-8000-000100000020', 'Orbit video', 'video', 's3://nexgen-os-examples/house/orbit.mp4', 'video/mp4', 'drone flight', '2026-03-14'),
-  ('00000000-0000-4000-8000-000100000020', 'Building permit 1998', 'permit', 's3://nexgen-os-examples/house/permit-1998.pdf', 'application/pdf', 'town hall', null),
+  ('00000000-0000-4000-8000-000100000010', 'Orbit video', 'video', 's3://nexgen-os-examples/house/orbit.mp4', 'video/mp4', 'drone flight', '2026-03-14'),
+  ('00000000-0000-4000-8000-000100000010', 'Building permit 1998', 'permit', 's3://nexgen-os-examples/house/permit-1998.pdf', 'application/pdf', 'town hall', null),
   ('00000000-0000-4000-8000-000100000051', 'Module datasheet', 'datasheet', 'https://static.trinasolar.com/vertex-s-425.pdf', 'application/pdf', 'manufacturer', null);
 
 -- A variant: add a battery. Only visible in the scenario.
 insert into scenarios (id, organisation_id, name, description) values
   ('00000000-0000-4000-8000-000100000080', '00000000-0000-4000-8000-000100000001', 'Add a 10 kWh battery', 'Store the midday surplus for the evening.');
 
-insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
-  ('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000020',
+insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
+  ('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
    'Battery', 'battery', 'BYD', 'HVS 10.2', 5, 'planned', '00000000-0000-4000-8000-000100000080');
 select connect_device('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000040');
 
 insert into attributes (object_id, property_code, value, scenario_id, source) values
   ('00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', '00000000-0000-4000-8000-000100000080', 'datasheet');
 
--- An estimate from PVGIS, recorded as a run of the solar module.
+-- An estimate from PVGIS, recorded as a run of the solar module, with the
+-- orientation of the modules it assumed: south, 30° (an array of the
+-- `solar` module carries its own azimuth and tilt).
 insert into modules (code, name, version, schema_name, requires_core_min) values
   ('solar', 'Solar', '0.1.0', 'solar', '0.1.0')
 on conflict (code) do nothing;
@@ -108,8 +94,8 @@ select record_run('solar', 'pvgis-5.3+core-0.1.0', '00000000-0000-4000-8000-0001
 
 -- Queries a page would run
 -- The house as a card:
---   select b.name, b.height_m, area_m2(b.footprint) area, attributes_of(b.id) from buildings b
---    where b.id = '00000000-0000-4000-8000-000100000020';
+--   select s.name, s.city, area_m2(s.geometry) plot_area, attributes_of(s.id) from sites s
+--    where s.id = '00000000-0000-4000-8000-000100000010';
 -- Hourly production on the sunny day:
 --   select * from resample('00000000-0000-4000-8000-000100000071', '2026-06-21', '2026-06-22', '1 hour');
 -- Daily offtake from the register:

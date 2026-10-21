@@ -10,7 +10,7 @@ import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis } from '@nexgen-os/pvgis';
 import { remainingAfterLosses, withSoiling } from '../modules/solar/src/pvwatts.js';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 
 const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/engines/fake.mjs`, 'pv_yield'] };
@@ -50,13 +50,10 @@ beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
   site = await insert(db, 'sites', { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  const building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Barn', footprint: square(4.35, 50.85, 30, 20), height_m: 8 });
-  const southFace = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'South pitch', kind: 'roof', azimuth_deg: 180, tilt_deg: 30 });
-  const eastFace = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'East pitch', kind: 'roof', azimuth_deg: 90, tilt_deg: 30 });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, building_id: building, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
+  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
-  south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'South', 'roof_parallel', 20) returning id`, [org, system, southFace])).rows[0].id;
-  east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc) values ($1, $2, $3, 'East', 'roof_parallel', 10) returning id`, [org, system, eastFace])).rows[0].id;
+  south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
+  east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
 });
 
 afterAll(async () => {
@@ -74,8 +71,8 @@ describe('solar.soiling_of', () => {
 
   it('refuses a value outside 0 to 1 and an object the property does not apply to', async () => {
     await expect(soiling(east, 2, 'a percentage by mistake')).rejects.toThrow();
-    const building = (await one<{ id: string }>(db, 'select id from buildings where site_id = $1', [site])).id;
-    await expect(soiling(building, 0.02, 'a building')).rejects.toThrow(/property_not_applicable/);
+    const project = await insert(db, 'projects', { organisation_id: org, name: 'Barn study', country: 'BE' });
+    await expect(soiling(project, 0.02, 'a project')).rejects.toThrow(/property_not_applicable/);
   });
 });
 

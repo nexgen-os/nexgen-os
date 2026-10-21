@@ -33,7 +33,7 @@ import {
   withinLocalYears,
 } from '../modules/solar/src/pvwatts.js';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, square } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
 const FAIMAN = { u0: 25, u1: 6.84 };
@@ -293,16 +293,13 @@ describe('a pvwatts yield run', () => {
     db = await freshDatabase(['solar']);
     org = await organisation(db, 'A cooperative', USER_A);
     site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    const building = await insert(db, 'buildings', { organisation_id: org, site_id: site, name: 'Hall', footprint: square(4.35, 50.85, 30, 20), height_m: 8 });
-    const southFace = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'South pitch', kind: 'roof', azimuth_deg: 180, tilt_deg: 30 });
-    const eastFace = await insert(db, 'surfaces', { organisation_id: org, building_id: building, name: 'East pitch', kind: 'roof', azimuth_deg: 90, tilt_deg: 30 });
-    system = await insert(db, 'devices', { organisation_id: org, site_id: site, building_id: building, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+    system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
     // The south array's modules have PVWatts parameters; the east array's have none and are bifacial.
     const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvwatts', '{"pdc0": 400, "gamma_pdc": -0.0037}')`, [product]);
-    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, module_product_id, module_count) values ($1, $2, $3, 'South', 'roof_parallel', $4, 50)`, [org, system, southFace, product]);
-    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, surface_id, name, mounting, kwp_dc, bifacial) values ($1, $2, $3, 'East', 'roof_parallel', 10, true)`, [org, system, eastFace]);
+    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, module_product_id, module_count) values ($1, $2, 180, 30, 'South', 'roof_parallel', $3, 50)`, [org, system, product]);
+    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc, bifacial) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10, true)`, [org, system]);
     pvcalc = await fixture('pvgis-pvcalc-brussels-south30.json');
   });
 

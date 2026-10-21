@@ -4,8 +4,8 @@
  * geometry taken from a file's reference system to WGS 84, and a face
  * written as a surface with its orientation against true north.
  */
-import type { Db } from '../db.js';
-import { orientation, polygonWkt, type Point } from '../geometry.js';
+import type { Db } from '@nexgen-os/core';
+import { orientation, polygonWkt, type Vertex as Point } from '@nexgen-os/core';
 
 /** The reference system of a file's coordinates: an EPSG code, or a PROJ string (a local transverse Mercator). */
 export interface Crs {
@@ -29,7 +29,7 @@ export async function organisationOfSite(db: Db, siteId: string): Promise<string
 /**
  * Refuses `already_imported` when one of the identifiers already names an
  * object of the organisation: a file is imported once
- * ([0036](../../../../docs/decisions/0036-a-file-is-imported-once.md)).
+ * ([0036](../../../docs/decisions/0036-a-file-is-imported-once.md)).
  */
 export async function refuseKnown(db: Db, organisationId: string, scheme: string, values: string[], label: string): Promise<void> {
   const known = await db.query<{ value: string; object_id: string }>(
@@ -51,7 +51,7 @@ export function toWgs84(expr: string, k: number, p: number): string {
 export const round = (n: number, digits: number) => Math.round(n * 10 ** digits) / 10 ** digits;
 
 /**
- * A face of a building as a surface, through `add_surface()`: its tilt
+ * A face of a building as a surface, through `three_d.add_surface()`: its tilt
  * from the outward normal, its azimuth against true north — the face's
  * centre and a point ten metres down its slope, both taken to WGS 84,
  * whatever the projection's convergence. Returns null for a face without
@@ -68,7 +68,7 @@ export async function addFace(
   const horizontal = Math.hypot(normal[0], normal[1]);
   const sloped = tilt >= 1 && horizontal > 0;
   const r = await db.query<{ id: string }>(
-    `select add_surface($1, $2, $3, ${toWgs84('ST_GeomFromText($4)', 5, 6)},
+    `select three_d.add_surface($1, $2, $3, ${toWgs84('ST_GeomFromText($4)', 5, 6)},
                         case when $7::boolean then round(degrees(ST_Azimuth(
                           ${toWgs84('ST_MakePoint($8, $9)', 5, 6)}::geography,
                           ${toWgs84('ST_MakePoint($10, $11)', 5, 6)}::geography))::numeric, 2) end,

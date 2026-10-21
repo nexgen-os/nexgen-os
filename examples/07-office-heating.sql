@@ -1,5 +1,5 @@
 -- Example 7 — an office building and its heating, in Munich. Needs the
--- core only.
+-- `3d` module.
 --
 -- A property company's site, an office block with four facades and their
 -- U-values, a gas boiler and a heat pump in service, a gas meter and an
@@ -13,11 +13,11 @@ insert into organisations (id, name) values
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
   ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', 'Rosenheimer Straße 145', 'DE', 'Rosenheimer Straße 145', '81671', 'München', 'DE-BY', 'office');
 
-insert into buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into three_d.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Office block', 'office',
    ST_GeomFromText('POLYGON((11.6070 48.1240, 11.6076 48.1240, 11.6076 48.1243, 11.6070 48.1243, 11.6070 48.1240))', 4326), 520, 21);
 
-insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg) values
+insert into three_d.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg) values
   ('00000000-0000-4000-8000-000700000031', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000020', 'South facade', 'facade', 180, 90),
   ('00000000-0000-4000-8000-000700000032', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000020', 'North facade', 'facade', 0, 90),
   ('00000000-0000-4000-8000-000700000033', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000020', 'East facade', 'facade', 90, 90),
@@ -26,9 +26,9 @@ insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg,
 
 -- U-values and materials today, from the 2022 energy audit.
 insert into attributes (object_id, property_code, value, source)
-select id, 'u_value', '1.4', 'energy audit 2022' from surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
+select id, 'u_value', '1.4', 'energy audit 2022' from three_d.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 insert into attributes (object_id, property_code, value, source)
-select id, 'material', '"concrete, 1979 cladding"', 'energy audit 2022' from surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
+select id, 'material', '"concrete, 1979 cladding"', 'energy audit 2022' from three_d.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 insert into attributes (object_id, property_code, value, source) values
   ('00000000-0000-4000-8000-000700000035', 'material', '"bitumen, insulated 2015"', 'energy audit 2022'),
   ('00000000-0000-4000-8000-000700000020', 'year_built', '1979', 'energy audit 2022'),
@@ -42,13 +42,18 @@ insert into meters (id, organisation_id, site_id, name, identifier, scheme, reso
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
   ('00000000-0000-4000-8000-000700000042', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Gas', '400000000000000312', 'gs1_gsrn', 'gas', 'offtake');
 
-insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, status, installation_date) values
-  ('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020',
+insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, installation_date) values
+  ('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Gas condensing boiler', 'boiler', 'Viessmann', 'Vitocrossal 300', 320, 'in_service', '2008-09-15'),
-  ('00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020',
+  ('00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Heat pump 1', 'heat_pump', 'Viessmann', 'Vitocal 300-A Pro', 120, 'in_service', '2021-11-02'),
-  ('00000000-0000-4000-8000-000700000053', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020',
+  ('00000000-0000-4000-8000-000700000053', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Air handling unit', 'hvac', 'Trox', 'X-CUBE 25', 18, 'in_service', '2015-05-20');
+
+-- All three are in the office block.
+select three_d.place_device(d, '00000000-0000-4000-8000-000700000020')
+  from unnest(array['00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000052',
+                    '00000000-0000-4000-8000-000700000053']::uuid[]) d;
 
 insert into links (subject_id, type_code, object_id) values
   ('00000000-0000-4000-8000-000700000051', 'serves', '00000000-0000-4000-8000-000700000020'),
@@ -85,11 +90,12 @@ insert into scenarios (id, organisation_id, name, description) values
 
 insert into attributes (object_id, property_code, value, scenario_id, source)
 select id, 'u_value', '0.24', '00000000-0000-4000-8000-000700000080', 'insulation design 2026'
-  from surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
+  from three_d.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 
-insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
-  ('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020',
+insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
+  ('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010',
    'Heat pump 2', 'heat_pump', 'Viessmann', 'Vitocal 300-A Pro', 160, 'planned', '00000000-0000-4000-8000-000700000080');
+select three_d.place_device('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000020');
 select connect_device('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000041');
 
 insert into modules (code, name, version, schema_name, requires_core_min) values
@@ -104,7 +110,7 @@ select record_run('thermal', 'heat-loss-0.1.0', '00000000-0000-4000-8000-0007000
 -- Queries a page would run
 -- The envelope today and in the scenario:
 --   select s.name, attributes_of(s.id)->>'u_value' today, attributes_of(s.id, now(), '00000000-0000-4000-8000-000700000080')->>'u_value' after
---     from surfaces s where s.building_id = '00000000-0000-4000-8000-000700000020' order by s.name;
+--     from three_d.surfaces s where s.building_id = '00000000-0000-4000-8000-000700000020' order by s.name;
 -- Daily gas over the week:
 --   select bucket::date, value m3 from resample('00000000-0000-4000-8000-000700000071', '2026-01-19', '2026-01-26', '1 day');
 -- Heat loss, reality against scenario:

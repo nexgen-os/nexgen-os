@@ -6,8 +6,10 @@
 -- modules with one orientation each (pvlib's Array, PVsyst's orientation,
 -- OpenSolar's module group, Orange Button's PVArray). The physics of a
 -- module or an inverter product is attached to its row of the core
--- `device_directory`, in pvlib's parameter names. A far horizon belongs to
--- a site or a surface. A yield profile is a named set of modelling choices
+-- `device_directory`, in pvlib's parameter names. An array carries its own
+-- azimuth and tilt; the roof face it sits on, when the `3d` module
+-- describes one, is a dated `placed_on` link (`three_d.place_array`). A far
+-- horizon belongs to a site or a surface. A yield profile is a named set of modelling choices
 -- with an ordered list of losses, so that a run says what it was computed
 -- with.
 --
@@ -203,12 +205,10 @@ create table solar.pv_arrays (
   id                   uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
   organisation_id      uuid not null references organisations(id) on delete cascade,
   pv_system_id         uuid not null references solar.pv_systems(id) on delete cascade,
-  -- The roof face, facade or ground area it sits on. Null for a rack or a
-  -- tracker described without one.
-  surface_id           uuid references surfaces(id) on delete set null,
   name                 text not null,
-  -- Taken from the surface when not given; given for a rack on a flat roof
-  -- or a ground mount. For a tracker: its axis, or null.
+  -- Its own, always: tilted frames on a flat roof differ from the roof. The
+  -- `3d` module fills them from the surface it places the array on when
+  -- they are not given. For a tracker: its axis, or null.
   azimuth_deg          numeric(6, 2),
   tilt_deg             numeric(5, 2),
   -- How the back of the modules is ventilated, which sets their temperature:
@@ -246,30 +246,18 @@ create table solar.pv_arrays (
 );
 
 comment on table solar.pv_arrays is
-  'A group of modules with one orientation in a PV system: the surface it sits on, azimuth and tilt, mounting, module and inverter products and counts, string layout, albedo (pvlib Array, PVsyst orientation, OpenSolar module group, Orange Button PVArray).';
+  'A group of modules with one orientation in a PV system: azimuth and tilt, mounting, module and inverter products and counts, string layout, albedo (pvlib Array, PVsyst orientation, OpenSolar module group, Orange Button PVArray).';
 
 create index pv_arrays_system_idx on solar.pv_arrays (pv_system_id);
-create index pv_arrays_surface_idx on solar.pv_arrays (surface_id);
 
--- BEFORE INSERT / UPDATE: the surface is on the system's site; orientation
--- comes from the surface and DC power from the module product when they
--- are not given.
+-- BEFORE INSERT / UPDATE: DC power comes from the module product when it
+-- is not given.
 create or replace function solar.pv_arrays_fill()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-declare
-  s surfaces%rowtype;
 begin
-  if new.surface_id is not null then
-    select * into s from surfaces where id = new.surface_id;
-    if site_of(new.surface_id) is distinct from (select site_id from devices where id = new.pv_system_id) then
-      raise exception 'array_outside_system_site' using errcode = 'check_violation';
-    end if;
-    new.azimuth_deg := coalesce(new.azimuth_deg, s.azimuth_deg);
-    new.tilt_deg := coalesce(new.tilt_deg, s.tilt_deg);
-  end if;
   if new.kwp_dc is null and new.module_count is not null and new.module_product_id is not null then
     new.kwp_dc := (select unit_power_kw * new.module_count from device_directory where id = new.module_product_id);
   end if;
@@ -279,7 +267,7 @@ $$;
 
 create trigger pv_arrays_fill before insert or update on solar.pv_arrays
   for each row execute function solar.pv_arrays_fill();
-call declare_object('solar.pv_arrays', 'pv_array', '{pv_system_id,surface_id}');
+call declare_object('solar.pv_arrays', 'pv_array', '{pv_system_id}');
 
 -- DC power of a system: the sum of its arrays, or its own figure when it
 -- has none. In a scenario, the arrays of reality and of the scenario and

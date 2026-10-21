@@ -94,11 +94,11 @@ describe('doctor', () => {
 });
 
 describe('status and the command line', () => {
-  it('counts organisations, sites, buildings and series', async () => {
+  it('counts organisations, sites, devices and series', async () => {
     const org = await organisation(db, 'Status firm');
     await insert(db, 'sites', { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
     const r = await status(sqlClient(db));
-    expect(r).toMatchObject({ schemaVersion: '0.3.0', packs: ['fr'], counts: { organisations: 1, sites: 1, buildings: 0, series: 0 } });
+    expect(r).toMatchObject({ schemaVersion: '0.3.0', packs: ['fr'], counts: { organisations: 1, sites: 1, devices: 0, series: 0 } });
     expect([...r.modules].sort()).toEqual(['grid', 'solar', 'weather']);
     const cli = await run(['status']);
     expect(cli.code).toBe(0);
@@ -125,7 +125,7 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: billing, community, consumption, grid, solar, tasks, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: 3d, billing, community, consumption, grid, solar, tasks, weather/);
   });
 
   it('names the weeks whose values sit in the default partition with no weekly partition, and the weeks to come once it partitions', async () => {

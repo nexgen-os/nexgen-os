@@ -103,8 +103,6 @@ interface SystemRow {
   kwp_dc: string | null;
   lon: number | null;
   lat: number | null;
-  device_azimuth: string | null;
-  device_tilt: string | null;
 }
 
 interface ArrayRow {
@@ -203,12 +201,10 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
   const system = (
     await db.query<SystemRow>(
       `select d.organisation_id, d.site_id, s.time_zone, p.kwp_dc,
-              ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat,
-              f.azimuth_deg device_azimuth, f.tilt_deg device_tilt
+              ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat
          from solar.pv_systems p
          join devices d on d.id = p.id
          join sites s on s.id = d.site_id
-         left join surfaces f on f.id = d.surface_id
         where p.id = $1`,
       [pvSystemId],
     )
@@ -241,9 +237,9 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
     )
   ).rows;
   if (rows.length === 0) {
-    // A system described without arrays: one array on the device's own surface, with the system's power.
+    // A system described without arrays has no orientation: an array carries it, with its own azimuth and tilt.
     rows = [{
-      id: null, name: 'whole system', azimuth_deg: system.device_azimuth, tilt_deg: system.device_tilt, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null, bifacial: false, albedo: null,
+      id: null, name: 'whole system', azimuth_deg: null, tilt_deg: null, mounting: 'roof_parallel', kwp_dc: system.kwp_dc, gamma_pdc: null, bifacial: false, albedo: null,
       module_model: null, module_parameters: null, module_count: null, modules_per_string: null, strings: null, inverter_product_id: null, inverter_model: null, inverter_parameters: null, inverter_count: null,
     }];
   }

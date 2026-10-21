@@ -10,7 +10,7 @@ it speaks to.
 | `src/series.ts` | the series API, each function one call of the SQL function of the same name: `store()`, `seriesEnsure()`, `resample()`, `window()`, `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`, `convertUnit()` |
 | `src/connectors.ts` | the interfaces of the connectors (`WeatherProvider`, `MeterDataProvider`, `PlacesProvider`) and `storeSeries()` |
 | `src/geometry.ts` | WKT, the normal of a face, azimuth and tilt |
-| `src/files/` | the importers and exporters of the format libraries: `importHomeAssistant`, `exportHomeAssistant`, `importCityJson`, `exportCityJson`, `importIfc`, `exportGeoJson`, `importWeatherFile`, `exportWeatherYear`, `exportSeriesParquet`; each writes the plain shapes of a library through the gestures of the schema (`add_building`, `add_space`, `add_surface`, `install_device`, `set_attribute`, `add_identifier`, `locate_site`, `series_ensure`, `store`) and reads them back |
+| `src/files/` | the importers and exporters of the format libraries the core's objects need: `exportGeoJson` (the sites, their devices and, when the `3d` module is installed, their buildings and surfaces), `importWeatherFile`, `exportWeatherYear`, `exportSeriesParquet`; each writes the plain shapes of a library through the gestures of the schema (`install_device`, `set_attribute`, `add_identifier`, `locate_site`, `series_ensure`, `store`) and reads them back. The importers of buildings — CityJSON, IFC, a Home Assistant home — are the `3d` module's ([`modules/3d/src`](../../modules/3d/src/index.ts)) |
 | `src/engines/` | the runner of the JSON contract of the engines in other languages (`runner.ts`) and the request and result types of the `pv_yield` and `settlement` kinds |
 
 The geocoders are connectors (`@nexgen-os/nominatim`, `photon`, `ban`,
@@ -18,8 +18,7 @@ The geocoders are connectors (`@nexgen-os/nominatim`, `photon`, `ban`,
 Nexgen OS. The format libraries, in [`packages/formats`](../formats/README.md),
 import nothing of Nexgen OS: this package imports them, for the shapes its
 importers write ([0035](../../docs/decisions/0035-a-format-library-touches-no-database.md)).
-`@nexgen-os/ifc`, which carries web-ifc, is an optional peer: needed only by
-whoever imports IFC. The engines themselves, programs in other
+The engines themselves, programs in other
 languages, are in [`engines/`](../../engines/README.md).
 
 Inside this repository the packages import one another by name; `tsc`, `tsx`

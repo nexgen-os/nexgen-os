@@ -8,11 +8,11 @@
  *   the site's origin   → `locate_site()`, at `rooftop` precision with a map
  *                         conversion, `parcel` with the site's coordinates,
  *                         when the site had no position or a coarser one
- *   building            → `add_building()`: its footprint in WGS 84, its
+ *   building            → `three_d.add_building()`: its footprint in WGS 84, its
  *                         elevation and height; its year (`set_attribute()`)
- *   storey, space       → `add_space()`, kinds floor and room; a room's
+ *   storey, space       → `three_d.add_space()`, kinds floor and room; a room's
  *                         area as the attribute `floor_area`
- *   roof face           → `add_surface()`, kind roof, azimuth (true north)
+ *   roof face           → `three_d.add_surface()`, kind roof, azimuth (true north)
  *                         and tilt
  *   product             → `install_device()`, when a device type names its
  *                         IFC class (`device_types.ifc_class`), in its
@@ -23,7 +23,7 @@
  * no column holds travels in `metadata.ifc`.
  */
 import type { Georeference, IfcModel, IfcRoom, FootprintSource } from '@nexgen-os/ifc';
-import type { Db } from '../db.js';
+import type { Db } from '@nexgen-os/core';
 import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfSite, refuseKnown, toWgs84, type Crs } from './faces.js';
 
 export interface IfcTarget {
@@ -121,7 +121,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     // they are joined, so that walls that meet after rounding do, and the
     // holes they leave filled.
     const row = await db.query<{ id: string }>(
-      `select add_building($1, $2,
+      `select three_d.add_building($1, $2,
                 (select case when g.u is null then null else
                           ST_Force3D(${toWgs84('ST_CollectionExtract(ST_MakeValid(g.u), 3)', 5, 6)}, coalesce($4, 0)) end
                    from (select case when $11::boolean
@@ -148,7 +148,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
 
     const addRoom = async (room: IfcRoom, floorId: string | null) => {
       const space = await db.query<{ id: string }>(
-        `select add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6) id`,
+        `select three_d.add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6) id`,
         [id, room.name, floorId, room.height, options.sourceCode, JSON.stringify({ ifc: room.description })],
       );
       const spaceId = space.rows[0].id;
@@ -161,7 +161,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     };
     for (const f of b.floors) {
       const floor = await db.query<{ id: string }>(
-        `select add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
+        `select three_d.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
         [id, f.name, f.level, f.elevation, f.height, options.sourceCode, JSON.stringify({ ifc: f.description })],
       );
       if (f.globalId) await identifierFromFile(db, floor.rows[0].id, 'ifc_guid', f.globalId);
@@ -219,19 +219,20 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     const at = precision ? p.position : null;
     const device = await db.query<{ id: string }>(
       `select install_device($1, $2, $3,
-                jsonb_strip_nulls(jsonb_build_object('building_id', $4::uuid, 'space_id', $5::uuid, 'geometry',
-                  case when $6::float8 is null then null
-                       else ST_AsGeoJSON(ST_Force3D(${toWgs84('ST_MakePoint($6, $7, $8)', 9, 10)}), 9)::jsonb end)),
-                p_source_code => $11, p_scenario_id => $12, p_nameplate => $13, p_metadata => $14, p_status => 'in_service') id`,
+                case when $4::float8 is null then null
+                     else ST_AsGeoJSON(ST_Force3D(${toWgs84('ST_MakePoint($4, $5, $6)', 7, 8)}), 9)::jsonb end,
+                p_source_code => $9, p_scenario_id => $10, p_nameplate => $11, p_metadata => $12, p_status => 'in_service') id`,
       [
         target.siteId, deviceType, p.name,
-        (p.building && buildingRows.get(p.building)) || null, (p.room && roomRows.get(p.room)) || null,
         at?.[0] ?? null, at?.[1] ?? null, at?.[2] ?? null, crs.srid, crs.proj,
         options.sourceCode, scenarioId,
         JSON.stringify({ manufacturer: p.manufacturer, model: p.model, serial_number: p.serialNumber }),
         JSON.stringify({ ifc: { ...p.description, header: model.header } }),
       ],
     );
+    const building = (p.building && buildingRows.get(p.building)) || null;
+    const room = (p.room && roomRows.get(p.room)) || null;
+    if (building || room) await db.query('select three_d.place_device($1, $2, $3)', [device.rows[0].id, building, room]);
     if (p.globalId) await identifierFromFile(db, device.rows[0].id, 'ifc_guid', p.globalId);
     result.counts.devices += 1;
   }

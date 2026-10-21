@@ -25,7 +25,7 @@ export async function ensureHistory(db: SqlClient): Promise<void> {
       name        text primary key,
       scope       text not null,
       applied_at  timestamptz not null default now(),
-      constraint schema_migrations_scope_format check (scope ~ '^(core|module:[a-z][a-z0-9_]*|pack:[a-z]{2})$')
+      constraint schema_migrations_scope_format check (scope ~ '^(core|module:[a-z0-9][a-z0-9_]*|pack:[a-z]{2})$')
     );
     alter table nexgen.schema_migrations enable row level security;
   `);
