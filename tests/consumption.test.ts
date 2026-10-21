@@ -11,7 +11,7 @@ import { store } from '@nexgen-os/core';
 import { reconstructConsumption, slotWeights, spreadEnergy, type LoadProfile } from '../modules/consumption/src/curve.js';
 
 const ORG = '00000000-0000-4000-8000-000700000001';
-const SITE = '00000000-0000-4000-8000-000700000010';
+const BLOCK = '00000000-0000-4000-8000-000700000010';
 const BUILDING = '00000000-0000-4000-8000-000700000020';
 const ELECTRICITY = '00000000-0000-4000-8000-000700000041';
 const TZ = 'Europe/Berlin';
@@ -76,7 +76,7 @@ describe('load profiles', () => {
 });
 
 describe('the weights of the slots', () => {
-  it('cut the local days of the site: the spring day has 23 hours and the autumn day 25', () => {
+  it('cut the local days of the participant: the spring day has 23 hours and the autumn day 25', () => {
     expect(slotWeights(FLAT, '2026-03-29', '2026-03-30', TZ)).toHaveLength(23);
     expect(slotWeights(FLAT, '2026-10-25', '2026-10-26', TZ)).toHaveLength(25);
     const year = slotWeights(FLAT, '2026-01-01', '2027-01-01', TZ);
@@ -129,13 +129,13 @@ describe('a curve reconstructed from a bill', () => {
   beforeAll(async () => {
     hours = [];
     for (const weekday of [1, 2, 3, 4, 5]) {
-      hours.push(await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: SITE, weekday, opens: '07:00', closes: '19:00', source: 'facility manager' }));
+      hours.push(await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: BLOCK, weekday, opens: '07:00', closes: '19:00', source: 'facility manager' }));
     }
   });
 
-  it('is a simulated series of the site that adds up to the bill, open hours four times closed ones', async () => {
+  it('is a simulated series of the participant that adds up to the bill, open hours four times closed ones', async () => {
     const r = await reconstructConsumption(db, {
-      participantId: SITE, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours',
+      participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours',
       energy: { kwh: 41_850, source: 'electricity bill January 2026' },
     });
     expect(r).toMatchObject({ step: '60 minutes', slots: 744 });
@@ -143,7 +143,7 @@ describe('a curve reconstructed from a bill', () => {
     const series = await one<{ object_id: string; kind: string; quantity_code: string; step: string; run_id: string }>(
       db, 'select object_id, kind, quantity_code, step::text, run_id from series where id = $1', [r.seriesId],
     );
-    expect(series).toEqual({ object_id: SITE, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', run_id: r.runId });
+    expect(series).toEqual({ object_id: BLOCK, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', run_id: r.runId });
 
     const values = await db.query<{ at: Date; value: number }>('select at, value from series_values where series_id = $1 order by at', [r.seriesId]);
     // Thursday 15 January: 10:00 open, 03:00 closed.
@@ -155,7 +155,7 @@ describe('a curve reconstructed from a bill', () => {
   });
 
   it('is a run of the module that says its profile, its hours, its energy and its conventions, and the same inputs give the same run', async () => {
-    const request = { participantId: SITE, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours', energy: { kwh: 41_850, source: 'electricity bill January 2026' } };
+    const request = { participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours', energy: { kwh: 41_850, source: 'electricity bill January 2026' } };
     const first = await reconstructConsumption(db, request);
     const again = await reconstructConsumption(db, request);
     expect(again.runId).toBe(first.runId);
@@ -172,17 +172,17 @@ describe('a curve reconstructed from a bill', () => {
     expect(run.results).toMatchObject({ series_id: first.seriesId, step: '60 minutes', slots: 744 });
   });
 
-  it('needs the site\'s activity hours for a profile by hours, and its time zone', async () => {
-    await expect(reconstructConsumption(db, { participantId: SITE, from: '2025-01-01', to: '2025-02-01', profileCode: 'nope', energy: { kwh: 1 } })).rejects.toThrow(/load_profile_unknown/);
-    await db.query('update consumption.activity_hours set valid_from = $1 where object_id = $2', ['2026-01-01', SITE]);
-    await expect(reconstructConsumption(db, { participantId: SITE, from: '2025-01-01', to: '2025-02-01', profileCode: 'office_hours', energy: { kwh: 1 } }))
+  it('needs the participant\'s activity hours for a profile by hours, and its time zone', async () => {
+    await expect(reconstructConsumption(db, { participantId: BLOCK, from: '2025-01-01', to: '2025-02-01', profileCode: 'nope', energy: { kwh: 1 } })).rejects.toThrow(/load_profile_unknown/);
+    await db.query('update consumption.activity_hours set valid_from = $1 where object_id = $2', ['2026-01-01', BLOCK]);
+    await expect(reconstructConsumption(db, { participantId: BLOCK, from: '2025-01-01', to: '2025-02-01', profileCode: 'office_hours', energy: { kwh: 1 } }))
       .rejects.toThrow(/activity_hours_required/);
-    await db.query('update consumption.activity_hours set valid_from = null where object_id = $1', [SITE]);
-    await db.query('update sites set time_zone = null where id = $1', [SITE]);
+    await db.query('update consumption.activity_hours set valid_from = null where object_id = $1', [BLOCK]);
+    await db.query('update participants set time_zone = null where id = $1', [BLOCK]);
     try {
-      await expect(reconstructConsumption(db, { participantId: SITE, from: '2026-01-01', to: '2026-02-01', profileCode: 'flat', energy: { kwh: 1 } })).rejects.toThrow(/time_zone_required/);
+      await expect(reconstructConsumption(db, { participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'flat', energy: { kwh: 1 } })).rejects.toThrow(/time_zone_required/);
     } finally {
-      await db.query('update sites set time_zone = $1 where id = $2', [TZ, SITE]);
+      await db.query('update participants set time_zone = $1 where id = $2', [TZ, BLOCK]);
     }
   });
 });
@@ -194,7 +194,7 @@ describe('a curve on quarter-hours', () => {
        values ('flat_quarter_hours', 'Flat, by quarter-hours', 'day_shapes', 96,
                jsonb_build_object('weekday', to_jsonb(array_fill(1, array[96]))), 'test')`,
     );
-    const r = await reconstructConsumption(db, { participantId: SITE, from: '2026-03-02', to: '2026-03-09', profileCode: 'flat_quarter_hours', energy: { kwh: 480, source: 'weekday estimate' } });
+    const r = await reconstructConsumption(db, { participantId: BLOCK, from: '2026-03-02', to: '2026-03-09', profileCode: 'flat_quarter_hours', energy: { kwh: 480, source: 'weekday estimate' } });
     expect(r).toMatchObject({ step: '15 minutes', slots: 7 * 96 });
     // Five weekdays carry the energy, the weekend nothing: 1 kWh a quarter-hour.
     const v = await one<{ value: number }>(db, `select value from series_values where series_id = $1 and at = '2026-03-02T10:00:00Z'`, [r.seriesId]);
@@ -204,9 +204,9 @@ describe('a curve on quarter-hours', () => {
 });
 
 describe('a typical curve from the annual consumption', () => {
-  it('spreads the site\'s annual consumption over one year', async () => {
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'annual_consumption', '438000', 'energy audit 2022')`, [SITE]);
-    const r = await reconstructConsumption(db, { participantId: SITE, from: '2026-01-01', to: '2027-01-01', profileCode: 'flat' });
+  it('spreads the participant\'s annual consumption over one year', async () => {
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'annual_consumption', '438000', 'energy audit 2022')`, [BLOCK]);
+    const r = await reconstructConsumption(db, { participantId: BLOCK, from: '2026-01-01', to: '2027-01-01', profileCode: 'flat' });
     expect(r.slots).toBe(8760);
     expect(r.kwh).toBeCloseTo(438_000, 3);
     const v = await one<{ value: number }>(db, 'select value from series_values where series_id = $1 limit 1', [r.seriesId]);
@@ -214,35 +214,35 @@ describe('a typical curve from the annual consumption', () => {
   });
 
   it('needs the energy of a period that is not one year', async () => {
-    await expect(reconstructConsumption(db, { participantId: SITE, from: '2026-01-01', to: '2026-07-01', profileCode: 'flat' })).rejects.toThrow(/energy_required/);
+    await expect(reconstructConsumption(db, { participantId: BLOCK, from: '2026-01-01', to: '2026-07-01', profileCode: 'flat' })).rejects.toThrow(/energy_required/);
   });
 });
 
-describe('the curve of a site', () => {
+describe('the curve of a participant', () => {
   const from = '2026-01-12T00:00:00+01:00';
   const to = '2026-01-19T00:00:00+01:00';
 
   it('is the last reconstruction while nothing is measured', async () => {
-    const r = await reconstructConsumption(db, { participantId: SITE, from: '2026-01-12', to: '2026-01-19', profileCode: 'office_hours', energy: { kwh: 9_000, source: 'weekly estimate' } });
-    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [SITE, from, to]);
+    const r = await reconstructConsumption(db, { participantId: BLOCK, from: '2026-01-12', to: '2026-01-19', profileCode: 'office_hours', energy: { kwh: 9_000, source: 'weekly estimate' } });
+    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [BLOCK, from, to]);
     expect(days.rows).toHaveLength(7);
     expect(days.rows.every((d) => d.series_id === r.seriesId && d.kind === 'simulated')).toBe(true);
     expect(days.rows.reduce((sum, d) => sum + d.value, 0)).toBeCloseTo(9_000, 3);
   });
 
-  it('is the measured one as soon as a meter of the site gives readings over the period', async () => {
+  it('is the measured one as soon as a meter of the participant gives readings over the period', async () => {
     const instants: { at: string; value: number }[] = [];
     for (let t = Date.parse(from); t < Date.parse(to); t += 3_600_000) instants.push({ at: new Date(t).toISOString(), value: 50 });
     const { seriesId: measured } = await store(db, { object_kind: 'meter', object_id: ELECTRICITY, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, instants);
-    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [SITE, from, to]);
+    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [BLOCK, from, to]);
     expect(days.rows.map((d) => [d.value, d.kind])).toEqual(Array(7).fill([1200, 'measured']));
     expect(days.rows[0].series_id).toBe(measured);
     // Before the readings start, a reconstruction still answers; before any curve, nothing does.
     const before = await one<{ s: string | null; kind: string }>(
-      db, `select s, (select kind from series where id = s) kind from consumption.curve_series($1, '2026-01-05T00:00:00+01:00', '2026-01-12T00:00:00+01:00') s`, [SITE]);
+      db, `select s, (select kind from series where id = s) kind from consumption.curve_series($1, '2026-01-05T00:00:00+01:00', '2026-01-12T00:00:00+01:00') s`, [BLOCK]);
     expect(before.s).not.toBe(measured);
     expect(before.kind).toBe('simulated');
-    const december = await one<{ s: string | null }>(db, `select consumption.curve_series($1, '2025-12-01T00:00:00+01:00', '2025-12-08T00:00:00+01:00') s`, [SITE]);
+    const december = await one<{ s: string | null }>(db, `select consumption.curve_series($1, '2025-12-01T00:00:00+01:00', '2025-12-08T00:00:00+01:00') s`, [BLOCK]);
     expect(december.s).toBeNull();
   });
 });
@@ -252,20 +252,20 @@ describe('activity hours', () => {
     const id = await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'building', object_id: BUILDING, weekday: 6, opens: '09:00', closes: '24:00' });
     const row = await one<{ organisation_id: string; closes: string }>(db, 'select organisation_id, closes::text from consumption.activity_hours where id = $1', [id]);
     expect(row).toEqual({ organisation_id: ORG, closes: '24:00:00' });
-    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: SITE, weekday: 1, opens: '18:00', closes: '08:00' })).rejects.toThrow(/activity_hours_order/);
-    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: SITE, weekday: 8, opens: '08:00', closes: '18:00' })).rejects.toThrow(/activity_hours_weekday/);
+    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: BLOCK, weekday: 1, opens: '18:00', closes: '08:00' })).rejects.toThrow(/activity_hours_order/);
+    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: BLOCK, weekday: 8, opens: '08:00', closes: '18:00' })).rejects.toThrow(/activity_hours_weekday/);
   });
 
   it('are read and written only by the organisation, and so is the curve', async () => {
     await asUser(db, USER_B, async () => {
       expect((await db.query('select id from consumption.activity_hours')).rows).toEqual([]);
-      await expect(db.query(`insert into consumption.activity_hours (organisation_id, object_kind, object_id, weekday, opens, closes) values ($1, 'participant', $2, 1, '08:00', '18:00')`, [ORG, SITE]))
+      await expect(db.query(`insert into consumption.activity_hours (organisation_id, object_kind, object_id, weekday, opens, closes) values ($1, 'participant', $2, 1, '08:00', '18:00')`, [ORG, BLOCK]))
         .rejects.toThrow(/object_not_found/);
-      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [SITE])).rows).toEqual([]);
+      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [BLOCK])).rows).toEqual([]);
     });
     await asUser(db, USER_A, async () => {
       expect((await db.query('select id from consumption.activity_hours')).rows.length).toBe(6);
-      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [SITE])).rows).toHaveLength(7);
+      expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [BLOCK])).rows).toHaveLength(7);
     });
   });
 });

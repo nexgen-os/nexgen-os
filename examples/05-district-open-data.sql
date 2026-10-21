@@ -1,7 +1,8 @@
 -- Example 5 — a district built from open data, in Dakar. Needs the `building`
 -- module.
 --
--- A city's district plan with its perimeter, six plots and their buildings
+-- A city's district plan with its perimeter, six participants each with
+-- its plot (the ground the `building` module describes) and its building
 -- whose footprints arrive in UTM zone 28N from OpenStreetMap, heights from
 -- a height model, buildings known by their OpenStreetMap ids, one plot split
 -- in two, a tall building shading a neighbour's roof, and the queries that
@@ -14,13 +15,20 @@ insert into projects (id, organisation_id, name, kind, country, status, geometry
   ('00000000-0000-4000-8000-000500000020', '00000000-0000-4000-8000-000500000001', 'Plateau — solar rooftops plan', 'district_plan', 'SN', 'simulation',
    ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326));
 
--- Six plots and their buildings, footprints in EPSG:32628, straight from the open-data importer.
-insert into sites (id, organisation_id, name, country, city, profile)
-select ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, '00000000-0000-4000-8000-000500000001', 'Plot ' || i, 'SN', 'Dakar', 'mixed'
+-- Every plot takes part in the plan through the participant whose it is.
+insert into participants (id, organisation_id, project_id, name, role, status, country, city, profile)
+select ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000020',
+       'Plot ' || i, 'prosumer', 'simulation', 'SN', 'Dakar', 'mixed'
   from generate_series(1, 6) i;
 
-insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, height_m, source_code)
-select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid,
+-- Six plots and their buildings, footprints in EPSG:32628, straight from the open-data importer.
+insert into building.sites (id, organisation_id, participant_id, name)
+select ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, 'Plot ' || i
+  from generate_series(1, 6) i;
+
+insert into building.buildings (id, organisation_id, participant_id, site_id, name, profile, footprint, height_m, source_code)
+select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-4000-8000-000500000001',
+       ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid,
        'Building ' || i, case when i in (2, 5) then 'office' else 'mixed' end,
        ST_SetSRID(ST_MakeEnvelope(236100 + 120 * i, 1630400, 236100 + 120 * i + 20, 1630415), 32628),
        6 + 3 * (i % 4), 'openstreetmap'
@@ -52,16 +60,11 @@ select ('00000000-0000-4000-8000-0005000000' || (50 + i))::uuid, '00000000-0000-
 insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
   ('building', '00000000-0000-4000-8000-000500000043', 'shades', 'surface', '00000000-0000-4000-8000-000500000052');
 
--- Every plot takes part in the plan.
-insert into participants (organisation_id, project_id, site_id, name, role, status)
-select '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000020', ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, 'Plot ' || i, 'prosumer', 'simulation'
-  from generate_series(1, 6) i;
-
--- Plot 6 was split in two by the cadastre this year: two new sites, and a
--- split_into link from the old plot to each.
-insert into sites (id, organisation_id, name, country, city, profile) values
-  ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', 'Plot 6a', 'SN', 'Dakar', 'mixed'),
-  ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', 'Plot 6b', 'SN', 'Dakar', 'mixed');
+-- Plot 6 was split in two by the cadastre this year: two new grounds of
+-- its participant, and a split_into link from the old plot to each.
+insert into building.sites (id, organisation_id, participant_id, name) values
+  ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6a'),
+  ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6b');
 select split_object('site', '00000000-0000-4000-8000-000500000036',
                     array['00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000038']::uuid[], '2026-02-01');
 
@@ -73,8 +76,8 @@ select split_object('site', '00000000-0000-4000-8000-000500000036',
 -- Which roofs are shaded:
 --   select s.name, b.name shaded_by from links l join building.surfaces s on s.id = l.object_id join building.buildings b on b.id = l.subject_id where l.type_code = 'shades';
 -- What plot 6 became:
---   select s.name, l.valid_from from links l join sites s on s.id = l.object_id
+--   select s.name, l.valid_from from links l join building.sites s on s.id = l.object_id
 --    where l.type_code = 'split_into' and l.subject_id = '00000000-0000-4000-8000-000500000036';
 
--- Daily readings are cut in the site's time zone.
-update sites set time_zone = 'Africa/Dakar' where organisation_id = '00000000-0000-4000-8000-000500000001';
+-- Daily readings are cut in the participant's time zone.
+update participants set time_zone = 'Africa/Dakar' where organisation_id = '00000000-0000-4000-8000-000500000001';

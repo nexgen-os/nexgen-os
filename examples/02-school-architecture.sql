@@ -1,8 +1,10 @@
 -- Example 2 — a school, inside and out, in a small municipality. Needs the
 -- `building` module.
 --
--- A municipality's site, the main building with two floors and five rooms
--- (spaces of the `building` module, one tree), a multisensor in each classroom reading
+-- A municipality is the participant of its school's study: it carries the
+-- place, and its devices; the `building` module describes the main
+-- building with two floors and five rooms (one tree of spaces). A
+-- multisensor per classroom reads
 -- temperature, CO2 and presence, a presence detector in the canteen, a
 -- heating setpoint asked of the heat pump per classroom, a heat pump serving
 -- the building, a morning of readings, and the acoustic class of each room
@@ -14,10 +16,14 @@ insert into organisations (id, name) values
 insert into contacts (id, organisation_id, name, kind) values
   ('00000000-0000-4000-8000-000200000005', '00000000-0000-4000-8000-000200000001', 'Service des bâtiments', 'company');
 
-insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
-  ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', 'École du Centre', 'BE', 'Rue de l''École 12', '1380', 'Valbrisée', 'BE-WBR', 'school');
+insert into projects (id, organisation_id, name, kind, country, status) values
+  ('00000000-0000-4000-8000-000200000006', '00000000-0000-4000-8000-000200000001', 'School comfort and heating', 'study', 'BE', 'active');
 
-insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into participants (id, organisation_id, project_id, name, role, contact_id, country, street, postal_code, city, region, profile) values
+  ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000006', 'École du Centre', 'consumer',
+   '00000000-0000-4000-8000-000200000005', 'BE', 'Rue de l''École 12', '1380', 'Valbrisée', 'BE-WBR', 'school');
+
+insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', 'Main building', 'school',
    ST_GeomFromText('POLYGON((4.4702 50.6802, 4.4708 50.6802, 4.4708 50.6805, 4.4702 50.6805, 4.4702 50.6802))', 4326), 112, 9.5);
 
@@ -41,39 +47,39 @@ insert into attributes (object_kind, object_id, property_code, value, source) va
   ('space', '00000000-0000-4000-8000-000200000044', 'floor_area', '60', 'as-built drawings'),
   ('space', '00000000-0000-4000-8000-000200000045', 'floor_area', '35', 'as-built drawings');
 
--- The heat pump in the building, and the instruments in the rooms: a
--- multisensor per classroom, a presence detector in the canteen.
-insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, installation_date) values
+-- The heat pump and the instruments are the school's, behind its meter: a
+-- multisensor per classroom, a presence detector in the canteen. Where an
+-- instrument sits is not described; the room it measures is the object of
+-- its series.
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, installation_date) values
   ('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010',
    'Air-to-water heat pump', 'heat_pump', 'Daikin', 'Altherma 3 H HT 18', 18, '2023-10-02');
-select building.place_device('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000020');
-
--- Each instrument is installed on the site, then placed in its room.
-select building.place_device(
-         install_device('00000000-0000-4000-8000-000200000010',
-                        case when s.name = 'Canteen' then 'sensor' else 'sensor_box' end,
-                        s.name || case when s.name = 'Canteen' then ' — presence detector' else ' — multisensor' end,
-                        p_installed_on => '2024-09-01'),
-         p_space_id => s.id)
-  from building.spaces s
- where s.name like 'Classroom%' or s.name = 'Canteen';
 
 insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
   ('device', '00000000-0000-4000-8000-000200000050', 'serves', 'building', '00000000-0000-4000-8000-000200000020');
 
--- The points, one series each: what a room is observed for, by the device
--- in it; the heating setpoint of a room is asked of the heat pump.
+-- The points, one series each: what a room is observed for, by the
+-- instrument that measures it; the heating setpoint of a room is asked of
+-- the heat pump.
+with instruments as (
+  select s.id space_id, s.name,
+         install_device('00000000-0000-4000-8000-000200000010',
+                        case when s.name = 'Canteen' then 'sensor' else 'sensor_box' end,
+                        s.name || case when s.name = 'Canteen' then ' — presence detector' else ' — multisensor' end,
+                        p_installed_on => '2024-09-01') device_id
+    from building.spaces s
+   where s.name like 'Classroom%' or s.name = 'Canteen'
+)
 insert into series (organisation_id, object_kind, object_id, device_id, quantity_code, kind, value_kind, step, external_ref)
-select '00000000-0000-4000-8000-000200000001', 'space', s.id, case when q.kind = 'setpoint' then '00000000-0000-4000-8000-000200000050'::uuid else d.device_id end,
+select '00000000-0000-4000-8000-000200000001', 'space', i.space_id, case when q.kind = 'setpoint' then '00000000-0000-4000-8000-000200000050'::uuid else i.device_id end,
        q.quantity, q.kind, 'instant', case when q.kind = 'measured' then interval '10 minutes' end,
-       format('mqtt://school/%s/%s', lower(replace(s.name, ' ', '-')), q.topic)
-  from building.spaces s
-  join building.devices d on d.space_id = s.id
+       format('mqtt://school/%s/%s', lower(replace(i.name, ' ', '-')), q.topic)
+  from instruments i
   cross join (values ('temperature', 'measured', 'temp'),
                      ('co2', 'measured', 'co2'),
                      ('occupancy', 'measured', 'presence'),
                      ('temperature', 'setpoint', 'setpoint')) as q(quantity, kind, topic)
- where s.name like 'Classroom%' or (s.name = 'Canteen' and q.topic = 'presence');
+ where i.name like 'Classroom%' or (i.name = 'Canteen' and q.topic = 'presence');
 
 -- A school morning in classroom 1: the room warms up, the CO2 climbs with
 -- the pupils, the setpoint goes up at six and down after school.
@@ -117,8 +123,8 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 -- Half-hourly temperature in classroom 1:
 --   select r.* from series s, resample(s.id, '2026-01-12', '2026-01-13', '30 minutes') r
 --    where s.object_id = '00000000-0000-4000-8000-000200000041' and s.quantity_code = 'temperature' and s.kind = 'measured';
--- Where is classroom 5, and whose rules apply:
---   select site_of('space', '00000000-0000-4000-8000-000200000044'), country_of('space', '00000000-0000-4000-8000-000200000044');
+-- Whose classroom 5 is, and whose rules apply:
+--   select participant_of('space', '00000000-0000-4000-8000-000200000044'), country_of('space', '00000000-0000-4000-8000-000200000044');
 
--- Daily readings are cut in the site's time zone.
-update sites set time_zone = 'Europe/Brussels' where organisation_id = '00000000-0000-4000-8000-000200000001';
+-- Daily readings are cut in the participant's time zone.
+update participants set time_zone = 'Europe/Brussels' where organisation_id = '00000000-0000-4000-8000-000200000001';

@@ -1,6 +1,6 @@
 // The `tasks` module: the tasks of the works on the farm of example 4, from
 // the permit to the commissioning of the ground array, who carries each,
-// what is late on a given day, where the site and a project stand; and the
+// what is late on a given day, where the farm and its project stand; and the
 // tasks a project gets from the templates of its country and kind.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -9,7 +9,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
-const SITE = '00000000-0000-4000-8000-000400000010';
+const FARM = '00000000-0000-4000-8000-000400000010';
 const GROUND_ARRAY = '00000000-0000-4000-8000-000400000052';
 const CARPORT_ARRAY = '00000000-0000-4000-8000-000400000053';
 
@@ -49,7 +49,7 @@ beforeAll(async () => {
   await organisation(db, 'Another farm', USER_B);
   installer = (await one<{ id: string }>(db, `insert into contacts (organisation_id, name) values ($1, 'Solaire du Nord') returning id`, [ORG])).id;
 
-  await task({ subject_kind: 'participant', subject_id: SITE, phase: 'permitting', role: 'municipality', name: 'Building permit for the ground array', status: 'done', planned_end: '2026-02-28', actual_start: '2026-01-05', actual_end: '2026-02-20' });
+  await task({ subject_kind: 'participant', subject_id: FARM, phase: 'permitting', role: 'municipality', name: 'Building permit for the ground array', status: 'done', planned_end: '2026-02-28', actual_start: '2026-01-05', actual_end: '2026-02-20' });
   await task({ subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'procurement', role: 'installer', name: 'Panels delivered', status: 'done', planned_end: '2026-04-30', actual_start: '2026-04-28', actual_end: '2026-04-28', responsible_contact_id: installer });
   installed = await task({
     subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'installation', role: 'installer', name: 'Ground array mounted and wired', status: 'in_progress',
@@ -65,9 +65,9 @@ afterAll(async () => {
 });
 
 describe('tasks', () => {
-  it('are objects on the site of what they are about, so that a photo or a certificate attaches to them', async () => {
-    const m = await one<{ table_name: string; site: string }>(db, `select k.table_name, site_of(t.subject_kind, t.subject_id) site from tasks.tasks t join kinds k on k.kind = 'task' where t.id = $1`, [installed]);
-    expect(m).toEqual({ table_name: 'tasks.tasks', site: SITE });
+  it('are objects of the participant of what they are about, so that a photo or a certificate attaches to them', async () => {
+    const m = await one<{ table_name: string; participant: string }>(db, `select k.table_name, participant_of(t.subject_kind, t.subject_id) participant from tasks.tasks t join kinds k on k.kind = 'task' where t.id = $1`, [installed]);
+    expect(m).toEqual({ table_name: 'tasks.tasks', participant: FARM });
     await db.query(`select attach_document('task', $1, 'Rows 1 to 12 mounted', 'image', 's3://farm/rows-1-12.jpg', 'image/jpeg', null, 'site manager')`, [installed]);
     const d = await one<{ organisation_id: string }>(db, 'select organisation_id from documents where object_id = $1', [installed]);
     expect(d.organisation_id).toBe(ORG);
@@ -79,48 +79,48 @@ describe('tasks', () => {
       'study', 'design', 'permitting', 'financing', 'procurement', 'site_preparation',
       'installation', 'grid_connection', 'commissioning', 'handover', 'operation', 'decommissioning',
     ]);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'demolition', name: 'Unknown phase' })).rejects.toThrow(/foreign key/);
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'demolition', name: 'Unknown phase' })).rejects.toThrow(/foreign key/);
   });
 
   it('are carried by a role read from a vocabulary', async () => {
     const roles = await db.query<{ code: string }>('select code from tasks.roles order by code');
     expect(roles.rows.map((r) => r.code)).toEqual(['community_manager', 'financer', 'grid_operator', 'installer', 'municipality', 'notary', 'owner', 'regulator']);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', role: 'wizard', name: 'Unknown role' })).rejects.toThrow(/foreign key/);
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', role: 'wizard', name: 'Unknown role' })).rejects.toThrow(/foreign key/);
   });
 
   it('keep their dates, status and source consistent', async () => {
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Done without an end', status: 'done', actual_start: '2026-01-01' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Done without an end', status: 'done', actual_start: '2026-01-01' }))
       .rejects.toThrow(/tasks_done/);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Ended but not done', actual_end: '2026-01-01' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Ended but not done', actual_end: '2026-01-01' }))
       .rejects.toThrow(/tasks_done/);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Started without a start', status: 'in_progress' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Started without a start', status: 'in_progress' }))
       .rejects.toThrow(/tasks_started/);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Backwards', planned_start: '2026-03-01', planned_end: '2026-02-01' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Backwards', planned_start: '2026-03-01', planned_end: '2026-02-01' }))
       .rejects.toThrow(/tasks_planned_order/);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Unknown status', status: 'paused' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Unknown status', status: 'paused' }))
       .rejects.toThrow(/tasks_status/);
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Unknown source', source: 'dream' }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Unknown source', source: 'dream' }))
       .rejects.toThrow(/tasks_source/);
-    const fromAction = await task({ subject_kind: 'participant', subject_id: SITE, phase: 'study', name: 'Battery sizing study', source: 'action', source_ref: 'storage_investment' });
+    const fromAction = await task({ subject_kind: 'participant', subject_id: FARM, phase: 'study', name: 'Battery sizing study', source: 'action', source_ref: 'storage_investment' });
     expect((await one<{ source: string }>(db, 'select source from tasks.tasks where id = $1', [fromAction])).source).toBe('action');
   });
 
   it('stay in their organisation: subject, contact and dependency', async () => {
     const other = await one<{ id: string }>(db, `select id from organisations where name = 'Another farm'`);
-    const theirSite = await participant(db, { organisation_id: other.id, name: 'Their field', country: 'FR' });
-    await expect(task({ subject_kind: 'participant', subject_id: theirSite, phase: 'design', name: 'Not ours' })).rejects.toThrow(/^object_in_other_organisation/);
+    const theirField = await participant(db, { organisation_id: other.id, name: 'Their field', country: 'FR' });
+    await expect(task({ subject_kind: 'participant', subject_id: theirField, phase: 'design', name: 'Not ours' })).rejects.toThrow(/^object_in_other_organisation/);
     const theirContact = (await one<{ id: string }>(db, `insert into contacts (organisation_id, name) values ($1, 'Their installer') returning id`, [other.id])).id;
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Their contact', responsible_contact_id: theirContact }))
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Their contact', responsible_contact_id: theirContact }))
       .rejects.toThrow(/^contact_in_other_organisation/);
-    const theirs = await insert(db, 'tasks.tasks', { organisation_id: other.id, subject_kind: 'participant', subject_id: theirSite, phase: 'design', name: 'Their study' });
-    await expect(task({ subject_kind: 'participant', subject_id: SITE, phase: 'design', name: 'Waits for theirs', depends_on: theirs }))
+    const theirs = await insert(db, 'tasks.tasks', { organisation_id: other.id, subject_kind: 'participant', subject_id: theirField, phase: 'design', name: 'Their study' });
+    await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Waits for theirs', depends_on: theirs }))
       .rejects.toThrow(/^dependency_in_other_organisation/);
   });
 });
 
 describe('where a project stands', () => {
-  it('sums the tasks of the site up on a day: by status, share done, the late ones, the current phase', async () => {
-    const p = await progress(SITE, '2026-06-15');
+  it('sums the tasks of the participant up on a day: by status, share done, the late ones, the current phase', async () => {
+    const p = await progress(FARM, '2026-06-15');
     expect(p).toEqual({
       on: '2026-06-15',
       total: 7,
@@ -132,17 +132,17 @@ describe('where a project stands', () => {
   });
 
   it('gives the same answer for the same day, and another for another day', async () => {
-    expect(await progress(SITE, '2026-06-15')).toEqual(await progress(SITE, '2026-06-15'));
-    const early = await progress(SITE, '2026-05-01');
+    expect(await progress(FARM, '2026-06-15')).toEqual(await progress(FARM, '2026-06-15'));
+    const early = await progress(FARM, '2026-05-01');
     expect(early.late).toEqual([]);
-    const autumn = await progress(SITE, '2026-10-15');
+    const autumn = await progress(FARM, '2026-10-15');
     expect(autumn.late.map((l) => l.phase)).toEqual(['installation', 'grid_connection']);
   });
 
   it('moves when a task is done', async () => {
     await db.query(`update tasks.tasks set status = 'done', actual_end = '2026-06-19' where id = $1`, [installed]);
     await db.query(`update tasks.tasks set status = 'cancelled' where name = 'Battery sizing study'`);
-    const p = await progress(SITE, '2026-06-22');
+    const p = await progress(FARM, '2026-06-22');
     expect(p.done_share).toBe(0.6);
     expect(p.late).toEqual([]);
     expect(p.current_phase).toBe('grid_connection');
@@ -150,14 +150,13 @@ describe('where a project stands', () => {
 
   it('adds the tasks of a scenario only when asked', async () => {
     const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'Battery later') returning id`, [ORG]);
-    await task({ subject_kind: 'participant', subject_id: SITE, phase: 'installation', name: 'Battery installed', planned_end: '2027-03-31', scenario_id: scenario.id });
-    expect((await progress(SITE, '2026-06-22')).total).toBe(7);
-    expect((await progress(SITE, '2026-06-22', scenario.id)).total).toBe(8);
+    await task({ subject_kind: 'participant', subject_id: FARM, phase: 'installation', name: 'Battery installed', planned_end: '2027-03-31', scenario_id: scenario.id });
+    expect((await progress(FARM, '2026-06-22')).total).toBe(7);
+    expect((await progress(FARM, '2026-06-22', scenario.id)).total).toBe(8);
   });
 
-  it('sums a project up: its own tasks and those of every site taking part', async () => {
-    const project = await insert(db, 'projects', { organisation_id: ORG, name: 'Mont Noir solar works', country: 'FR', status: 'creation' });
-    await insert(db, 'participants', { organisation_id: ORG, project_id: project, participant_id: SITE, name: 'The farm', role: 'prosumer' });
+  it('sums a project up: its own tasks and those of every participant taking part', async () => {
+    const project = '00000000-0000-4000-8000-000400000005';
     await task({ subject_kind: 'project', subject_id: project, phase: 'design', name: 'Grid study accepted', status: 'done', actual_start: '2025-11-03', actual_end: '2025-12-15' });
     const p = await progress(project, '2026-06-22');
     expect(p.total).toBe(8);
@@ -165,11 +164,11 @@ describe('where a project stands', () => {
   });
 
   it('reads under row level security: a stranger sees no task', async () => {
-    const mine = await asUser(db, USER_A, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [SITE]));
+    const mine = await asUser(db, USER_A, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [FARM]));
     expect(mine.p.total).toBe(7);
-    const theirs = await asUser(db, USER_B, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [SITE]));
+    const theirs = await asUser(db, USER_B, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [FARM]));
     expect(theirs.p).toMatchObject({ total: 0, by_status: {}, done_share: null, late: [], current_phase: null });
-    await expect(asUser(db, USER_B, () => db.query(`update tasks.tasks set notes = 'x' where subject_id = $1 returning id`, [SITE])))
+    await expect(asUser(db, USER_B, () => db.query(`update tasks.tasks set notes = 'x' where subject_id = $1 returning id`, [FARM])))
       .resolves.toMatchObject({ rows: [] });
   });
 });
