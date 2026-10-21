@@ -38,7 +38,7 @@ set search_path = nexgen, public, extensions;
 create table series (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- What is observed, by its kind and its id: a room, a building, a site,
+  -- What is observed, by its kind and its id: a room, a building, a participant,
   -- a device, a meter.
   object_kind      text not null references kinds(kind),
   object_id        uuid not null,
@@ -404,8 +404,8 @@ create trigger series_values_dirty_delete after delete on series_values
   referencing old table as changed for each statement execute function series_values_mark_dirty();
 
 -- Hourly and daily aggregates of a series, derived from its values and
--- rebuilt from them (decision 0031): the hour in UTC, the day in the site's
--- time zone (a series with no site has hours only). Months and years are
+-- rebuilt from them (decision 0031): the hour in UTC, the day in the time
+-- zone of its participant (a series with none has hours only). Months and years are
 -- summed from days. The columns are what every read needs: the count of
 -- readings, their sum, extremes and last value, and for a cumulative
 -- register the consumption of the bucket and the count of increments.
@@ -426,7 +426,7 @@ create table series_rollups (
 );
 
 comment on table series_rollups is
-  'Hourly (UTC) and daily (site time zone) aggregates of a series, kept fresh by series_rollup() from the dirty hours; read by resample() when the step allows. Derived, never edited.';
+  'Hourly (UTC) and daily (participant time zone) aggregates of a series, kept fresh by series_rollup() from the dirty hours; read by resample() when the step allows. Derived, never edited.';
 
 -- The last stored value of each series, kept by store() and repaired by
 -- series_rollup(): a live tile reads one row.
@@ -483,21 +483,22 @@ comment on function series_for_read(uuid) is
   'The series when the caller may read it (a member of its organisation, or a role that bypasses row level security); series_not_found otherwise.';
 
 -- The time zone a series is read in for steps of a day or more: the one of
--- the site of its object. Null when there is none; never a default.
+-- the participant its object belongs to. Null when there is none; never a
+-- default.
 create or replace function series_time_zone(p_series_id uuid)
 returns text
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select s.time_zone
+  select p.time_zone
     from series se
-    join sites s on s.id = site_of(se.object_kind, se.object_id)
+    join participants p on p.id = participant_of(se.object_kind, se.object_id)
    where se.id = p_series_id;
 $$;
 
 comment on function series_time_zone(uuid) is
-  'The time zone of the site a series'' object is on; null when there is none, never a default.';
+  'The time zone of the participant a series'' object belongs to; null when there is none, never a default.';
 
 -- A step is a duration under a day (bins of absolute time), a whole number
 -- of days, or a whole number of months (calendar bins in a time zone).
@@ -563,7 +564,7 @@ comment on function series_bucket(timestamptz, interval, timestamptz, text) is
 
 -- The origin buckets count from: the local midnight of `p_from` (UTC
 -- midnight without a time zone), so that hours and quarter-hours fall on
--- the site's own clock, half-hour time zones included.
+-- the participant's own clock, half-hour time zones included.
 create or replace function series_origin(p_from timestamptz, p_time_zone text)
 returns timestamptz
 language sql
@@ -679,7 +680,7 @@ comment on function series_buckets(series, timestamptz, timestamptz, interval, t
 -- each bucket. Its value is combined the way the quantity says (sum, mean
 -- or last); a cumulative register gives what was consumed or produced in
 -- the bucket. Durations bin from the local midnight of `p_from`; a day or
--- more is cut in the site's time zone (or the one given), counted from the
+-- more is cut in the participant's time zone (or the one given), counted from the
 -- local day or month of `p_from`. A forecast gives its latest issue, or the
 -- latest issued before `p_issued_before`. Hourly and daily rollups are read
 -- instead of the values when the bucket is made of whole rollups and none
@@ -712,7 +713,7 @@ declare
 begin
   select q.aggregation into agg from quantities q where q.code = s.quantity_code;
   if shape <> 'time' and tz is null then
-    raise exception 'time_zone_required: a step of a day or more needs the site''s time zone' using errcode = 'invalid_parameter_value';
+    raise exception 'time_zone_required: a step of a day or more needs the participant''s time zone' using errcode = 'invalid_parameter_value';
   end if;
   origin := series_origin(p_from, tz);
   -- Seconds of one value of a regular series, for `expected`.
@@ -777,7 +778,7 @@ end;
 $$;
 
 comment on function resample(uuid, timestamptz, timestamptz, interval, text, timestamptz) is
-  'A series on a regular step, the amount of each bucket: combined by its quantity''s aggregation, the consumption of the bucket for a cumulative register (resets handled). Durations bin from local midnight; days and months cut in the site''s time zone. Reads hourly and daily rollups when they cover the buckets and are fresh. Returns samples, expected (regular series) and the worst quality. Refuses series_not_found, time_zone_required, step_unsupported.';
+  'A series on a regular step, the amount of each bucket: combined by its quantity''s aggregation, the consumption of the bucket for a cumulative register (resets handled). Durations bin from local midnight; days and months cut in the participant''s time zone. Reads hourly and daily rollups when they cover the buckets and are fresh. Returns samples, expected (regular series) and the worst quality. Refuses series_not_found, time_zone_required, step_unsupported.';
 
 -- The values themselves, in time order: the only read without aggregation,
 -- and the way an index of a cumulative register is read.
@@ -1308,7 +1309,7 @@ end;
 $$;
 
 comment on function series_rollup(integer) is
-  'Drains up to p_max_hours dirty hours: hourly rollups, daily rollups in the site''s time zone and the latest value of their series, computed again from the values. Called by pg_cron every minute when installed, else by hand. Returns the hours drained.';
+  'Drains up to p_max_hours dirty hours: hourly rollups, daily rollups in the participant''s time zone and the latest value of their series, computed again from the values. Called by pg_cron every minute when installed, else by hand. Returns the hours drained.';
 
 -- Every minute where pg_cron is installed; nothing to do where it is not.
 do $$
