@@ -50,6 +50,21 @@ describe('doctor', () => {
     }
   });
 
+  it('names a module table that reaches no object of the core, and lets one that does through', async () => {
+    await db.exec(`begin;
+      create table grid.detached (id uuid primary key, organisation_id uuid not null references nexgen.organisations(id));
+      create table grid.attached (id uuid primary key, organisation_id uuid not null references nexgen.organisations(id),
+                                  connection_id uuid references grid.connections(id));`);
+    try {
+      const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
+      expect(r.problems.filter((p) => p.code !== 'rls_disabled')).toEqual([
+        { code: 'module_table_detached', detail: 'grid.detached carries organisation_id and reaches no object of the core by a foreign key' },
+      ]);
+    } finally {
+      await db.exec('rollback');
+    }
+  });
+
   it('names a step recorded as missing and a module without its row', async () => {
     await db.exec(`begin; delete from nexgen.schema_migrations where name = 'packs/fr/seed/0001_fr.sql'; delete from nexgen.modules where code = 'grid';`);
     try {

@@ -71,7 +71,10 @@ Every refusal starts with a name: `postgis_required` (with the line to run),
 release named first), `unknown_module`, `unknown_pack`,
 `pack_requires_module`, `db_url_required`. `doctor` adds `rls_disabled`,
 `migrations_pending`, `module_unregistered`, `unknown_migration`,
-`schema_version_missing`, `history_missing` and `vocabulary_empty`.
+`schema_version_missing`, `history_missing`, `vocabulary_empty` and
+`module_table_detached` (a table of a module schema that carries
+`organisation_id` and reaches no table of the core but `organisations` by a
+path of foreign keys, decision 0042).
 
 `pack build` and `pack check` refuse with `not_a_checkout` (no
 `packs/schema/pack.1.json` under the root), `unknown_pack` and

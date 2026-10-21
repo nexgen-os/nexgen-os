@@ -73,6 +73,43 @@ export async function tablesWithoutRls(db: SqlClient, schemas: string[]): Promis
 }
 
 /**
+ * Tables of the module schemas that carry `organisation_id` and reach no
+ * table of the core but `organisations` by a path of foreign keys, followed
+ * transitively (decision 0042): a module enriches an object of the core,
+ * through a derived table, a secondary table or vocabulary rows, and never
+ * holds a notion of its own beside it. `organisation_id` alone is the
+ * tenancy every table carries, not an object it enriches — unless it is the
+ * table's primary key: a table keyed by the organisation's id derives the
+ * organisation itself (`accounting.companies`). A partition is left out, as
+ * above.
+ */
+export async function detachedModuleTables(db: SqlClient, schemas: string[]): Promise<string[]> {
+  const rows = await db.query<{ t: string }>(
+    `with recursive candidates as (
+       select c.oid, n.nspname || '.' || c.relname as t
+         from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = any($1::text[]) and n.nspname <> 'nexgen' and c.relkind in ('r', 'p') and not c.relispartition
+          and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'organisation_id' and not a.attisdropped)
+          and not exists (
+            select 1 from pg_constraint pk join pg_constraint f on f.conrelid = pk.conrelid and f.contype = 'f' and f.conkey = pk.conkey
+             where pk.conrelid = c.oid and pk.contype = 'p' and f.confrelid = 'nexgen.organisations'::regclass)
+     ),
+     reach (start, rel) as (
+       select oid, oid from candidates
+       union
+       select r.start, f.confrelid from reach r join pg_constraint f on f.conrelid = r.rel and f.contype = 'f'
+     )
+     select c.t from candidates c
+      where not exists (
+        select 1 from reach r join pg_class k on k.oid = r.rel join pg_namespace n on n.oid = k.relnamespace
+         where r.start = c.oid and n.nspname = 'nexgen' and k.relname <> 'organisations')
+      order by 1`,
+    [schemas],
+  );
+  return rows.map((r) => r.t);
+}
+
+/**
  * The weeks of `series_values` that should have a partition and have none,
  * each as the Monday (UTC) that starts it. A week should have one when values
  * of it sit in the default partition, and, once an installation partitions at
@@ -163,6 +200,10 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
   const schemas = ['nexgen', ...report.modules.map((m) => m.schema_name)];
   for (const t of await tablesWithoutRls(db, schemas)) {
     problems.push({ code: 'rls_disabled', detail: `${t} has no row level security` });
+  }
+
+  for (const t of await detachedModuleTables(db, report.modules.map((m) => m.schema_name))) {
+    problems.push({ code: 'module_table_detached', detail: `${t} carries organisation_id and reaches no object of the core by a foreign key` });
   }
 
   const unpartitioned = await missingSeriesPartitions(db);
