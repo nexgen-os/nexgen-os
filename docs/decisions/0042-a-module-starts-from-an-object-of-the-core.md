@@ -56,7 +56,7 @@ module's.
 
 **The examples say which modules they need, and need no more.** Examples
 01 (a house) and 04 (a farm) need the core only; 03 (an energy community)
-needs `community`, `grid` and `accounting`; 02 (a school), 05 (a district),
+needs `community`, `grid` and `billing`; 02 (a school), 05 (a district),
 06 (a drone survey) and 07 (an office) describe buildings and install `3d`
 first.
 

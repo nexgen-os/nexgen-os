@@ -6,7 +6,7 @@ with the statuses, is in [`decisions/`](decisions/README.md).
 
 ## The spirit
 
-Six sentences every record answers to, written the way the founder says
+Eight sentences every record answers to, written the way the founder says
 them; Ekwo OS, the invoicing and bookkeeping core built on the same playbook, is the
 measure.
 
@@ -23,6 +23,15 @@ measure.
   [0025](decisions/0025-a-place-has-one-shape.md),
   [0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md),
   [0018](decisions/0018-one-function-per-gesture.md)).
+- **Few words.** One word per thing, across schemas, folders and documents:
+  the meter is `meters` in the core and `grid.meters` in the grid module,
+  the device is `devices` in the core and `three_d.devices` in the 3d module;
+  no synonym, no second name for a thing the core already names
+  ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
+- **Proven.** The shape follows the platform this core was taken from, which
+  earned it in the field — organisation, project, participant, meter, device —
+  and when two structures compete, the one the platform runs wins
+  ([nexgen-os-and-nexgen.md](nexgen-os-and-nexgen.md), [0006](decisions/0006-named-objects.md)).
 - **Few tables, complete on the functions.** A column only for what every
   row has, everything else attached; the actions of the trades are
   functions of the schema, many of them, each one gesture

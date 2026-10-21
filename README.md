@@ -25,10 +25,33 @@ Seven objects, in the order a page walks them — the organisation, the
 project it works on, the participants taking part in it, their places, the
 meters that connect those places to a network, the devices installed on
 them, the series they produce — and attachments to anything else, in the
-schema `nexgen`. The table
-that groups the core's tables, the functions that act on them and the
-standards they follow is in [core/README.md](core/README.md); the diagram and
-the rules are in [docs/model.md](docs/model.md).
+schema `nexgen`. In plain words:
+
+- **the organisation** owns the data and has members;
+- **the project** is what a person works on when signed in — an energy
+  community, a portfolio, a study, a construction site, a district plan;
+- **the participant** is an actor of the project — a household, a company, a
+  tenant, a public body — that groups the devices behind the same meter:
+  seen from the grid, everything *behind the meter* is the participant's,
+  everything in front of it is the grid's, the market's or the community's.
+  Several participants may share one site, one per occupant or per meter;
+- **the site** is the place, geolocated with its address and point; what is
+  built on it is the `3d` module's;
+- **the meter** is the connection point to a network, under the identifier
+  its operator knows — the frontier between the grid and the place;
+- **the device** is anything installed, from a PV system to a probe, behind a
+  meter when it is on the grid side;
+- **the series** is a quantity of any of them over time.
+
+Three rules shaped this structure, and settle every new question about it:
+**keep it simple**; **few words** — one word per thing across schemas,
+folders and documents (the meter is `meters` in the core and `grid.meters`
+in the grid module); and **stay close to the platform this core comes from**,
+whose structure has proven itself in the field. The table that groups the
+core's tables, the functions that act on them and the standards they follow
+is in [core/README.md](core/README.md); the diagram and the rules are in
+[docs/model.md](docs/model.md); the rules and why in
+[docs/doctrine.md](docs/doctrine.md).
 
 ## Principles
 

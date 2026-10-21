@@ -22,6 +22,17 @@ them, are the `3d` module's ([`modules/3d`](../modules/3d/README.md)). Each
 named object is a table with the columns every row has; what a trade knows
 beyond them is an attribute with its period and its source.
 
+Why this hierarchy: it is the one the commercial platform this core comes
+from has run for years, and it reads the way the trades speak. A
+**participant** is an actor of the project that groups the devices behind
+the same meter — seen from the grid, everything *behind the meter* is the
+participant's, everything in front of it is the grid's, the market's or the
+community's; a **meter** is that frontier; a **site** is only where things
+are, geolocated but not described. Three rules settle every question about
+the structure: keep it simple, one word per thing across schemas, folders
+and documents, and stay close to the platform that proved it
+([docs/doctrine.md](../docs/doctrine.md), the spirit).
+
 | Table | Holds | Standard it follows |
 |---|---|---|
 | `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; an organisation is an object like the others | Ekwo companies and contacts |

@@ -91,7 +91,11 @@ erDiagram
   its works are the `tasks` module's.
 - **participants** — an actor of a project on a site, `producer`,
   `consumer` or `prosumer`, with the contact who answers for it (the owner,
-  the tenant, the company), its status and the period it takes part. It is
+  the tenant, the company), its status and the period it takes part. The
+  participant groups the devices behind the same meter: seen from the grid,
+  everything *behind the meter* is the participant's, and everything in
+  front of it — the network, the market, the community's allocation — is the
+  project's or the grid module's. It is
   the whole site or one occupant of it — a building, a floor, one flat:
   several participants share a site, one per occupant or per meter, and the
   level of the building each occupies is an `occupies` link the `3d` module
