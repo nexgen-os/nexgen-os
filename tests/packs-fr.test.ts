@@ -113,6 +113,27 @@ describe('the fr pack', () => {
     expect(voltage.levels.map((l) => l.code)).toEqual(['tbt', 'bt', 'hta', 'htb']);
   });
 
+  it('reads a value decided by a region in each of its departments, a department\'s own before it, the country when neither decides', async () => {
+    // The pack decides nothing per department or region yet: two values of a test source stand for what one would.
+    const org = await organisation(db, 'Une régie', USER_A);
+    const paris = await joinWithPlace(db, org, 'Mairie de Paris', { country: 'FR', region: 'FR-75C' });
+    const evry = await joinWithPlace(db, org, 'Mairie d\'Évry', { country: 'FR', region: 'FR-91' });
+    await db.query(`insert into sources (code, name, kind, base_url, published_by) values ('test_regional_text', 'A text of a region, for this test', 'text', 'https://region.example/', 'test')`);
+    await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values
+                      ('pv_specific_yield_fallback', 'FR', 'FR-IDF', '1000', 'test_regional_text', 'decided by the region', 'test')`);
+    const p = async (site: string, property: string) =>
+      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, '2026-10-20') p", [site, property])).p;
+    expect(await p(paris, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF', reference: 'decided by the region' });
+    expect(await p(evry, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF' });
+    await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values
+                      ('pv_specific_yield_fallback', 'FR', 'FR-75C', '1010', 'test_regional_text', 'decided by the department', 'test')`);
+    expect(await p(paris, 'pv_specific_yield_fallback')).toMatchObject({ value: 1010, level: 'region', region: 'FR-75C' });
+    expect(await p(evry, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, region: 'FR-IDF' });
+    expect(await p(paris, 'vat_rate_electricity')).toMatchObject({ value: 0.2, level: 'country', country: 'FR' });
+    await db.query(`delete from defaults where published_by = 'test'`);
+    await db.query(`delete from sources where code = 'test_regional_text'`);
+  });
+
   it('plans a French roof installation from the generic templates of the tasks module', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
     const roof = await insert(db, 'projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
