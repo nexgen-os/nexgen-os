@@ -52,6 +52,11 @@ insert into participants (id, organisation_id, project_id, site_id, name, role, 
   ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000033', 'Rijnmond Verpakkingen', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01'),
   ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', '00000000-0000-4000-8000-000300000034', 'Roof plant', 'producer', null, 'active', '2025-01-01');
 
+-- Each participant carries the meter of its site from the day it joined.
+select assign_meter(m.id, p.id, p.join_date)
+  from meters m join participants p on p.site_id = m.site_id
+ where m.organisation_id = '00000000-0000-4000-8000-000300000001';
+
 -- Two tenants of the same landlord, read together: a group has no site.
 insert into participants (id, organisation_id, project_id, name, status) values
   ('00000000-0000-4000-8000-000300000055', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Oostzijde 12–14 (same landlord)', 'active');
@@ -107,7 +112,7 @@ select billing.record_invoice('00000000-0000-4000-8000-000300000051', '22222222-
 -- Queries a page would run
 -- The community as a table:
 --   select p.name, p.role, m.identifier, c.name contact, p.join_date
---     from participants p left join meters m on m.site_id = p.site_id left join contacts c on c.id = p.contact_id
+--     from participants p left join meters m on m.participant_id = p.id left join contacts c on c.id = p.contact_id
 --    where p.project_id = '00000000-0000-4000-8000-000300000020' and p.site_id is not null order by p.role, p.name;
 -- Daily offtake of Van Dijk in May:
 --   select r.bucket::date, r.value from series s, resample(s.id, '2026-05-01', '2026-06-01', '1 day') r

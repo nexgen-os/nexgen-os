@@ -3,24 +3,29 @@
 --
 -- A project is what a person works on: an energy community, a portfolio, a
 -- study, a construction site, a district plan, with the country whose rules
--- apply and a lifecycle. A participant is a site's role in a project —
--- producer, consumer or prosumer — with the contact who answers for it and
--- the period it is in. A site takes part in a project once at a time;
--- participants may be grouped (two tenants of one landlord, a campus), a
--- group having no site of its own.
+-- apply and a lifecycle. A participant is an actor of a project — producer,
+-- consumer or prosumer — on a site, with the contact who answers for it and
+-- the period it is in. It may be a whole site, or one occupant of it: a
+-- building with two flats is one site with two participants, each carrying
+-- its own meter. Which building, floor or unit it occupies is a fact of the
+-- physical description, held by the `3d` module as a link. A participant is
+-- in one project; participants may be grouped (two tenants of one landlord,
+-- a campus), a group having no site of its own.
 --
 -- A meter, in the sense of the grid, is a connection point to a network:
 -- the identifier its operator knows, on a site, with what it can do (take,
 -- inject, both) and the period that identifier names that point (IEC CIM
 -- UsagePoint). It is the frontier between the grid and the place: what is in
 -- front of it belongs to the project (the grid, the market, the sharing of a
--- community), what is behind it to the participant. The physical meter is a
--- device of type `meter` and can be swapped; a device behind a connection
--- point names it in `devices.meter_id`. Who runs the grid and how the point
--- is connected are the `grid` module's (decision 0042).
+-- community), what is behind it to the participant that carries it
+-- (`meters.participant_id`, the participant it leaves kept as a dated
+-- `carried_by` link). The physical meter is a device of type `meter` and can
+-- be swapped; a device behind a connection point names it in
+-- `devices.meter_id`. Who runs the grid and how the point is connected are
+-- the `grid` module's (decision 0042).
 --
 -- The hierarchy a page walks: organisation → project → participant → site
--- (buildings, spaces, surfaces) → meter → device → series.
+-- → meter → device → series.
 
 set search_path = nexgen, public, extensions;
 
@@ -55,7 +60,7 @@ create table projects (
 );
 
 comment on table projects is
-  'What a person works on: an energy community, a portfolio, a study, a construction site, a district plan, with its country and its lifecycle (simulation, creation, active, inactive, archived). Sites take part in it as participants.';
+  'What a person works on: an energy community, a portfolio, a study, a construction site, a district plan, with its country and its lifecycle (simulation, creation, active, inactive, archived). Its actors are participants.';
 
 create index projects_geometry_idx on projects using gist (geometry);
 create trigger projects_normalize before insert or update of geometry on projects
@@ -70,7 +75,9 @@ create table participants (
   id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
   organisation_id  uuid not null references organisations(id) on delete cascade,
   project_id       uuid not null references projects(id) on delete cascade,
-  -- The site behind the meter. Null for a group.
+  -- The site it is on: the whole site, or the building, floor or unit of it
+  -- the `3d` module says it occupies. Several participants may share a site.
+  -- Null for a group.
   site_id          uuid references sites(id) on delete cascade,
   -- The group it is part of.
   parent_id        uuid references participants(id) on delete restrict,
@@ -94,7 +101,7 @@ create table participants (
 );
 
 comment on table participants is
-  'A site taking part in a project as producer, consumer or prosumer, with the contact who answers for it and the period it is in. It groups what is behind the meters of its site. A participant without a site is a group of others.';
+  'An actor of a project on a site — the whole site, a building, a floor, one flat — as producer, consumer or prosumer, with the contact who answers for it and the period it is in. It carries its meters (meters.participant_id) and groups the devices behind them. Several participants may share a site; a participant without a site is a group of others.';
 
 create index participants_project_idx on participants (project_id);
 create index participants_site_idx on participants (site_id);
@@ -117,18 +124,6 @@ begin
       raise exception 'participant_parent_in_other_project' using errcode = 'check_violation';
     end if;
   end if;
-  -- A site is in a project once at a time: a participant may leave and
-  -- come back, never overlap itself.
-  if new.site_id is not null and exists (
-    select 1 from participants q
-     where q.project_id = new.project_id
-       and q.site_id = new.site_id
-       and q.scenario_id is not distinct from new.scenario_id
-       and q.id <> new.id
-       and daterange(q.join_date, q.leave_date, '[]') && daterange(new.join_date, new.leave_date, '[]')
-  ) then
-    raise exception 'participant_site_already_in_project' using errcode = 'exclusion_violation';
-  end if;
   if new.contact_id is not null and not exists (
     select 1 from contacts c where c.id = new.contact_id and c.organisation_id = new.organisation_id
   ) then
@@ -139,7 +134,7 @@ end;
 $$;
 
 comment on function participants_check() is
-  'BEFORE INSERT / UPDATE on participants: a parent is a group of the same project, a site is in a project once at a time, the contact is of the organisation.';
+  'BEFORE INSERT / UPDATE on participants: a parent is a group of the same project (participant_parent_not_a_group, participant_parent_in_other_project), the contact is of the organisation (participant_contact_in_other_organisation). Several participants may share a site.';
 
 create trigger participants_check before insert or update of parent_id, project_id, site_id, contact_id, join_date, leave_date, scenario_id on participants
   for each row execute function participants_check();
@@ -153,6 +148,9 @@ create table meters (
   id                uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
   organisation_id   uuid not null references organisations(id) on delete cascade,
   site_id           uuid not null references sites(id) on delete cascade,
+  -- The participant that carries it, on the same site: what is behind the
+  -- point is that participant's. Null while nobody does.
+  participant_id    uuid references participants(id) on delete set null,
   name              text,
   -- The metering point identifier and its numbering scheme (a GS1 GSRN, or
   -- a national scheme a pack publishes).
@@ -175,34 +173,46 @@ create table meters (
 );
 
 comment on table meters is
-  'A connection point to a network on a site, with the identifier its operator knows (IEC CIM UsagePoint): the frontier between the grid and the place. The physical meter is a device of type meter, and can be swapped; a device behind it names it in devices.meter_id. The grid module adds who runs it and how it is connected.';
+  'A connection point to a network on a site, with the identifier its operator knows (IEC CIM UsagePoint) and the participant that carries it: the frontier between the grid and the place. The physical meter is a device of type meter, and can be swapped; a device behind it names it in devices.meter_id. The grid module adds who runs it and how it is connected.';
 
 create unique index meters_one_identifier on meters (organisation_id, scheme, identifier, scenario_id, valid_from) nulls not distinct;
 create index meters_site_idx on meters (site_id);
+create index meters_participant_idx on meters (participant_id);
 
 create or replace function meters_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
+declare
+  p participants%rowtype;
 begin
   if not identifier_valid(new.scheme, new.identifier) then
     raise exception 'invalid_identifier: % is not a valid %', new.identifier, new.scheme
       using errcode = 'check_violation';
+  end if;
+  if new.participant_id is not null then
+    select * into p from participants where id = new.participant_id;
+    if p.organisation_id <> new.organisation_id then
+      raise exception 'meter_participant_in_other_organisation' using errcode = 'check_violation';
+    end if;
+    if p.site_id is distinct from new.site_id then
+      raise exception 'meter_participant_site_mismatch: the participant is not on the meter''s site' using errcode = 'check_violation';
+    end if;
   end if;
   return new;
 end;
 $$;
 
 comment on function meters_check() is
-  'BEFORE INSERT / UPDATE on meters: the identifier matches its scheme (invalid_identifier).';
+  'BEFORE INSERT / UPDATE on meters: the identifier matches its scheme (invalid_identifier); the participant that carries it is of the organisation (meter_participant_in_other_organisation) and on the meter''s site (meter_participant_site_mismatch), so a group carries none of its own.';
 
-create trigger meters_check before insert or update of identifier, scheme on meters
+create trigger meters_check before insert or update of identifier, scheme, site_id, participant_id on meters
   for each row execute function meters_check();
 call declare_object('meters', 'meter', '{site_id}');
 
--- The connection points a participant is behind: those of its site, or of
--- the sites of the participants it groups.
+-- The connection points a participant carries, or the participants it
+-- groups carry.
 create or replace function participant_meters(p_participant_id uuid)
 returns table (meter_id uuid)
 language sql
@@ -210,15 +220,15 @@ stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
   with recursive down as (
-    select id, site_id from participants where id = p_participant_id
+    select id from participants where id = p_participant_id
     union all
-    select p.id, p.site_id from participants p join down on p.parent_id = down.id
+    select p.id from participants p join down on p.parent_id = down.id
   )
-  select m.id from meters m join down on m.site_id = down.site_id;
+  select m.id from meters m join down on m.participant_id = down.id;
 $$;
 
 comment on function participant_meters(uuid) is
-  'The connection points a participant is behind: those of its site, and of the sites of the participants it groups.';
+  'The connection points a participant carries (meters.participant_id), and those the participants it groups carry.';
 
 -- ---------------------------------------------------------------------------
 -- Gestures
@@ -253,7 +263,7 @@ end;
 $$;
 
 comment on function join_project(uuid, uuid, text, text, uuid, date, text) is
-  'A site joins a project as producer, consumer or prosumer from a day. Refuses participant_site_already_in_project, participant_contact_in_other_organisation. Returns the participant.';
+  'An actor joins a project on a site as producer, consumer or prosumer from a day; several may join on one site (one per flat, one per meter). Refuses participant_contact_in_other_organisation. Returns the participant.';
 
 create or replace function leave_project(p_participant_id uuid, p_on date default current_date)
 returns void
@@ -280,7 +290,8 @@ create or replace function declare_meter(
   p_resource       text default 'electricity',
   p_direction      text default 'both',
   p_valid_from     date default null,
-  p_name           text default null
+  p_name           text default null,
+  p_participant_id uuid default null
 )
 returns uuid
 language plpgsql
@@ -301,14 +312,49 @@ begin
     raise exception 'meter_already_open: % % names an open connection point', p_scheme, p_identifier
       using errcode = 'unique_violation';
   end if;
-  insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction, valid_from, scenario_id)
-  values (v_id, s.organisation_id, p_site_id, p_name, p_identifier, p_scheme, p_resource, p_direction, p_valid_from, s.scenario_id);
+  insert into meters (id, organisation_id, site_id, participant_id, name, identifier, scheme, resource, direction, valid_from, scenario_id)
+  values (v_id, s.organisation_id, p_site_id, p_participant_id, p_name, p_identifier, p_scheme, p_resource, p_direction, p_valid_from, s.scenario_id);
   return v_id;
 end;
 $$;
 
-comment on function declare_meter(uuid, text, text, text, text, date, text) is
-  'Declares a connection point on a site under the identifier its operator knows. Refuses invalid_identifier, meter_already_open. Returns its id.';
+comment on function declare_meter(uuid, text, text, text, text, date, text, uuid) is
+  'Declares a connection point on a site under the identifier its operator knows, carried by a participant of the site when one is named. Refuses invalid_identifier, meter_already_open, meter_participant_site_mismatch. Returns its id.';
+
+-- The participant a meter leaves is kept as a dated `carried_by` link, so
+-- who carried the point stays readable; null leaves it carried by nobody.
+create or replace function assign_meter(p_meter_id uuid, p_participant_id uuid, p_on date default current_date)
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  m       meters%rowtype;
+  v_since date;
+begin
+  select * into m from meters where id = p_meter_id;
+  if not found then
+    raise exception 'meter_not_found: %', p_meter_id using errcode = 'no_data_found';
+  end if;
+  if m.participant_id is not distinct from p_participant_id then
+    return;
+  end if;
+  if m.participant_id is not null then
+    -- Carried since the previous participant left it, else since the
+    -- participant joined, else since the identifier names the point.
+    select coalesce(max(l.valid_to)::date, (select join_date from participants where id = m.participant_id), m.valid_from)
+      into v_since
+      from links l where l.subject_id = p_meter_id and l.type_code = 'carried_by';
+    insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
+    values (p_meter_id, 'carried_by', m.participant_id, case when v_since < p_on then v_since end, p_on, m.scenario_id);
+  end if;
+  update meters set participant_id = p_participant_id where id = p_meter_id;
+end;
+$$;
+
+comment on function assign_meter(uuid, uuid, date) is
+  'Gives a meter to a participant of its site from a day, or to nobody (null); the participant it leaves is kept as a carried_by link ending that day. Refuses meter_not_found, meter_participant_site_mismatch, meter_participant_in_other_organisation.';
 
 create or replace function close_meter(p_meter_id uuid, p_on date default current_date)
 returns void
@@ -329,5 +375,5 @@ comment on function close_meter(uuid, date) is
 
 grant execute on function participant_meters(uuid),
   join_project(uuid, uuid, text, text, uuid, date, text), leave_project(uuid, date),
-  declare_meter(uuid, text, text, text, text, date, text), close_meter(uuid, date)
+  declare_meter(uuid, text, text, text, text, date, text, uuid), assign_meter(uuid, uuid, date), close_meter(uuid, date)
   to authenticated, service_role;

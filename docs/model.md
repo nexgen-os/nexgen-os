@@ -18,6 +18,7 @@ erDiagram
   sites ||--o{ participants : "as"
   organisations ||--o{ sites : owns
   sites ||--o{ meters : "connected by"
+  participants ||--o{ meters : carries
   meters ||--o{ devices : "behind"
   sites ||--o{ buildings : holds
   buildings ||--o{ spaces : "floors, rooms, zones, units"
@@ -75,14 +76,18 @@ parents. Attachments point to the registry; pages read the named tables.
   `simulation` to `archived` and its dates. The allocation key of a
   community, the installed power of a portfolio are attributes; the tasks of
   its works are the `tasks` module's.
-- **participants** — a site's role in a project, `producer`, `consumer` or
-  `prosumer`, with the contact who answers for it (the owner, the tenant,
-  the company), its status and the period it takes part. It groups what is
-  behind the meters of its site; a participant without a site groups others
-  (two tenants of one landlord, a campus), of the same project. A site takes
-  part in a project once at a time and may take part in several projects.
-  `join_project`, `leave_project`; `participant_meters(participant)` lists
-  the connection points it is behind, groups included.
+- **participants** — an actor of a project on a site, `producer`,
+  `consumer` or `prosumer`, with the contact who answers for it (the owner,
+  the tenant, the company), its status and the period it takes part. It is
+  the whole site or one occupant of it — a building, a floor, one flat:
+  several participants share a site, one per occupant or per meter, and the
+  level of the building each occupies is an `occupies` link the `3d` module
+  holds. It carries its meters (`meters.participant_id`) and groups the
+  devices behind them; a participant without a site groups others (two
+  tenants of one landlord, a campus), of the same project. A participant is
+  in one project. `join_project`, `leave_project`;
+  `participant_meters(participant)` lists the connection points it carries,
+  groups included.
 
 
 - **sites** — the place a person owns, rents or operates, in the one
@@ -143,9 +148,13 @@ key is refused (`place_key_unknown`).
   *UsagePoint*): the identifier its operator knows and its scheme (a GS1
   GSRN, or a scheme a pack publishes, checked by `identifier_valid`), what
   it can do (`offtake`, `injection`, `both`) and the period that identifier
-  names it. `declare_meter` refuses `invalid_identifier` and
-  `meter_already_open`; `close_meter` ends the period when the register
-  retires the number. Its subscribed power is an attribute. The physical
+  names it, and the participant of its site that carries it
+  (`participant_id`). `declare_meter` refuses `invalid_identifier` and
+  `meter_already_open`; `assign_meter` gives it to another participant of
+  its site, the one it leaves kept as a dated `carried_by` link
+  (`meter_participant_site_mismatch` for a participant elsewhere, a group
+  included); `close_meter` ends the period when the register retires the
+  number. Its subscribed power is an attribute. The physical
   meter is a device of type `meter` and can be swapped; who operates the
   point and how it is connected are the `grid` module's (`grid.meters`).
 

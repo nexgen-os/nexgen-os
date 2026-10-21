@@ -70,7 +70,8 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
   ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
   ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
   ('placed_in', 'was placed in',  'held',            '{device}',       '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure', 'Where a device was before it moved, over the period it was there.'),
-  ('behind_meter', 'was behind',  'had behind it',   '{device}',       '{meter}',            null,          null,                      'The connection point a device was behind before it was connected to another one, over the period it was there (devices.meter_id holds today''s).');
+  ('behind_meter', 'was behind',  'had behind it',   '{device}',       '{meter}',            null,          null,                      'The connection point a device was behind before it was connected to another one, over the period it was there (devices.meter_id holds today''s).'),
+  ('carried_by', 'was carried by', 'carried',        '{meter}',        '{participant}',      null,          null,                      'The participant that carried a connection point before another one did, over the period it did (meters.participant_id holds today''s).');
 
 -- ---------------------------------------------------------------------------
 -- Quantities, each with the one unit it is stored in (QUDT unit codes).

@@ -1,7 +1,8 @@
 // An energy community, on the projects, participants and meters of the core
 // with the `community` and `grid` modules installed beside them: a project,
 // three sites each behind its own connection point, taking part as
-// participants with the company that answers for each, a shared PV plant on
+// participants with the company that answers for each and carrying its
+// meter, a shared PV plant on
 // a fourth site, a group of participants, a meter swapped without losing the
 // connection point, and the values of a register.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -25,6 +26,7 @@ beforeAll(async () => {
     const tenant = await insert(db, 'contacts', { organisation_id: org, name: `Tenant ${n}`, kind: 'company' });
     const participant = (await one<{ id: string }>(
       db, `select join_project($1, $2, $3, 'consumer', $4, '2025-01-01', 'active') id`, [project, site, `Tenant ${n}`, tenant])).id;
+    await db.query(`select assign_meter($1, $2, '2025-01-01')`, [meter, participant]);
     sites.push(site);
     meters.push(meter);
     participants.push(participant);
@@ -33,7 +35,8 @@ beforeAll(async () => {
   const plantMeter = await insert(db, 'meters', { organisation_id: org, site_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
   const array = await insert(db, 'devices', { organisation_id: org, site_id: plant, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
   await db.query(`select connect_device($1, $2)`, [array, plantMeter]);
-  await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
+  const producer = await insert(db, 'participants', { organisation_id: org, project_id: project, site_id: plant, name: 'Roof plant', role: 'producer', status: 'active' });
+  await db.query(`select assign_meter($1, $2)`, [plantMeter, producer]);
 });
 
 afterAll(async () => {
@@ -45,7 +48,7 @@ describe('an energy community', () => {
     const r = await db.query<{ participant: string; role: string; meter: string; contact: string | null }>(
       `select p.name participant, p.role, m.identifier meter, c.name contact
          from participants p
-         join meters m on m.site_id = p.site_id
+         join meters m on m.participant_id = p.id
          left join contacts c on c.id = p.contact_id
         where p.project_id = $1
         order by p.role, p.name`,
@@ -59,10 +62,7 @@ describe('an energy community', () => {
     ]);
   });
 
-  it('refuses the same site twice in a project, a metering number that is not one, and a connection point declared twice', async () => {
-    await expect(
-      db.query(`select join_project($1, $2, 'Again')`, [project, sites[0]]),
-    ).rejects.toThrow(/participant_site_already_in_project/);
+  it('refuses a metering number that is not one, and a connection point declared twice', async () => {
     await expect(
       db.query(`select declare_meter($1, '12AB', 'gs1_gsrn')`, [sites[0]]),
     ).rejects.toThrow(/invalid_identifier/);
@@ -71,11 +71,9 @@ describe('an energy community', () => {
     ).rejects.toThrow(/meter_already_open/);
   });
 
-  it('lets a participant leave and come back, never overlapping itself', async () => {
+  it('lets a participant leave, and another one join on the same site', async () => {
     await db.query(`select leave_project($1, '2025-12-31')`, [participants[2]]);
     await expect(db.query(`select leave_project($1)`, [participants[2]])).rejects.toThrow(/participant_not_in_project/);
-    await expect(db.query(`select join_project($1, $2, 'Back too early', 'consumer', null, '2025-06-01')`, [project, sites[2]]))
-      .rejects.toThrow(/participant_site_already_in_project/);
     const back = await one<{ id: string }>(db, `select join_project($1, $2, 'Back', 'consumer', null, '2026-02-01') id`, [project, sites[2]]);
     expect(back.id).toBeTruthy();
   });
