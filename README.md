@@ -32,8 +32,8 @@ the rules are in [docs/model.md](docs/model.md).
 
 ## Principles
 
-1. **Concrete objects, generic attachments.** A building is a row of
-   `buildings`. A new kind of thing is a module table with the same id; a new
+1. **Concrete objects, generic attachments.** A site is a row of `sites`, a
+   building a row of `three_d.buildings`. A new kind of thing is a module table with the same id; a new
    property is a vocabulary row; a new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
@@ -41,7 +41,7 @@ the rules are in [docs/model.md](docs/model.md).
 3. **One way to read, one way to write.** `attributes_of()` for attributes,
    `resample()` for series (the amount of each bucket, a register's
    consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
-   beside it), `site_of()` and `country_of()` for where, `building_volume()`
+   beside it), `site_of()` and `country_of()` for where, `three_d.building_volume()`
    for a derived 3D block. Values are written by `store()` alone, which
    converts their unit, checks their quality and step, and keeps the
    aggregates and the latest value; clients never resample, convert or fill.
@@ -114,25 +114,27 @@ is checked.
 
    ```sql
    set search_path = nexgen;
-   select b.name, s.name, s.azimuth_deg, s.tilt_deg, s.material
-   from surfaces s join buildings b on b.id = s.building_id
-   where s.kind = 'roof';
+   select d.name, d.device_type, m.identifier meter
+   from devices d left join meters m on m.id = d.meter_id
+   order by d.name;
    ```
 
 The installer's page ([packages/cli/README.md](packages/cli/README.md))
 says what each command does and how to reach a remote host over TLS. Every
 example in `examples/` is a complete, loadable dataset.
 
-## Twenty minutes, to the same building with its yield
+## Twenty minutes, to the same house with its yield
 
 From the house loaded above, in a clone of this repository (`npm ci` once):
 
-6. Describe its PV system in the `solar` module. The device already stands
-   on the south roof face, which gives the array its azimuth and tilt:
+6. Describe its PV system in the `solar` module, with one array facing
+   south at 30°, its own azimuth and tilt (the `3d` module can say which
+   roof face it sits on, `three_d.place_array()`):
 
    ```sql
    set search_path = nexgen;
    insert into solar.pv_systems (id, kwp_dc, grid_connection) values ('00000000-0000-4000-8000-000100000051', 3.825, 'self_consumption');
+   insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ('00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000051', 'South roof', 180, 30, 'roof_parallel', 3.825);
    ```
 
 7. Compute its yield for a year, as a run: PVGIS computes the energy (no

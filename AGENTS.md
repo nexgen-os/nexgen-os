@@ -95,9 +95,11 @@ Four things only you do here:
 2. **Learn the vocabulary before writing**: `device_types`, `quantities`
    (code and unit), `property_defs` (what an attribute may hold),
    `sources` (what exists outside, with its licence), `id_schemes`.
-3. **Describe, with a source**: a building with its footprint from a
-   CityJSON file (`packages/formats/cityjson`), a roof face with its azimuth and
-   tilt, a PV system and its arrays; the geocoder for an address.
+3. **Describe, with a source**: the site and its meters, the participants
+   of a project carrying them; with the `3d` module, a building with its
+   footprint from a CityJSON file (`packages/formats/cityjson`), a roof face
+   with its azimuth and tilt; a PV system and its arrays, each with its own
+   orientation; the geocoder for an address.
 4. **Compute as a run**: a yield through `modules/solar/src/yield.ts` with a
    named profile; read it back with `resample(series, from, to, step)`.
 5. **Show, then let the person decide**: what you attached, what the run

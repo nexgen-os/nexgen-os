@@ -21,9 +21,9 @@ tables it fills; an exporter reads the rows back into the same shapes.
 
 | Package | Format | Reads | Writes | Importer, exporter |
 |---|---|---|---|---|
-| [`homeassistant`](homeassistant/README.md) | Home Assistant registries and recorder states | floors, areas, devices, entities, states → spaces, devices, points, readings | the snapshot, no field lost | `importHomeAssistant`, `exportHomeAssistant` (core) |
-| [`cityjson`](cityjson/README.md) | CityJSON 2.0 (3DBAG, UrbIS, converted CityGML) | Buildings and their parts: attributes, footprint faces, semantic surfaces | LoD 1 solid, LoD 2 surfaces, attributes | `importCityJson`, `exportCityJson` (core) |
-| [`ifc`](ifc/README.md) | IFC4, IFC2x3 | buildings, storeys, spaces, roof faces, equipment, placed by the map conversion or the site's coordinates | — | `importIfc` (core) |
+| [`homeassistant`](homeassistant/README.md) | Home Assistant registries and recorder states | floors, areas, devices, entities, states → spaces, devices, points, readings | the snapshot, no field lost | `importHomeAssistant`, `exportHomeAssistant` (`modules/3d/src`) |
+| [`cityjson`](cityjson/README.md) | CityJSON 2.0 (3DBAG, UrbIS, converted CityGML) | Buildings and their parts: attributes, footprint faces, semantic surfaces | LoD 1 solid, LoD 2 surfaces, attributes | `importCityJson`, `exportCityJson` (`modules/3d/src`) |
+| [`ifc`](ifc/README.md) | IFC4, IFC2x3 | buildings, storeys, spaces, roof faces, equipment, placed by the map conversion or the site's coordinates | — | `importIfc` (`modules/3d/src`) |
 | [`geojson`](geojson/README.md) | GeoJSON (RFC 7946) | features of a collection, a feature, a geometry | a FeatureCollection with its bbox | `exportGeoJson` (core) |
 | [`weather-files`](weather-files/README.md) | EPW, TMY3 | hourly series dated at their start in UTC | EPW | `importWeatherFile`, `exportWeatherYear` (core) |
 | [`parquet`](parquet/README.md) | Parquet | — | series rows | `exportSeriesParquet` (core) |

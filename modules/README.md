@@ -12,9 +12,14 @@ is specific to a trade lives here, one folder and one schema per module.
    the same id (`call derive_devices('solar.pv_systems', 'solar')`;
    `grid.meters`, keyed by the meter's id); one that adds a kind of
    object of its own gives it a foreign key to the core object it belongs to
-   and declares it (`call declare_object('solar.pv_arrays', 'pv_array',
-   '{pv_system_id,surface_id}')`), so that attributes, identifiers, links,
-   series and documents attach to it. Every module table that carries
+   and declares it (`call declare_object('three_d.buildings', 'building',
+   '{site_id}')`), so that attributes, identifiers, links, series and
+   documents attach to it and `site_of()` finds its site. A module that
+   gives an object of the core a place of its own declares it too
+   (`call declare_parents('three_d.placements', 'device', 'device_id',
+   '{space_id,surface_id,building_id}')`). A module table never names a
+   table of another module: an array of `solar` sits on a surface of `3d`
+   through a dated `placed_on` link. Every module table that carries
    `organisation_id` reaches a core table other than `organisations` by its
    foreign keys; `nexgen-os doctor` names one that does not
    (`module_table_detached`). The project, the participant and the meter
@@ -26,8 +31,9 @@ is specific to a trade lives here, one folder and one schema per module.
 4. **Row level security on every table**, through `secure_table()`.
 5. **A country is data.** No module names one; what a country decides is in
    its pack.
-6. **The registry is a table.** The last statement of a module's first
-   migration writes its row into `nexgen.modules`.
+6. **The registry is a table.** A module's first migration writes its row
+   into `nexgen.modules`, last, or first when the kinds it declares are to
+   be published under its code (`3d` owns the schema `three_d`).
 7. **A module declares its inputs and outputs**, typed and with units, so
    that a run can be reproduced and compared.
 
@@ -47,7 +53,7 @@ and `tasks` carries what has to be done, with its legal reference and its condit
 | `grid` (shipped) | the grid side of a meter of the core: the operators of a country (`operators`, written by packs) and, for each meter, its operator and its voltage level (`grid.meters`, the meter's id) | later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
 | `community` (shipped) | energy sharing on the projects and participants of the core: the allocation key of a project and what it reads of a participant, as their attributes; the volumes allocated to each participant as series of a run | who received how much: self-consumption on a site, energy sharing in a community, volumes per participant and interval, through a sharing engine; with `contracts` a settlement engine turns them into settlement lines, handed to the accounting side through `accounting` ([why](../README.md#invoicing-and-ekwo-os)) |
 | `billing` (shipped, [0010](../docs/decisions/0010-ekwo-link.md), [0043](../docs/decisions/0043-the-participant-is-billed.md)) | the billing bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact, and the Ekwo invoices issued for or to a participant of the core, as pointers; the line where Nexgen OS stops is in the [README](../README.md#invoicing-and-ekwo-os) | nothing: a settlement line is handed to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)), which keeps legal identity, invoices and the ledger; the two install side by side on one database ([with Ekwo OS](../docs/with-ekwo-os.md)) |
-| `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
+| `3d` (shipped, [0008](../docs/decisions/0008-3d-module.md), [README](3d/README.md)) | the physical description of a site: buildings, their floors, rooms, zones and units (one tree of spaces), roof faces, facades and ground areas with their orientation, the placement of a device among them, the `occupies` link of a participant on a building, a floor or a unit, the `placed_on` link of a PV array on a face; the importers of CityJSON, IFC and Home Assistant homes; later, georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | the level-of-detail 1 block of a building, the orientation of a face from its 3D polygon; later, placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
 | `solar` (schema shipped, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles | PV yield as a run that says its weather, period, conventions, models and losses, computed by PVGIS, by `pvwatts.ts` or by the pvlib engine ([0013](../docs/decisions/0013-external-engines.md)); IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
 | `storage` | batteries and their product physics (usable capacity, cycles, round-trip efficiency), hydrogen later | charge and discharge dispatch on the series `solar` and `consumption` produce |
 | `charging` | EV chargers, charging sessions | charging load and its steering |

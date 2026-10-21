@@ -35,16 +35,21 @@ page walks them:
 - **the project**: what a person works on — an energy community, a
   portfolio, a study, a construction site, a district plan — with its
   country and its lifecycle;
-- **the participant**: a site's role in a project (producer, consumer,
-  prosumer), with the contact who answers for it and its period; it groups
-  what is behind the meters of its site, and a participant without a site
-  groups others;
-- **the place**: the site, the building on it, the surfaces of the building
-  or the ground (a roof face, a facade, a carport), and the spaces inside it
-  (floors, rooms, zones, units) ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
+- **the participant**: an actor of a project on a site (producer,
+  consumer, prosumer) — the whole site or one occupant of it, a building, a
+  floor, a flat — with the contact who answers for it and its period; it
+  carries its meters and groups the devices behind them, several
+  participants share a site, and a participant without a site groups
+  others;
+- **the place**: the site, with its address, its point or parcel and its
+  time zone ([0025](0025-a-place-has-one-shape.md)), geolocated but not
+  described. What it physically is — its buildings, their floors, rooms
+  and units, their roof faces and facades, where a device sits among them —
+  is the description of a building, the `3d` module's
+  ([0008](0008-3d-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
 - **the meter**: the connection point of a site to a network, under the
-  identifier its operator knows (an EAN, a PRM, a GSRN), the frontier
-  between the grid and the place;
+  identifier its operator knows (an EAN, a PRM, a GSRN), carried by a
+  participant of the site, the frontier between the grid and the place;
 - **the device**: anything installed on the place, from a PV system to a
   physical meter or a probe, an instance of a product of the catalogue,
   behind a meter when it is on the grid side
@@ -60,7 +65,7 @@ external data ([0011](0011-external-data.md)).
 
 **Every object is a table with the columns that object always has**
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
-`from buildings`, never `from entities where class = 'building'`.
+`from sites`, never `from entities where class = 'site'`.
 
 **Everything else is attached, through one registry.** What every object
 shares (an id, an organisation, a scenario, a kind) is kept once in
@@ -78,9 +83,12 @@ decides, [0020](0020-a-pack-holds-what-a-function-reads.md)).
 **A trade of its own is a module.** The grid side of a connection point
 (who operates it, how it is connected, mandates, tariffs) and the sharing
 of an energy community (allocation keys, the shares an engine computes) are
-modules beside `solar` and `architecture`; the objects themselves — the
-meter, the project, the participant — are the core's, and a module starts
-from them ([0042](0042-a-module-starts-from-an-object-of-the-core.md)).
+modules beside `solar` and `3d`; the objects themselves — the meter, the
+project, the participant — are the core's, and a module starts from them
+([0042](0042-a-module-starts-from-an-object-of-the-core.md)). The physical
+description of a place is a trade too, the territory of BIM and CityGML:
+the `3d` module holds the buildings, spaces and surfaces and declares them
+as kinds of object of its own.
 The law is not held in the open repository.
 
 ## What it forbids
@@ -98,7 +106,10 @@ The entity table of [0001](0001-one-entity-table-attached-values.md), then
 the 0.1 core of forty tables, with the grid, the community, the law and the
 sensors in it (19/10/2026), then the 0.2 core, which named three notions —
 the place, the device, the series — and held the project, the participant
-and the connection point in the `community` and `grid` modules (21/10/2026).
+and the connection point in the `community` and `grid` modules (21/10/2026);
+the same day, the buildings, spaces and surfaces of the 0.2 core left it
+for the `3d` module, and the participant became an actor at any level of a
+building, carrying its meters.
 
 ## See also
 

@@ -53,11 +53,14 @@ measure.
 
 ## Places
 
+The place of the core is the site, geolocated but not described; what is
+built on it is the `3d` module's.
+
 - [0003](decisions/0003-geometry-wgs84-3d-utm.md) Geometry is stored in WGS 84 in 3D, and measured in UTM
 - [0025](decisions/0025-a-place-has-one-shape.md) A place has one shape: address, point, precision, source
 - [0009](decisions/0009-addresses-and-geocoding.md) What applies to a place follows its region, its municipality or its area
-- [0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md) A device is placed on a surface or in a space, and a space is one notion with a kind
-- [0008](decisions/0008-3d-module.md) A 3D model is a file a row points to, and it enriches a place without changing it
+- [0008](decisions/0008-3d-module.md) The `3d` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it
+- [0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md) A device is placed by the `3d` module, on a surface or in a space, and a space is one notion with a kind
 
 ## Series
 

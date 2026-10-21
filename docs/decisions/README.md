@@ -38,8 +38,8 @@ describes; its record is written once the fix has shipped.
 - [0003](0003-geometry-wgs84-3d-utm.md) · Geometry is stored in WGS 84 in 3D, and measured in UTM · accepted
 - [0025](0025-a-place-has-one-shape.md) · A place has one shape · accepted
 - [0009](0009-addresses-and-geocoding.md) · What applies to a place follows its region, its municipality or its area · accepted
-- [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md) · A device is placed on a surface or in a space, and a space is one notion with a kind · accepted
-- [0008](0008-3d-module.md) · A 3D model is a file a row points to, and it enriches a place without changing it · accepted
+- [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md) · A device is placed by the `3d` module, on a surface or in a space, and a space is one notion with a kind · accepted
+- [0008](0008-3d-module.md) · The `3d` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
 
 ## Series
 

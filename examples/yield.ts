@@ -5,8 +5,8 @@
 //   export NEXGEN_DB_URL=…   # the connection string, never written to a file
 //   npx tsx examples/yield.ts <pv system id> [year]
 //
-// The system is a row of `solar.pv_systems`; its arrays are its own, or one
-// array on the device's surface with the system's power. PVGIS computes the
+// The system is a row of `solar.pv_systems`, with its arrays, each with its
+// own azimuth and tilt. PVGIS computes the
 // energy (no key, an Internet connection); the year is a whole calendar
 // year PVGIS covers, the last full one but two by default.
 

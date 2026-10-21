@@ -1,5 +1,5 @@
 // The twenty-minute path of the README, on PGlite: the house of example 01,
-// its PV system described in the `solar` module in one line, a yield run
+// its PV system and its array described in the `solar` module, a yield run
 // through `examples/yield.ts` and its series read back by month.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -17,8 +17,9 @@ beforeAll(async () => {
   await db.exec(await readFile(`${repoRoot}/examples/01-house-pv-battery.sql`, 'utf8'));
   const readme = await readFile(`${repoRoot}/README.md`, 'utf8');
   const describeSystem = readme.match(/^\s*(insert into solar\.pv_systems .*;)$/m)?.[1];
-  if (!describeSystem) throw new Error('the README no longer describes the PV system of example 01');
-  await db.exec(`set search_path = nexgen, public, extensions; ${describeSystem}`);
+  const describeArray = readme.match(/^\s*(insert into solar\.pv_arrays .*;)$/m)?.[1];
+  if (!describeSystem || !describeArray) throw new Error('the README no longer describes the PV system of example 01 and its array');
+  await db.exec(`set search_path = nexgen, public, extensions; ${describeSystem} ${describeArray}`);
 });
 
 afterAll(async () => {
@@ -26,7 +27,7 @@ afterAll(async () => {
 });
 
 describe('the yield of example 01, as the README runs it', () => {
-  it('runs on the roof face of the device, records the run and reads the year back by month', async () => {
+  it('runs on the orientation of its array, records the run and reads the year back by month', async () => {
     const recorded = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/pvgis-seriescalc-brussels-2023-48h.json`, 'utf8')) as { outputs: { hourly: { P: number }[] } };
     const asked: string[] = [];
     const fetch: Fetch = async (url) => {
@@ -35,7 +36,7 @@ describe('the yield of example 01, as the README runs it', () => {
     };
     const { result, months } = await yieldOfSystem(db, PV_SYSTEM, 2023, { pvgis: pvgis({ fetch }) });
 
-    // One array on the south face the device stands on, with the system's power.
+    // One array facing south at 30°, with the system's power.
     const params = Object.fromEntries(new URL(asked[0] as string).searchParams);
     expect(asked).toHaveLength(1);
     expect([params.peakpower, params.aspect, params.angle]).toEqual(['3.825', '0', '30']);

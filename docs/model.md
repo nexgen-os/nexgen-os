@@ -1,9 +1,11 @@
 # The core model
 
 The core names seven objects, in the order a page walks them:
-organisation → project → participant → site (buildings, spaces, surfaces)
-→ meter → device → series ([0006](decisions/0006-named-objects.md)); and the
-engine that attaches everything else to any of them. A trade that needs
+organisation → project → participant → site → meter → device → series
+([0006](decisions/0006-named-objects.md)); and the engine that attaches
+everything else to any of them. The site is geolocated, not described: its
+buildings, floors, rooms and roof faces, and where a device sits among
+them, are the `3d` module's ([0008](decisions/0008-3d-module.md)). A trade that needs
 more adds a module with its own schema, starting from one of these objects
 ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)); a
 country adds a pack.
@@ -20,15 +22,7 @@ erDiagram
   sites ||--o{ meters : "connected by"
   participants ||--o{ meters : carries
   meters ||--o{ devices : "behind"
-  sites ||--o{ buildings : holds
-  buildings ||--o{ spaces : "floors, rooms, zones, units"
-  spaces ||--o{ spaces : "inside"
-  buildings ||--o{ surfaces : "roof faces, facades"
-  sites ||--o{ surfaces : "ground areas"
   sites ||--o{ devices : installed
-  buildings ||--o{ devices : in
-  spaces ||--o{ devices : in
-  surfaces ||--o{ devices : on
   device_directory ||--o{ devices : "instance of"
   objects ||--o{ series : "observed"
   devices ||--o{ series : "measures, is set"
@@ -48,11 +42,30 @@ erDiagram
 ```
 
 `objects` is the registry: one row per organisation, project, participant,
-site, building, space, surface, meter or device (and per object a module
-declares: a PV array, a task), with its kind, its organisation and its
-scenario. The named tables keep it up to date by trigger; `declare_object()`
-registers a module's table as a kind, with the columns that lead to its
-parents. Attachments point to the registry; pages read the named tables.
+site, meter or device (and per object a module declares: a building, a
+space, a surface, a PV array, a task), with its kind, its organisation and
+its scenario. The named tables keep it up to date by trigger;
+`declare_object()` registers a module's table as a kind, with the columns
+that lead to its parents, and `declare_parents()` a module table that gives
+an object of another kind parents of its own (where a device is placed).
+`site_of()`, `ancestor_of()` and `parameter_of()` walk both. Attachments
+point to the registry; pages read the named tables.
+
+The `3d` module, on the same registry:
+
+```mermaid
+erDiagram
+  sites ||--o{ buildings : holds
+  buildings ||--o{ spaces : "floors, rooms, zones, units"
+  spaces ||--o{ spaces : "inside"
+  buildings ||--o{ surfaces : "roof faces, facades"
+  sites ||--o{ surfaces : "ground areas"
+  devices ||--o| placements : "placed"
+  buildings ||--o{ placements : in
+  spaces ||--o{ placements : in
+  surfaces ||--o{ placements : on
+  participants }o--o{ spaces : "occupies (link)"
+```
 
 ## Who
 
@@ -89,6 +102,7 @@ parents. Attachments point to the registry; pages read the named tables.
   `participant_meters(participant)` lists the connection points it carries,
   groups included.
 
+## Where
 
 - **sites** — the place a person owns, rents or operates, in the one
   standard shape of a place ([0025](decisions/0025-a-place-has-one-shape.md)),
@@ -96,20 +110,28 @@ parents. Attachments point to the registry; pages read the named tables.
   takes the shape below and defaults the time zone to the region's, else the
   country's first, from the pack; `locate_site()` places it again from a
   geocoder's answer; `place_of(site)` gives it back. Everything on a site
-  inherits its country: `country_of()`, `site_of()`.
-- **buildings** — footprint, elevation, height, profile, status, the source
-  it was described from and, in `metadata`, what that source said beyond the
-  columns. `building_volume()` extrudes the footprint. Its year, material
-  and floor counts are attributes.
-- **spaces** — the inside of a building, one tree
+  inherits its country: `country_of()`, `site_of()`. A site is geolocated,
+  not described.
+
+What is built on a site is the `3d` module's (`three_d`,
+[0008](decisions/0008-3d-module.md)), when it is installed:
+
+- **three_d.buildings** — footprint, elevation, height, profile, status, the
+  source it was described from and, in `metadata`, what that source said
+  beyond the columns. `three_d.building_volume()` extrudes the footprint.
+  Its year, label, material and floor counts are attributes the module
+  publishes.
+- **three_d.spaces** — the inside of a building, one tree
   ([0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md)):
   `floor` (with its `level`), `room`, `zone`, `unit`, each with its
   building, its parent space, elevation, height and geometry, the source it
-  was described from and its `metadata` (`add_space`).
-- **surfaces** — a roof face, a facade, a ground area or a carport, on a
-  building or straight on a site (a ground-mounted plant, a field or a car
-  park has surfaces and no building), with azimuth (degrees clockwise from true north) and
-  tilt; `add_surface` reads them from a 3D polygon when none is given.
+  was described from and its `metadata` (`three_d.add_space`). A
+  participant occupies a building, a floor or a unit (`occupies`).
+- **three_d.surfaces** — a roof face, a facade, a ground area or a carport,
+  on a building or straight on a site (a ground-mounted plant, a field or a
+  car park has surfaces and no building), with azimuth (degrees clockwise
+  from true north) and tilt; `three_d.add_surface` reads them from a 3D
+  polygon when none is given.
 
 ### The shape of a place
 
@@ -163,18 +185,20 @@ key is refused (`place_key_unknown`).
 - **devices** — anything installed, including the instruments that measure:
   a PV system, a battery, a heat pump, a meter, a thermometer
   ([0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
-  Type (from `device_types`), site, and where on it — building, space,
-  surface — checked together by `devices_check`; catalogue product,
-  manufacturer, model, rated power, unit count, status, installation and
-  removal dates, and the meter of its site it is behind (`meter_id`, none
-  for an instrument that measures nothing on the grid side). `install_device`
-  (with the nameplate and `metadata` of the file it was read from, when no
-  product is named, and its meter), `move_device` (the place it leaves stays
-  as a `placed_in` link), `connect_device` (the meter it leaves stays as a
-  `behind_meter` link: the column is today, the links are the history),
-  `retire_device`, `replace_device` (a `replaces` link, same place, same
-  meter). Anything else about where it belongs — the zone it serves — is a
-  link. A module derives the types it owns:
+  Type (from `device_types`), site, a point or the area it covers,
+  catalogue product, manufacturer, model, rated power, unit count, status,
+  installation and removal dates, and the meter of its site it is behind
+  (`meter_id`, checked by `devices_check`; none for an instrument that
+  measures nothing on the grid side). `install_device` (with the nameplate
+  and `metadata` of the file it was read from, when no product is named,
+  its GeoJSON geometry and its meter), `connect_device` (the meter it leaves
+  stays as a `behind_meter` link: the column is today, the links are the
+  history), `retire_device`, `replace_device` (a `replaces` link, same
+  site, same meter). Where on its site it is — the building, the room, the
+  roof face — is a placement of the `3d` module
+  (`three_d.place_device`, `three_d.move_device`, the place it leaves kept
+  as a `placed_in` link); anything else about where it belongs — the zone
+  it serves — is a link. A module derives the types it owns:
   `call derive_devices('solar.pv_systems', 'solar')` makes a table with the
   same id, refused for any other type.
 - **device_directory** — products: manufacturer, model, unit power,
@@ -270,8 +294,9 @@ optional extras).
   next; `attributes_of(object, at, scenario)` reads them.
 - **external_ids** — unique per scheme in an organisation, checked against
   the scheme's pattern, with validity (`add_identifier`).
-- **links** — typed and dated (`serves`, `shades`, `occupies`, `owns`,
-  `placed_in`…); the link type may require kinds on either side
+- **links** — typed and dated (`serves`, `shades`, `owns`, `behind_meter`,
+  `carried_by`, and the modules' own: `occupies`, `placed_in`, `placed_on`
+  of `3d`…); the link type may require kinds on either side
   (`link_objects`, `end_link`). Splits, merges and replacements are links
   too: `split_into`, `merged_into`, `replaces` (`split_object`,
   `merge_objects`). Identifiers never encode anything and are never reused.
@@ -322,6 +347,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
+| `3d` | `three_d` | the physical description of a site: `buildings`, `spaces` (floors, rooms, zones, units, one tree) and `surfaces` (roof faces, facades, ground areas) as kinds of object, `placements` (where a device is, with the device's id), the `occupies` link of a participant on a building, a floor or a unit, the `placed_on` link of a PV array on a face, the importers of CityJSON, IFC and Home Assistant homes |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 
@@ -345,10 +371,10 @@ into the same shapes, and the library writes the file.
 
 | File | Library | Importer, exporter |
 |---|---|---|
-| Home Assistant snapshot | `homeassistant`: `readHomeAssistant`, `writeHomeAssistant` | `importHomeAssistant`, `exportHomeAssistant` (core) |
-| CityJSON 2.0 | `cityjson`: `readCityJson`, `writeCityJson` | `importCityJson`, `exportCityJson` (core) |
-| IFC4, IFC2x3 | `ifc`: `readIfc` | `importIfc` (core) |
-| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core) |
+| Home Assistant snapshot | `homeassistant`: `readHomeAssistant`, `writeHomeAssistant` | `importHomeAssistant`, `exportHomeAssistant` (`modules/3d/src`) |
+| CityJSON 2.0 | `cityjson`: `readCityJson`, `writeCityJson` | `importCityJson`, `exportCityJson` (`modules/3d/src`) |
+| IFC4, IFC2x3 | `ifc`: `readIfc` | `importIfc` (`modules/3d/src`) |
+| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core; the buildings and surfaces when `3d` is installed) |
 | EPW, TMY3 | `weather-files`: `readEpw`, `readTmy3`, `writeEpw` | `importWeatherFile`, `exportWeatherYear` (core) |
 | Parquet | `parquet`: `writeSeriesParquet` | `exportSeriesParquet` (core) |
 | PVsyst PAN, OND | `panond`: `readPan`, `readOnd` | `importProduct` (`modules/solar/src/products.ts`) |

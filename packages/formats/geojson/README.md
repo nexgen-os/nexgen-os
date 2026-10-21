@@ -41,11 +41,11 @@ const variant = await exportGeoJson(db, { siteId }, { scenarioId });    // a des
 
 | Nexgen OS | Feature | Properties |
 |---|---|---|
-| the project (`projectId`, needs the `community` module) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
+| the project (`projectId`) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
 | each site | its parcel or point | address fields, `time_zone`, `location_precision`, `location_source_code`, `profile`; the municipality code among its identifiers |
-| each building | its footprint | `site_id`, `elevation_m`, `height_m`, `status`, `source_code`; floors and year among its attributes |
-| each surface | its face, or `null` | `surface_kind`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `source_code`; the material among its attributes |
-| each device | its point or area, or `null` | `device_type`, `site_id`, `building_id`, `space_id`, `surface_id`, `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
+| each building, with the `3d` module | its footprint | `site_id`, `elevation_m`, `height_m`, `status`, `source_code`; floors and year among its attributes |
+| each surface, with the `3d` module | its face, or `null` | `surface_kind`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `source_code`; the material among its attributes |
+| each device | its point or area, or `null` | `device_type`, `site_id`, with the `3d` module its placement (`building_id`, `space_id`, `surface_id`), `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
 
 Every feature also carries its `attributes` (read by `attributes_of()` at
 the moment asked, in the scenario asked), its `external_ids` and the `runs`

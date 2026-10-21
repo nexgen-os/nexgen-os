@@ -27,8 +27,9 @@ const again = writeHomeAssistant(home);   // deep-equals snapshot
 ```
 
 What it never does: convert a unit, guess a quantity, open a connection or
-call Home Assistant. Into Nexgen OS, `importHomeAssistant()` of
-`@nexgen-os/core` writes the shapes into a building — spaces through
-`add_space()`, devices through `install_device()`, one series per point
+call Home Assistant. Into Nexgen OS, `importHomeAssistant()` of the `3d`
+module (`modules/3d/src`) writes the shapes into a building — spaces
+through `three_d.add_space()`, devices through `install_device()` and
+`three_d.place_device()`, one series per point
 through `series_ensure()`, the readings through `store()` converted by the
 `units` vocabulary — and `exportHomeAssistant()` reads them back.

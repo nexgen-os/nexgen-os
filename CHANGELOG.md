@@ -225,7 +225,8 @@ rewritten) — and a module starts from one of them and enriches it
 - `nexgen-os doctor` names `module_table_detached`: a table of a module
   schema that carries `organisation_id` and reaches no table of the core
   but `organisations` by a path of foreign keys.
-- Examples 01, 04, 05, 06 and 07 need the core only.
+- Examples 01 and 04 need the core only; 02, 05, 06 and 07 install the
+  `3d` module first (below).
 - The bridge to the invoicing side is the `billing` module (schema
   `billing`, module code `billing`), and the participant of the core is the
   one who is billed (decision 0043, decision 0010 rewritten):
@@ -242,6 +243,50 @@ rewritten) — and a module starts from one of them and enriches it
   Ekwo raises `ekwo_remote_not_supported`. `nexgen-os doctor` names
   `billing_key_unlinked`. Example 03 records one bill between two
   participants.
+
+The participant is an actor of the project at any level of a building, and
+the physical description of a place leaves the core for the `3d` module:
+
+- `meters.participant_id`: the participant that carries a connection point,
+  of the same organisation and on the meter's site (`meters_check`:
+  `meter_participant_in_other_organisation`,
+  `meter_participant_site_mismatch`). `assign_meter(meter, participant, on)`
+  gives it to another participant and keeps the one it leaves as a dated
+  `carried_by` link, a new link type of the core; `declare_meter()` takes an
+  optional `p_participant_id`; `participant_meters()` reads the column,
+  groups included. The rule `participant_site_already_in_project` is
+  dropped: several participants share a site, one per flat or per meter.
+- `buildings`, `spaces` and `surfaces` move to the schema `three_d` of the
+  `3d` module, version 0.1.0, which needs core 0.3.0
+  (`modules/3d/migrations/0001_three_d.sql`), with `add_building()`,
+  `add_space()`, `add_surface()`, `building_volume()`, `building_of()`,
+  `footprint_volume()` and `surface_orientation()`, now `three_d.*`; the
+  link types `placed_in` and `occupies` and the properties `floor_area`,
+  `energy_label`, `year_built`, `floors_above_ground`,
+  `floors_below_ground`, `roof_area`, `material`, `u_value` and
+  `is_external` are published by the module. A module code may start with
+  a digit.
+- `devices` loses `building_id`, `space_id` and `surface_id`;
+  `install_device()` takes a GeoJSON geometry (`p_geometry`) in place of the
+  placement object and refuses `invalid_geometry`; `move_device()` leaves the
+  core. The placement is `three_d.placements`, one row per placed device,
+  written by `three_d.place_device()` and `three_d.move_device()` (decision
+  0026, rewritten). `declare_parents()` and `object_parent_tables` let a
+  module give an object of the core parents of its own: `site_of()`,
+  `ancestor_of()` and `parameter_of()` go through a placed device's surface,
+  space and building.
+- `solar.pv_arrays` loses `surface_id` and keeps its own azimuth and tilt;
+  `three_d.place_array()` puts an array on a surface as a dated `placed_on`
+  link and fills its orientation from the face when it has none. A PV
+  system without arrays has no orientation: the yield asks for an array
+  (`array_without_orientation`).
+- `importCityJson()`, `exportCityJson()`, `importIfc()`,
+  `importHomeAssistant()` and `exportHomeAssistant()` move from
+  `@nexgen-os/core` to `modules/3d/src`; `@nexgen-os/core` no longer depends
+  on `@nexgen-os/cityjson`, `@nexgen-os/homeassistant` and
+  `@nexgen-os/ifc`. `exportGeoJson()` adds the buildings, surfaces and
+  placements of a site when the module is installed. `nexgen-os status`
+  counts devices instead of buildings.
 
 ### Changed — schema 0.2.0: the place, the device and the series
 

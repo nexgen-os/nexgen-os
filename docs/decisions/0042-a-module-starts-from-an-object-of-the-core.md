@@ -32,7 +32,9 @@ three forms and no other:
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object: `tasks.tasks`
   is about one object of the registry, `solar.pv_arrays` belongs to a PV
-  system;
+  system, `three_d.buildings` stands on a site — a kind of object of the
+  module, declared with `declare_object()`, which `site_of()` reaches like
+  any other;
 - **vocabulary rows** in the core's vocabularies, marked with the module in
   `published_by`: the `allocation_key` property of `community`, the
   quantities of `weather`, a module's device types.
@@ -45,9 +47,17 @@ organisation and keeps to the rule. `nexgen-os doctor` checks it on every
 installation and names the table that does not (`module_table_detached`).
 
 **The objects every installation walks are the core's**: organisation →
-project → participant → site (buildings, spaces, surfaces) → meter →
-device → series ([0006](0006-named-objects.md)). A module enriches any of
-them; none of them is a module's.
+project → participant → site → meter → device → series
+([0006](0006-named-objects.md)). A module enriches any of them; none of
+them is a module's. The physical description of a site — its buildings,
+spaces and surfaces, where a device sits among them — is the `3d`
+module's.
+
+**The examples say which modules they need, and need no more.** Examples
+01 (a house) and 04 (a farm) need the core only; 03 (an energy community)
+needs `community`, `grid` and `accounting`; 02 (a school), 05 (a district),
+06 (a drone survey) and 07 (an office) describe buildings and install `3d`
+first.
 
 ## What it forbids
 
@@ -68,7 +78,9 @@ The projects, the participants and the meters moved to the core; `grid`
 kept the operators and now derives the core's meter in a `grid.meters` of its
 own, the grid side of it; `community` kept energy
 sharing; the `behind_meter` link became `devices.meter_id`, the link
-keeping the history.
+keeping the history. The same release moved `buildings`, `spaces` and
+`surfaces` and the placement of a device from the core to the `3d` module,
+and `solar.pv_arrays.surface_id` became a `placed_on` link.
 
 ## See also
 
