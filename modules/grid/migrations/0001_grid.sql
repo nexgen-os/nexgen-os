@@ -1,7 +1,7 @@
 -- Nexgen OS — module `grid`: the grid side of a connection point.
 --
 -- The connection point is the core's (`meters`): the identifier its operator
--- knows, on a site, what it can do and when (decision 0042). This module
+-- knows, carried by a participant, what it can do and when (decision 0042). This module
 -- enriches it with what the grid knows. Who runs the grid — distribution and
 -- transmission operators, what they cover, where a third party reads meter
 -- data — is a vocabulary a country pack fills; how a point is connected —

@@ -4,8 +4,8 @@
 -- equipment is taken down, and each phase through tasks: the grid study
 -- accepted, the permit filed, the loan signed, the panels delivered, the
 -- array wired, the injection point energised, the system commissioned, the
--- yearly inspection done. A task is about one object — a project, a site, a
--- building, a surface, a device — has a phase, a role that carries it and
+-- yearly inspection done. A task is about one object — a project, a
+-- participant, a building, a surface, a device — has a phase, a role that carries it and
 -- the contact who holds that role, planned and actual dates, a status, and
 -- may depend on another task. It is an object itself, so that photos,
 -- reports and certificates attach to it as documents and attributes.
@@ -15,7 +15,7 @@
 -- and the documents it expects; the module publishes the generic ones
 -- (0003), the installation and private overlays add theirs. `tasks.plan()` reads the templates
 -- that match a project and creates its tasks, once. `tasks.progress()` sums
--- the tasks of a site or a project up on a day.
+-- the tasks of a participant or a project up on a day.
 --
 -- Projects and their participants are the core's: a task is a secondary
 -- table of the core objects it is about (decision 0042).
@@ -77,7 +77,7 @@ comment on table tasks.roles is
   'The roles that carry the tasks of a project: owner, installer, grid operator, municipality, regulator, financer, notary, community manager. Distinct from the roles of an organisation''s members and from a participant''s role in the energy flows. Vocabulary: written by migrations, modules and packs.';
 
 insert into tasks.roles (code, name, description) values
-  ('owner',              'Owner',              'The owner of the site or of the project: decides, signs, pays.'),
+  ('owner',              'Owner',              'The owner of the place or of the project: decides, signs, pays.'),
   ('installer',          'Installer',          'The company that designs, supplies and installs the equipment.'),
   ('grid_operator',      'Grid operator',      'The distribution or transmission operator: connection, meter, data.'),
   ('municipality',       'Municipality',       'The local authority: permits, declarations, public consultation.'),
@@ -149,8 +149,8 @@ grant select, insert, update, delete on tasks.templates to service_role;
 create table tasks.tasks (
   id                      uuid primary key default gen_random_uuid(),
   organisation_id         uuid not null references organisations(id) on delete cascade,
-  -- What the task is about, by its kind and its id: a project, a site, a
-  -- building, a surface, a device. Its organisation is the subject's
+  -- What the task is about, by its kind and its id: a project, a
+  -- participant, a building, a surface, a device. Its organisation is the subject's
   -- (`attach`), and it goes with its subject (`drop_attachments`).
   subject_kind            text not null references kinds(kind),
   subject_id              uuid not null,
@@ -192,7 +192,7 @@ create table tasks.tasks (
 );
 
 comment on table tasks.tasks is
-  'A task on a project, a site, a building, a surface or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action). An object: photos, reports and certificates attach to it.';
+  'A task on a project, a participant, a building, a surface or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action). An object: photos, reports and certificates attach to it.';
 
 create index tasks_subject_idx on tasks.tasks (subject_kind, subject_id);
 create index tasks_phase_idx on tasks.tasks (phase);
@@ -336,8 +336,8 @@ grant execute on function tasks.plan(uuid, uuid) to authenticated, service_role;
 -- progress — where a project stands on a day.
 -- ---------------------------------------------------------------------------
 
--- The tasks of a site (on the site or anything on it) or of a project (on
--- the project or on the sites taking part in it), in the world as it is or
+-- The tasks of a participant (on the participant or anything of it) or of
+-- a project (on the project or on the participants taking part in it), in the world as it is or
 -- in a scenario, summed up on a given day: how many by status, the share
 -- done among those not cancelled, those late (planned to end before the
 -- day and not done), and the phase of the earliest task still open. The
@@ -353,17 +353,17 @@ as $$
     union all
     select s.id, s.parent_id from scenarios s join chain on s.id = chain.parent_id
   ),
-  sites as (
+  nodes as (
     select p_object_id as id
     union
-    select p.site_id from participants p where p.project_id = p_object_id and p.site_id is not null
+    select p.id from participants p where p.project_id = p_object_id
   ),
   m as (
     select m.*, ph.position
       from tasks.tasks m
       join tasks.phases ph on ph.code = m.phase
      where (m.scenario_id is null or m.scenario_id in (select id from chain))
-       and (m.subject_id = p_object_id or site_of(m.subject_kind, m.subject_id) in (select id from sites))
+       and (m.subject_id = p_object_id or participant_of(m.subject_kind, m.subject_id) in (select id from nodes))
   )
   select jsonb_build_object(
     'on', p_on,
@@ -379,10 +379,10 @@ as $$
 $$;
 
 comment on function tasks.progress(uuid, date, uuid) is
-  'Where a site or a project stands on a day: tasks by status, share done, the late ones, the current phase. Reads under the caller''s row level security.';
+  'Where a participant or a project stands on a day: tasks by status, share done, the late ones, the current phase. Reads under the caller''s row level security.';
 
 grant execute on function tasks.progress(uuid, date, uuid) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('tasks', 'Tasks', '0.1.0', 'tasks', '0.2.0',
-        'What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a site or a project on a day.');
+        'What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a participant or a project on a day.');
