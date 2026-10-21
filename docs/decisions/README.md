@@ -68,7 +68,7 @@ describes; its record is written once the fix has shipped.
 ## Packs
 
 - [0020](0020-a-pack-holds-what-a-function-reads.md) · A pack holds what a function reads, and data cannot execute · accepted
-- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, and no global fallback · accepted
+- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted
 - [0034](0034-a-pack-upgrade-is-never-silent.md) · A pack upgrade is never silent, and a golden site is its contract · accepted
 
 ## Formats and external data

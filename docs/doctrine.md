@@ -103,7 +103,7 @@ device is not placed.
 ## Packs
 
 - [0020](decisions/0020-a-pack-holds-what-a-function-reads.md) A pack holds what a function reads, and data cannot execute
-- [0021](decisions/0021-one-cascade-of-defaults.md) One cascade of defaults, and no global fallback
+- [0021](decisions/0021-one-cascade-of-defaults.md) One cascade of defaults, climbing a region to its parent, and no global fallback
 - [0034](decisions/0034-a-pack-upgrade-is-never-silent.md) A pack upgrade is never silent, and a golden site is its contract
 
 ## Formats and external data

@@ -1,6 +1,6 @@
-# 0021 — One cascade of defaults, and no global fallback
+# 0021 — One cascade of defaults, climbing a region to its parent, and no global fallback
 
-> Status: accepted · 19/10/2026
+> Status: accepted · 19/10/2026 · completed 21/10/2026 (the climb through the parent region)
 
 ## Context
 
@@ -18,9 +18,18 @@ none.
 **A default is a value of a level, and one function resolves it, in one
 order**: the object itself, then its parents (a device's participant, a
 participant's group and project), then its organisation, then the region
-of its participant's place, then its country
+of its participant's place, then the regions it is part of, nearest first,
+then its country
 ([0045](0045-the-participant-is-the-node.md)). The first level that holds a value answers, and the answer says
 which level it came from.
+
+**A region climbs to its parent.** `region` is the ISO 3166-2 subdivision a
+pack chooses to list (a department in France, a region in Belgium); when
+the pack lists two levels, each subdivision names the one it is part of
+(`regions.parent`). A value decided at the upper level holds in every
+subdivision under it without a copy, and a value of the lower level wins
+over it. The answer names the region that decided. A pack with one level
+has no parent, and its cascade is the same as before.
 
 **Below the country, a default is an attribute.** The object, its parents
 and its organisation hold their own values as attributes, with a period and

@@ -13,9 +13,11 @@
 -- `parameter_of()` is the one resolution of a parameter, in one order for
 -- every property: the object's own attribute, then its parents' nearest
 -- first along the foreign keys of the core (`parents_of()`), then its
--- organisation, then the region, then the country of its participant's
--- place — and nothing else: device → participant → project → organisation
--- → region → country. A module resolves its own kinds through them first
+-- organisation, then the region of its participant's place and the
+-- regions it is part of (`regions.parent`), then the country — and nothing
+-- else: device → participant → project → organisation → region → its
+-- parent region(s) → country. A value a region decides holds in every
+-- region listed under it, without a copy. A module resolves its own kinds through them first
 -- (a building through its spaces), then asks the core from the participant.
 -- There is no global level: a value nobody decided is refused by name
 -- (`parameter_missing`), never guessed.
@@ -139,7 +141,7 @@ create table defaults (
 );
 
 comment on table defaults is
-  'The values a country or one of its regions decides, by property, each with its source and reference: the two last levels of parameter_of(). Published by packs; dated, never edited — a new value is a new row and a valid_to on the old one.';
+  'The values a country or one of its regions decides, by property, each with its source and reference: the last levels of parameter_of(), a region''s holding in the regions listed under it. Published by packs; dated, never edited — a new value is a new row and a valid_to on the old one.';
 
 -- The natural key a pack upserts by.
 create unique index defaults_natural_key on defaults
@@ -272,13 +274,15 @@ stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  a        attributes%rowtype;
-  d        defaults%rowtype;
-  v_org    uuid;
-  anc      record;
-  v_place  participants%rowtype;
-  v_day    date := p_at::date;
-  reached  text := 'object';
+  a          attributes%rowtype;
+  d          defaults%rowtype;
+  v_org      uuid;
+  anc        record;
+  v_place    participants%rowtype;
+  v_region   text;
+  v_climbed  text[] := '{}';
+  v_day      date := p_at::date;
+  reached    text := 'object';
 begin
   if not exists (select 1 from property_defs where code = p_property_code) then
     raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
@@ -315,20 +319,25 @@ begin
   -- 4. The region, then the country of its participant's place: the pack's.
   select * into v_place from participants where id = participant_of(p_kind, p_object_id) and country is not null;
   if v_place.id is not null then
-    if v_place.region is not null then
+    -- The region, then the region it is part of, up to the top of the
+    -- levels its pack lists: a value decided above holds below it.
+    v_region := v_place.region;
+    while v_region is not null and not v_region = any (v_climbed) loop
       reached := 'region';
+      v_climbed := v_climbed || v_region;
       select * into d from defaults
-       where property_code = p_property_code and country = v_place.country and region = v_place.region
+       where property_code = p_property_code and country = v_place.country and region = v_region
          and (valid_from is null or valid_from <= v_day) and (valid_to is null or valid_to > v_day);
       if found then
         if d.value is null then
-          raise exception 'parameter_not_decided: % in %: %', p_property_code, v_place.region, coalesce(d.reference, 'no single value')
+          raise exception 'parameter_not_decided: % in %: %', p_property_code, v_region, coalesce(d.reference, 'no single value')
             using errcode = 'no_data_found';
         end if;
-        return jsonb_build_object('value', d.value, 'level', 'region', 'region', v_place.region,
+        return jsonb_build_object('value', d.value, 'level', 'region', 'region', v_region,
                                   'source_code', d.source_code, 'reference', d.reference, 'valid_from', d.valid_from);
       end if;
-    end if;
+      select r.parent into v_region from regions r where r.code = v_region;
+    end loop;
     reached := 'country';
     select * into d from defaults
      where property_code = p_property_code and country = v_place.country and region is null
@@ -350,7 +359,7 @@ end;
 $$;
 
 comment on function parameter_of(text, uuid, text, timestamptz, uuid) is
-  'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, then the region''s and the country''s of its participant''s place — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
+  'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, then the region''s of its participant''s place, its parent regions'' nearest first, and the country''s — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
 
 -- ---------------------------------------------------------------------------
 -- Row level security: countries, regions and defaults are what packs
