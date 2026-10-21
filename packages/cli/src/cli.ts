@@ -10,7 +10,7 @@
 import { readFile } from 'node:fs/promises';
 import { readCatalogue, type Step } from './catalogue.js';
 import { doctor, status, type DoctorReport, type StatusReport } from './doctor.js';
-import { install, migrate, postgisVersion, type InstallReport } from './engine.js';
+import { install, migrate, postgisVersion, type InstallReport } from './apply.js';
 import { NexgenError } from './errors.js';
 import { buildPacks, checkPacks, type PackReport } from './pack/command.js';
 import { connect, type SqlClient } from './sql.js';

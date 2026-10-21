@@ -53,6 +53,9 @@ new path:
   `tests/connectors-*.test.ts`, `tests/fixtures/engines` →
   `tests/fixtures/connectors`, and the CI job `engine-pvlib` →
   `connector-pvlib`.
+- `packages/cli/src/engine.ts` → `packages/cli/src/apply.ts`: the one way
+  to apply a migration; "engine" names only what computed a run. The
+  exports of the installer do not change.
 
 ### Changed
 

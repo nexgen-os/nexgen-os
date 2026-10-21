@@ -6,7 +6,7 @@
  * problem so that the person or the agent reading it knows which.
  */
 import { installedScopes, plan, readCatalogue, type Catalogue } from './catalogue.js';
-import { postgisVersion, recordedSteps, registeredModules, POSTGIS_LINE } from './engine.js';
+import { postgisVersion, recordedSteps, registeredModules, POSTGIS_LINE } from './apply.js';
 import type { SqlClient } from './sql.js';
 import { checkFloor, databaseVersion } from './version.js';
 

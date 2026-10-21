@@ -1,5 +1,5 @@
 /**
- * The engine: one way to apply a migration, used by `init`, by `migrate`
+ * One way to apply a migration, used by `init`, by `migrate`
  * and by the test harness alike.
  *
  * Each file is applied in one transaction together with its record in
