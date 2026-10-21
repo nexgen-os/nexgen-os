@@ -112,6 +112,6 @@ describe('a yield run with the soiling of the place', () => {
       db,
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
-    )).rejects.toThrow(/losses_differ_between_arrays: South and East/);
+    )).rejects.toThrow(/losses_differ_between_arrays: (South and East|East and South) have different soiling/);
   });
 });

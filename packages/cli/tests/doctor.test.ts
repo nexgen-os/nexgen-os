@@ -67,7 +67,7 @@ describe('doctor', () => {
 
   it('names, by kind, attachments whose object no longer exists', async () => {
     const org = await organisation(db, 'Orphans');
-    const site = await insert(db, 'nexgen.sites', { organisation_id: org, name: 'Gone', country: 'FR' });
+    const site = await insert(db, 'nexgen.sites', { organisation_id: org, name: 'Gone', country: 'ZZ' });
     await db.query(`select nexgen.set_attribute('site', $1, 'annual_consumption', '1200')`, [site]);
     await db.query(`select nexgen.add_identifier('site', $1, 'osm', 'way/7')`, [site]);
     await db.exec('begin');
