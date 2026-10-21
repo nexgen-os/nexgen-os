@@ -31,7 +31,7 @@ new path:
   `connectors/series.ts`, the address shape and `geocoderFor()` of
   `formats/geocoding/index.ts`, `engines/runner.ts`, `engines/settlement.ts`,
   `engines/pvlib/index.ts` → the new package `@nexgen-os/core`
-  (`packages/core`). `engines/` keeps the programs in other languages.
+  (`packages/core`). The programs in other languages followed, below.
 - `sdk/python` → `packages/python`.
 - `modules/solar/*.ts` → `modules/solar/src/*.ts`.
 - `modules/ekwo` → `modules/billing`: schema `billing`, tables
@@ -134,8 +134,8 @@ new path:
   `runSharing()` (`modules/community/src/sharing.ts`), which hands the
   participants' metered offtake and injection, the key and the rules to an
   engine and stores its answer as series of a run on each participant.
-- The `energy_sharing` request kind of the engines
-  (`packages/core/src/engines/sharing.ts`), and `engines/sharing-example`,
+- The `energy_sharing` request kind of the program connectors
+  (`packages/core/src/connectors/sharing.ts`), and `packages/connectors/sharing-example`,
   pure Python, which shares in proportion to offtake and is meant to be
   copied; it refuses by name `participants_missing`, `series_missing`,
   `series_misaligned`, `key_unknown` and `rule_unknown`.
@@ -155,12 +155,12 @@ new path:
   `tests/cross-install.test.ts` installs the Ekwo OS core from its published
   package and the Nexgen OS core with `billing`, in both orders, and finds
   no collision, each side's grants intact and one member reading both.
-- The `settlement` request kind of the engines (`packages/core/src/engines/settlement.ts`):
+- The `settlement` request kind of the program connectors (`packages/core/src/connectors/settlement.ts`):
   contracts with their price signals and the series their volume is read
   from in, settlement lines out — energy, price and amount over each
   interval a price holds, who pays whom, in the contract's currency. How
   energy is matched with contracts stays the engine's own.
-  `engines/settlement-example`, pure Python, settles at a fixed price and
+  `packages/connectors/settlement-example`, pure Python, settles at a fixed price and
   is meant to be copied; it refuses by name a price it cannot read
   (`price_missing`, `price_kind_unsupported`, `signal_misaligned`,
   `signals_overlap`, `currency_mixed`) and a volume counted twice
