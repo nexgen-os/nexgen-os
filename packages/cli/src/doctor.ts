@@ -110,6 +110,18 @@ export async function detachedModuleTables(db: SqlClient, schemas: string[]): Pr
 }
 
 /**
+ * The rows of the `billing` module whose Ekwo id is no longer in Ekwo OS,
+ * when Ekwo OS shares the database (decision 0043). The doctor reads no
+ * table of Ekwo itself: the module's `billing.unlinked_keys()` does, and
+ * answers nothing when the module or Ekwo's tables are absent.
+ */
+export async function unlinkedBillingKeys(db: SqlClient): Promise<{ table_name: string; id: string; ekwo_id: string }[]> {
+  const [r] = await db.query<{ f: boolean }>(`select to_regprocedure('billing.unlinked_keys()') is not null as f`);
+  if (!r?.f) return [];
+  return db.query('select table_name, id, ekwo_id from billing.unlinked_keys() order by 1, 2');
+}
+
+/**
  * The weeks of `series_values` that should have a partition and have none,
  * each as the Monday (UTC) that starts it. A week should have one when values
  * of it sit in the default partition, and, once an installation partitions at
@@ -204,6 +216,10 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
 
   for (const t of await detachedModuleTables(db, report.modules.map((m) => m.schema_name))) {
     problems.push({ code: 'module_table_detached', detail: `${t} carries organisation_id and reaches no object of the core by a foreign key` });
+  }
+
+  for (const k of await unlinkedBillingKeys(db)) {
+    problems.push({ code: 'billing_key_unlinked', detail: `${k.table_name} ${k.id}: Ekwo id ${k.ekwo_id} is no longer in Ekwo OS` });
   }
 
   const unpartitioned = await missingSeriesPartitions(db);

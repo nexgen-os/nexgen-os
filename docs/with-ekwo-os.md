@@ -19,8 +19,9 @@ one transaction away. This page says how, and what each side owns.
 | Who belongs | `nexgen.organisation_members` | `public.company_members` |
 
 Each installer applies only its own files, reads only its own history and
-checks only its own schemas: `nexgen-os doctor` never looks at `public`, and
-`ekwo doctor` never looks at `nexgen`. Neither creates, alters or grants
+checks only its own schemas: `nexgen-os doctor` reads `public` only through
+the `billing` module's `billing.unlinked_keys()`, and `ekwo doctor` never
+looks at `nexgen`. Neither creates, alters or grants
 anything in the other's schemas.
 
 **Reserved.** The schema name `ekwo` belongs to Ekwo OS, and so does the
@@ -51,18 +52,35 @@ reaches both cores with the same signed-in session.
 
 The core of Nexgen OS names no product and holds no personal contact data.
 The [`billing`](../modules/billing/README.md) module keeps, beside the
-core and keyed by the same ids, what links the two:
+core and keyed by the same ids, what links the two
+([decision 0043](decisions/0043-the-participant-is-billed.md)):
 
 | Table | Holds |
 |---|---|
 | `billing.companies` | the Ekwo company an organisation is: `ekwo_company_id`, one each |
 | `billing.contacts` | the Ekwo contact a contact is, and the email and phone it is reached at |
+| `billing.invoices` | the Ekwo invoices issued for or to a participant: the Ekwo id, the counterparty participant, `sale` or `purchase`, the period, the settlement run |
 
-`ekwo_company_id` is a `public.companies.id`. Today the column is a plain
-reference in both setups: when Ekwo OS runs elsewhere, the module reaches it
-through its API, the Ekwo instance being a source with the name of its key;
-when both share the database, the foreign key to `public.companies` can be
-added and holds, as the test shows, but no migration adds it yet.
+The participant is the one who is billed, and its billing contact is the
+core's `participants.contact_id`; the amounts, the currency, the tax and the
+lines are read from Ekwo by the invoice's id.
+
+When both share the database, the Ekwo ids are real foreign keys:
+`ekwo_company_id` to `public.companies`, `ekwo_contact_id` to
+`public.contacts`, and the id of `billing.invoices` to `public.documents`.
+The module's migration adds them when Ekwo OS is already there; when Ekwo OS
+is installed second, the installation adds them with one statement:
+
+```sql
+select billing.reference_ekwo();
+```
+
+`nexgen-os doctor` names each row whose Ekwo id is no longer in Ekwo OS
+(`billing_key_unlinked`). When Ekwo OS runs elsewhere, the columns are plain
+references, and reaching Ekwo through its API, the Ekwo instance being a
+source with the name of its key, is the invoicing bridge of the `contracts`
+module (`billing.verify_remote_invoice()` raises
+`ekwo_remote_not_supported` until then).
 
 A person is a member on each side separately: an owner of a Nexgen
 organisation and of the Ekwo company it is reads both, each under its own
@@ -89,8 +107,12 @@ orders. It asserts that:
   its own schema;
 - the module schemas of both releases are disjoint, and none is `ekwo`;
 - a member of both sides reads its organisation and its company, a stranger
-  neither; `billing.companies` points at an Ekwo company, and takes a real
-  foreign key to it.
+  neither; `billing.companies` points at an Ekwo company;
+- with Ekwo OS installed first, the module's migration adds the foreign keys
+  to `public.companies`, `public.contacts` and `public.documents`; with
+  Nexgen OS first, `billing.reference_ekwo()` adds them; a participant's
+  invoice is recorded against an Ekwo document, an unknown one is refused,
+  and `nexgen-os doctor` names a row whose Ekwo id is gone.
 
 Everything above runs on PGlite: Ekwo OS needs no extension. What the test
 does not cover: Ekwo OS's seeds and country packs, its own modules, and the

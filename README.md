@@ -208,9 +208,13 @@ settlement line is handed to an invoicing application, and
 [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)),
 the open invoicing and bookkeeping core built on the same playbook, is the one it is built
 for. The [`billing`](modules/billing/README.md) module is the bridge:
-an organisation's Ekwo company, a contact's Ekwo contact, and the details of
-a contact that the invoicing side manages, so that the core holds no
-personal data ([decision 0010](docs/decisions/0010-ekwo-link.md)).
+an organisation's Ekwo company, a contact's Ekwo contact, the details of a
+contact that the invoicing side manages, so that the core holds no personal
+data, and the Ekwo invoices of each participant, who is the one billed
+([decisions 0010](docs/decisions/0010-ekwo-link.md) and
+[0043](docs/decisions/0043-the-participant-is-billed.md)). Issuing the
+invoice from a settlement line is the invoicing bridge of the `contracts`
+module.
 
 The two install side by side on one database: Nexgen OS takes the schema
 `nexgen` and its modules; `public`, and `ekwo` from Ekwo OS 1.0, stay Ekwo's.
