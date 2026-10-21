@@ -1,7 +1,7 @@
 // One resolution of a parameter, in one order for every property: the
 // object's own attribute, its parents' nearest first, its organisation's
-// (an attribute, since an organisation is an object), its region's, its
-// country's — and nothing else: a value nobody decided is
+// (an attribute, since an organisation is an object), its region's, the
+// regions it is part of nearest first, its country's — and nothing else: a value nobody decided is
 // refused by name, never guessed. Pack values are dated and cited.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -67,6 +67,27 @@ describe('parameter_of', () => {
   it('reads the region before the country', async () => {
     const south = await participant(db, { organisation_id: org, name: 'Vineyard', country: 'ZZ', region: 'ZZ-SO' });
     expect(await parameterOf('participant', south, 'pv_specific_yield_fallback')).toMatchObject({ value: 1150, level: 'region', region: 'ZZ-SO' });
+  });
+
+  it('climbs from the region to the region it is part of before the country: a value decided above holds below without a copy', async () => {
+    // Two levels, as a pack listing departments under their regions does.
+    await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-E', 'ZZ', 'East', 'pack:zz')`);
+    await db.query(`insert into regions (code, country, name, parent, published_by) values ('ZZ-E1', 'ZZ', 'East One', 'ZZ-E', 'pack:zz'), ('ZZ-E2', 'ZZ', 'East Two', 'ZZ-E', 'pack:zz')`);
+    await db.query(`insert into defaults (property_code, country, region, value, valid_from, source_code, reference, published_by) values
+                      ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E', '1200', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 6', 'pack:zz'),
+                      ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E2', '1250', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 7', 'pack:zz'),
+                      ('offpeak_hours', 'ZZ', 'ZZ-E', null, null, 'zz_statistics', 'decided by each operator of the East', 'pack:zz')`);
+    const east1 = await participant(db, { organisation_id: org, name: 'Orchard', country: 'ZZ', region: 'ZZ-E1' });
+    const two = await participant(db, { organisation_id: org, name: 'Mill', country: 'ZZ', region: 'ZZ-E2' });
+    expect(await parameterOf('participant', east1, 'pv_specific_yield_fallback')).toMatchObject({ value: 1200, level: 'region', region: 'ZZ-E', reference: 'yearbook 2025, table 6' });
+    expect(await parameterOf('participant', two, 'pv_specific_yield_fallback')).toMatchObject({ value: 1250, level: 'region', region: 'ZZ-E2' });
+    await expect(parameterOf('participant', east1, 'offpeak_hours')).rejects.toThrow(/parameter_not_decided: offpeak_hours in ZZ-E: decided by each operator/);
+    // A region whose parents nobody decided for reads the country, even when its pack lists a loop.
+    await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-W', 'ZZ', 'West', 'pack:zz')`);
+    await db.query(`insert into regions (code, country, name, parent, published_by) values ('ZZ-W1', 'ZZ', 'West One', 'ZZ-W', 'pack:zz')`);
+    await db.query(`update regions set parent = 'ZZ-W1' where code = 'ZZ-W'`);
+    const west = await participant(db, { organisation_id: org, name: 'Dairy', country: 'ZZ', region: 'ZZ-W1' });
+    expect(await parameterOf('participant', west, 'pv_specific_yield_fallback')).toMatchObject({ value: 980, level: 'country', country: 'ZZ' });
   });
 
   it('reads the organisation before its region: an attribute of the organisation, which is an object', async () => {

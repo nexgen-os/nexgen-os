@@ -340,8 +340,9 @@ deletes what was attached to it.
   a parameter ([0021](decisions/0021-one-cascade-of-defaults.md)): the
   object's own attribute, its parents' nearest first along the core's
   foreign keys (`parents_of()`: a device's participant, its group and its
-  project), its organisation's attribute, then the default of the region and
-  of the country of the participant's place — `{value, level,
+  project), its organisation's attribute, then the default of the region of
+  the participant's place, of the regions it is part of (`regions.parent`,
+  nearest first) and of its country — `{value, level,
   source_code, reference, valid_from}`. There is no global level: nothing
   found is `parameter_missing` naming the property and the level reached; a
   country that decides no single value answers `parameter_not_decided` with

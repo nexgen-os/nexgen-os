@@ -53,7 +53,7 @@ documents, and stay close to the platform that proved it
 | `attributes`, `external_ids`, `links`, `documents` | what attaches to any object, named by its kind and its id: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
 | `kinds` | the kinds of object an attachment may name — the core's and those modules publish — with the table holding each | — |
 | `scenarios`, `runs`, `modules`, `connectors` | design variants, immutable computations and the series they own, the modules installed, an organisation's use of a source through a connector | — |
-| `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys, with no global fallback | ISO 3166, ISO 4217 |
+| `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys and a region's parents, with no global fallback | ISO 3166, ISO 4217 |
 | `device_types`, `profiles`, `link_types`, `quantities`, `units`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
 
 Every act that writes several rows or carries a rule is one function named
