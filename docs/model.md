@@ -341,8 +341,9 @@ building or a site), `link_types`, `quantities` (one unit each, QUDT),
 `tags` (Haystack), `id_schemes` and `sources` (the external APIs, datasets,
 registers and published texts: base URL, authentication type, licence,
 attribution, countries, regions, retention). An organisation's use of a
-source is a `connections` row naming its secret; the code that reads it is
-a connector under `connectors/` ([0011](decisions/0011-external-data.md)).
+source is a `connectors` row naming its secret: the connector, the code
+under `packages/connectors/` that reads it, configured for that
+organisation ([0011](decisions/0011-external-data.md)).
 Read by everyone signed in, written by migrations, seeds, modules and packs.
 
 ## What the modules add

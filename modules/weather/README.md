@@ -24,7 +24,7 @@ point) and the property `weather_source` (a site or a project pins a model).
 
 - `weather.source_for(site, purpose)` — the model a site reads for a
   purpose, in this order: the site's attribute `weather_source` (when that
-  model serves the purpose); an active connection of the organisation to a
+  model serves the purpose); an active connector of the organisation to a
   model for the purpose (`config.purpose`, when set, restricts it); the
   rule of the site's region, then of its country; the preferred model
   whose source covers the site's country and region. Named error

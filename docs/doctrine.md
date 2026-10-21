@@ -105,7 +105,7 @@ built on it is the `3d` module's.
 
 - [0035](decisions/0035-a-format-library-touches-no-database.md) A format library is MIT, one package per format, and touches no database
 - [0036](decisions/0036-a-file-is-imported-once.md) A file is imported once, and a reader reports rather than corrects
-- [0011](decisions/0011-external-data.md) A source is a row, a connection names a secret, a connector is code
+- [0011](decisions/0011-external-data.md) A source is a row, a connector is code, and an organisation's use of it is a `connectors` row naming its secret
 
 ## Rights and refusals
 

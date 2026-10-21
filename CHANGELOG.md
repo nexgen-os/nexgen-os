@@ -303,6 +303,15 @@ the physical description of a place leaves the core for the `3d` module:
   `@nexgen-os/ifc`. `exportGeoJson()` adds the buildings, surfaces and
   placed devices of a site when the module is installed. `nexgen-os status`
   counts devices instead of buildings.
+- `connections` → `connectors`: an organisation's use of a source is a row
+  of the core table `connectors`, the connector configured for it, with the
+  same columns (`organisation_id`, `source_code`, `name`, `config`,
+  `secret_ref`, `status`, `last_run_at`, `last_error`); its constraints,
+  index and trigger take the word (`connectors_status`,
+  `connectors_name_not_blank`). The migration is
+  `core/migrations/20261012200800_core_connectors.sql`; `weather.source_for()`
+  reads it. Two words remain, a source and a connector (decision 0011,
+  rewritten).
 
 ### Changed — schema 0.2.0: the place, the device and the series
 

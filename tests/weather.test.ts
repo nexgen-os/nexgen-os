@@ -71,9 +71,9 @@ describe('source_for', () => {
     const other = await insert(db, 'sites', { organisation_id: org, name: 'Barn', country: 'FR', region: 'FR-BRE' });
     expect(await sourceFor(other, 'irradiance')).toBe('open_meteo');
 
-    // (b) An active connection of the organisation, for that purpose.
+    // (b) An active connector of the organisation, for that purpose.
     await db.query(
-      `insert into connections (organisation_id, source_code, name, config) values ($1, 'station_network', 'Our stations', '{"purpose": "irradiance"}')`,
+      `insert into connectors (organisation_id, source_code, name, config) values ($1, 'station_network', 'Our stations', '{"purpose": "irradiance"}')`,
       [org],
     );
     expect(await sourceFor(site, 'irradiance')).toBe('station_network');

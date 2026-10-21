@@ -206,7 +206,7 @@ create table sources (
   -- How a connector authenticates: none, api_key, oauth2, certificate,
   -- mandate (the data subject's authorisation, as with grid operators). A
   -- source is shared by every organisation and names no credential: an
-  -- organisation's `connections` row names its own, kept in the vault.
+  -- organisation's `connectors` row names its own, kept in the vault.
   auth            text not null default 'none',
   -- ISO 3166-1 alpha-2 codes the source covers; empty = worldwide.
   countries       text[] not null default '{}',

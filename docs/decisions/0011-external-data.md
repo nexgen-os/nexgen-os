@@ -1,6 +1,6 @@
-# 0011 — A source is a row, a connection names a secret, a connector is code
+# 0011 — A source is a row, a connector is code, and an organisation's use of it is a `connectors` row naming its secret
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026
+> Status: accepted · 13/10/2026, rewritten 19/10/2026 and 21/10/2026
 
 ## Context
 
@@ -17,18 +17,20 @@ data or code cannot be open plugs into an open core.
 
 ## Decision
 
-**Three layers, one rule: data carries its source.**
+**Two words, three layers, one rule: data carries its source.** A
+*source* is what exists outside; a *connector* is the code that reads it
+and, in the database, an organisation's configured use of that code. No
+third word.
 
 1. **A source is a row** of `sources`: what exists out there, its licence,
    its attribution, how it authenticates, which countries it covers, how
    long what it answered may be kept and whether it may be passed on.
    Worldwide open sources ship with the core, national ones with their
    pack, the others with the module or the private package that uses them.
-2. **A connection names a secret.** A row of `connections` says that this
-   organisation reads that source, for what, with which credential by name
-   (resolved in the installation's vault), and how the last collection
-   went. A connection holds no secret and no data.
-3. **A connector is code outside the database**: one interface per kind of
+2. **A connector is code outside the database**, in `packages/connectors/`,
+   whatever language it runs: a client of an external API in TypeScript,
+   or a program that reads one JSON request and answers one JSON result
+   ([0013](0013-external-engines.md)). A client has one interface per kind of
    answer (weather, meter data, places, addresses) and one implementation
    per source. It answers in the core's terms (quantities, value kinds,
    steps, identifier schemes), and what it brings back is written on
@@ -36,6 +38,12 @@ data or code cannot be open plugs into an open core.
    one write path ([0031](0031-one-way-to-write-a-series-one-way-to-read-it.md)),
    places in the one shape of a place ([0025](0025-a-place-has-one-shape.md)).
    A geocoder is a connector.
+3. **An organisation's use of a connector is a `connectors` row naming its
+   secret.** It says that this organisation reads that source, for what
+   (`config`), with which credential by name (`secret_ref`, resolved in the
+   installation's vault), and how the last collection went (`status`,
+   `last_run_at`, `last_error`). It holds no secret and no data. The table
+   takes the word of the code because the row is that code, configured.
 
 Whatever a connector writes says where it came from: the source of a
 series, an attribute, a document, a site's position; the scheme of an
@@ -81,14 +89,16 @@ database.
 Some forty source readers, each with code of its own, writing answers in
 columns and JSON that no longer said where they came from; and the revised
 forecasts left open by [0005](0005-open-questions.md), settled by keeping
-every issue.
+every issue. Until 21/10/2026 an organisation's use of a source was a row
+of `connections`, a third word beside the source and the connector, and
+the programs in other languages sat in a root folder of their own.
 
 ## See also
 
 - Inherits Ekwo OS 0006 (*A machine key is a caller narrower than a
   person*) and 0027 (*The sources of a pack are a register, not a
   bibliography*).
-- [`connectors/README.md`](../../packages/connectors/README.md).
+- [`packages/connectors/README.md`](../../packages/connectors/README.md).
 - [0016](0016-naming-third-party-methods.md) — a connector keeps its
   provider's name.
 - [0029](0029-a-series-belongs-to-an-object.md) — forecasts and their

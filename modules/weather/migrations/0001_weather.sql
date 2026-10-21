@@ -221,10 +221,10 @@ begin
     end if;
   end if;
 
-  -- (b) An active connection of the organisation to a model for that
+  -- (b) An active connector of the organisation to a model for that
   -- purpose (its config may restrict it to one purpose).
   select m.source_code into found_code
-    from connections c
+    from connectors c
     join weather.models m on m.source_code = c.source_code
    where c.organisation_id = s.organisation_id
      and c.status = 'active'
@@ -267,7 +267,7 @@ end;
 $$;
 
 comment on function weather.source_for(uuid, text) is
-  'The weather model a site reads for a purpose: the site''s attribute weather_source, else an active connection of its organisation, else the rule of its region then its country, else the preferred model covering it. Named error weather_source_unknown when none.';
+  'The weather model a site reads for a purpose: the site''s attribute weather_source, else an active connector of its organisation, else the rule of its region then its country, else the preferred model covering it. Named error weather_source_unknown when none.';
 
 -- ---------------------------------------------------------------------------
 -- point_for — the point one site reads for one model.

@@ -60,7 +60,7 @@ page walks them:
 
 Around them, what every installation needs and no trade owns: the contacts
 an organisation deals with, the scenarios of a study, the runs that compute
-([0004](0004-deterministic-runs.md)), the sources and connections of
+([0004](0004-deterministic-runs.md)), the sources and connectors of
 external data ([0011](0011-external-data.md)).
 
 **Every object is a table with the columns that object always has**

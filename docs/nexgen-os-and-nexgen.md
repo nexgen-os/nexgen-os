@@ -12,7 +12,7 @@ and its organisation on GitHub; anyone can install it, read it, extend it.
 
 **Nexgen** is the commercial platform of WeSmart (Newide in Belgium,
 AI4Energy in France): the application, the studies, the reports, the data
-connections, the agents and the services WeSmart sells to project holders,
+connectors, the agents and the services WeSmart sells to project holders,
 installers, cities and communities. Nexgen is built on Nexgen OS and speaks
 its language; it is **not** part of this repository, it is **not** open
 source, and nothing here describes, limits or promises what Nexgen does.

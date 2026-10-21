@@ -78,7 +78,7 @@ Four things only you do here:
 
 - compute a figure yourself and write it as if a run had: a yield, a loss,
   a settlement is a run of a module, reproducible by anyone;
-- store a secret: a `sources` or `connections` row names a secret, the
+- store a secret: a `sources` or `connectors` row names a secret, the
   installation's vault holds it;
 - assume a country, a currency, a language, a time zone: they are data of
   the site, the project and the pack;

@@ -1,7 +1,7 @@
 // A weather forecast comes in from an open connector, lands on a site with
 // its issue time, and the second issue replaces the first for the pages
 // while the first stays readable; each kind of series has its one store;
-// an organisation's connection to a source is a row of its own.
+// an organisation's connector to a source is a row of its own.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { openMeteo } from '@nexgen-os/open-meteo';
@@ -81,13 +81,13 @@ describe('a forecast on a site', () => {
   });
 });
 
-describe('a connection', () => {
+describe('a connectors row', () => {
   it('names the source and the credential, never the secret, and belongs to its organisation', async () => {
-    const id = await insert(db, 'connections', { organisation_id: org, source_code: 'open_meteo', name: 'Weather for the hall', config: { sites: [site] }, secret_ref: null });
-    const mine = await asUser(db, USER_A, () => one<{ n: number }>(db, 'select count(*)::int n from connections where id = $1', [id]));
-    const theirs = await asUser(db, USER_B, () => one<{ n: number }>(db, 'select count(*)::int n from connections where id = $1', [id]));
+    const id = await insert(db, 'connectors', { organisation_id: org, source_code: 'open_meteo', name: 'Weather for the hall', config: { sites: [site] }, secret_ref: null });
+    const mine = await asUser(db, USER_A, () => one<{ n: number }>(db, 'select count(*)::int n from connectors where id = $1', [id]));
+    const theirs = await asUser(db, USER_B, () => one<{ n: number }>(db, 'select count(*)::int n from connectors where id = $1', [id]));
     expect([mine.n, theirs.n]).toEqual([1, 0]);
-    await expect(insert(db, 'connections', { organisation_id: org, source_code: 'open_meteo', name: 'Paused?', status: 'sleeping' })).rejects.toThrow(/connections_status/);
+    await expect(insert(db, 'connectors', { organisation_id: org, source_code: 'open_meteo', name: 'Paused?', status: 'sleeping' })).rejects.toThrow(/connectors_status/);
     const retention = await one<{ redistributable: boolean; retention_days: number | null }>(db, `select redistributable, retention_days from sources where code = 'open_meteo'`);
     expect(retention).toEqual({ redistributable: true, retention_days: null });
   });

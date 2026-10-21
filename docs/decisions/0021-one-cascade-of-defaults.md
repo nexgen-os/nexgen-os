@@ -8,7 +8,7 @@ A yield, a sizing or a settlement starts from values nobody has measured
 yet: a system loss, a degradation rate, a share of self-consumption, a
 reference price. Before this rule each module found them its own way: one
 read a column of the organisation, another a constant in its code, the
-weather module its own order of project, connection, pack and core. Two
+weather module its own order of project, connector, pack and core. Two
 modules asked the same question and got two answers, and a figure computed
 for one country silently used a number chosen for another when the pack had
 none.

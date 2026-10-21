@@ -1,9 +1,10 @@
 // Connectors: how an installation reads the outside world.
 //
 // A source (a vocabulary row) says what exists: a weather model, a grid
-// operator's hub, a company register, a map provider. A connection (a core
-// row) says that an organisation reads it. A connector is the code in
-// between: a library that implements one of the interfaces below and
+// operator's hub, a company register, a map provider. A connector is the
+// code that reads it, and a `connectors` row of the core is that code
+// configured for one organisation. A client of an external API is a
+// library that implements one of the interfaces below and
 // answers in the core's terms — quantities, value kinds, steps, external
 // identifiers — so that what it brings back lands on ordinary objects,
 // attributes, documents and series with its source on it (decision 0011).
