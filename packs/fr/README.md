@@ -16,6 +16,25 @@ here is code or law in words; the national address register answers in
 | `grid.json` | nine operators: RTE, Enedis (about 95 % of the mainland), five local distribution companies with their department, EDF SEI (Corsica and four overseas departments) and Électricité de Mayotte; the voltage domains TBT, BT, HTA, HTB of the Code du travail |
 | `defaults.json` | the values below, each with its source, its reference and its period |
 
+## Which level decides what
+
+In France `region` is the department; its ISO region is its parent.
+`parameter_of()` reads a department's value first, then its region's, then
+the country's ([0021](../../docs/decisions/0021-one-cascade-of-defaults.md)),
+so a value a region decides is written once, on the region. Every default
+below is national today. The table says at which level each kind of
+decision is taken in France, for the values this pack may hold later; it
+holds no value.
+
+| Level | Carried as | Decides |
+|---|---|---|
+| Department | `region` of the participant's place (`FR-29`, `FR-75C`) | the RE2020 climate zone (H1a to H3); the procedures of the prefecture |
+| Region | `parent` of the department (`FR-BRE`, `FR-IDF`) | regional support schemes; the regional plan (SRADDET, the regional scheme for planning, sustainable development and equality of territories); calls for projects |
+| Municipality | the `insee` identifier of the participant's place | the distribution operator (a local distribution company, or the national one); the local urban plan (PLU); the urban or rural density class that sets the distance allowed between the participants of a collective self-consumption operation |
+
+A municipality is not a region of this pack: what it decides would be read
+through its INSEE code, by the module that needs it.
+
 ## The defaults
 
 | Property | Value | Source |

@@ -69,6 +69,8 @@ describe('the be pack', () => {
       municipality_scheme: 'nis', pack_version: '0.2.0', certification: 'community' });
     const regions = await db.query<{ code: string }>(`select code from regions where country = 'BE' order by code`);
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
+    // One level: a region has no parent, and parameter_of() goes from the region to the country.
+    expect(await one<{ n: number }>(db, `select count(*)::int n from regions where country = 'BE' and parent is not null`)).toEqual({ n: 0 });
     const org = await organisation(db, 'Une commune', USER_A);
     const site = await siteIn(org, 'BE-WAL');
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [site])).time_zone).toBe('Europe/Brussels');
