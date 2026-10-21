@@ -1,15 +1,16 @@
 // Nexgen OS and Ekwo OS installed on one database, in both orders.
 //
-// Ekwo OS, the invoicing and bookkeeping core built on the same playbook, lives in `public`;
-// Nexgen OS lives in `nexgen` and one schema per module (decision 0010). This
-// file installs both on one PGlite with PostGIS, each by its own installer —
+// Ekwo OS, the invoicing and bookkeeping core built on the same playbook,
+// lives in `public`; Nexgen OS lives in `nexgen` and one schema per module
+// (decision 0010). This file installs both on one PGlite with PostGIS, each by its own installer —
 // Ekwo's migration runner from the published `ekwo-os` package, which carries
 // its migrations, and `nexgen-os init` — and checks that neither touches what
 // the other created: no name collides, each side keeps its schemas, Ekwo's
 // revocations on `public` leave Nexgen's grants as they were, a person who
 // belongs to both sides reads both, and the `billing` module points at an
-// Ekwo company. Ekwo OS needs no extension, so all of it runs on PGlite;
-// what it leaves to a real project is in `docs/with-ekwo-os.md`.
+// Ekwo company, contact and invoice by real foreign keys. Ekwo OS needs no
+// extension, so all of it runs on PGlite; what it leaves to a real project
+// is in `docs/with-ekwo-os.md`.
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { postgis } from '@electric-sql/pglite-postgis';
@@ -270,12 +271,97 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       expect(joined.rows).toEqual([{ organisation: 'Cooperative', company: 'Cooperative' }]);
     });
 
-    it('takes a real foreign key to public.companies when both share the database', async () => {
-      await db.exec(`alter table billing.companies
-        add constraint companies_ekwo_company_fk foreign key (ekwo_company_id) references public.companies (id)`);
+    it('takes real foreign keys to public.companies, public.contacts and public.documents', async () => {
+      const keys = async () =>
+        (
+          await db.query<{ k: string }>(
+            `select n.nspname || '.' || t.relname || ' ' || fn.nspname || '.' || f.relname || ' ' || c.convalidated as k
+               from pg_constraint c
+               join pg_class t on t.oid = c.conrelid join pg_namespace n on n.oid = t.relnamespace
+               join pg_class f on f.oid = c.confrelid join pg_namespace fn on fn.oid = f.relnamespace
+              where n.nspname = 'billing' and c.contype = 'f' and fn.nspname = 'public' order by 1`,
+          )
+        ).rows.map((r) => r.k);
+      // Ekwo first: the module's migration added them. Nexgen first: the
+      // installation adds them once Ekwo OS is there.
+      const added = (await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k;
+      expect(added).toEqual(order === 'ekwo-first' ? [] : ['companies_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);
+      expect(await keys()).toEqual([
+        'billing.companies public.companies true',
+        'billing.contacts public.contacts true',
+        'billing.invoices public.documents true',
+      ]);
       await expect(
         db.query('update billing.companies set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
       ).rejects.toThrow(/foreign key/);
+    });
+
+    describe('a participant billed in Ekwo', () => {
+      let participantId: string;
+      let documentId: string;
+
+      beforeAll(async () => {
+        const contactId = (await one<{ id: string }>(db, `insert into nexgen.contacts (organisation_id, name) values ($1, 'Warehouse tenant') returning id`, [organisationId])).id;
+        const projectId = (
+          await one<{ id: string }>(db, `insert into nexgen.projects (organisation_id, name, kind, country) values ($1, 'Harbour community', 'energy_community', 'BE') returning id`, [organisationId])
+        ).id;
+        participantId = (
+          await one<{ id: string }>(
+            db,
+            `insert into nexgen.participants (organisation_id, project_id, name, contact_id, status) values ($1, $2, 'Warehouse', $3, 'active') returning id`,
+            [organisationId, projectId, contactId],
+          )
+        ).id;
+        // Ekwo's own functions read its tables on its own search path.
+        await db.exec('set search_path = public, extensions');
+        // The currency of the company, as Ekwo's seed would declare it.
+        await db.query(`insert into public.currencies (code, name) values ('EUR', 'Euro') on conflict do nothing`);
+        const ekwoContactId = (await one<{ id: string }>(db, `insert into public.contacts (company_id, name) values ($1, 'Warehouse tenant') returning id`, [companyId])).id;
+        documentId = (
+          await one<{ id: string }>(
+            db,
+            `insert into public.documents (company_id, doc_type, contact_id, document_date) values ($1, 'sale_invoice', $2, '2026-06-01') returning id`,
+            [companyId, ekwoContactId],
+          )
+        ).id;
+        await db.exec('set search_path = nexgen, public, extensions');
+        await asUser(db, USER_A, () => db.query('select billing.link_contact($1, $2)', [contactId, ekwoContactId]));
+      });
+
+      it('records the Ekwo invoice of the participant, and refuses one Ekwo does not hold', async () => {
+        await asUser(db, USER_A, () =>
+          db.query(`select billing.record_invoice($1, $2, 'sale', '2026-05-01', '2026-05-31')`, [participantId, documentId]),
+        );
+        const joined = await asUser(db, USER_A, () =>
+          db.query<{ participant: string; doc_type: string }>(
+            `select p.name as participant, d.doc_type::text as doc_type
+               from billing.invoices_of($1) i
+               join nexgen.participants p on p.id = i.participant_id
+               join public.documents d on d.id = i.id`,
+            [participantId],
+          ),
+        );
+        expect(joined.rows).toEqual([{ participant: 'Warehouse', doc_type: 'sale_invoice' }]);
+        await expect(
+          asUser(db, USER_A, () => db.query(`select billing.record_invoice($1, gen_random_uuid(), 'sale', '2026-06-01', '2026-06-30')`, [participantId])),
+        ).rejects.toThrow(/^ekwo_invoice_not_found/);
+        await expect(
+          asUser(db, USER_A, () => db.query('select billing.link_company($1, gen_random_uuid())', [organisationId])),
+        ).rejects.toThrow(/^ekwo_company_not_found/);
+      });
+
+      it("nexgen-os doctor names a row whose Ekwo id is no longer in Ekwo OS", async () => {
+        expect((await doctor(sqlClient(db))).problems.map((p) => p.code)).not.toContain('billing_key_unlinked');
+        // A row left dangling as a restore without its foreign keys leaves it.
+        const dangling = '00000000-0000-4000-8000-0000000000dd';
+        await db.exec('set session_replication_role = replica');
+        await db.query(`insert into billing.invoices (id, organisation_id, participant_id, kind, period_from, period_to) values ($1, $2, $3, 'sale', '2026-06-01', '2026-06-30')`, [dangling, organisationId, participantId]);
+        await db.exec('set session_replication_role = origin');
+        const unlinked = (await doctor(sqlClient(db))).problems.filter((p) => p.code === 'billing_key_unlinked');
+        expect(unlinked).toEqual([{ code: 'billing_key_unlinked', detail: `billing.invoices ${dangling}: Ekwo id ${dangling} is no longer in Ekwo OS` }]);
+        await db.query('delete from billing.invoices where id = $1', [dangling]);
+        await db.exec('set search_path = nexgen, public, extensions');
+      });
     });
   });
 });

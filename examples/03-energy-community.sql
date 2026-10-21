@@ -5,7 +5,8 @@
 -- as consumers, the companies who answer for them (Ekwo contacts), a roof
 -- plant on a fourth site taking part as producer, two tenants grouped, a
 -- month of quarter-hour offtake per consumer and of injection by the plant,
--- and the invoicing left to Ekwo through a run of the sharing module.
+-- the month's settlement as a run, and one bill between two participants,
+-- issued by Ekwo and recorded by the billing module.
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000300000001', 'Haven Energie Coöperatie');
@@ -86,14 +87,22 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
   ('00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-examples/community/statutes-2024.pdf', 'application/pdf', 'notary'),
   ('00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-examples/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
 
--- The month's settlement, computed in the community module and handed to
--- Ekwo: the run keeps the lines and the Ekwo document ids they became.
+-- The month's settlement, computed in the community module: the lines
+-- of who received how much, and at which price.
 select record_run('community', 'settlement-0.1.0', '00000000-0000-4000-8000-000300000020', null,
   '{"period": "2026-05", "allocation": "proportional", "price_eur_mwh": 95}',
   '{"shared_kwh": 18420, "lines": [
-     {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95, "ekwo_document_id": "22222222-2222-4222-8222-222222222201"},
-     {"participant": "00000000-0000-4000-8000-000300000052", "kwh": 8120, "eur": 771.40, "ekwo_document_id": "22222222-2222-4222-8222-222222222202"},
-     {"participant": "00000000-0000-4000-8000-000300000053", "kwh": 3090, "eur": 293.55, "ekwo_document_id": "22222222-2222-4222-8222-222222222203"}]}');
+     {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95},
+     {"participant": "00000000-0000-4000-8000-000300000052", "kwh": 8120, "eur": 771.40},
+     {"participant": "00000000-0000-4000-8000-000300000053", "kwh": 3090, "eur": 293.55}]}');
+
+-- Ekwo issued Van Dijk's bill for the energy it bought from the roof plant
+-- in May; the billing module keeps the Ekwo id, the two participants and
+-- the run the amounts came from. The amounts, the tax and the lines are
+-- Ekwo's, read by that id.
+select billing.record_invoice('00000000-0000-4000-8000-000300000051', '22222222-2222-4222-8222-222222222201', 'purchase',
+  '2026-05-01', '2026-05-31', '00000000-0000-4000-8000-000300000054',
+  (select id from runs where module_code = 'community' and subject_id = '00000000-0000-4000-8000-000300000020'));
 
 -- Queries a page would run
 -- The community as a table:
@@ -103,6 +112,8 @@ select record_run('community', 'settlement-0.1.0', '00000000-0000-4000-8000-0003
 -- Daily offtake of Van Dijk in May:
 --   select r.bucket::date, r.value from series s, resample(s.id, '2026-05-01', '2026-06-01', '1 day') r
 --    where s.object_id = '00000000-0000-4000-8000-000300000041';
+-- Van Dijk's bills, with their Ekwo ids:
+--   select id, kind, period_from, period_to, counterparty_participant_id from billing.invoices_of('00000000-0000-4000-8000-000300000051');
 -- The meters behind the landlord's group:
 --   select m.identifier from participant_meters('00000000-0000-4000-8000-000300000055') pm join meters m on m.id = pm.meter_id;
 

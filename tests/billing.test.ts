@@ -5,10 +5,12 @@
 // `record_invoice()` accepts any id, and the doctor finds nothing to report.
 // With Ekwo OS on the same database, the keys are real:
 // `tests/cross-install.test.ts`.
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { doctor } from '../packages/cli/src/index.js';
-import { USER_A, USER_B, asUser, freshDatabase, one, organisation, sqlClient } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, one, organisation, repoRoot, sqlClient } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -63,7 +65,8 @@ describe('billing without Ekwo OS', () => {
     expect((await one<{ v: string }>(db, `select version v from modules where code = 'billing'`)).v).toBe('0.2.0');
     const keys = await db.query<{ conname: string }>(
       `select conname from pg_constraint c join pg_namespace n on n.oid = c.connamespace
-        where n.nspname = 'billing' and c.contype = 'f' and c.confrelid::regclass::text like 'public.%'`,
+         join pg_class f on f.oid = c.confrelid join pg_namespace fn on fn.oid = f.relnamespace
+        where n.nspname = 'billing' and c.contype = 'f' and fn.nspname <> 'nexgen'`,
     );
     expect(keys.rows).toEqual([]);
     expect((await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k).toEqual([]);
@@ -137,4 +140,25 @@ describe('billing without Ekwo OS', () => {
     expect(codes).not.toContain('module_table_detached');
     expect(codes).not.toContain('rls_disabled');
   });
+});
+
+describe('the energy community of example 3', () => {
+  it('records one bill between two participants, from the settlement run', async () => {
+    const community = await freshDatabase(['billing', 'community', 'grid']);
+    try {
+      await community.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
+      const bills = await community.query(
+        `select i.id, p.name participant, c.name counterparty, i.kind, i.period_from::text, i.period_to::text, r.module_code
+           from billing.invoices_of('00000000-0000-4000-8000-000300000051') i
+           join participants p on p.id = i.participant_id
+           join participants c on c.id = i.counterparty_participant_id
+           join runs r on r.id = i.run_id`,
+      );
+      expect(bills.rows).toEqual([
+        { id: '22222222-2222-4222-8222-222222222201', participant: 'Van Dijk Logistiek', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', module_code: 'community' },
+      ]);
+    } finally {
+      await community.close();
+    }
+  }, 120_000);
 });
