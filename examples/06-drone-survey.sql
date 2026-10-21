@@ -19,22 +19,22 @@ insert into building.buildings (id, organisation_id, site_id, name, profile, foo
   ('00000000-0000-4000-8000-000600000020', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000010', 'Hall A', 'industrial',
    ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11);
 
-insert into external_ids (object_id, scheme, value) values
-  ('00000000-0000-4000-8000-000600000020', 'osm', 'way/112233445'),
-  ('00000000-0000-4000-8000-000600000020', 'overture_gers', '08b1e5a2-6f3c-4d8e-9a1b-2c3d4e5f6a7b');
+insert into external_ids (object_kind, object_id, scheme, value) values
+  ('building', '00000000-0000-4000-8000-000600000020', 'osm', 'way/112233445'),
+  ('building', '00000000-0000-4000-8000-000600000020', 'overture_gers', '08b1e5a2-6f3c-4d8e-9a1b-2c3d4e5f6a7b');
 
 -- The survey itself is a source of this organisation: who flew, under which terms.
 insert into sources (code, name, kind, auth, countries, license, attribution, published_by, description) values
   ('rae_drone_survey', 'Rilievi Aerei Emilia — drone surveys', 'device', 'none', '{IT}', 'client contract', '© Rilievi Aerei Emilia', 'rae', 'Photogrammetric surveys flown by the company''s own drones.');
 
-insert into documents (object_id, name, kind, uri, media_type, source_code, source, captured_at, metadata) values
-  ('00000000-0000-4000-8000-000600000020', 'Orthophoto 2 cm', 'image', 's3://nexgen-os-examples/bologna/hall-a-ortho.tif', 'image/tiff', 'rae_drone_survey', 'flight 2026-04-08, DJI M3E', '2026-04-08',
+insert into documents (object_kind, object_id, name, kind, uri, media_type, source_code, source, captured_at, metadata) values
+  ('building', '00000000-0000-4000-8000-000600000020', 'Orthophoto 2 cm', 'image', 's3://nexgen-os-examples/bologna/hall-a-ortho.tif', 'image/tiff', 'rae_drone_survey', 'flight 2026-04-08, DJI M3E', '2026-04-08',
    '{"gsd_cm": 2.1, "crs": "EPSG:32632", "images": 412}'),
-  ('00000000-0000-4000-8000-000600000020', 'Oblique photos', 'image', 's3://nexgen-os-examples/bologna/hall-a-obliques.zip', 'application/zip', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
+  ('building', '00000000-0000-4000-8000-000600000020', 'Oblique photos', 'image', 's3://nexgen-os-examples/bologna/hall-a-obliques.zip', 'application/zip', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
    '{"count": 96, "exif_pose": true}'),
-  ('00000000-0000-4000-8000-000600000020', 'Roof inspection video', 'video', 's3://nexgen-os-examples/bologna/hall-a-roof.mp4', 'video/mp4', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
+  ('building', '00000000-0000-4000-8000-000600000020', 'Roof inspection video', 'video', 's3://nexgen-os-examples/bologna/hall-a-roof.mp4', 'video/mp4', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
    '{"duration_s": 214, "camera": "nadir sweep"}'),
-  ('00000000-0000-4000-8000-000600000020', 'Point cloud', 'document', 's3://nexgen-os-examples/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
+  ('building', '00000000-0000-4000-8000-000600000020', 'Point cloud', 'document', 's3://nexgen-os-examples/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
    '{"points": 48200000, "density_per_m2": 850, "note": "a survey output kept as a document; the hosted capture tools read it"}');
 
 -- Roof faces measured on the orthophoto: two pitches of a sawtooth roof and a flat annex.
@@ -46,15 +46,15 @@ insert into building.surfaces (id, organisation_id, building_id, name, kind, azi
   ('00000000-0000-4000-8000-000600000033', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Annex, flat', 'roof', 180, 2,
    ST_GeomFromText('POLYGON Z((11.3850 44.4809 59, 11.3862 44.4809 59, 11.3862 44.4811 59, 11.3850 44.4811 59, 11.3850 44.4809 59))', 4326));
 
-insert into attributes (object_id, property_code, value, source_code, source) values
-  ('00000000-0000-4000-8000-000600000031', 'roof_area', '2860', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
-  ('00000000-0000-4000-8000-000600000032', 'roof_area', '410', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
-  ('00000000-0000-4000-8000-000600000033', 'roof_area', '1920', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
-  ('00000000-0000-4000-8000-000600000031', 'material', '"corrugated steel"', 'rae_drone_survey', 'seen on the oblique photos'),
-  ('00000000-0000-4000-8000-000600000032', 'material', '"glass"', 'rae_drone_survey', 'seen on the oblique photos'),
-  ('00000000-0000-4000-8000-000600000033', 'material', '"bitumen"', 'rae_drone_survey', 'seen on the oblique photos'),
-  ('00000000-0000-4000-8000-000600000020', 'floors_above_ground', '1', 'rae_drone_survey', 'seen on the oblique photos'),
-  ('00000000-0000-4000-8000-000600000033', 'is_external', 'true', null, 'survey');
+insert into attributes (object_kind, object_id, property_code, value, source_code, source) values
+  ('surface', '00000000-0000-4000-8000-000600000031', 'roof_area', '2860', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
+  ('surface', '00000000-0000-4000-8000-000600000032', 'roof_area', '410', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
+  ('surface', '00000000-0000-4000-8000-000600000033', 'roof_area', '1920', 'rae_drone_survey', 'measured on the 2 cm orthophoto'),
+  ('surface', '00000000-0000-4000-8000-000600000031', 'material', '"corrugated steel"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('surface', '00000000-0000-4000-8000-000600000032', 'material', '"glass"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('surface', '00000000-0000-4000-8000-000600000033', 'material', '"bitumen"', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('building', '00000000-0000-4000-8000-000600000020', 'floors_above_ground', '1', 'rae_drone_survey', 'seen on the oblique photos'),
+  ('surface', '00000000-0000-4000-8000-000600000033', 'is_external', 'true', null, 'survey');
 
 -- The client answers for the site in the surveyor's solar study.
 insert into projects (id, organisation_id, name, kind, country, status) values

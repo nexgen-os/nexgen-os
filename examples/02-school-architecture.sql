@@ -34,12 +34,12 @@ insert into building.spaces (id, organisation_id, building_id, parent_id, kind, 
   ('00000000-0000-4000-8000-000200000045', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000031', 'room', 'Staff room');
 
 -- Floor areas measured on the drawings, room by room.
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000200000041', 'floor_area', '62', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000200000042', 'floor_area', '60', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000200000043', 'floor_area', '140', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000200000044', 'floor_area', '60', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000200000045', 'floor_area', '35', 'as-built drawings');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('space', '00000000-0000-4000-8000-000200000041', 'floor_area', '62', 'as-built drawings'),
+  ('space', '00000000-0000-4000-8000-000200000042', 'floor_area', '60', 'as-built drawings'),
+  ('space', '00000000-0000-4000-8000-000200000043', 'floor_area', '140', 'as-built drawings'),
+  ('space', '00000000-0000-4000-8000-000200000044', 'floor_area', '60', 'as-built drawings'),
+  ('space', '00000000-0000-4000-8000-000200000045', 'floor_area', '35', 'as-built drawings');
 
 -- The heat pump in the building, and the instruments in the rooms: a
 -- multisensor per classroom, a presence detector in the canteen.
@@ -58,13 +58,13 @@ select building.place_device(
   from building.spaces s
  where s.name like 'Classroom%' or s.name = 'Canteen';
 
-insert into links (subject_id, type_code, object_id) values
-  ('00000000-0000-4000-8000-000200000050', 'serves', '00000000-0000-4000-8000-000200000020');
+insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
+  ('device', '00000000-0000-4000-8000-000200000050', 'serves', 'building', '00000000-0000-4000-8000-000200000020');
 
 -- The points, one series each: what a room is observed for, by the device
 -- in it; the heating setpoint of a room is asked of the heat pump.
-insert into series (organisation_id, object_id, device_id, quantity_code, kind, value_kind, step, external_ref)
-select '00000000-0000-4000-8000-000200000001', s.id, case when q.kind = 'setpoint' then '00000000-0000-4000-8000-000200000050'::uuid else d.device_id end,
+insert into series (organisation_id, object_kind, object_id, device_id, quantity_code, kind, value_kind, step, external_ref)
+select '00000000-0000-4000-8000-000200000001', 'space', s.id, case when q.kind = 'setpoint' then '00000000-0000-4000-8000-000200000050'::uuid else d.device_id end,
        q.quantity, q.kind, 'instant', case when q.kind = 'measured' then interval '10 minutes' end,
        format('mqtt://school/%s/%s', lower(replace(s.name, ' ', '-')), q.topic)
   from building.spaces s
@@ -94,18 +94,18 @@ insert into property_defs (code, name, datatype, allowed_values, applies_to, pub
   ('acoustic_class', 'Acoustic class', 'text', '{A,B,C,D}', '{space}', 'installation')
 on conflict (code) do nothing;
 
-insert into attributes (object_id, property_code, value, source)
-select id, 'acoustic_class', to_jsonb(case when name like 'Classroom%' then 'B' else 'C' end), 'acoustic survey 2024'
+insert into attributes (object_kind, object_id, property_code, value, source)
+select 'space', id, 'acoustic_class', to_jsonb(case when name like 'Classroom%' then 'B' else 'C' end), 'acoustic survey 2024'
   from building.spaces where kind = 'room';
 
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000200000020', 'floor_area', '1840', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000200000020', 'year_built', '1968', 'municipal archive'),
-  ('00000000-0000-4000-8000-000200000020', 'energy_label', '"D"', 'energy performance certificate 2022');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('building', '00000000-0000-4000-8000-000200000020', 'floor_area', '1840', 'as-built drawings'),
+  ('building', '00000000-0000-4000-8000-000200000020', 'year_built', '1968', 'municipal archive'),
+  ('building', '00000000-0000-4000-8000-000200000020', 'energy_label', '"D"', 'energy performance certificate 2022');
 
-insert into documents (object_id, name, kind, uri, media_type, source) values
-  ('00000000-0000-4000-8000-000200000020', 'Ground floor plan', 'plan', 's3://nexgen-os-examples/school/ground-floor.dxf', 'image/vnd.dxf', 'architect'),
-  ('00000000-0000-4000-8000-000200000020', 'IFC model', 'document', 's3://nexgen-os-examples/school/main-building.ifc', 'application/x-step', 'architect');
+insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
+  ('building', '00000000-0000-4000-8000-000200000020', 'Ground floor plan', 'plan', 's3://nexgen-os-examples/school/ground-floor.dxf', 'image/vnd.dxf', 'architect'),
+  ('building', '00000000-0000-4000-8000-000200000020', 'IFC model', 'document', 's3://nexgen-os-examples/school/main-building.ifc', 'application/x-step', 'architect');
 
 -- Queries a page would run
 -- The rooms with their points, floor by floor:
@@ -118,7 +118,7 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
 --   select r.* from series s, resample(s.id, '2026-01-12', '2026-01-13', '30 minutes') r
 --    where s.object_id = '00000000-0000-4000-8000-000200000041' and s.quantity_code = 'temperature' and s.kind = 'measured';
 -- Where is classroom 5, and whose rules apply:
---   select site_of('00000000-0000-4000-8000-000200000044'), country_of('00000000-0000-4000-8000-000200000044');
+--   select site_of('space', '00000000-0000-4000-8000-000200000044'), country_of('space', '00000000-0000-4000-8000-000200000044');
 
 -- Daily readings are cut in the site's time zone.
 update sites set time_zone = 'Europe/Brussels' where organisation_id = '00000000-0000-4000-8000-000200000001';

@@ -46,17 +46,17 @@ select connect_device(d, m)
 update devices set geometry = ST_GeomFromText('POLYGON((2.7234 50.7707, 2.7246 50.7707, 2.7246 50.7715, 2.7234 50.7715, 2.7234 50.7707))', 4326)
  where id = '00000000-0000-4000-8000-000400000052';
 
-insert into links (subject_id, type_code, object_id) values
-  ('00000000-0000-4000-8000-000400000051', 'feeds', '00000000-0000-4000-8000-000400000054'),
-  ('00000000-0000-4000-8000-000400000054', 'feeds', '00000000-0000-4000-8000-000400000041');
+insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
+  ('device', '00000000-0000-4000-8000-000400000051', 'feeds', 'device', '00000000-0000-4000-8000-000400000054'),
+  ('device', '00000000-0000-4000-8000-000400000054', 'feeds', 'meter', '00000000-0000-4000-8000-000400000041');
 
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000400000010', 'annual_consumption', '186000', 'supplier invoices 2025'),
-  ('00000000-0000-4000-8000-000400000041', 'subscribed_power', '160', 'supply contract');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('site', '00000000-0000-4000-8000-000400000010', 'annual_consumption', '186000', 'supplier invoices 2025'),
+  ('meter', '00000000-0000-4000-8000-000400000041', 'subscribed_power', '160', 'supply contract');
 
-insert into documents (object_id, name, kind, uri, media_type, source) values
-  ('00000000-0000-4000-8000-000400000010', 'Electricity invoices 2025', 'document', 's3://nexgen-os-examples/farm/invoices-2025.pdf', 'application/pdf', 'supplier'),
-  ('00000000-0000-4000-8000-000400000052', 'Ground array layout', 'plan', 's3://nexgen-os-examples/farm/field-layout.geojson', 'application/geo+json', 'installer');
+insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
+  ('site', '00000000-0000-4000-8000-000400000010', 'Electricity invoices 2025', 'document', 's3://nexgen-os-examples/farm/invoices-2025.pdf', 'application/pdf', 'supplier'),
+  ('device', '00000000-0000-4000-8000-000400000052', 'Ground array layout', 'plan', 's3://nexgen-os-examples/farm/field-layout.geojson', 'application/geo+json', 'installer');
 
 insert into modules (code, name, version, schema_name, requires_core_min) values
   ('solar', 'Solar', '0.1.0', 'solar', '0.1.0')
@@ -64,7 +64,7 @@ on conflict (code) do nothing;
 
 -- The orientation each estimate assumed: the barn roof faces south-south-east
 -- at 15°, the ground array south on flat ground, the carport south at 10°.
-select record_run('solar', 'pvgis-5.3+core-0.1.0', d.id, null,
+select record_run('solar', 'pvgis-5.3+core-0.1.0', 'device', d.id, null,
   jsonb_build_object('source', 'pvgis', 'peak_kw', d.rated_power_kw, 'tilt', o.tilt_deg, 'azimuth', o.azimuth_deg, 'loss_pct', 14),
   jsonb_build_object('annual_kwh', round(d.rated_power_kw * o.specific_yield)))
   from devices d

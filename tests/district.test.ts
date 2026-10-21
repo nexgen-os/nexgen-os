@@ -32,7 +32,7 @@ beforeAll(async () => {
     const b = await insert(db, 'building.buildings', {
       organisation_id: org, site_id: site, name: `Building ${i + 1}`, footprint: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
     });
-    await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
+    await db.query(`insert into external_ids (object_kind, object_id, scheme, value) values ('building', $1, 'osm', $2)`, [b, `way/${1000 + i}`]);
     await insert(db, 'participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
   }
   // One building outside the district, to prove the spatial query.
@@ -76,7 +76,7 @@ describe('a district from open data', () => {
   it('refuses the same identifier on two objects', async () => {
     const b3 = await one<{ id: string }>(db, `select id from building.buildings where name = 'Building 3'`);
     await expect(
-      db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', 'way/1001')`, [b3.id]),
+      db.query(`insert into external_ids (object_kind, object_id, scheme, value) values ('building', $1, 'osm', 'way/1001')`, [b3.id]),
     ).rejects.toThrow(/duplicate key/);
   });
 
@@ -84,7 +84,7 @@ describe('a district from open data', () => {
     const b3 = await one<{ id: string }>(db, `select id from building.buildings where name = 'Building 3'`);
     const b2 = await one<{ id: string }>(db, `select id from building.buildings where name = 'Building 2'`);
     const roof = await insert(db, 'building.surfaces', { organisation_id: org, building_id: b2.id, name: 'Roof 2', kind: 'roof', tilt_deg: 0 });
-    await db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'shades', $2)`, [b3.id, roof]);
+    await db.query(`select link_objects('building', $1, 'shades', 'surface', $2)`, [b3.id, roof]);
     const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'shades'`);
     expect(r.n).toBe(1);
   });
@@ -93,10 +93,10 @@ describe('a district from open data', () => {
     const p = await one<{ id: string }>(db, `select id from sites where name = 'Plot 1'`);
     const a = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1a', country: 'SN' });
     const b = await insert(db, 'sites', { organisation_id: org, name: 'Plot 1b', country: 'SN' });
-    await db.query(`select split_object($1, array[$2, $3]::uuid[], '2026-02-01')`, [p.id, a, b]);
+    await db.query(`select split_object('site', $1, array[$2, $3]::uuid[], '2026-02-01')`, [p.id, a, b]);
     const r = await db.query<{ name: string; dated: boolean }>(
       `select s.name, l.valid_from = '2026-02-01'::timestamptz dated from links l join sites s on s.id = l.object_id
-        where l.subject_id = $1 and l.type_code = 'split_into' order by s.name`,
+        where l.subject_kind = 'site' and l.subject_id = $1 and l.type_code = 'split_into' order by s.name`,
       [p.id],
     );
     expect(r.rows).toEqual([{ name: 'Plot 1a', dated: true }, { name: 'Plot 1b', dated: true }]);
@@ -105,14 +105,15 @@ describe('a district from open data', () => {
   it('merges only objects of one kind and one organisation', async () => {
     const [p2, p3] = (await db.query<{ id: string }>(`select id from sites where name in ('Plot 2', 'Plot 3') order by name`)).rows.map((r) => r.id);
     const merged = await insert(db, 'sites', { organisation_id: org, name: 'Plots 2 and 3', country: 'SN' });
-    await db.query(`select merge_objects(array[$1, $2]::uuid[], $3)`, [p2, p3, merged]);
+    await db.query(`select merge_objects('site', array[$1, $2]::uuid[], $3)`, [p2, p3, merged]);
     const r = await one<{ n: number }>(db, `select count(*)::int n from links where type_code = 'merged_into' and object_id = $1`, [merged]);
     expect(r.n).toBe(2);
     const b1 = await one<{ id: string }>(db, `select id from building.buildings where name = 'Building 1'`);
-    await expect(db.query(`select merge_objects(array[$1]::uuid[], $2)`, [b1.id, merged])).rejects.toThrow(/object_kind_mismatch/);
+    // A building is not found among the sites: one gesture, one kind.
+    await expect(db.query(`select merge_objects('site', array[$1]::uuid[], $2)`, [b1.id, merged])).rejects.toThrow(/object_not_found/);
     const elsewhere = await organisation(db, 'Another city');
     const theirs = await insert(db, 'sites', { organisation_id: elsewhere, name: 'Their plot', country: 'SN' });
-    await expect(db.query(`select split_object($1, array[$2]::uuid[])`, [merged, theirs])).rejects.toThrow(/object_in_other_organisation/);
+    await expect(db.query(`select split_object('site', $1, array[$2]::uuid[])`, [merged, theirs])).rejects.toThrow(/object_in_other_organisation/);
   });
 
   it('counts the district by its participants', async () => {

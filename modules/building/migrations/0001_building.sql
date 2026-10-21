@@ -814,14 +814,15 @@ security invoker
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  f    building.surfaces%rowtype;
-  scn  uuid;
+  f      building.surfaces%rowtype;
+  known  boolean;
+  scn    uuid;
 begin
   if to_regclass('solar.pv_arrays') is null then
     raise exception 'module_required: solar' using errcode = 'undefined_table';
   end if;
-  execute 'select scenario_id from solar.pv_arrays where id = $1' into scn using p_array_id;
-  if not found then
+  execute 'select true, scenario_id from solar.pv_arrays where id = $1' into known, scn using p_array_id;
+  if known is null then
     raise exception 'array_not_found: %', p_array_id using errcode = 'no_data_found';
   end if;
   select * into f from building.surfaces where id = p_surface_id;

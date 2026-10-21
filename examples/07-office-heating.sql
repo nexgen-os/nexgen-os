@@ -25,18 +25,18 @@ insert into building.surfaces (id, organisation_id, building_id, name, kind, azi
   ('00000000-0000-4000-8000-000700000035', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000020', 'Flat roof', 'roof', 180, 0);
 
 -- U-values and materials today, from the 2022 energy audit.
-insert into attributes (object_id, property_code, value, source)
-select id, 'u_value', '1.4', 'energy audit 2022' from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
-insert into attributes (object_id, property_code, value, source)
-select id, 'material', '"concrete, 1979 cladding"', 'energy audit 2022' from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000700000035', 'material', '"bitumen, insulated 2015"', 'energy audit 2022'),
-  ('00000000-0000-4000-8000-000700000020', 'year_built', '1979', 'energy audit 2022'),
-  ('00000000-0000-4000-8000-000700000020', 'floors_above_ground', '6', 'energy audit 2022'),
-  ('00000000-0000-4000-8000-000700000020', 'floors_below_ground', '1', 'energy audit 2022'),
-  ('00000000-0000-4000-8000-000700000035', 'u_value', '0.22', 'energy audit 2022'),
-  ('00000000-0000-4000-8000-000700000020', 'floor_area', '5400', 'as-built drawings'),
-  ('00000000-0000-4000-8000-000700000020', 'energy_label', '"F"', 'energy certificate 2022');
+insert into attributes (object_kind, object_id, property_code, value, source)
+select 'surface', id, 'u_value', '1.4', 'energy audit 2022' from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
+insert into attributes (object_kind, object_id, property_code, value, source)
+select 'surface', id, 'material', '"concrete, 1979 cladding"', 'energy audit 2022' from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('surface', '00000000-0000-4000-8000-000700000035', 'material', '"bitumen, insulated 2015"', 'energy audit 2022'),
+  ('building', '00000000-0000-4000-8000-000700000020', 'year_built', '1979', 'energy audit 2022'),
+  ('building', '00000000-0000-4000-8000-000700000020', 'floors_above_ground', '6', 'energy audit 2022'),
+  ('building', '00000000-0000-4000-8000-000700000020', 'floors_below_ground', '1', 'energy audit 2022'),
+  ('surface', '00000000-0000-4000-8000-000700000035', 'u_value', '0.22', 'energy audit 2022'),
+  ('building', '00000000-0000-4000-8000-000700000020', 'floor_area', '5400', 'as-built drawings'),
+  ('building', '00000000-0000-4000-8000-000700000020', 'energy_label', '"F"', 'energy certificate 2022');
 
 insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
@@ -55,10 +55,10 @@ select building.place_device(d, '00000000-0000-4000-8000-000700000020')
   from unnest(array['00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000052',
                     '00000000-0000-4000-8000-000700000053']::uuid[]) d;
 
-insert into links (subject_id, type_code, object_id) values
-  ('00000000-0000-4000-8000-000700000051', 'serves', '00000000-0000-4000-8000-000700000020'),
-  ('00000000-0000-4000-8000-000700000052', 'serves', '00000000-0000-4000-8000-000700000020'),
-  ('00000000-0000-4000-8000-000700000053', 'serves', '00000000-0000-4000-8000-000700000020');
+insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
+  ('device', '00000000-0000-4000-8000-000700000051', 'serves', 'building', '00000000-0000-4000-8000-000700000020'),
+  ('device', '00000000-0000-4000-8000-000700000052', 'serves', 'building', '00000000-0000-4000-8000-000700000020'),
+  ('device', '00000000-0000-4000-8000-000700000053', 'serves', 'building', '00000000-0000-4000-8000-000700000020');
 select connect_device('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000042');
 select connect_device(d, '00000000-0000-4000-8000-000700000041')
   from unnest(array['00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000053']::uuid[]) d;
@@ -67,12 +67,12 @@ select connect_device(d, '00000000-0000-4000-8000-000700000041')
 -- each: a winter week of hourly gas consumption at the gas meter, in m³;
 -- the heating setpoint of the building and its schedule; the flow
 -- temperature the boiler reports, not collected yet.
-insert into series (id, organisation_id, object_id, device_id, quantity_code, kind, value_kind, step, external_ref, source) values
-  ('00000000-0000-4000-8000-000700000071', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000042', null,
+insert into series (id, organisation_id, object_kind, object_id, device_id, quantity_code, kind, value_kind, step, external_ref, source) values
+  ('00000000-0000-4000-8000-000700000071', '00000000-0000-4000-8000-000700000001', 'meter', '00000000-0000-4000-8000-000700000042', null,
    'volume', 'measured', 'interval', '1 hour', 'mbus://10.1.0.20/1', 'gas meter'),
-  ('00000000-0000-4000-8000-000700000072', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000051',
+  ('00000000-0000-4000-8000-000700000072', '00000000-0000-4000-8000-000700000001', 'building', '00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000051',
    'temperature', 'setpoint', 'instant', null, 'bacnet://10.1.0.9/analog-value,1', 'building management system'),
-  ('00000000-0000-4000-8000-000700000073', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000051',
+  ('00000000-0000-4000-8000-000700000073', '00000000-0000-4000-8000-000700000001', 'device', '00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000051',
    'temperature', 'measured', 'instant', null, 'bacnet://10.1.0.9/analog-input,12', 'building management system');
 
 select store('00000000-0000-4000-8000-000700000071', array_agg(ts order by ts),
@@ -88,8 +88,8 @@ select store('00000000-0000-4000-8000-000700000072', array_agg((d + t)::timestam
 insert into scenarios (id, organisation_id, name, description) values
   ('00000000-0000-4000-8000-000700000080', '00000000-0000-4000-8000-000700000001', 'Insulation and second heat pump', 'External insulation of the four facades, boiler decommissioned, 160 kW heat pump added.');
 
-insert into attributes (object_id, property_code, value, scenario_id, source)
-select id, 'u_value', '0.24', '00000000-0000-4000-8000-000700000080', 'insulation design 2026'
+insert into attributes (object_kind, object_id, property_code, value, scenario_id, source)
+select 'surface', id, 'u_value', '0.24', '00000000-0000-4000-8000-000700000080', 'insulation design 2026'
   from building.surfaces where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 
 insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
@@ -102,9 +102,9 @@ insert into modules (code, name, version, schema_name, requires_core_min) values
   ('thermal', 'Thermal', '0.1.0', 'thermal', '0.1.0')
 on conflict (code) do nothing;
 
-select record_run('thermal', 'heat-loss-0.1.0', '00000000-0000-4000-8000-000700000020', null,
+select record_run('thermal', 'heat-loss-0.1.0', 'building', '00000000-0000-4000-8000-000700000020', null,
   '{"method": "steady-state", "design_outdoor_c": -14, "indoor_c": 20}', '{"heat_loss_kw": 412, "annual_heating_kwh": 618000}');
-select record_run('thermal', 'heat-loss-0.1.0', '00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000080',
+select record_run('thermal', 'heat-loss-0.1.0', 'building', '00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000080',
   '{"method": "steady-state", "design_outdoor_c": -14, "indoor_c": 20}', '{"heat_loss_kw": 236, "annual_heating_kwh": 351000}');
 
 -- Queries a page would run

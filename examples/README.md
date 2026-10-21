@@ -35,6 +35,6 @@ import { freshDatabase } from './tests/helpers/db.ts';
 import { readFile } from 'node:fs/promises';
 const db = await freshDatabase();
 await db.exec(await readFile('examples/01-house-pv-battery.sql', 'utf8'));
-console.log((await db.query('select kind, count(*)::int n from objects group by kind order by kind')).rows);
+console.log((await db.query('select name, city, country from sites order by name')).rows);
 "
 ```

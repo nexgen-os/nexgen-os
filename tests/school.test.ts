@@ -41,9 +41,9 @@ beforeAll(async () => {
     ['co2', 'measured', probe, 'mqtt://school/c1/co2'],
     ['temperature', 'setpoint', heatPump, 'modbus://10.0.0.5/4001'],
   ]) {
-    await db.query(`select series_ensure($1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
+    await db.query(`select series_ensure('space', $1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
   }
-  await db.query(`select series_ensure($1, 'temperature', 'measured', 'instant')`, [classroom5]);
+  await db.query(`select series_ensure('space', $1, 'temperature', 'measured', 'instant')`, [classroom5]);
 });
 
 afterAll(async () => {
@@ -54,7 +54,7 @@ describe('a school, inside', () => {
   it('finds the site, the country and the building from a room', async () => {
     const r = await one<{ site: string; country: string; building: string }>(
       db,
-      'select site_of($1) site, country_of($1) country, building.building_of($1) building',
+      `select site_of('space', $1) site, country_of('space', $1) country, building.building_of('space', $1) building`,
       [classroom5],
     );
     expect(r).toEqual({ site, country: 'BE', building: school });
@@ -116,7 +116,7 @@ describe('a school, inside', () => {
   });
 
   it('serves the building with the heat pump, linked to it', async () => {
-    await db.query(`select link_objects($1, 'serves', $2)`, [heatPump, school]);
+    await db.query(`select link_objects('device', $1, 'serves', 'building', $2)`, [heatPump, school]);
     const r = await one<{ name: string }>(
       db,
       `select d.name from links l join devices d on d.id = l.subject_id where l.type_code = 'serves' and l.object_id = $1`,
@@ -126,26 +126,26 @@ describe('a school, inside', () => {
   });
 
   it('attaches an attribute to a room like to anything else', async () => {
-    await expect(db.query(`select set_attribute($1, 'roof_area', '12')`, [classroom1])).rejects.toThrow(/property_not_applicable/);
-    await db.query(`select set_attribute($1, 'floor_area', '62', null, null, 'as-built drawings')`, [classroom1]);
+    await expect(db.query(`select set_attribute('space', $1, 'roof_area', '12')`, [classroom1])).rejects.toThrow(/property_not_applicable/);
+    await db.query(`select set_attribute('space', $1, 'floor_area', '62', null, null, 'as-built drawings')`, [classroom1]);
     await db.query(
       `insert into property_defs (code, name, datatype, applies_to, published_by) values ('acoustic_class', 'Acoustic class', 'text', '{space}', 'installation')`,
     );
-    await db.query(`select set_attribute($1, 'acoustic_class', '"B"')`, [classroom1]);
+    await db.query(`select set_attribute('space', $1, 'acoustic_class', '"B"')`, [classroom1]);
     const p = await one<{ p: Record<string, unknown> }>(db, 'select attributes_of($1) p', [classroom1]);
     expect(p.p).toEqual({ acoustic_class: 'B', floor_area: 62 });
   });
 
   it('removes the floors, rooms, devices in them and their series when the building goes', async () => {
     await db.query('delete from building.buildings where id = $1', [school]);
-    const r = await one<{ spaces: number; series: number; objects: number; placed: number }>(
+    const r = await one<{ spaces: number; series: number; attributes: number; placed: number }>(
       db,
       `select (select count(*)::int from building.spaces where building_id = $1) spaces,
               (select count(*)::int from series) series,
-              (select count(*)::int from objects where kind = 'space') objects,
+              (select count(*)::int from attributes where object_kind = 'space') attributes,
               (select count(*)::int from building.devices where space_id is not null or building_id is not null) placed`,
       [school],
     );
-    expect(r).toEqual({ spaces: 0, series: 0, objects: 0, placed: 0 });
+    expect(r).toEqual({ spaces: 0, series: 0, attributes: 0, placed: 0 });
   });
 });

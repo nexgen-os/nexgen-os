@@ -27,21 +27,21 @@ select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-
   from generate_series(1, 6) i;
 
 -- The number of floors OpenStreetMap gives (building:levels), with its source.
-insert into attributes (object_id, property_code, value, source_code, source)
-select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floors_above_ground', to_jsonb(2 + (i % 4)), 'openstreetmap', 'building:levels'
+insert into attributes (object_kind, object_id, property_code, value, source_code, source)
+select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floors_above_ground', to_jsonb(2 + (i % 4)), 'openstreetmap', 'building:levels'
   from generate_series(1, 6) i;
 
-insert into external_ids (object_id, scheme, value)
-select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'osm', 'way/' || (987650000 + i)
+insert into external_ids (object_kind, object_id, scheme, value)
+select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'osm', 'way/' || (987650000 + i)
   from generate_series(1, 6) i;
 
-insert into attributes (object_id, property_code, value, source_code, source)
-select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floor_area', to_jsonb(300 * (2 + (i % 4))), 'openstreetmap', 'footprint × floors'
+insert into attributes (object_kind, object_id, property_code, value, source_code, source)
+select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floor_area', to_jsonb(300 * (2 + (i % 4))), 'openstreetmap', 'footprint × floors'
   from generate_series(1, 6) i;
 
 -- Heights come from the Copernicus height model, noted as such.
-insert into documents (object_id, name, kind, uri, media_type, source_code, source) values
-  ('00000000-0000-4000-8000-000500000020', 'Height model tile', 'document', 's3://nexgen-os-examples/dakar/dem-n14w018.tif', 'image/tiff', 'copernicus_dem', 'GLO-30 tile N14 W018');
+insert into documents (object_kind, object_id, name, kind, uri, media_type, source_code, source) values
+  ('project', '00000000-0000-4000-8000-000500000020', 'Height model tile', 'document', 's3://nexgen-os-examples/dakar/dem-n14w018.tif', 'image/tiff', 'copernicus_dem', 'GLO-30 tile N14 W018');
 
 -- A roof face per building, flat, ready for the solar study.
 insert into building.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg)
@@ -49,8 +49,8 @@ select ('00000000-0000-4000-8000-0005000000' || (50 + i))::uuid, '00000000-0000-
   from generate_series(1, 6) i;
 
 -- Building 3 is the tall one; it shades the roof of building 2.
-insert into links (subject_id, type_code, object_id) values
-  ('00000000-0000-4000-8000-000500000043', 'shades', '00000000-0000-4000-8000-000500000052');
+insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
+  ('building', '00000000-0000-4000-8000-000500000043', 'shades', 'surface', '00000000-0000-4000-8000-000500000052');
 
 -- Every plot takes part in the plan.
 insert into participants (organisation_id, project_id, site_id, name, role, status)
@@ -62,7 +62,7 @@ select '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-00050000
 insert into sites (id, organisation_id, name, country, city, profile) values
   ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', 'Plot 6a', 'SN', 'Dakar', 'mixed'),
   ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', 'Plot 6b', 'SN', 'Dakar', 'mixed');
-select split_object('00000000-0000-4000-8000-000500000036',
+select split_object('site', '00000000-0000-4000-8000-000500000036',
                     array['00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000038']::uuid[], '2026-02-01');
 
 -- Queries a page would run

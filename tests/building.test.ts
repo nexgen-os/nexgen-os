@@ -39,7 +39,7 @@ describe('the module', () => {
       db, `select code, schema_name, requires_core_min from modules where code = 'building'`);
     expect(m).toEqual({ code: 'building', schema_name: 'building', requires_core_min: '0.3.0' });
     const kinds = await db.query<{ kind: string; table_name: string; published_by: string }>(
-      `select kind, table_name, published_by from object_kinds where kind in ('building', 'space', 'surface') order by kind`);
+      `select kind, table_name, published_by from kinds where kind in ('building', 'space', 'surface') order by kind`);
     expect(kinds.rows).toEqual([
       { kind: 'building', table_name: 'building.buildings', published_by: 'building' },
       { kind: 'space', table_name: 'building.spaces', published_by: 'building' },
@@ -70,9 +70,9 @@ describe('the module', () => {
     expect(await detachedModuleTables(sqlClient(db), ['building'])).toEqual([]);
   });
 
-  it('keeps site_of, country_of and the parent checks of the core working on its kinds', async () => {
+  it('answers site_of and country_of of the core for its kinds, and keeps the parent checks working', async () => {
     const r = await one<{ site: string; country: string; building: string }>(
-      db, 'select site_of($1) site, country_of($1) country, building.building_of($1) building', [flatA]);
+      db, `select site_of('space', $1) site, country_of('space', $1) country, building.building_of('space', $1) building`, [flatA]);
     expect(r).toEqual({ site, country: 'NL', building: block });
     const other = await organisation(db, 'Someone else');
     await expect(insert(db, 'building.buildings', { organisation_id: other, site_id: site, name: 'Intruder' }))
@@ -86,7 +86,7 @@ describe('the placement of a device', () => {
     const p = await one<{ building_id: string; space_id: string; organisation_id: string }>(
       db, 'select building_id, space_id, organisation_id from building.devices where device_id = $1', [heatPump]);
     expect(p).toEqual({ building_id: block, space_id: flatA, organisation_id: org });
-    const r = await one<{ site: string; building: string }>(db, 'select site_of($1) site, building.building_of($1) building', [heatPump]);
+    const r = await one<{ site: string; building: string }>(db, `select site_of('device', $1) site, building.building_of('device', $1) building`, [heatPump]);
     expect(r).toEqual({ site, building: block });
   });
 
@@ -106,14 +106,19 @@ describe('the placement of a device', () => {
       db, 'select building_id, space_id, surface_id from building.devices where device_id = $1', [heatPump]);
     expect(now).toEqual({ building_id: block, space_id: null, surface_id: roof });
     const was = await db.query<{ object_id: string; valid_to: string }>(
-      `select object_id, valid_to::date::text valid_to from links where subject_id = $1 and type_code = 'placed_in'`, [heatPump]);
+      `select object_id, valid_to::date::text valid_to from links where subject_kind = 'device' and subject_id = $1 and type_code = 'placed_in'`, [heatPump]);
     expect(was.rows).toEqual([{ object_id: flatA, valid_to: '2026-05-01' }]);
   });
 
-  it('lets the cascade of parameter_of go through the place of a device', async () => {
-    await db.query(`select set_attribute($1, 'annual_consumption', '3200', null, null, 'survey')`, [block]);
-    const r = await one<{ p: { value: number; level: string } }>(db, `select parameter_of($1, 'annual_consumption') p`, [heatPump]);
+  it('resolves a parameter through the place of a device, then asks the core', async () => {
+    await db.query(`select set_attribute('building', $1, 'annual_consumption', '3200', null, null, 'survey')`, [block]);
+    const r = await one<{ p: { value: number; level: string } }>(db, `select building.parameter_of('device', $1, 'annual_consumption') p`, [heatPump]);
     expect(r.p).toMatchObject({ value: 3200, level: 'building' });
+    await db.query(`select set_attribute('site', $1, 'annual_consumption', '9000', null, null, 'survey')`, [site]);
+    const fromSurface = await one<{ p: { value: number; level: string } }>(db, `select building.parameter_of('surface', $1, 'annual_consumption') p`, [roof]);
+    expect(fromSurface.p).toMatchObject({ value: 3200, level: 'building' });
+    const fromCore = await one<{ p: { value: number; level: string } }>(db, `select parameter_of('device', $1, 'annual_consumption') p`, [heatPump]);
+    expect(fromCore.p).toMatchObject({ value: 9000, level: 'site' });
   });
 
   it('goes with its device, and loses a place that goes', async () => {
@@ -129,15 +134,15 @@ describe('a participant occupies a unit', () => {
   it('links a participant of a project to the unit it occupies, and refuses a site as the object', async () => {
     const project = await insert(db, 'projects', { organisation_id: org, name: 'Block community', kind: 'energy_community', country: 'NL' });
     const tenant = (await one<{ id: string }>(db, `select join_project($1, $2, 'Flat A', 'consumer', null, '2026-01-01') id`, [project, site])).id;
-    await db.query(`insert into links (subject_id, type_code, object_id, valid_from) values ($1, 'occupies', $2, '2026-01-01')`, [tenant, flatA]);
+    await db.query(`select link_objects('participant', $1, 'occupies', 'space', $2, '2026-01-01')`, [tenant, flatA]);
     const r = await one<{ unit: string; floor: string }>(
       db,
       `select u.name unit, f.name floor from links l join building.spaces u on u.id = l.object_id join building.spaces f on f.id = u.parent_id
-        where l.subject_id = $1 and l.type_code = 'occupies'`,
+        where l.subject_kind = 'participant' and l.subject_id = $1 and l.type_code = 'occupies'`,
       [tenant],
     );
     expect(r).toEqual({ unit: 'Flat A', floor: 'Ground floor' });
-    await expect(db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'occupies', $2)`, [tenant, site]))
+    await expect(db.query(`select link_objects('participant', $1, 'occupies', 'site', $2)`, [tenant, site]))
       .rejects.toThrow(/link_object_kind/);
   });
 });
@@ -156,9 +161,9 @@ describe('a PV array on a roof face', () => {
     const a = await one<{ azimuth_deg: string; tilt_deg: string }>(db, 'select azimuth_deg, tilt_deg from solar.pv_arrays where id = $1', [array]);
     expect(a).toEqual({ azimuth_deg: '180.00', tilt_deg: '35.00' });
     const link = await one<{ object_id: string; valid_from: string; valid_to: string | null }>(
-      db, `select object_id, valid_from::date::text valid_from, valid_to from links where subject_id = $1 and type_code = 'placed_on'`, [array]);
+      db, `select object_id, valid_from::date::text valid_from, valid_to from links where subject_kind = 'pv_array' and subject_id = $1 and type_code = 'placed_on'`, [array]);
     expect(link).toEqual({ object_id: roof, valid_from: '2026-03-01', valid_to: null });
-    expect((await one<{ b: string }>(db, 'select building.building_of($1) b', [array])).b).toBe(block);
+    expect((await one<{ b: string }>(db, `select building.building_of('pv_array', $1) b`, [array])).b).toBe(block);
   });
 
   it('keeps its own orientation over the face\'s: a tilted frame on a flat roof', async () => {
@@ -175,7 +180,7 @@ describe('a PV array on a roof face', () => {
     await db.query(`select building.place_array($1, $2, '2026-03-01')`, [array, roof]);
     await db.query(`select building.place_array($1, $2, '2026-08-01')`, [array, east]);
     const links = await db.query<{ object_id: string; valid_to: string | null }>(
-      `select object_id, valid_to::date::text valid_to from links where subject_id = $1 and type_code = 'placed_on' order by valid_from`, [array]);
+      `select object_id, valid_to::date::text valid_to from links where subject_kind = 'pv_array' and subject_id = $1 and type_code = 'placed_on' order by valid_from`, [array]);
     expect(links.rows).toEqual([{ object_id: roof, valid_to: '2026-08-01' }, { object_id: east, valid_to: null }]);
   });
 

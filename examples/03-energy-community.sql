@@ -68,8 +68,8 @@ insert into devices (id, organisation_id, site_id, name, device_type, manufactur
 select connect_device('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000044');
 
 -- A month of quarter-hour offtake per consumer, and of injection by the plant.
-insert into series (id, organisation_id, object_id, quantity_code, kind, value_kind, step, source)
-select ('00000000-0000-4000-8000-0003000000' || (70 + row_number() over ()))::uuid, '00000000-0000-4000-8000-000300000001', m.id,
+insert into series (id, organisation_id, object_kind, object_id, quantity_code, kind, value_kind, step, source)
+select ('00000000-0000-4000-8000-0003000000' || (70 + row_number() over ()))::uuid, '00000000-0000-4000-8000-000300000001', 'meter', m.id,
        case when m.direction = 'injection' then 'injection_energy' else 'offtake_energy' end, 'measured', 'interval', '15 minutes', 'grid operator hub'
   from meters m where m.organisation_id = '00000000-0000-4000-8000-000300000001' order by m.identifier;
 
@@ -83,18 +83,18 @@ select store(s.id, array_agg(ts order by ts), array_agg((
  where s.organisation_id = '00000000-0000-4000-8000-000300000001'
  group by s.id;
 
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000300000041', 'subscribed_power', '80', 'supply contract'),
-  ('00000000-0000-4000-8000-000300000042', 'subscribed_power', '120', 'supply contract'),
-  ('00000000-0000-4000-8000-000300000043', 'subscribed_power', '63', 'supply contract');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('meter', '00000000-0000-4000-8000-000300000041', 'subscribed_power', '80', 'supply contract'),
+  ('meter', '00000000-0000-4000-8000-000300000042', 'subscribed_power', '120', 'supply contract'),
+  ('meter', '00000000-0000-4000-8000-000300000043', 'subscribed_power', '63', 'supply contract');
 
-insert into documents (object_id, name, kind, uri, media_type, source) values
-  ('00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-examples/community/statutes-2024.pdf', 'application/pdf', 'notary'),
-  ('00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-examples/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
+insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
+  ('project', '00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-examples/community/statutes-2024.pdf', 'application/pdf', 'notary'),
+  ('project', '00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-examples/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
 
 -- The month's settlement, computed in the community module: the lines
 -- of who received how much, and at which price.
-select record_run('community', 'settlement-0.1.0', '00000000-0000-4000-8000-000300000020', null,
+select record_run('community', 'settlement-0.1.0', 'project', '00000000-0000-4000-8000-000300000020', null,
   '{"period": "2026-05", "allocation": "proportional", "price_eur_mwh": 95}',
   '{"shared_kwh": 18420, "lines": [
      {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95},
