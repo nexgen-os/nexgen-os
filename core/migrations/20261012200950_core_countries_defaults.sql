@@ -13,10 +13,12 @@
 -- `parameter_of()` is the one resolution of a parameter, in one order for
 -- every property: the object's own attribute, then its parents' nearest
 -- first along the foreign keys of the core (`parents_of()`), then its
--- organisation, then its region, then its country — and nothing else. A
--- module that places an object of the core among its own (a device on a
--- roof face) resolves through them first, then asks the core. There is no global level: a value nobody decided is refused
--- by name (`parameter_missing`), never guessed.
+-- organisation, then the region, then the country of its participant's
+-- place — and nothing else: device → participant → project → organisation
+-- → region → country. A module resolves its own kinds through them first
+-- (a building through its spaces), then asks the core from the participant.
+-- There is no global level: a value nobody decided is refused by name
+-- (`parameter_missing`), never guessed.
 
 set search_path = nexgen, public, extensions;
 
@@ -32,7 +34,7 @@ create table countries (
   currency             char(3) not null,
   -- BCP 47, the first is the one a document is written in by default.
   languages            text[] not null default '{}',
-  -- IANA, the first is the default of a site that names none.
+  -- IANA, the first is the default of a place that names none.
   time_zones           text[] not null default '{}',
   -- The level the pack lists its regions at (a region, a province, a
   -- department), in the words of ISO 3166-2 for that country.
@@ -80,18 +82,18 @@ create table regions (
 );
 
 comment on table regions is
-  'The ISO 3166-2 subdivisions of a country at the level its pack lists them, with their parent and time zone. A site names one; a default may hold in one only. Written by packs.';
+  'The ISO 3166-2 subdivisions of a country at the level its pack lists them, with their parent and time zone. A participant''s place names one; a default may hold in one only. Written by packs.';
 
 create index regions_country_idx on regions (country);
 
--- A site names a region its country's pack lists, when the pack lists any.
-create or replace function sites_region_check()
+-- A place names a region its country's pack lists, when the pack lists any.
+create or replace function participants_region_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
-  -- A region of another country is refused by the format check of sites.
+  -- A region of another country is refused by the format check of participants.
   if new.region is not null and new.region like new.country || '-%'
      and exists (select 1 from regions r where r.country = new.country)
      and not exists (select 1 from regions r where r.code = new.region) then
@@ -102,11 +104,11 @@ begin
 end;
 $$;
 
-comment on function sites_region_check() is
-  'BEFORE INSERT / UPDATE on sites: the region is one the country''s pack lists, when it lists any (region_unknown).';
+comment on function participants_region_check() is
+  'BEFORE INSERT / UPDATE on participants: the region is one the country''s pack lists, when it lists any (region_unknown).';
 
-create trigger sites_region_check before insert or update of region, country on sites
-  for each row execute function sites_region_check();
+create trigger participants_region_check before insert or update of region, country on participants
+  for each row execute function participants_region_check();
 
 -- ---------------------------------------------------------------------------
 -- defaults — the values a study starts from.
@@ -212,10 +214,10 @@ comment on function attribute_at(uuid, text, timestamptz, uuid) is
   'The attribute row of one object and property holding at a moment, the scenario''s own before reality''s; null when none.';
 
 -- The parents of an object of the core, nearest first, through its foreign
--- keys: a participant is on its site, in its group, in its project; a meter
--- on its site and carried by its participant; a device on its site, behind
--- its meter. A series and a run are their object's, then its parents. A
--- module's kind has none here: the module resolves it.
+-- keys: a participant is in its group, then in its project; a meter and a
+-- device are their participant's, then its parents. A series and a run are
+-- their object's, then its parents. A module's kind has none here: the
+-- module resolves it.
 create or replace function parents_of(p_kind text, p_id uuid)
 returns table (kind text, object_id uuid)
 language plpgsql
@@ -226,42 +228,36 @@ declare
   k   text;
   id  uuid;
 begin
-  if p_kind in ('series', 'run') then
-    if p_kind = 'series' then
-      select se.object_kind, se.object_id into k, id from series se where se.id = p_id;
-    else
-      select r.subject_kind, r.subject_id into k, id from runs r where r.id = p_id;
-    end if;
-    if k is null then
-      return;
-    end if;
-    kind := k;
-    object_id := id;
-    return next;
-    return query select * from parents_of(k, id);
+  if p_kind = 'series' then
+    select se.object_kind, se.object_id into k, id from series se where se.id = p_id;
+  elsif p_kind = 'run' then
+    select r.subject_kind, r.subject_id into k, id from runs r where r.id = p_id;
+  elsif p_kind = 'meter' then
+    select 'participant', m.participant_id into k, id from meters m where m.id = p_id;
+  elsif p_kind = 'device' then
+    select 'participant', d.participant_id into k, id from devices d where d.id = p_id;
+  elsif p_kind = 'participant' then
+    return query
+      select x.kind, x.object_id from (
+        select 1 as n, 'participant'::text as kind, p.parent_id as object_id from participants p where p.id = p_id
+        union all select 2, 'project', p.project_id from participants p where p.id = p_id
+      ) x
+      where x.object_id is not null
+      order by x.n;
     return;
   end if;
-  return query
-    select x.kind, x.object_id from (
-      select 1 as n, 'site'::text as kind, p.site_id as object_id from participants p where p_kind = 'participant' and p.id = p_id
-      union all select 2, 'participant', p.parent_id from participants p where p_kind = 'participant' and p.id = p_id
-      union all select 3, 'project', p.project_id from participants p where p_kind = 'participant' and p.id = p_id
-      union all select 1, 'site', m.site_id from meters m where p_kind = 'meter' and m.id = p_id
-      union all select 2, 'participant', m.participant_id from meters m where p_kind = 'meter' and m.id = p_id
-      union all select 3, 'project', p.project_id from meters m join participants p on p.id = m.participant_id where p_kind = 'meter' and m.id = p_id
-      union all select 1, 'site', d.site_id from devices d where p_kind = 'device' and d.id = p_id
-      union all select 2, 'meter', d.meter_id from devices d where p_kind = 'device' and d.id = p_id
-      union all select 3, 'participant', m.participant_id from devices d join meters m on m.id = d.meter_id where p_kind = 'device' and d.id = p_id
-      union all select 4, 'project', p.project_id from devices d join meters m on m.id = d.meter_id join participants p on p.id = m.participant_id
-                 where p_kind = 'device' and d.id = p_id
-    ) x
-    where x.object_id is not null
-    order by x.n;
+  if k is null then
+    return;
+  end if;
+  kind := k;
+  object_id := id;
+  return next;
+  return query select * from parents_of(k, id);
 end;
 $$;
 
 comment on function parents_of(text, uuid) is
-  'The parents of an object of the core along its foreign keys, nearest first: a participant''s site, group and project; a meter''s site, participant and project; a device''s site, meter, participant and project; a series'' or a run''s object, then its parents.';
+  'The parents of an object of the core along its foreign keys, nearest first: a participant''s group and project; a meter''s or a device''s participant, then its parents; a series'' or a run''s object, then its parents.';
 
 create or replace function parameter_of(
   p_kind          text,
@@ -280,7 +276,7 @@ declare
   d        defaults%rowtype;
   v_org    uuid;
   anc      record;
-  v_site   sites%rowtype;
+  v_place  participants%rowtype;
   v_day    date := p_at::date;
   reached  text := 'object';
 begin
@@ -316,45 +312,45 @@ begin
     end if;
   end if;
 
-  -- 4. Its region, then its country: the pack's.
-  select * into v_site from sites where id = site_of(p_kind, p_object_id);
-  if v_site.id is not null then
-    if v_site.region is not null then
+  -- 4. The region, then the country of its participant's place: the pack's.
+  select * into v_place from participants where id = participant_of(p_kind, p_object_id) and country is not null;
+  if v_place.id is not null then
+    if v_place.region is not null then
       reached := 'region';
       select * into d from defaults
-       where property_code = p_property_code and country = v_site.country and region = v_site.region
+       where property_code = p_property_code and country = v_place.country and region = v_place.region
          and (valid_from is null or valid_from <= v_day) and (valid_to is null or valid_to > v_day);
       if found then
         if d.value is null then
-          raise exception 'parameter_not_decided: % in %: %', p_property_code, v_site.region, coalesce(d.reference, 'no single value')
+          raise exception 'parameter_not_decided: % in %: %', p_property_code, v_place.region, coalesce(d.reference, 'no single value')
             using errcode = 'no_data_found';
         end if;
-        return jsonb_build_object('value', d.value, 'level', 'region', 'region', v_site.region,
+        return jsonb_build_object('value', d.value, 'level', 'region', 'region', v_place.region,
                                   'source_code', d.source_code, 'reference', d.reference, 'valid_from', d.valid_from);
       end if;
     end if;
     reached := 'country';
     select * into d from defaults
-     where property_code = p_property_code and country = v_site.country and region is null
+     where property_code = p_property_code and country = v_place.country and region is null
        and (valid_from is null or valid_from <= v_day) and (valid_to is null or valid_to > v_day);
     if found then
       if d.value is null then
-        raise exception 'parameter_not_decided: % in %: %', p_property_code, v_site.country, coalesce(d.reference, 'no single value')
+        raise exception 'parameter_not_decided: % in %: %', p_property_code, v_place.country, coalesce(d.reference, 'no single value')
           using errcode = 'no_data_found';
       end if;
-      return jsonb_build_object('value', d.value, 'level', 'country', 'country', v_site.country,
+      return jsonb_build_object('value', d.value, 'level', 'country', 'country', v_place.country,
                                 'source_code', d.source_code, 'reference', d.reference, 'valid_from', d.valid_from);
     end if;
   end if;
 
   raise exception 'parameter_missing: % for %, reached %', p_property_code, p_object_id,
-    case reached when 'country' then 'country ' || v_site.country when 'region' then 'region ' || v_site.region else reached end
+    case reached when 'country' then 'country ' || v_place.country when 'region' then 'region ' || v_place.region else reached end
     using errcode = 'no_data_found';
 end;
 $$;
 
 comment on function parameter_of(text, uuid, text, timestamptz, uuid) is
-  'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, its region''s, its country''s — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
+  'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, then the region''s and the country''s of its participant''s place — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
 
 -- ---------------------------------------------------------------------------
 -- Row level security: countries, regions and defaults are what packs

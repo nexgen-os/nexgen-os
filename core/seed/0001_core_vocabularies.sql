@@ -15,7 +15,6 @@ insert into kinds (kind, table_name) values
   ('organisation', 'organisations'),
   ('project',      'projects'),
   ('participant',  'participants'),
-  ('site',         'sites'),
   ('meter',        'meters'),
   ('device',       'devices'),
   ('series',       'series'),
@@ -48,7 +47,7 @@ insert into device_types (code, name, parent_code, module_code, brick_class, ifc
   ('controller', 'Controller',         null,        null,     'Controller',          'IfcController',           'A gateway or controller that drives other devices.');
 
 -- ---------------------------------------------------------------------------
--- Profiles: what a building or a site is used for.
+-- Profiles: what a building or a place is used for.
 -- ---------------------------------------------------------------------------
 
 insert into profiles (code, name, applies_to, ifc_occupancy, citygml_function, description) values
@@ -63,9 +62,9 @@ insert into profiles (code, name, applies_to, ifc_occupancy, citygml_function, d
   ('healthcare',  'Healthcare',         'building', 'Healthcare',   'hospital',    'A hospital, a care home.'),
   ('hospitality', 'Hospitality',        'building', 'Hotel',        'hotel',       'A hotel, a restaurant.'),
   ('mixed',       'Mixed use',          'building', 'Mixed',        'mixed',       'Several uses in one building.'),
-  ('plant',       'Production site',    'site',     null,           'industry',    'A site whose purpose is a plant: a PV field, a wind farm.'),
-  ('car_park',    'Car park',           'site',     null,           'parking',     'An open car park.'),
-  ('land',        'Land',               'site',     null,           'agriculture', 'A field, a meadow, a wood.');
+  ('plant',       'Production site',    'place',    null,           'industry',    'A place whose purpose is a plant: a PV field, a wind farm.'),
+  ('car_park',    'Car park',           'place',     null,           'parking',     'An open car park.'),
+  ('land',        'Land',               'place',     null,           'agriculture', 'A field, a meadow, a wood.');
 
 -- ---------------------------------------------------------------------------
 -- Link types. Kinds refer to `kinds`.
@@ -83,7 +82,6 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
   ('split_into', 'was split into', 'was split from', null,            null,                 null,          null,                      'The subject was divided into the object (a parcel split by the cadastre); one link per part.'),
   ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
   ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
-  ('behind_meter', 'was behind',  'had behind it',   '{device}',       '{meter}',            null,          null,                      'The connection point a device was behind before it was connected to another one, over the period it was there (devices.meter_id holds today''s).'),
   ('carried_by', 'was carried by', 'carried',        '{meter}',        '{participant}',      null,          null,                      'The participant that carried a connection point before another one did, over the period it did (meters.participant_id holds today''s).');
 
 -- ---------------------------------------------------------------------------
@@ -179,7 +177,7 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 -- ---------------------------------------------------------------------------
 -- Property definitions: attributes beyond the columns (bSDD / IFC property
 -- sets where they exist). Kinds refer to `kinds`. A fact a column holds
--- is never repeated here: the use of a site is its `profile`, a device's
+-- is never repeated here: the use of a place is its participant's `profile`, a device's
 -- power its `rated_power_kw`, its commissioning its `installation_date`.
 -- What describes a building or a roof face (its year, floors, label,
 -- material) is published by the `building` module with its kinds.
@@ -187,9 +185,9 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 
 insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
-  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
-  -- The sum over a site or a project; a device's own is its rated power.
-  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site}',      null,                         null),
+  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{participant,building}', null,              null),
+  -- The sum over a participant or a project; a device's own is its rated power.
+  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,participant}', null,                         null),
   -- What the contract of a connection point allows it to take.
   ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
 

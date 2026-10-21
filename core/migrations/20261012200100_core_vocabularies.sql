@@ -1,6 +1,6 @@
 -- Nexgen OS — core: vocabularies.
 --
--- The objects of the core are named tables: a site, a building, a device.
+-- The objects of the core are named tables: a participant, a meter, a device.
 -- What varies inside them is held as data, never as an enum: which kinds of
 -- devices exist, what a building is used for, how two objects may be linked,
 -- which values can be attached and in which unit, which tags and which
@@ -12,7 +12,7 @@
 --   kinds           the kinds of object an attachment may name (the core's,
 --                   and those modules publish), with the table holding each
 --   device_types    Brick Schema equipment classes, IFC distribution elements
---   profiles        the use of a building or a site (Nexgen profiles)
+--   profiles        the use of a building or a place (Nexgen profiles)
 --   link_types      Brick relationships, IFC objectified relationships
 --   property_defs   buildingSMART Data Dictionary (bSDD), IFC property sets
 --   quantities      QUDT quantity kinds and units
@@ -30,7 +30,7 @@ set search_path = nexgen, public, extensions;
 -- ---------------------------------------------------------------------------
 
 -- An attribute, an identifier, a link, a document, a series or a run names
--- its object by its kind and its id: `('site', <id>)`, `('surface', <id>)`.
+-- its object by its kind and its id: `('participant', <id>)`, `('surface', <id>)`.
 -- A kind is a row here with the table that holds its objects, written by a
 -- plain insert in the core's seed and in the first migration of the module
 -- that publishes it. The hierarchy between objects is their foreign keys;
@@ -44,7 +44,7 @@ create table kinds (
 );
 
 comment on table kinds is
-  'The kinds of object an attachment names with its id (organisation, project, participant, site, meter, device, series, run, and those modules publish: building, space, surface, pv_array…), each with the table holding it.';
+  'The kinds of object an attachment names with its id (organisation, project, participant, meter, device, series, run, and those modules publish: site, building, space, surface, pv_array…), each with the table holding it.';
 
 -- ---------------------------------------------------------------------------
 -- device_types — what a device can be.
@@ -87,25 +87,25 @@ comment on function device_type_is_a(text, text) is
   'True when the type is the ancestor or one of its refinements.';
 
 -- ---------------------------------------------------------------------------
--- profiles — what a building or a site is used for.
+-- profiles — what a building or a place is used for.
 -- ---------------------------------------------------------------------------
 
 create table profiles (
   code            text primary key,
   name            text not null,
   description     text,
-  -- building: a use of a building (office, school, dwelling); site: a use of
-  -- a site without a building to speak of (a field, a car park, a plant).
+  -- building: a use of a building (office, school, dwelling); place: a use of
+  -- a place without a building to speak of (a field, a car park, a plant).
   applies_to          text not null default 'building',
   ifc_occupancy   text,
   citygml_function text,
   published_by    text not null default 'core',
   constraint profiles_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
-  constraint profiles_applies_to check (applies_to in ('building', 'site'))
+  constraint profiles_applies_to check (applies_to in ('building', 'place'))
 );
 
 comment on table profiles is
-  'The use of a building or a site: residential, office, school, factory, farm, car park… Modules add their own (a load profile is an energy profile of a use).';
+  'The use of a building or a place: residential, office, school, factory, farm, car park… Modules add their own (a load profile is an energy profile of a use).';
 
 -- ---------------------------------------------------------------------------
 -- link_types — how two objects may be linked (besides their own columns).
