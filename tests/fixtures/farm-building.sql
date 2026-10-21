@@ -16,25 +16,25 @@ insert into building.surfaces (id, organisation_id, building_id, site_id, name, 
   ('00000000-0000-4000-8000-000400000034', '00000000-0000-4000-8000-000400000001', null, '00000000-0000-4000-8000-000400000010', 'Visitor car park', 'carport', 180, 10);
 
 -- What the cadastre and the farmer say about them, each with its source.
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000400000021', 'year_built', '2004', 'building permit'),
-  ('00000000-0000-4000-8000-000400000021', 'floors_above_ground', '1', 'building permit'),
-  ('00000000-0000-4000-8000-000400000022', 'year_built', '1987', 'building permit'),
-  ('00000000-0000-4000-8000-000400000022', 'floors_above_ground', '1', 'building permit'),
-  ('00000000-0000-4000-8000-000400000031', 'material', '"fibre cement"', 'roofer''s survey'),
-  ('00000000-0000-4000-8000-000400000032', 'material', '"fibre cement"', 'roofer''s survey'),
-  ('00000000-0000-4000-8000-000400000033', 'material', '"grass"', 'the farmer'),
-  ('00000000-0000-4000-8000-000400000034', 'material', '"steel structure"', 'installer');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('building', '00000000-0000-4000-8000-000400000021', 'year_built', '2004', 'building permit'),
+  ('building', '00000000-0000-4000-8000-000400000021', 'floors_above_ground', '1', 'building permit'),
+  ('building', '00000000-0000-4000-8000-000400000022', 'year_built', '1987', 'building permit'),
+  ('building', '00000000-0000-4000-8000-000400000022', 'floors_above_ground', '1', 'building permit'),
+  ('surface', '00000000-0000-4000-8000-000400000031', 'material', '"fibre cement"', 'roofer''s survey'),
+  ('surface', '00000000-0000-4000-8000-000400000032', 'material', '"fibre cement"', 'roofer''s survey'),
+  ('surface', '00000000-0000-4000-8000-000400000033', 'material', '"grass"', 'the farmer'),
+  ('surface', '00000000-0000-4000-8000-000400000034', 'material', '"steel structure"', 'installer');
 
 update building.surfaces set geometry = ST_GeomFromText('POLYGON((2.7232 50.7706, 2.7248 50.7706, 2.7248 50.7716, 2.7232 50.7716, 2.7232 50.7706))', 4326)
  where id = '00000000-0000-4000-8000-000400000033';
 
-insert into attributes (object_id, property_code, value, source) values
-  ('00000000-0000-4000-8000-000400000031', 'roof_area', '1180', 'measured on the cadastral plan'),
-  ('00000000-0000-4000-8000-000400000033', 'roof_area', '11200', 'measured on the cadastral plan');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('surface', '00000000-0000-4000-8000-000400000031', 'roof_area', '1180', 'measured on the cadastral plan'),
+  ('surface', '00000000-0000-4000-8000-000400000033', 'roof_area', '11200', 'measured on the cadastral plan');
 
-insert into external_ids (object_id, scheme, value) values
-  ('00000000-0000-4000-8000-000400000021', 'osm', 'way/445566778');
+insert into external_ids (object_kind, object_id, scheme, value) values
+  ('building', '00000000-0000-4000-8000-000400000021', 'osm', 'way/445566778');
 
 select building.place_device(d, b, null, f)
   from (values ('00000000-0000-4000-8000-000400000051'::uuid, '00000000-0000-4000-8000-000400000021'::uuid, '00000000-0000-4000-8000-000400000031'::uuid),

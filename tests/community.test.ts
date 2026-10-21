@@ -95,7 +95,7 @@ describe('an energy community', () => {
     await one<{ id: string }>(db, `select replace_device($1, '2026-03-01', null, 'Meter B') id`, [old.id]);
     const r = await one<{ name: string; identifier: string; replaces: string }>(
       db,
-      `select d.name, m.identifier, (select object_id from links where subject_id = d.id and type_code = 'replaces') replaces
+      `select d.name, m.identifier, (select object_id from links where subject_kind = 'device' and subject_id = d.id and type_code = 'replaces') replaces
          from devices d join meters m on m.id = d.meter_id
         where m.id = $1 and d.device_type = 'meter' and d.status = 'in_service'`,
       [meters[0]],
@@ -115,18 +115,18 @@ describe('an energy community', () => {
 
   it('records who owns a site for a period, and refuses a link whose kinds do not fit', async () => {
     await db.query(
-      `insert into links (subject_id, type_code, object_id, valid_from) values ($1, 'owns', $2, '2025-01-01')`,
+      `select link_objects('participant', $1, 'owns', 'site', $2, '2025-01-01')`,
       [participants[0], sites[0]],
     );
     await expect(
-      db.query(`insert into links (subject_id, type_code, object_id) values ($1, 'owns', $2)`, [sites[0], sites[1]]),
+      db.query(`select link_objects('site', $1, 'owns', 'site', $2)`, [sites[0], sites[1]]),
     ).rejects.toThrow(/link_subject_kind/);
   });
 
   it('reads a cumulative register as the consumption of each step, and its index as a window', async () => {
     const register = await one<{ id: string }>(
       db,
-      `insert into series (object_id, quantity_code, kind, value_kind, source) values ($1, 'offtake_energy', 'measured', 'cumulative', 'dso') returning id`,
+      `insert into series (object_kind, object_id, quantity_code, kind, value_kind, source) values ('meter', $1, 'offtake_energy', 'measured', 'cumulative', 'dso') returning id`,
       [meters[1]],
     );
     await db.query(

@@ -53,7 +53,7 @@ beforeAll(async () => {
   buyer = await participant(org, p, 'Warehouse', await contact(org, 'Warehouse tenant'));
   unnamed = await participant(org, p, 'Workshop', null);
   stranger = await participant(other, await project(other), 'Elsewhere', await contact(other, 'Someone else'));
-  run = (await one<{ id: string }>(db, `select record_run('billing', 'test-1', $1, null, '{"period": "2026-05"}', '{}') id`, [p])).id;
+  run = (await one<{ id: string }>(db, `select record_run('billing', 'test-1', 'project', $1, null, '{"period": "2026-05"}', '{}') id`, [p])).id;
 }, 120_000);
 
 afterAll(async () => {

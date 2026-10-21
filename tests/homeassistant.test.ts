@@ -41,7 +41,12 @@ afterAll(async () => {
 
 describe('a Home Assistant home in Nexgen OS', () => {
   it('lands floors and areas on one tree of spaces, devices in their rooms, entities on series', async () => {
-    const r = await db.query<{ kind: string; n: number }>(`select kind, count(*)::int n from objects where organisation_id = $1 group by kind order by kind`, [org]);
+    const r = await db.query<{ kind: string; n: number }>(
+      `select 'building' kind, count(*)::int n from building.buildings where organisation_id = $1
+       union all select 'device', count(*)::int from devices where organisation_id = $1
+       union all select 'organisation', count(*)::int from organisations where id = $1
+       union all select 'site', count(*)::int from sites where organisation_id = $1
+       union all select 'space', count(*)::int from building.spaces where organisation_id = $1`, [org]);
     expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, organisation: 1, site: 1, space: 6 });
     const rooms = await db.query<{ name: string; kind: string; floor: string | null }>(
       `select s.name, s.kind, f.name floor from building.spaces s left join building.spaces f on f.id = s.parent_id where s.building_id = $1 order by s.kind, s.name`, [building]);
@@ -65,8 +70,8 @@ describe('a Home Assistant home in Nexgen OS', () => {
 
   it('opens one series per entity, on its device, else its area, else the building, with the right quantity and kind', async () => {
     const r = await db.query<{ ref: string; observed: string; device: boolean; quantity: string; kind: string }>(
-      `select s.external_ref ref, o.kind observed, s.device_id is not null device, s.quantity_code quantity, s.kind
-         from series s join objects o on o.id = s.object_id order by s.external_ref`);
+      `select s.external_ref ref, s.object_kind observed, s.device_id is not null device, s.quantity_code quantity, s.kind
+         from series s order by s.external_ref`);
     expect(r.rows).toEqual([
       { ref: 'homeassistant://binary_sensor.bedroom_motion', observed: 'space', device: false, quantity: 'occupancy', kind: 'measured' },
       { ref: 'homeassistant://climate.living_room', observed: 'device', device: true, quantity: 'ha_climate_c', kind: 'setpoint' },

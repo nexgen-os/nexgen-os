@@ -34,19 +34,19 @@ afterAll(async () => {
   await db.close();
 });
 
-const target = (objectId: string, kind: 'measured' | 'simulated', name: string | null = null) => ({ organisationId: org, objectId, sourceCode: 'pvgis', kind, name });
+const target = (objectKind: string, objectId: string, kind: 'measured' | 'simulated', name: string | null = null) => ({ organisationId: org, objectKind, objectId, sourceCode: 'pvgis', kind, name });
 
 describe('the IEC 61724-1 indicators', () => {
   it('refuses by name what it cannot compute', async () => {
     await expect(performanceIndicators(db, { pvSystemId: site, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^pv_system_not_found/);
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^series_not_found: no measured production/);
     // Ten days of production at a performance ratio of 0.8, from 25 June to 4 July 2025 (UTC days, Brussels is UTC+2).
-    await storeSeries(db, target(system, 'measured'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8) });
+    await storeSeries(db, target('device', system, 'measured'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8) });
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-25', to: '2025-07-04' })).rejects.toThrow(/^irradiance_required/);
   });
 
   it('gives the final and reference yields and the performance ratio from a sensor, by month in the site time zone, on the hours both have', async () => {
-    const sensor = await storeSeries(db, target(array, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, sun).filter((_, i) => i !== 36) });
+    const sensor = await storeSeries(db, target('pv_array', array, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, sun).filter((_, i) => i !== 36) });
     const got = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' });
     expect(got.irradiance).toBe('measured');
     // 26 June 00:00 to 4 July 00:00 in Brussels: 8 days of 24 hours, less the hour without irradiance (26 June 12:00 UTC).
@@ -65,16 +65,16 @@ describe('the IEC 61724-1 indicators', () => {
 
     // The same readings give the same run; a new reading, a new one.
     expect((await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' })).runId).toBe(got.runId);
-    await storeSeries(db, target(array, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: [{ at: '2025-06-26T12:00:00.000Z', value: 800 }] });
+    await storeSeries(db, target('pv_array', array, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: [{ at: '2025-06-26T12:00:00.000Z', value: 800 }] });
     const renewed = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' });
     expect(renewed.runId).not.toBe(got.runId);
     expect(renewed.total.hours).toBe(8 * 24);
   });
 
   it('compares with a yield run: the energy performance index, and the run\'s irradiance when no sensor is there', async () => {
-    const expected = await storeSeries(db, target(system, 'simulated', 'fake 2025-2025'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8 / 0.95) });
-    const poa = await storeSeries(db, target(array, 'simulated', 'fake 2025-2025'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => sun(i) * 1.05) });
-    const yieldRun = (await db.query<{ id: string }>(`select record_run('solar', 'fake 1.0.0', $1, null, '{"profile": "pvwatts"}', $2::jsonb) id`, [system, JSON.stringify({ series_id: expected.seriesId, array_series: { South: { poa_irradiance: poa.seriesId } } })])).rows[0].id;
+    const expected = await storeSeries(db, target('device', system, 'simulated', 'fake 2025-2025'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8 / 0.95) });
+    const poa = await storeSeries(db, target('pv_array', array, 'simulated', 'fake 2025-2025'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => sun(i) * 1.05) });
+    const yieldRun = (await db.query<{ id: string }>(`select record_run('solar', 'fake 1.0.0', 'device', $1, null, '{"profile": "pvwatts"}', $2::jsonb) id`, [system, JSON.stringify({ series_id: expected.seriesId, array_series: { South: { poa_irradiance: poa.seriesId } } })])).rows[0].id;
 
     const withSensor = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', yieldRunId: yieldRun });
     expect(withSensor.irradiance).toBe('measured');

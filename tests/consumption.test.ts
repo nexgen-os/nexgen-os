@@ -129,7 +129,7 @@ describe('a curve reconstructed from a bill', () => {
   beforeAll(async () => {
     hours = [];
     for (const weekday of [1, 2, 3, 4, 5]) {
-      hours.push(await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_id: SITE, weekday, opens: '07:00', closes: '19:00', source: 'facility manager' }));
+      hours.push(await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'site', object_id: SITE, weekday, opens: '07:00', closes: '19:00', source: 'facility manager' }));
     }
   });
 
@@ -205,7 +205,7 @@ describe('a curve on quarter-hours', () => {
 
 describe('a typical curve from the annual consumption', () => {
   it('spreads the site\'s annual consumption over one year', async () => {
-    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'annual_consumption', '438000', 'energy audit 2022')`, [SITE]);
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('site', $1, 'annual_consumption', '438000', 'energy audit 2022')`, [SITE]);
     const r = await reconstructConsumption(db, { siteId: SITE, from: '2026-01-01', to: '2027-01-01', profileCode: 'flat' });
     expect(r.slots).toBe(8760);
     expect(r.kwh).toBeCloseTo(438_000, 3);
@@ -233,7 +233,7 @@ describe('the curve of a site', () => {
   it('is the measured one as soon as a meter of the site gives readings over the period', async () => {
     const instants: { at: string; value: number }[] = [];
     for (let t = Date.parse(from); t < Date.parse(to); t += 3_600_000) instants.push({ at: new Date(t).toISOString(), value: 50 });
-    const { seriesId: measured } = await store(db, { object_id: ELECTRICITY, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, instants);
+    const { seriesId: measured } = await store(db, { object_kind: 'meter', object_id: ELECTRICITY, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, instants);
     const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [SITE, from, to]);
     expect(days.rows.map((d) => [d.value, d.kind])).toEqual(Array(7).fill([1200, 'measured']));
     expect(days.rows[0].series_id).toBe(measured);
@@ -249,17 +249,17 @@ describe('the curve of a site', () => {
 
 describe('activity hours', () => {
   it('belong to the organisation of what is open, and close after they open', async () => {
-    const id = await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_id: BUILDING, weekday: 6, opens: '09:00', closes: '24:00' });
+    const id = await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'building', object_id: BUILDING, weekday: 6, opens: '09:00', closes: '24:00' });
     const row = await one<{ organisation_id: string; closes: string }>(db, 'select organisation_id, closes::text from consumption.activity_hours where id = $1', [id]);
     expect(row).toEqual({ organisation_id: ORG, closes: '24:00:00' });
-    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_id: SITE, weekday: 1, opens: '18:00', closes: '08:00' })).rejects.toThrow(/activity_hours_order/);
-    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_id: SITE, weekday: 8, opens: '08:00', closes: '18:00' })).rejects.toThrow(/activity_hours_weekday/);
+    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'site', object_id: SITE, weekday: 1, opens: '18:00', closes: '08:00' })).rejects.toThrow(/activity_hours_order/);
+    await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'site', object_id: SITE, weekday: 8, opens: '08:00', closes: '18:00' })).rejects.toThrow(/activity_hours_weekday/);
   });
 
   it('are read and written only by the organisation, and so is the curve', async () => {
     await asUser(db, USER_B, async () => {
       expect((await db.query('select id from consumption.activity_hours')).rows).toEqual([]);
-      await expect(db.query(`insert into consumption.activity_hours (organisation_id, object_id, weekday, opens, closes) values ($1, $2, 1, '08:00', '18:00')`, [ORG, SITE]))
+      await expect(db.query(`insert into consumption.activity_hours (organisation_id, object_kind, object_id, weekday, opens, closes) values ($1, 'site', $2, 1, '08:00', '18:00')`, [ORG, SITE]))
         .rejects.toThrow(/object_not_found/);
       expect((await db.query(`select * from consumption.curve($1, '2026-01-12T00:00:00+01:00', '2026-01-19T00:00:00+01:00', '1 day')`, [SITE])).rows).toEqual([]);
     });

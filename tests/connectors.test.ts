@@ -48,7 +48,7 @@ describe('a forecast on a site', () => {
   it('keeps every issue, shows the latest, and still answers for an earlier one', async () => {
     const first = await openMeteo({ fetch: fetchWith(answer([12, 13, 14], [100, 200, 300])), now: () => new Date('2026-10-14T00:00:00Z') }).forecast({ lon: 4.35, lat: 50.85 });
     const second = await openMeteo({ fetch: fetchWith(answer([11, 12, 13], [100, 200, 300])), now: () => new Date('2026-10-14T06:00:00Z') }).forecast({ lon: 4.35, lat: 50.85 });
-    const target = { organisationId: org, objectId: site, sourceCode: 'open_meteo', kind: 'forecast' as const };
+    const target = { organisationId: org, objectKind: 'site', objectId: site, sourceCode: 'open_meteo', kind: 'forecast' as const };
     const a = await storeSeries(db, target, first.series[0], { issuedAt: first.issued_at });
     const b = await storeSeries(db, target, second.series[0], { issuedAt: second.issued_at });
     expect(b.seriesId).toBe(a.seriesId);
@@ -66,13 +66,13 @@ describe('a forecast on a site', () => {
   it('refuses a forecast in series_values and a measurement in forecast_values, by name', async () => {
     const forecast = await one<{ id: string }>(db, `select id from series where object_id = $1 and kind = 'forecast' limit 1`, [site]);
     await expect(db.query(`insert into series_values (series_id, at, value) values ($1, now(), 1)`, [forecast.id])).rejects.toThrow(/forecast_values_required/);
-    const measured = await insert(db, 'series', { organisation_id: org, object_id: site, quantity_code: 'temperature', kind: 'measured', value_kind: 'instant' });
+    const measured = await insert(db, 'series', { organisation_id: org, object_kind: 'site', object_id: site, quantity_code: 'temperature', kind: 'measured', value_kind: 'instant' });
     await expect(db.query(`insert into forecast_values (series_id, at, issued_at, value) values ($1, now(), now(), 1)`, [measured])).rejects.toThrow(/not_a_forecast/);
-    await expect(storeSeries(db, { organisationId: org, objectId: site, sourceCode: 'open_meteo', kind: 'forecast' }, { quantity_code: 'temperature', value_kind: 'instant', step: '1 hour', values: [] })).rejects.toThrow(/issued_at_required/);
+    await expect(storeSeries(db, { organisationId: org, objectKind: 'site', objectId: site, sourceCode: 'open_meteo', kind: 'forecast' }, { quantity_code: 'temperature', value_kind: 'instant', step: '1 hour', values: [] })).rejects.toThrow(/issued_at_required/);
   });
 
   it('replaces a measured value already present instead of refusing it', async () => {
-    const target = { organisationId: org, objectId: site, sourceCode: 'open_meteo', kind: 'measured' as const };
+    const target = { organisationId: org, objectKind: 'site', objectId: site, sourceCode: 'open_meteo', kind: 'measured' as const };
     const series = { quantity_code: 'irradiance', value_kind: 'interval' as const, step: '1 hour', values: [{ at: '2026-10-13T09:00:00Z', value: 100 }] };
     const { seriesId } = await storeSeries(db, target, series);
     await storeSeries(db, target, { ...series, values: [{ at: '2026-10-13T09:00:00Z', value: 150 }, { at: '2026-10-13T10:00:00Z', value: 200 }] });

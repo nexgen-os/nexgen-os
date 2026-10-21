@@ -42,8 +42,8 @@ let system: string;
 let south: string;
 let east: string;
 
-async function soiling(objectId: string, value: number, source: string): Promise<void> {
-  await db.query(`insert into attributes (organisation_id, object_id, property_code, value, source) values ($1, $2, 'soiling_loss', $3::jsonb, $4)`, [org, objectId, JSON.stringify(value), source]);
+async function soiling(kind: string, objectId: string, value: number, source: string): Promise<void> {
+  await db.query(`insert into attributes (organisation_id, object_kind, object_id, property_code, value, source) values ($1, $2, $3, 'soiling_loss', $4::jsonb, $5)`, [org, kind, objectId, JSON.stringify(value), source]);
 }
 
 beforeAll(async () => {
@@ -63,16 +63,16 @@ afterAll(async () => {
 describe('solar.soiling_of', () => {
   it('is null while nobody says it, then the nearest value with where it was found', async () => {
     expect((await one<{ s: unknown }>(db, 'select solar.soiling_of($1) s', [south])).s).toBeNull();
-    await soiling(site, 0.05, 'dust from the farmyard, survey of 2026-06');
+    await soiling('site', site, 0.05, 'dust from the farmyard, survey of 2026-06');
     const fromSite = (await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [south])).s;
     expect(fromSite).toMatchObject({ value: 0.05, level: 'site', object_id: site, reference: 'dust from the farmyard, survey of 2026-06' });
     expect((await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [system])).s).toMatchObject({ value: 0.05, level: 'site' });
   });
 
   it('refuses a value outside 0 to 1 and an object the property does not apply to', async () => {
-    await expect(soiling(east, 2, 'a percentage by mistake')).rejects.toThrow();
+    await expect(soiling('pv_array', east, 2, 'a percentage by mistake')).rejects.toThrow();
     const project = await insert(db, 'projects', { organisation_id: org, name: 'Barn study', country: 'BE' });
-    await expect(soiling(project, 0.02, 'a project')).rejects.toThrow(/property_not_applicable/);
+    await expect(soiling('project', project, 0.02, 'a project')).rejects.toThrow(/property_not_applicable/);
   });
 });
 
@@ -107,7 +107,7 @@ describe('a yield run with the soiling of the place', () => {
   });
 
   it('refuses an engine run whose arrays have different soiling: the request carries one list of losses', async () => {
-    await soiling(south, 0.01, 'cleaned every spring');
+    await soiling('pv_array', south, 0.01, 'cleaned every spring');
     await expect(runYield(
       db,
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },

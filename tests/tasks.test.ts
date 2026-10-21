@@ -49,15 +49,15 @@ beforeAll(async () => {
   await organisation(db, 'Another farm', USER_B);
   installer = (await one<{ id: string }>(db, `insert into contacts (organisation_id, name) values ($1, 'Solaire du Nord') returning id`, [ORG])).id;
 
-  await task({ subject_id: SITE, phase: 'permitting', role: 'municipality', name: 'Building permit for the ground array', status: 'done', planned_end: '2026-02-28', actual_start: '2026-01-05', actual_end: '2026-02-20' });
-  await task({ subject_id: GROUND_ARRAY, phase: 'procurement', role: 'installer', name: 'Panels delivered', status: 'done', planned_end: '2026-04-30', actual_start: '2026-04-28', actual_end: '2026-04-28', responsible_contact_id: installer });
+  await task({ subject_kind: 'site', subject_id: SITE, phase: 'permitting', role: 'municipality', name: 'Building permit for the ground array', status: 'done', planned_end: '2026-02-28', actual_start: '2026-01-05', actual_end: '2026-02-20' });
+  await task({ subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'procurement', role: 'installer', name: 'Panels delivered', status: 'done', planned_end: '2026-04-30', actual_start: '2026-04-28', actual_end: '2026-04-28', responsible_contact_id: installer });
   installed = await task({
-    subject_id: GROUND_ARRAY, phase: 'installation', role: 'installer', name: 'Ground array mounted and wired', status: 'in_progress',
+    subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'installation', role: 'installer', name: 'Ground array mounted and wired', status: 'in_progress',
     planned_start: '2026-05-04', planned_end: '2026-05-29', actual_start: '2026-05-11', responsible_contact_id: installer,
   });
-  await task({ subject_id: GROUND_ARRAY, phase: 'grid_connection', role: 'grid_operator', name: 'Injection point energised', planned_start: '2026-08-01', planned_end: '2026-09-30' });
-  await task({ subject_id: GROUND_ARRAY, phase: 'commissioning', name: 'Ground array commissioned', planned_end: '2026-10-31' });
-  await task({ subject_id: CARPORT_ARRAY, phase: 'installation', name: 'Carport built', status: 'cancelled', planned_end: '2026-06-30' });
+  await task({ subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'grid_connection', role: 'grid_operator', name: 'Injection point energised', planned_start: '2026-08-01', planned_end: '2026-09-30' });
+  await task({ subject_kind: 'device', subject_id: GROUND_ARRAY, phase: 'commissioning', name: 'Ground array commissioned', planned_end: '2026-10-31' });
+  await task({ subject_kind: 'device', subject_id: CARPORT_ARRAY, phase: 'installation', name: 'Carport built', status: 'cancelled', planned_end: '2026-06-30' });
 });
 
 afterAll(async () => {
@@ -66,12 +66,9 @@ afterAll(async () => {
 
 describe('tasks', () => {
   it('are objects on the site of what they are about, so that a photo or a certificate attaches to them', async () => {
-    const m = await one<{ kind: string; site: string }>(db, 'select o.kind, site_of(o.id) site from objects o where o.id = $1', [installed]);
-    expect(m).toEqual({ kind: 'task', site: SITE });
-    await db.query(
-      `insert into documents (object_id, name, kind, uri, media_type, source) values ($1, 'Rows 1 to 12 mounted', 'image', 's3://farm/rows-1-12.jpg', 'image/jpeg', 'site manager')`,
-      [installed],
-    );
+    const m = await one<{ table_name: string; site: string }>(db, `select k.table_name, site_of(t.subject_kind, t.subject_id) site from tasks.tasks t join kinds k on k.kind = 'task' where t.id = $1`, [installed]);
+    expect(m).toEqual({ table_name: 'tasks.tasks', site: SITE });
+    await db.query(`select attach_document('task', $1, 'Rows 1 to 12 mounted', 'image', 's3://farm/rows-1-12.jpg', 'image/jpeg', null, 'site manager')`, [installed]);
     const d = await one<{ organisation_id: string }>(db, 'select organisation_id from documents where object_id = $1', [installed]);
     expect(d.organisation_id).toBe(ORG);
   });
@@ -82,41 +79,41 @@ describe('tasks', () => {
       'study', 'design', 'permitting', 'financing', 'procurement', 'site_preparation',
       'installation', 'grid_connection', 'commissioning', 'handover', 'operation', 'decommissioning',
     ]);
-    await expect(task({ subject_id: SITE, phase: 'demolition', name: 'Unknown phase' })).rejects.toThrow(/foreign key/);
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'demolition', name: 'Unknown phase' })).rejects.toThrow(/foreign key/);
   });
 
   it('are carried by a role read from a vocabulary', async () => {
     const roles = await db.query<{ code: string }>('select code from tasks.roles order by code');
     expect(roles.rows.map((r) => r.code)).toEqual(['community_manager', 'financer', 'grid_operator', 'installer', 'municipality', 'notary', 'owner', 'regulator']);
-    await expect(task({ subject_id: SITE, phase: 'design', role: 'wizard', name: 'Unknown role' })).rejects.toThrow(/foreign key/);
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', role: 'wizard', name: 'Unknown role' })).rejects.toThrow(/foreign key/);
   });
 
   it('keep their dates, status and source consistent', async () => {
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Done without an end', status: 'done', actual_start: '2026-01-01' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Done without an end', status: 'done', actual_start: '2026-01-01' }))
       .rejects.toThrow(/tasks_done/);
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Ended but not done', actual_end: '2026-01-01' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Ended but not done', actual_end: '2026-01-01' }))
       .rejects.toThrow(/tasks_done/);
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Started without a start', status: 'in_progress' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Started without a start', status: 'in_progress' }))
       .rejects.toThrow(/tasks_started/);
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Backwards', planned_start: '2026-03-01', planned_end: '2026-02-01' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Backwards', planned_start: '2026-03-01', planned_end: '2026-02-01' }))
       .rejects.toThrow(/tasks_planned_order/);
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Unknown status', status: 'paused' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Unknown status', status: 'paused' }))
       .rejects.toThrow(/tasks_status/);
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Unknown source', source: 'dream' }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Unknown source', source: 'dream' }))
       .rejects.toThrow(/tasks_source/);
-    const fromAction = await task({ subject_id: SITE, phase: 'study', name: 'Battery sizing study', source: 'action', source_ref: 'storage_investment' });
+    const fromAction = await task({ subject_kind: 'site', subject_id: SITE, phase: 'study', name: 'Battery sizing study', source: 'action', source_ref: 'storage_investment' });
     expect((await one<{ source: string }>(db, 'select source from tasks.tasks where id = $1', [fromAction])).source).toBe('action');
   });
 
   it('stay in their organisation: subject, contact and dependency', async () => {
     const other = await one<{ id: string }>(db, `select id from organisations where name = 'Another farm'`);
     const theirSite = await insert(db, 'sites', { organisation_id: other.id, name: 'Their field', country: 'FR' });
-    await expect(task({ subject_id: theirSite, phase: 'design', name: 'Not ours' })).rejects.toThrow(/^parent_in_other_organisation/);
+    await expect(task({ subject_kind: 'site', subject_id: theirSite, phase: 'design', name: 'Not ours' })).rejects.toThrow(/^object_in_other_organisation/);
     const theirContact = (await one<{ id: string }>(db, `insert into contacts (organisation_id, name) values ($1, 'Their installer') returning id`, [other.id])).id;
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Their contact', responsible_contact_id: theirContact }))
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Their contact', responsible_contact_id: theirContact }))
       .rejects.toThrow(/^contact_in_other_organisation/);
-    const theirs = await insert(db, 'tasks.tasks', { organisation_id: other.id, subject_id: theirSite, phase: 'design', name: 'Their study' });
-    await expect(task({ subject_id: SITE, phase: 'design', name: 'Waits for theirs', depends_on: theirs }))
+    const theirs = await insert(db, 'tasks.tasks', { organisation_id: other.id, subject_kind: 'site', subject_id: theirSite, phase: 'design', name: 'Their study' });
+    await expect(task({ subject_kind: 'site', subject_id: SITE, phase: 'design', name: 'Waits for theirs', depends_on: theirs }))
       .rejects.toThrow(/^dependency_in_other_organisation/);
   });
 });
@@ -153,7 +150,7 @@ describe('where a project stands', () => {
 
   it('adds the tasks of a scenario only when asked', async () => {
     const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'Battery later') returning id`, [ORG]);
-    await task({ subject_id: SITE, phase: 'installation', name: 'Battery installed', planned_end: '2027-03-31', scenario_id: scenario.id });
+    await task({ subject_kind: 'site', subject_id: SITE, phase: 'installation', name: 'Battery installed', planned_end: '2027-03-31', scenario_id: scenario.id });
     expect((await progress(SITE, '2026-06-22')).total).toBe(7);
     expect((await progress(SITE, '2026-06-22', scenario.id)).total).toBe(8);
   });
@@ -161,7 +158,7 @@ describe('where a project stands', () => {
   it('sums a project up: its own tasks and those of every site taking part', async () => {
     const project = await insert(db, 'projects', { organisation_id: ORG, name: 'Mont Noir solar works', country: 'FR', status: 'creation' });
     await insert(db, 'participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
-    await task({ subject_id: project, phase: 'design', name: 'Grid study accepted', status: 'done', actual_start: '2025-11-03', actual_end: '2025-12-15' });
+    await task({ subject_kind: 'project', subject_id: project, phase: 'design', name: 'Grid study accepted', status: 'done', actual_start: '2025-11-03', actual_end: '2025-12-15' });
     const p = await progress(project, '2026-06-22');
     expect(p.total).toBe(8);
     expect(p.by_status.done).toBe(4);
@@ -248,7 +245,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
   });
 
   it('apply a condition once the project has the attribute it names', async () => {
-    await db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'installed_power', '36'::jsonb, 'design')`, [roofFr]);
+    await db.query(`select set_attribute('project', $1, 'installed_power', '36'::jsonb, null, null, 'design')`, [roofFr]);
     expect(await plan(roofFr)).toMatchObject({ created: 0, existing: 3, skipped: [] });
     await db.query(`update attributes set value = '300'::jsonb where object_id = $1 and property_code = 'installed_power'`, [roofFr]);
     const bigger = await plan(roofFr);

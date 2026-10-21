@@ -35,10 +35,16 @@ declare
   side  text := coalesce(tg_argv[0], 'object');
   k     text;
   oid   uuid;
+  org   uuid;
   scn   uuid;
 begin
   execute format('select ($1).%I, ($1).%I', side || '_kind', side || '_id') into k, oid using new;
-  new.organisation_id := object_organisation(k, oid);
+  org := object_organisation(k, oid);
+  -- A row that says its organisation says the object's.
+  if new.organisation_id is not null and new.organisation_id <> org then
+    raise exception 'object_in_other_organisation: % %', k, oid using errcode = 'check_violation';
+  end if;
+  new.organisation_id := org;
   scn := object_scenario(k, oid);
   if scn is not null and scn is distinct from new.scenario_id then
     raise exception 'attachment_outside_object_scenario' using errcode = 'check_violation';
@@ -48,7 +54,7 @@ end;
 $$;
 
 comment on function attach() is
-  'Trigger of every attachment: copies the organisation of the object its kind and id name (object_organisation), and refuses an attachment outside the object''s scenario. Refuses kind_unknown, object_not_found.';
+  'Trigger of every attachment: copies the organisation of the object its kind and id name (object_organisation), and refuses an attachment outside the object''s scenario. Refuses kind_unknown, object_not_found, object_in_other_organisation.';
 
 -- A value fits a property: its datatype, its range, its allowed values.
 -- Shared by attributes and by the defaults of the country packs.

@@ -81,7 +81,7 @@ describe('source_for', () => {
     expect(await sourceFor(site, 'temperature')).toBe('open_meteo');
 
     // (a) The site's own choice.
-    await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'weather_source', '"pvgis"')`, [site]);
+    await db.query(`select set_attribute('site', $1, 'weather_source', '"pvgis"')`, [site]);
     expect(await sourceFor(site, 'irradiance')).toBe('pvgis');
   });
 
@@ -111,13 +111,13 @@ describe('point_for', () => {
 
     const p = await one<{ cell_lon: string; cell_lat: string; resolution_m: number; kind: string }>(
       db,
-      `select p.cell_lon::text, p.cell_lat::text, p.resolution_m, o.kind
-         from weather.points p join objects o on o.id = p.id where p.id = $1`,
+      `select p.cell_lon::text, p.cell_lat::text, p.resolution_m, k.kind
+         from weather.points p join kinds k on k.table_name = 'weather.points' where p.id = $1`,
       [a.id],
     );
     expect(p).toEqual({ cell_lon: '4.83', cell_lat: '45.76', resolution_m: 1000, kind: 'weather_point' });
     const links = await db.query<{ subject_id: string }>(
-      `select subject_id from links where type_code = 'weather_from' and object_id = $1 order by subject_id`, [a.id]);
+      `select subject_id from links where type_code = 'weather_from' and object_kind = 'weather_point' and object_id = $1 order by subject_id`, [a.id]);
     expect(links.rows.map((r) => r.subject_id).sort()).toEqual([site, near].sort());
   });
 

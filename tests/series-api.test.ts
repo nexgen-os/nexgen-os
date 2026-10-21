@@ -48,7 +48,7 @@ describe('units', () => {
 
 describe('store()', () => {
   it('creates the series of an identity, converts from the unit given, and changes nothing the second time', async () => {
-    const identity = { object_id: meter, quantity_code: 'offtake_energy', step: '15 minutes', source_code: 'pvgis' };
+    const identity = { object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', step: '15 minutes', source_code: 'pvgis' };
     const values = at('2026-05-04T08:00:00Z', 4, 15).map((t, i) => ({ at: t, value: 250 * (i + 1) }));
     const first = await store(db, identity, values, { unit: 'Wh' });
     expect(first.changed).toBe(4);
@@ -59,21 +59,21 @@ describe('store()', () => {
   });
 
   it('refuses by name what does not fit the series', async () => {
-    const s = (await store(db, { object_id: meter, quantity_code: 'power', value_kind: 'instant', step: '1 hour' }, [])).seriesId;
+    const s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', value_kind: 'instant', step: '1 hour' }, [])).seriesId;
     const one_ = [{ at: '2026-05-04T08:00:00Z', value: 1 }];
     await expect(store(db, s, one_, { unit: 'kWh' })).rejects.toThrow(/series_unit_mismatch/);
     await store(db, s, one_);
     await expect(store(db, s, [{ at: '2026-05-04T08:30:00Z', value: 1 }])).rejects.toThrow(/series_step_mismatch/);
-    await expect(store(db, { object_id: meter, quantity_code: 'power', value_kind: 'instant', step: '15 minutes' }, one_)).rejects.toThrow(/series_step_mismatch/);
-    await expect(store(db, { object_id: meter, quantity_code: 'power', value_kind: 'interval', step: '1 hour' }, one_)).rejects.toThrow(/series_value_kind_mismatch/);
+    await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', value_kind: 'instant', step: '15 minutes' }, one_)).rejects.toThrow(/series_step_mismatch/);
+    await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', value_kind: 'interval', step: '1 hour' }, one_)).rejects.toThrow(/series_value_kind_mismatch/);
     await expect(store(db, s, [...one_, ...one_])).rejects.toThrow(/values_duplicated/);
     await expect(store(db, s, [{ at: '2026-05-04T09:00:00Z', value: 1, quality: 42 }])).rejects.toThrow(/quality_unknown/);
-    await expect(store(db, { object_id: meter, quantity_code: 'power', kind: 'simulated', value_kind: 'instant' }, one_)).rejects.toThrow(/series_run_required/);
+    await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', kind: 'simulated', value_kind: 'instant' }, one_)).rejects.toThrow(/series_run_required/);
     await expect(store(db, s, one_, { issuedAt: '2026-05-04T00:00:00Z' })).rejects.toThrow(/not_a_forecast/);
   });
 
   it('keeps the quality it is given, stores a null as missing, and keeps the latest value', async () => {
-    const s = (await store(db, { object_id: meter, quantity_code: 'temperature', value_kind: 'instant', step: '1 hour' }, [
+    const s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'temperature', value_kind: 'instant', step: '1 hour' }, [
       { at: '2026-05-04T08:00:00Z', value: 18 },
       { at: '2026-05-04T09:00:00Z', value: 19, quality: 1 },
       { at: '2026-05-04T10:00:00Z', value: null as unknown as number, quality: 3 },
@@ -87,20 +87,20 @@ describe('store()', () => {
   });
 
   it('is the only way an API role writes values', async () => {
-    const s = (await store(db, { object_id: meter, quantity_code: 'consumption_energy', step: '1 hour' }, [])).seriesId;
+    const s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'consumption_energy', step: '1 hour' }, [])).seriesId;
     await expect(asUser(db, USER_A, () => db.query(`insert into series_values (series_id, at, value) values ($1, '2026-05-04T08:00:00Z', 1)`, [s])))
       .rejects.toThrow(/permission denied/);
     const mine = await asUser(db, USER_A, () => store(db, s, [{ at: '2026-05-04T08:00:00Z', value: 1 }]));
     expect(mine.changed).toBe(1);
     await expect(asUser(db, USER_B, () => store(db, s, [{ at: '2026-05-04T09:00:00Z', value: 1 }]))).rejects.toThrow(/series_not_found/);
-    await expect(asUser(db, USER_B, () => store(db, { object_id: meter, quantity_code: 'consumption_energy', step: '1 hour' }, [])))
+    await expect(asUser(db, USER_B, () => store(db, { object_kind: 'device', object_id: meter, quantity_code: 'consumption_energy', step: '1 hour' }, [])))
       .rejects.toThrow(/object_not_found/);
   });
 });
 
 describe('a cumulative register', () => {
   it('reads as the consumption of each bucket, a reset included, and as its index through window()', async () => {
-    const s = (await store(db, { object_id: meter, quantity_code: 'injection_energy', value_kind: 'cumulative', step: '1 hour', source_code: 'pvgis' }, [
+    const s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'injection_energy', value_kind: 'cumulative', step: '1 hour', source_code: 'pvgis' }, [
       { at: '2026-05-05T08:00:00Z', value: 100 },
       { at: '2026-05-05T09:00:00Z', value: 104 },
       { at: '2026-05-05T10:00:00Z', value: 110 },
@@ -119,7 +119,7 @@ describe('a cumulative register', () => {
 describe('rollups', () => {
   let s: string;
   beforeAll(async () => {
-    s = (await store(db, { object_id: site, quantity_code: 'production_energy', step: '15 minutes', source_code: 'pvgis' },
+    s = (await store(db, { object_kind: 'site', object_id: site, quantity_code: 'production_energy', step: '15 minutes', source_code: 'pvgis' },
       at('2026-06-01T00:00:00+02:00', 96 * 31, 15).map((t, i) => ({ at: t, value: (i % 96) / 4 })))).seriesId;
   });
 
@@ -151,14 +151,14 @@ describe('rollups', () => {
 describe('buckets', () => {
   it('fall on the local hours of a half-hour time zone', async () => {
     const india = await insert(db, 'sites', { organisation_id: org, name: 'Pune', country: 'IN', time_zone: 'Asia/Kolkata' });
-    const s = (await store(db, { object_id: india, quantity_code: 'production_energy', step: '30 minutes', source_code: 'pvgis' },
+    const s = (await store(db, { object_kind: 'site', object_id: india, quantity_code: 'production_energy', step: '30 minutes', source_code: 'pvgis' },
       at('2026-05-04T08:00:00+05:30', 4, 30).map((t) => ({ at: t, value: 1 })))).seriesId;
     const r = await resample(db, s, '2026-05-04T08:00:00+05:30', '2026-05-04T10:00:00+05:30', '1 hour');
     expect(r.map((b) => [b.bucket, b.value])).toEqual([['2026-05-04T02:30:00.000Z', 2], ['2026-05-04T03:30:00.000Z', 2]]);
   });
 
   it('honour a step of several days, and refuse one that mixes calendar units', async () => {
-    const s = (await store(db, { object_id: site, quantity_code: 'offtake_energy', step: '1 day', source_code: 'pvgis' },
+    const s = (await store(db, { object_kind: 'site', object_id: site, quantity_code: 'offtake_energy', step: '1 day', source_code: 'pvgis' },
       Array.from({ length: 6 }, (_, i) => ({ at: `2026-03-0${i + 1}T00:00:00+01:00`, value: 1 })))).seriesId;
     const r = await resample(db, s, '2026-03-01T00:00:00+01:00', '2026-03-07T00:00:00+01:00', '2 days');
     expect(r.map((b) => b.value)).toEqual([2, 2, 2]);
@@ -172,7 +172,7 @@ describe('gaps', () => {
     // Eight quarter-hours with the third and fourth absent and the sixth missing.
     const values = at('2026-05-06T08:00:00Z', 8, 15).map((t, i) => ({ at: t, value: i + 1, quality: i === 5 ? 3 : 0 }))
       .filter((_, i) => i !== 2 && i !== 3);
-    s = (await store(db, { object_id: meter, quantity_code: 'temperature', value_kind: 'instant', step: '15 minutes', name: 'flow' }, values)).seriesId;
+    s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'temperature', value_kind: 'instant', step: '15 minutes', name: 'flow' }, values)).seriesId;
   });
 
   it('are found by coverage()', async () => {
@@ -199,7 +199,7 @@ describe('gaps', () => {
 
 describe('a forecast', () => {
   it('is read as known at a time, or at a horizon before each instant', async () => {
-    const identity = { object_id: site, quantity_code: 'temperature', kind: 'forecast' as const, value_kind: 'instant' as const, step: '1 hour', source_code: 'open_meteo' };
+    const identity = { object_kind: 'site', object_id: site, quantity_code: 'temperature', kind: 'forecast' as const, value_kind: 'instant' as const, step: '1 hour', source_code: 'open_meteo' };
     const hours = at('2026-05-07T12:00:00Z', 3, 60);
     const s = (await store(db, identity, hours.map((t) => ({ at: t, value: 10 })), { issuedAt: '2026-05-06T06:00:00Z' })).seriesId;
     await store(db, s, hours.map((t) => ({ at: t, value: 12 })), { issuedAt: '2026-05-07T06:00:00Z' });
@@ -216,7 +216,7 @@ describe('a forecast', () => {
 
 describe('reading', () => {
   it('exports rows sorted by series and time, for the series the caller may read', async () => {
-    const a = (await store(db, { object_id: meter, quantity_code: 'energy', step: '1 hour', source_code: 'pvgis' },
+    const a = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'energy', step: '1 hour', source_code: 'pvgis' },
       [{ at: '2026-05-08T01:00:00Z', value: 2 }, { at: '2026-05-08T00:00:00Z', value: 1 }])).seriesId;
     const rows = await exportRows(db, [a], '2026-05-08T00:00:00Z', '2026-05-09T00:00:00Z');
     expect(rows).toEqual([
@@ -243,7 +243,7 @@ describe('reading', () => {
 
 describe('weekly partitions', () => {
   it('are bounded at UTC midnights whatever the session time zone', async () => {
-    const s = (await store(db, { object_id: meter, quantity_code: 'power', value_kind: 'instant', name: 'partition probe' }, [
+    const s = (await store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', value_kind: 'instant', name: 'partition probe' }, [
       { at: '2026-05-10T23:30:00Z', value: 1 },   // the Sunday before, in UTC
       { at: '2026-05-11T00:30:00Z', value: 2 },   // the Monday of the week
     ])).seriesId;

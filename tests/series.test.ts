@@ -16,7 +16,7 @@ beforeAll(async () => {
   await organisation(db, 'Another', USER_B);
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
   meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
-  energy = await insert(db, 'series', { organisation_id: org, object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
+  energy = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   // Two weeks around the spring change (29 March 2026, 02:00 → 03:00 in Brussels), 1 kWh per quarter-hour.
   await db.query(
     `insert into series_values (series_id, at, value)
@@ -45,7 +45,7 @@ describe('the series store', () => {
 
   it('keeps the two local 02:00 of the autumn change apart, 100 quarter-hours on the long day', async () => {
     // 25 October 2026, 03:00 → 02:00 in Brussels: the local hour 02:00 happens twice; the instants stay unique.
-    const autumn = await insert(db, 'series', { organisation_id: org, object_id: meter, quantity_code: 'injection_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
+    const autumn = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'injection_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
     await db.query(
       `insert into series_values (series_id, at, value)
        select $1, ts, 1 from generate_series('2026-10-24 00:00+02'::timestamptz, '2026-10-26 23:45+01', '15 minutes') ts`,
@@ -66,7 +66,7 @@ describe('the series store', () => {
 
   it('refuses a daily step for a site without a time zone, by name', async () => {
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'BE' });
-    const s = await insert(db, 'series', { organisation_id: org, object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
+    const s = await insert(db, 'series', { organisation_id: org, object_kind: 'site', object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
     await expect(db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day')`, [s])).rejects.toThrow(/time_zone_required/);
     const r = await db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day', 'Europe/Brussels')`, [s]);
     expect(r.rows).toEqual([]);

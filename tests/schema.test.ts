@@ -19,13 +19,13 @@ describe('the nexgen schema', () => {
   it('holds every core table and function, and public holds none of them', async () => {
     const tables = await db.query<{ table_schema: string; n: number }>(
       `select table_schema, count(*)::int n from information_schema.tables
-        where table_name in ('organisations', 'sites', 'meters', 'devices', 'series', 'series_values', 'objects', 'modules')
+        where table_name in ('organisations', 'sites', 'meters', 'devices', 'series', 'series_values', 'kinds', 'modules')
         group by 1 order by 1`,
     );
     expect(tables.rows).toEqual([{ table_schema: 'nexgen', n: 8 }]);
     const fns = await db.query<{ schema: string; name: string }>(
       `select n.nspname schema, p.proname name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where p.proname in ('site_of', 'resample', 'register_object', 'declare_object', 'secure_table') order by 2, 1`,
+        where p.proname in ('site_of', 'resample', 'object_organisation', 'drop_attachments', 'secure_table') order by 2, 1`,
     );
     expect(fns.rows.map((r) => r.schema)).toEqual(['nexgen', 'nexgen', 'nexgen', 'nexgen', 'nexgen']);
   });
@@ -39,12 +39,12 @@ describe('the nexgen schema', () => {
         `insert into nexgen.sites (organisation_id, name, country, time_zone) values ($1, 'Shed', 'FR', 'Europe/Paris') returning id`,
         [org],
       );
-      const registered = await one<{ kind: string; country: string }>(
+      const found = await one<{ organisation: string; country: string }>(
         db,
-        `select o.kind, nexgen.country_of($1) country from nexgen.objects o where o.id = $1`,
+        `select nexgen.object_organisation('site', $1) organisation, nexgen.country_of('site', $1) country`,
         [site.id],
       );
-      expect(registered).toEqual({ kind: 'site', country: 'FR' });
+      expect(found).toEqual({ organisation: org, country: 'FR' });
       await expect(db.query('select 1 from sites')).rejects.toThrow(/relation "sites" does not exist/);
     } finally {
       await db.exec('set search_path = nexgen, public');
@@ -53,7 +53,7 @@ describe('the nexgen schema', () => {
 });
 
 describe('site_of across modules', () => {
-  it('finds the site and the building of a room, a series in it and a PV array of the solar module, without a module rewriting it', async () => {
+  it('finds the site and the building of a room, a series in it and a PV array of the solar module, each module answering for its kinds', async () => {
     const both = await freshDatabase(['building', 'solar']);
     try {
       const org = await organisation(both, 'Both', USER_A);
@@ -67,21 +67,21 @@ describe('site_of across modules', () => {
       const array = await one<{ id: string }>(both, `insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ($1, $2, 'A', 180, 30, 'roof_parallel', 10) returning id`, [org, device.id]);
       const probe = await one<{ id: string }>(both, `select install_device($1, 'sensor', 'Thermometer') id`, [site.id]);
       await both.query('select building.place_device($1, p_space_id => $2)', [probe.id, space.id]);
-      const series = await one<{ id: string }>(both, `select series_ensure($1, 'temperature', 'measured', 'instant', '10 minutes', $2) id`, [space.id, probe.id]);
+      const series = await one<{ id: string }>(both, `select series_ensure('space', $1, 'temperature', 'measured', 'instant', '10 minutes', $2) id`, [space.id, probe.id]);
       const r = await both.query<{ what: string; site: string; building: string | null }>(
-        `select 'space' what, site_of($1) site, building.building_of($1) building
-         union all select 'pv_array', site_of($2), building.building_of($2)
-         union all select 'device in a room', site_of($3), building.building_of($3)
-         union all select 'floor', site_of($4), building.building_of($4)`,
+        `select 'space' what, site_of('space', $1) site, building.building_of('space', $1) building
+         union all select 'pv_array', site_of('pv_array', $2), building.building_of('pv_array', $2)
+         union all select 'device in a room', site_of('device', $3), building.building_of('device', $3)
+         union all select 'floor', site_of('space', $4), building.building_of('space', $4)`,
         [space.id, array.id, probe.id, floor.id],
       );
       expect(r.rows.map((x) => [x.what, x.site === site.id, x.building === building.id])).toEqual([
         ['space', true, true], ['pv_array', true, true], ['device in a room', true, true], ['floor', true, true],
       ]);
       const observed = await one<{ site: string; building: string }>(
-        both, `select site_of(object_id) site, (select building_id from building.devices where device_id = s.device_id) building from series s where id = $1`, [series.id]);
+        both, `select site_of('series', id) site, (select building_id from building.devices where device_id = s.device_id) building from series s where id = $1`, [series.id]);
       expect(observed).toEqual({ site: site.id, building: building.id });
-      const kinds = await both.query<{ kind: string; published_by: string }>(`select kind, published_by from object_kinds where kind in ('space', 'pv_array', 'weather_point', 'device', 'organisation') order by kind`);
+      const kinds = await both.query<{ kind: string; published_by: string }>(`select kind, published_by from kinds where kind in ('space', 'pv_array', 'weather_point', 'device', 'organisation') order by kind`);
       expect(kinds.rows).toEqual([
         { kind: 'device', published_by: 'core' }, { kind: 'organisation', published_by: 'core' },
         { kind: 'pv_array', published_by: 'solar' }, { kind: 'space', published_by: 'building' },

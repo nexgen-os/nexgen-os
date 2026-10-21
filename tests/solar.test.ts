@@ -102,8 +102,8 @@ describe('the solar module', () => {
       { name: 'South', azimuth_deg: '180.00', tilt_deg: '30.00', kwp_dc: '3.400' },
       { name: 'West', azimuth_deg: '270.00', tilt_deg: '25.00', kwp_dc: '1.700' },
     ]);
-    const kinds = await one<{ n: number }>(db, `select count(*)::int n from objects where kind = 'pv_array'`);
-    expect(kinds.n).toBe(2);
+    const kind = await one<{ table_name: string; site: string }>(db, `select table_name, site_of('pv_array', $1) site from kinds where kind = 'pv_array'`, [southArray]);
+    expect(kind).toEqual({ table_name: 'solar.pv_arrays', site });
   });
 
   it('keeps an orientation given for a rack, over the surface it stands on', async () => {
@@ -190,7 +190,7 @@ describe('product physics', () => {
 describe('horizons', () => {
   it('keeps a far horizon on the site, azimuth from north', async () => {
     await db.query(
-      `insert into solar.horizons (object_id, profile, source_code) values ($1, '[[0, 2], [90, 5.5], [180, 1], [270, 8]]', 'pvgis')`,
+      `insert into solar.horizons (object_kind, object_id, profile, source_code) values ('site', $1, '[[0, 2], [90, 5.5], [180, 1], [270, 8]]', 'pvgis')`,
       [site],
     );
     const r = await one<{ organisation_id: string; n: number }>(
@@ -201,13 +201,13 @@ describe('horizons', () => {
 
   it('refuses an empty profile, a malformed pair and a horizon on a device', async () => {
     await expect(
-      db.query(`insert into solar.horizons (object_id, profile) values ($1, '[]')`, [south]),
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('surface', $1, '[]')`, [south]),
     ).rejects.toThrow(/horizons_profile_not_empty/);
     await expect(
-      db.query(`insert into solar.horizons (object_id, profile) values ($1, '[[400, 2]]')`, [south]),
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('surface', $1, '[[400, 2]]')`, [south]),
     ).rejects.toThrow(/horizons_profile_pairs/);
     await expect(
-      db.query(`insert into solar.horizons (object_id, profile) values ($1, '[[0, 2]]')`, [pv]),
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[[0, 2]]')`, [pv]),
     ).rejects.toThrow(/horizon_on_site_or_surface_only/);
   });
 });

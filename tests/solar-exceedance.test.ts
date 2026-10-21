@@ -33,9 +33,9 @@ afterAll(async () => {
 });
 
 const yieldRun = async (name: string, perHour: Record<number, number>, results: Record<string, unknown> = {}) => {
-  const { seriesId } = await storeSeries(db, { organisationId: org, objectId: system, sourceCode: 'open_meteo', kind: 'simulated', name }, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: years(perHour) });
+  const { seriesId } = await storeSeries(db, { organisationId: org, objectKind: 'device', objectId: system, sourceCode: 'open_meteo', kind: 'simulated', name }, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: years(perHour) });
   const span = Object.keys(perHour).map(Number);
-  return (await db.query<{ id: string }>(`select record_run('solar', 'fake 1.0.0', $1, null, $2::jsonb, $3::jsonb) id`, [system, JSON.stringify({ name, weather: { years: { from: Math.min(...span), to: Math.max(...span) } } }), JSON.stringify({ series_id: seriesId, ...results })])).rows[0].id;
+  return (await db.query<{ id: string }>(`select record_run('solar', 'fake 1.0.0', 'device', $1, null, $2::jsonb, $3::jsonb) id`, [system, JSON.stringify({ name, weather: { years: { from: Math.min(...span), to: Math.max(...span) } } }), JSON.stringify({ series_id: seriesId, ...results })])).rows[0].id;
 };
 
 describe('the quantiles of the normal distribution', () => {

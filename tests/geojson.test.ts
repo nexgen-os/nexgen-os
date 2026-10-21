@@ -38,9 +38,9 @@ beforeAll(async () => {
      values ('roof_layer', 'A commercial roof layer', 'api', 'Proprietary', '© Roof Layer Inc.', false)`,
   );
   await db.query(
-    `insert into attributes (object_id, property_code, value, source_code) values
-       ($1, 'floor_area', '280', 'openstreetmap'),
-       ($1, 'energy_label', '"C"', 'roof_layer')`,
+    `insert into attributes (object_kind, object_id, property_code, value, source_code) values
+       ('building', $1, 'floor_area', '280', 'openstreetmap'),
+       ('building', $1, 'energy_label', '"C"', 'roof_layer')`,
     [BARN],
   );
   // A shed described from that layer, its roof and the array on it.
@@ -178,7 +178,7 @@ describe('a scenario, a moment, a project', () => {
     const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'A battery') returning id`, [ORG]);
     const battery = await insert(db, 'devices', { organisation_id: ORG, site_id: SITE, name: 'Battery', device_type: 'battery', rated_power_kw: 50, scenario_id: scenario.id });
     await db.query(
-      `insert into attributes (object_id, property_code, value, scenario_id, source) values ($1, 'annual_consumption', '150000', $2, 'with the battery')`,
+      `insert into attributes (object_kind, object_id, property_code, value, scenario_id, source) values ('site', $1, 'annual_consumption', '150000', $2, 'with the battery')`,
       [SITE, scenario.id],
     );
     const variant = await exportGeoJson(db, { siteId: SITE }, { scenarioId: scenario.id });
