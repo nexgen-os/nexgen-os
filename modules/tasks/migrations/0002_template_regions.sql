@@ -51,7 +51,7 @@ begin
      order by tp.position, tp.code
   loop
     if exists (select 1 from tasks.tasks x
-                where x.subject_id = p_project_id and x.template_id = t.id
+                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id
                   and x.scenario_id is not distinct from p_scenario_id) then
       v_existing := v_existing + 1;
       continue;
@@ -73,7 +73,7 @@ begin
       -- value a JSON number.
       select case when jsonb_typeof(a.value) = 'number' then (a.value #>> '{}')::numeric end into v_value
         from attributes a
-       where a.object_id = p_project_id and a.property_code = t.applies_when->>'property'
+       where a.object_kind = 'project' and a.object_id = p_project_id and a.property_code = t.applies_when->>'property'
        limit 1;
       if v_value is null then
         v_skipped := v_skipped || jsonb_build_object('code', t.code, 'published_by', t.published_by,
@@ -94,8 +94,8 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_id, phase, role, name, notes, source, template_id, scenario_id)
-    values (v_org, p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
+    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id, scenario_id)
+    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
     v_created := v_created + 1;
   end loop;
 
@@ -104,9 +104,9 @@ begin
      set depends_on = d.id
     from tasks.templates tp
     join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
-    join tasks.tasks d on d.template_id = dt.id and d.subject_id = p_project_id
+    join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
                       and d.scenario_id is not distinct from p_scenario_id
-   where x.template_id = tp.id and x.subject_id = p_project_id
+   where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
      and x.scenario_id is not distinct from p_scenario_id
      and x.depends_on is null;
 

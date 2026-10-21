@@ -96,7 +96,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
 
   let run: { id: string; results: { series_id?: string; array_series?: Record<string, Record<string, string>> } } | undefined;
   if (request.yieldRunId) {
-    run = (await db.query<typeof run & object>(`select id, results from runs where id = $1 and subject_id = $2 and module_code = 'solar'`, [request.yieldRunId, request.pvSystemId])).rows[0];
+    run = (await db.query<typeof run & object>(`select id, results from runs where id = $1 and subject_kind = 'device' and subject_id = $2 and module_code = 'solar'`, [request.yieldRunId, request.pvSystemId])).rows[0];
     if (!run) throw new Error(`run_not_of_system: ${request.yieldRunId} is not a yield run of this PV system`);
   }
 
@@ -186,7 +186,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     },
   };
   const recorded = await db.query<{ id: string }>(
-    `select record_run('solar', $1, $2, null, $3::jsonb, $4::jsonb) id`,
+    `select record_run('solar', $1, 'device', $2, null, $3::jsonb, $4::jsonb) id`,
     [PERFORMANCE_ENGINE_VERSION, request.pvSystemId, JSON.stringify(inputs), JSON.stringify({ irradiance: source, total, months })],
   );
   return { runId: recorded.rows[0].id, irradiance: source, total, months };

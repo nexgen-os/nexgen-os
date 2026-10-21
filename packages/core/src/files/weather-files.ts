@@ -16,7 +16,8 @@ const HOUR_MS = 3_600_000;
 
 export interface WeatherTarget {
   organisationId: string;
-  /** The object the weather is about: a weather point, a site. */
+  /** The object the weather is about, by its kind and its id: a weather point, a site. */
+  objectKind: string;
   objectId: string;
 }
 
@@ -38,7 +39,7 @@ export async function importWeatherFile(
   const name = options.name !== undefined ? options.name : file.typical ? `typical year ${file.years[0]}-${file.years[file.years.length - 1]}` : null;
   const series = [];
   for (const s of file.series) {
-    const stored = await storeSeries(db, { organisationId: target.organisationId, objectId: target.objectId, sourceCode: options.sourceCode, kind, name }, s);
+    const stored = await storeSeries(db, { organisationId: target.organisationId, objectKind: target.objectKind, objectId: target.objectId, sourceCode: options.sourceCode, kind, name }, s);
     series.push({ quantity_code: s.quantity_code, ...stored });
   }
   return { series, warnings: file.warnings };

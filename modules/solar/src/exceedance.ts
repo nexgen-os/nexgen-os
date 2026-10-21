@@ -48,8 +48,8 @@ export interface ExceedanceResult {
  */
 export async function exceedance(db: Db, request: ExceedanceRequest): Promise<ExceedanceResult> {
   const run = (
-    await db.query<{ id: string; subject_id: string; inputs: { weather?: { years?: { from: number; to: number } } }; results: { series_id?: string; typical_months?: unknown } }>(
-      `select id, subject_id, inputs, results from runs where id = $1 and module_code = 'solar'`,
+    await db.query<{ id: string; subject_kind: string; subject_id: string; inputs: { weather?: { years?: { from: number; to: number } } }; results: { series_id?: string; typical_months?: unknown } }>(
+      `select id, subject_kind, subject_id, inputs, results from runs where id = $1 and module_code = 'solar'`,
       [request.yieldRunId],
     )
   ).rows[0];
@@ -100,8 +100,8 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
     method: 'normal distribution of the annual energy; interannual variability from the years of the run (sample standard deviation), divided by the square root of the horizon; the named components added in quadrature',
   };
   const recorded = await db.query<{ id: string }>(
-    `select record_run('solar', $1, $2, null, $3::jsonb, $4::jsonb) id`,
-    [EXCEEDANCE_ENGINE_VERSION, run.subject_id, JSON.stringify(inputs), JSON.stringify(result)],
+    `select record_run('solar', $1, $2, $3, null, $4::jsonb, $5::jsonb) id`,
+    [EXCEEDANCE_ENGINE_VERSION, run.subject_kind, run.subject_id, JSON.stringify(inputs), JSON.stringify(result)],
   );
   return { runId: recorded.rows[0].id, ...result };
 }

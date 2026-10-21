@@ -99,7 +99,7 @@ $$;
 -- ---------------------------------------------------------------------------
 
 create table weather.points (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   name             text not null,
   source_code      text not null references weather.models(source_code),
@@ -130,7 +130,14 @@ create unique index points_one_per_cell on weather.points
 create index points_geometry_idx on weather.points using gist (geometry);
 create trigger weather_points_normalize before insert or update of geometry on weather.points
   for each row execute function normalize_geometry('geometry');
-call declare_object('weather.points', 'weather_point', '{}');
+create trigger points_set_updated_at before update on weather.points
+  for each row execute function set_updated_at();
+create index points_organisation_idx on weather.points (organisation_id);
+create trigger points_drop_attachments after delete on weather.points
+  for each row execute function drop_attachments('weather_point');
+call secure_table('weather.points');
+
+insert into kinds (kind, table_name, published_by) values ('weather_point', 'weather.points', 'weather');
 
 -- The cell of a position for a model: longitude and latitude rounded to the
 -- model's grid, or exact when the model has none (a station).
@@ -321,11 +328,12 @@ begin
 
   if not exists (
     select 1 from links l
-     where l.subject_id = p_site_id and l.type_code = 'weather_from' and l.object_id = point_id
+     where l.subject_kind = 'site' and l.subject_id = p_site_id and l.type_code = 'weather_from'
+       and l.object_kind = 'weather_point' and l.object_id = point_id
        and (l.valid_to is null or l.valid_to > now())
   ) then
-    insert into links (subject_id, type_code, object_id, scenario_id)
-    values (p_site_id, 'weather_from', point_id, s.scenario_id);
+    insert into links (subject_kind, subject_id, type_code, object_kind, object_id, scenario_id)
+    values ('site', p_site_id, 'weather_from', 'weather_point', point_id, s.scenario_id);
   end if;
 
   return point_id;

@@ -315,8 +315,8 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
   const energy = sumSeries(perArray.map((x) => x.answer.series.find((s) => s.quantity_code === 'production_energy')!));
   const temperature = perArray[0].answer.series.find((s) => s.quantity_code === 'temperature')!;
   const owned: OwnedSeries[] = [
-    { key: 'production', objectId: request.pvSystemId, sourceCode: client.source_code, series: energy },
-    { key: 'temperature', objectId: system.site_id, sourceCode: client.source_code, series: temperature },
+    { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: client.source_code, series: energy },
+    { key: 'temperature', objectKind: 'site', objectId: system.site_id, sourceCode: client.source_code, series: temperature },
   ];
 
   const nYears = request.years.to - request.years.from + 1;
@@ -409,8 +409,8 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
 
   const name = months ? `typical year ${years.from}-${years.to}` : null;
   const owned: OwnedSeries[] = [
-    { key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
-    ...(siteTemperature ? [{ key: 'temperature', objectId: system.site_id, sourceCode: weather.source_code, name, series: { ...siteTemperature, values: rounded(temperature) } }] : []),
+    { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
+    ...(siteTemperature ? [{ key: 'temperature', objectKind: 'site', objectId: system.site_id, sourceCode: weather.source_code, name, series: { ...siteTemperature, values: rounded(temperature) } }] : []),
   ];
 
   const annualKwh = round(annual);
@@ -580,7 +580,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
   const energy = answered.find((s) => s.quantity_code === 'production_energy' && s.array === undefined);
   if (!energy) throw new Error(`engine_contract_mismatch: ${spec.name} answered no production_energy for the system`);
   const name = `${spec.name} ${years.from}-${years.to}`;
-  const owned: OwnedSeries[] = [{ key: 'production', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy, unit: engineUnit(energy.unit) }];
+  const owned: OwnedSeries[] = [{ key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy, unit: engineUnit(energy.unit) }];
   const arrayKeys: { array: string; quantity: string; key: string }[] = [];
   for (const s of answered.filter((x) => x.array !== undefined)) {
     const a = arrays.find((x) => x.name === s.array);
@@ -589,7 +589,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
     // told apart by the array's name.
     const key = `array ${a.name}: ${s.quantity_code}`;
     arrayKeys.push({ array: a.name, quantity: s.quantity_code, key });
-    owned.push({ key, objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
+    owned.push({ key, objectKind: a.id ? 'pv_array' : 'device', objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
   }
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
@@ -633,6 +633,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
 /** A series a run computed, under the key its results name it by. */
 interface OwnedSeries {
   key: string;
+  objectKind: string;
   objectId: string;
   sourceCode: string;
   name?: string | null;
@@ -655,7 +656,7 @@ async function recordRun(
   results: (seriesIds: Record<string, string>) => Record<string, unknown>,
 ): Promise<{ runId: string; results: Record<string, unknown> }> {
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('solar', $1, $2, null, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
+    `select run_id, finished from start_run('solar', $1, 'device', $2, null, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
   if (started.finished) {
     const done = await db.query<{ results: Record<string, unknown> }>('select results from runs where id = $1', [started.run_id]);
     return { runId: started.run_id, results: done.rows[0].results };
@@ -664,7 +665,7 @@ async function recordRun(
   // An engine says the unit of its values; `store()` converts them to the quantity's.
   for (const o of owned) {
     const stored = await store(db, {
-      object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
+      object_kind: o.objectKind, object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
       step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, run_id: started.run_id,
     }, o.series.values, { unit: o.unit ?? null });
     ids[o.key] = stored.seriesId;

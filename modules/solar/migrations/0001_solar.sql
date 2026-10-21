@@ -202,7 +202,7 @@ $$;
 -- ---------------------------------------------------------------------------
 
 create table solar.pv_arrays (
-  id                   uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id                   uuid primary key default gen_random_uuid(),
   organisation_id      uuid not null references organisations(id) on delete cascade,
   pv_system_id         uuid not null references solar.pv_systems(id) on delete cascade,
   name                 text not null,
@@ -267,7 +267,35 @@ $$;
 
 create trigger pv_arrays_fill before insert or update on solar.pv_arrays
   for each row execute function solar.pv_arrays_fill();
-call declare_object('solar.pv_arrays', 'pv_array', '{pv_system_id}');
+-- The system of an array is a device of the core: the parent check reads
+-- its organisation and its scenario there.
+create trigger pv_arrays_pv_system_id_check before insert or update of pv_system_id, scenario_id on solar.pv_arrays
+  for each row execute function parent_check('pv_system_id', 'devices');
+create trigger pv_arrays_set_updated_at before update on solar.pv_arrays
+  for each row execute function set_updated_at();
+create index pv_arrays_organisation_idx on solar.pv_arrays (organisation_id);
+create trigger pv_arrays_drop_attachments after delete on solar.pv_arrays
+  for each row execute function drop_attachments('pv_array');
+call secure_table('solar.pv_arrays');
+
+insert into kinds (kind, table_name, published_by) values ('pv_array', 'solar.pv_arrays', 'solar');
+
+-- The site of a PV array: its system's, a device of the core. `site_of()`
+-- of the core hands this module its kind.
+create or replace function solar.site_of(p_kind text, p_id uuid)
+returns uuid
+language sql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+  select d.site_id from solar.pv_arrays a join devices d on d.id = a.pv_system_id
+   where p_kind = 'pv_array' and a.id = p_id;
+$$;
+
+comment on function solar.site_of(text, uuid) is
+  'The site a PV array is on: its system''s. What site_of() of the core answers for the kind of this module.';
+
+grant execute on function solar.site_of(text, uuid) to authenticated, service_role;
 
 -- DC power of a system: the sum of its arrays, or its own figure when it
 -- has none. In a scenario, the arrays of reality and of the scenario and
@@ -323,7 +351,9 @@ create table solar.horizons (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from the object by trigger (`attach`).
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  object_id        uuid not null references objects(id) on delete cascade,
+  -- A site or a surface, by its kind and its id.
+  object_kind      text not null references kinds(kind),
+  object_id        uuid not null,
   profile          jsonb not null,
   -- Where it comes from: PVGIS's elevation model, a survey, a PVsyst or
   -- Meteonorm file.
@@ -339,7 +369,7 @@ create table solar.horizons (
 comment on table solar.horizons is
   'The far horizon of a site or a surface: [azimuth_deg, elevation_deg] pairs, azimuth clockwise from true north. One per object and scenario; every yield run on it reads it.';
 
-create unique index horizons_one_per_object on solar.horizons (object_id, scenario_id) nulls not distinct;
+create unique index horizons_one_per_object on solar.horizons (object_kind, object_id, scenario_id) nulls not distinct;
 
 create or replace function solar.horizons_check()
 returns trigger
@@ -347,7 +377,7 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
-  if (select kind from objects where id = new.object_id) not in ('site', 'surface') then
+  if new.object_kind not in ('site', 'surface') then
     raise exception 'horizon_on_site_or_surface_only' using errcode = 'check_violation';
   end if;
   return new;
@@ -356,8 +386,8 @@ $$;
 
 -- Triggers fire in name order: attach first, then the kind check.
 create trigger horizons_attach before insert or update on solar.horizons
-  for each row execute function attach('object_id');
-create trigger horizons_check before insert or update of object_id on solar.horizons
+  for each row execute function attach('object');
+create trigger horizons_check before insert or update of object_kind, object_id on solar.horizons
   for each row execute function solar.horizons_check();
 create trigger horizons_set_updated_at before update on solar.horizons
   for each row execute function set_updated_at();

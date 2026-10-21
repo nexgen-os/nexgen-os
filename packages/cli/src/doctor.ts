@@ -38,7 +38,7 @@ export const VOCABULARIES = [
   'tags',
   'id_schemes',
   'sources',
-  'object_kinds',
+  'kinds',
   'series_quality_codes',
   'countries',
   'regions',
@@ -107,6 +107,45 @@ export async function detachedModuleTables(db: SqlClient, schemas: string[]): Pr
     [schemas],
   );
   return rows.map((r) => r.t);
+}
+
+/**
+ * Attachments whose object no longer exists, counted by kind (decision
+ * 0044). An attachment is a row of a table whose `object_kind` (or
+ * `subject_kind`) references `kinds`, beside its `object_id` (or
+ * `subject_id`) — the core's
+ * attributes, identifiers, links, documents, series and runs, and the
+ * modules' tables that attach to an object of any kind; its object is the
+ * row of that id in the table `kinds` gives for its kind. `drop_attachments()`
+ * deletes them with their object; a row left behind was written around it.
+ */
+export async function orphanedAttachments(db: SqlClient): Promise<{ kind: string; table_name: string; rows: number }[]> {
+  if (!(await exists(db, 'nexgen.kinds'))) return [];
+  const tables = await db.query<{ table_name: string; side: string }>(
+    `select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
+       from pg_constraint f
+       join pg_class c on c.oid = f.conrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join pg_attribute a on a.attrelid = f.conrelid and a.attnum = f.conkey[1]
+      where f.contype = 'f' and f.confrelid = 'nexgen.kinds'::regclass and cardinality(f.conkey) = 1
+        and a.attname in ('object_kind', 'subject_kind') and not c.relispartition
+      order by 1, 2`,
+  );
+  const kinds = await db.query<{ kind: string; table_name: string }>('select kind, table_name from nexgen.kinds order by kind');
+  const found: { kind: string; table_name: string; rows: number }[] = [];
+  for (const k of kinds) {
+    if (!(await exists(db, k.table_name.includes('.') ? k.table_name : `nexgen.${k.table_name}`))) continue;
+    const of = k.table_name.includes('.') ? k.table_name : `nexgen.${k.table_name}`;
+    for (const t of tables) {
+      const [r] = await db.query<{ n: number }>(
+        `select count(*)::int as n from ${t.table_name} a
+          where a.${t.side}_kind = $1 and not exists (select 1 from ${of} o where o.id = a.${t.side}_id)`,
+        [k.kind],
+      );
+      if (r && r.n > 0) found.push({ kind: k.kind, table_name: t.table_name, rows: r.n });
+    }
+  }
+  return found;
 }
 
 /**
@@ -216,6 +255,15 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
 
   for (const t of await detachedModuleTables(db, report.modules.map((m) => m.schema_name))) {
     problems.push({ code: 'module_table_detached', detail: `${t} carries organisation_id and reaches no object of the core by a foreign key` });
+  }
+
+  const orphans = await orphanedAttachments(db);
+  for (const kind of [...new Set(orphans.map((o) => o.kind))]) {
+    const of = orphans.filter((o) => o.kind === kind);
+    problems.push({
+      code: 'attachments_orphaned',
+      detail: `${kind}: ${of.map((o) => `${o.rows} in ${o.table_name}`).join(', ')} name a ${kind} that no longer exists`,
+    });
   }
 
   for (const k of await unlinkedBillingKeys(db)) {

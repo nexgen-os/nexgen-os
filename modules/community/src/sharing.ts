@@ -165,7 +165,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
 
   // The run of these inputs and this engine: the finished one when it exists, the engine is not started again.
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('community', $1, $2, null, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
+    `select run_id, finished from start_run('community', $1, 'project', $2, null, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
     const done = (await db.query<{ results: { totals: Record<string, number>; participants: { id: string; series: Record<string, string> }[] } }>(
@@ -192,7 +192,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
         throw new Error(`engine_contract_mismatch: ${request.engine.name} answered no ${quantity} on the grid for participant ${p.name}`);
       }
       const { seriesId } = await store(db, {
-        object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, run_id: started.run_id,
+        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, run_id: started.run_id,
       }, s.values, { unit: s.unit ?? null });
       stored[p.id][quantity] = seriesId;
     }

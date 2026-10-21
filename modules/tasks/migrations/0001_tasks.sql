@@ -147,10 +147,13 @@ grant select, insert, update, delete on tasks.templates to service_role;
 -- ---------------------------------------------------------------------------
 
 create table tasks.tasks (
-  id                      uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id                      uuid primary key default gen_random_uuid(),
   organisation_id         uuid not null references organisations(id) on delete cascade,
-  -- What the task is about: a project, a site, a building, a surface, a device.
-  subject_id              uuid not null references objects(id) on delete cascade,
+  -- What the task is about, by its kind and its id: a project, a site, a
+  -- building, a surface, a device. Its organisation is the subject's
+  -- (`attach`), and it goes with its subject (`drop_attachments`).
+  subject_kind            text not null references kinds(kind),
+  subject_id              uuid not null,
   phase                   text not null references tasks.phases(code),
   -- The role that carries it, and the contact who holds that role here.
   role                    text references tasks.roles(code),
@@ -191,13 +194,22 @@ create table tasks.tasks (
 comment on table tasks.tasks is
   'A task on a project, a site, a building, a surface or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action). An object: photos, reports and certificates attach to it.';
 
-create index tasks_subject_idx on tasks.tasks (subject_id);
+create index tasks_subject_idx on tasks.tasks (subject_kind, subject_id);
 create index tasks_phase_idx on tasks.tasks (phase);
 create index tasks_role_idx on tasks.tasks (role);
 -- A template is applied once to a subject, in the world as it is or in a scenario.
-create unique index tasks_template_once on tasks.tasks (subject_id, template_id, coalesce(scenario_id, '00000000-0000-0000-0000-000000000000'::uuid))
+create unique index tasks_template_once on tasks.tasks (subject_kind, subject_id, template_id, coalesce(scenario_id, '00000000-0000-0000-0000-000000000000'::uuid))
   where template_id is not null;
-call declare_object('tasks.tasks', 'task', '{subject_id}');
+create trigger tasks_attach before insert or update of subject_kind, subject_id, scenario_id on tasks.tasks
+  for each row execute function attach('subject');
+create trigger tasks_set_updated_at before update on tasks.tasks
+  for each row execute function set_updated_at();
+create index tasks_organisation_idx on tasks.tasks (organisation_id);
+create trigger tasks_drop_attachments after delete on tasks.tasks
+  for each row execute function drop_attachments('task');
+call secure_table('tasks.tasks');
+
+insert into kinds (kind, table_name, published_by) values ('task', 'tasks.tasks', 'tasks');
 
 -- The contact who holds a task and the task it waits for are of its organisation.
 create or replace function tasks.tasks_check()
@@ -263,7 +275,7 @@ begin
      order by tp.position, tp.code
   loop
     if exists (select 1 from tasks.tasks x
-                where x.subject_id = p_project_id and x.template_id = t.id
+                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id
                   and x.scenario_id is not distinct from p_scenario_id) then
       v_existing := v_existing + 1;
       continue;
@@ -274,7 +286,7 @@ begin
       -- value a JSON number.
       select case when jsonb_typeof(a.value) = 'number' then (a.value #>> '{}')::numeric end into v_value
         from attributes a
-       where a.object_id = p_project_id and a.property_code = t.applies_when->>'property'
+       where a.object_kind = 'project' and a.object_id = p_project_id and a.property_code = t.applies_when->>'property'
        limit 1;
       if v_value is null then
         v_skipped := v_skipped || jsonb_build_object('code', t.code, 'published_by', t.published_by,
@@ -295,8 +307,8 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_id, phase, role, name, notes, source, template_id, scenario_id)
-    values (v_org, p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
+    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id, scenario_id)
+    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
     v_created := v_created + 1;
   end loop;
 
@@ -305,9 +317,9 @@ begin
      set depends_on = d.id
     from tasks.templates tp
     join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
-    join tasks.tasks d on d.template_id = dt.id and d.subject_id = p_project_id
+    join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
                       and d.scenario_id is not distinct from p_scenario_id
-   where x.template_id = tp.id and x.subject_id = p_project_id
+   where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
      and x.scenario_id is not distinct from p_scenario_id
      and x.depends_on is null;
 
@@ -351,7 +363,7 @@ as $$
       from tasks.tasks m
       join tasks.phases ph on ph.code = m.phase
      where (m.scenario_id is null or m.scenario_id in (select id from chain))
-       and (m.subject_id = p_object_id or site_of(m.subject_id) in (select id from sites))
+       and (m.subject_id = p_object_id or site_of(m.subject_kind, m.subject_id) in (select id from sites))
   )
   select jsonb_build_object(
     'on', p_on,

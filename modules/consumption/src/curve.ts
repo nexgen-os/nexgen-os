@@ -214,7 +214,7 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
   // The run of these inputs: the finished one when it exists, else a new
   // one whose series is written before it is final.
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('consumption', $1, $2, $3, $4::jsonb)`,
+    `select run_id, finished from start_run('consumption', $1, 'site', $2, $3, $4::jsonb)`,
     [CONSUMPTION_ENGINE_VERSION, request.siteId, scenarioId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
@@ -222,7 +222,7 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
     return { runId: started.run_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
   }
   const { seriesId } = await store(db, {
-    object_id: request.siteId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
+    object_kind: 'site', object_id: request.siteId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
     source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, scenario_id: scenarioId, run_id: started.run_id,
   }, values);
   const kwh = round(values.reduce((sum, v) => sum + v.value, 0));

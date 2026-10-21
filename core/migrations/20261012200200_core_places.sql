@@ -146,9 +146,10 @@ comment on function parent_check() is
   'Trigger of a foreign key to a parent (its column, then the parent''s table): the parent is in the same organisation, and in the same scenario when it exists only in one.';
 
 -- AFTER DELETE on the table of a kind, tg_argv[0] being the kind: what was
--- attached to the row goes with it. An attachment is a table carrying an
--- `object_kind` and `object_id` pair (or `subject_kind` and `subject_id`):
--- the core's, and those of a module that attach to an object of any kind.
+-- attached to the row goes with it. An attachment is a table whose
+-- `object_kind` (or `subject_kind`) references `kinds`, beside its
+-- `object_id` (or `subject_id`): the core's, and those of a module that
+-- attach to an object of any kind.
 create or replace function drop_attachments()
 returns trigger
 language plpgsql
@@ -159,11 +160,12 @@ declare
 begin
   for t in
     select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
-      from pg_attribute a
-      join pg_class c on c.oid = a.attrelid
+      from pg_constraint f
+      join pg_class c on c.oid = f.conrelid
       join pg_namespace n on n.oid = c.relnamespace
-     where a.attname in ('object_kind', 'subject_kind') and a.attnum > 0 and not a.attisdropped
-       and c.relkind in ('r', 'p') and not c.relispartition
+      join pg_attribute a on a.attrelid = f.conrelid and a.attnum = f.conkey[1]
+     where f.contype = 'f' and f.confrelid = 'nexgen.kinds'::regclass and cardinality(f.conkey) = 1
+       and a.attname in ('object_kind', 'subject_kind') and not c.relispartition
   loop
     execute format('delete from %s where %I = $1 and %I = $2', t.table_name, t.side || '_kind', t.side || '_id')
       using tg_argv[0], old.id;
@@ -173,7 +175,7 @@ end;
 $$;
 
 comment on function drop_attachments() is
-  'AFTER DELETE on the table of a kind: deletes what was attached to the row, in every table carrying an object_kind / object_id (or subject_kind / subject_id) pair.';
+  'AFTER DELETE on the table of a kind: deletes what was attached to the row, in every table whose object_kind (or subject_kind) references kinds.';
 
 -- ---------------------------------------------------------------------------
 -- Geometry helpers

@@ -91,9 +91,9 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
       ['floors_below_ground', b.storeysBelowGround],
       ['year_built', b.yearOfConstruction],
     ] as const) {
-      if (value !== null) await attributeFromFile(db, buildingId, property, Math.round(value), options.sourceCode, scenarioId);
+      if (value !== null) await attributeFromFile(db, 'building', buildingId, property, Math.round(value), options.sourceCode, scenarioId);
     }
-    await identifierFromFile(db, buildingId, 'cityjson', b.id);
+    await identifierFromFile(db, 'building', buildingId, 'cityjson', b.id);
 
     let n = 0;
     for (const s of b.surfaces) {
@@ -163,7 +163,7 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
   const buildings = await db.query<BuildingRow>(
     `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from building.buildings where site_id = $1)) srid)
      select b.id, b.name, b.height_m, attributes_of(b.id) attributes, b.metadata,
-            (select value from external_ids e where e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
+            (select value from external_ids e where e.object_kind = 'building' and e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
             s.srid,
             ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
             (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(building.building_volume(b.id)) d) volume

@@ -119,8 +119,9 @@ create table consumption.activity_hours (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from what is open by `attach()`.
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A site, a building, a space: what is open.
-  object_id        uuid not null references objects(id) on delete cascade,
+  -- A site, a building, a space: what is open, by its kind and its id.
+  object_kind      text not null references kinds(kind),
+  object_id        uuid not null,
   -- ISO day of the week, 1 Monday to 7 Sunday.
   weekday          smallint not null,
   -- Local wall-clock times of the site; `24:00` closes at midnight. Two
@@ -143,12 +144,12 @@ create table consumption.activity_hours (
 comment on table consumption.activity_hours is
   'When a site, a building or a space is open, day of the week by day of the week, in the local time of its site, over a period: what a reconstruction by activity hours reads.';
 
-create index activity_hours_object_idx on consumption.activity_hours (object_id);
+create index activity_hours_object_idx on consumption.activity_hours (object_kind, object_id);
 create index activity_hours_organisation_idx on consumption.activity_hours (organisation_id);
 
 create trigger activity_hours_attach
   before insert or update on consumption.activity_hours
-  for each row execute function attach('object_id');
+  for each row execute function attach('object');
 
 call secure_table('consumption.activity_hours');
 
@@ -172,7 +173,7 @@ as $$
     from series se
     left join runs r on r.id = se.run_id
    where se.quantity_code = 'consumption_energy'
-     and (se.object_id = p_site_id or site_of(se.object_id) = p_site_id)
+     and (se.object_id = p_site_id or site_of(se.object_kind, se.object_id) = p_site_id)
      and se.scenario_id is not distinct from p_scenario_id
      and (se.kind = 'measured' or (se.kind = 'simulated' and r.module_code = 'consumption' and r.status = 'succeeded'))
      and exists (select 1 from series_values v where v.series_id = se.id and v.at >= p_from and v.at < p_to and v.quality <> 3)

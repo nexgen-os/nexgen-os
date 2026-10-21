@@ -128,10 +128,11 @@ export async function importHomeAssistant(db: Db, target: HomeTarget, home: Home
       );
     }
     const device = (p.device && devices.get(p.device)) || null;
-    const observed = device || (p.space && spaces.get(p.space)) || buildingId;
+    const space = (p.space && spaces.get(p.space)) || null;
+    const [kind, observed] = device ? ['device', device] : space ? ['space', space] : ['building', buildingId];
     const seriesId = await id(db,
-      `select series_ensure($1, $2, $3, $4, null, $5, $6, $7, $8, null, $9) id`,
-      [observed, q.quantity, p.role, p.valueKind, device, `homeassistant://${p.key}`, HOMEASSISTANT_SOURCE, p.key,
+      `select series_ensure($1, $2, $3, $4, $5, null, $6, $7, $8, $9, null, $10) id`,
+      [kind, observed, q.quantity, p.role, p.valueKind, device, `homeassistant://${p.key}`, HOMEASSISTANT_SOURCE, p.key,
        { ha: { key: p.key, device: p.device, space: p.space, unit: p.unit, binary: p.binary, converted: q.converted, extra: p.extra } }]);
     series.set(p.key, seriesId);
     if (p.readings.length) {
@@ -164,7 +165,7 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
     ha: { key: string; device: string | null; space: string | null; unit: string | null; binary: boolean; converted: boolean; extra: Record<string, unknown> } }>(
     `select se.id, q.unit, se.quantity_code quantity, se.kind, se.value_kind, se.metadata->'ha' ha
        from series se join quantities q on q.code = se.quantity_code
-      where se.metadata ? 'ha' and building.building_of(se.object_id) = $1
+      where se.metadata ? 'ha' and building.building_of(se.object_kind, se.object_id) = $1
       order by se.metadata->'ha'->>'key'`, [buildingId]);
 
   const spaces: HomeSpace[] = [

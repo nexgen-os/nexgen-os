@@ -137,10 +137,10 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
       ],
     );
     const id = row.rows[0].id;
-    await identifierFromFile(db, id, 'ifc_guid', b.globalId);
+    await identifierFromFile(db, 'building', id, 'ifc_guid', b.globalId);
     // The year the file says the building was built, when it reads as a year.
     if (b.yearOfConstruction !== null && b.yearOfConstruction >= 1000 && b.yearOfConstruction <= 2200) {
-      await attributeFromFile(db, id, 'year_built', Math.round(b.yearOfConstruction), options.sourceCode, scenarioId);
+      await attributeFromFile(db, 'building', id, 'year_built', Math.round(b.yearOfConstruction), options.sourceCode, scenarioId);
     }
     result.buildings.push({ id, globalId: b.globalId, footprint: b.footprint.source });
     buildingRows.set(b.globalId, id);
@@ -152,9 +152,9 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
         [id, room.name, floorId, room.height, options.sourceCode, JSON.stringify({ ifc: room.description })],
       );
       const spaceId = space.rows[0].id;
-      if (room.area !== null) await attributeFromFile(db, spaceId, 'floor_area', room.area, options.sourceCode, scenarioId);
+      if (room.area !== null) await attributeFromFile(db, 'space', spaceId, 'floor_area', room.area, options.sourceCode, scenarioId);
       if (room.globalId) {
-        await identifierFromFile(db, spaceId, 'ifc_guid', room.globalId);
+        await identifierFromFile(db, 'space', spaceId, 'ifc_guid', room.globalId);
         roomRows.set(room.globalId, spaceId);
       }
       result.counts.spaces += 1;
@@ -164,7 +164,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
         `select building.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
         [id, f.name, f.level, f.elevation, f.height, options.sourceCode, JSON.stringify({ ifc: f.description })],
       );
-      if (f.globalId) await identifierFromFile(db, floor.rows[0].id, 'ifc_guid', f.globalId);
+      if (f.globalId) await identifierFromFile(db, 'space', floor.rows[0].id, 'ifc_guid', f.globalId);
       result.counts.floors += 1;
       for (const room of f.rooms) await addRoom(room, floor.rows[0].id);
     }
@@ -178,7 +178,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
         skip(roof.description.entity, 'no roof face in its geometry');
         continue;
       }
-      if (roof.globalId) await identifierFromFile(db, surface, 'ifc_guid', roof.globalId);
+      if (roof.globalId) await identifierFromFile(db, 'surface', surface, 'ifc_guid', roof.globalId);
       result.counts.roofs += 1;
     }
   }
@@ -233,7 +233,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     const building = (p.building && buildingRows.get(p.building)) || null;
     const room = (p.room && roomRows.get(p.room)) || null;
     if (building || room) await db.query('select building.place_device($1, $2, $3)', [device.rows[0].id, building, room]);
-    if (p.globalId) await identifierFromFile(db, device.rows[0].id, 'ifc_guid', p.globalId);
+    if (p.globalId) await identifierFromFile(db, 'device', device.rows[0].id, 'ifc_guid', p.globalId);
     result.counts.devices += 1;
   }
   result.skipped.sort((p, q) => p.entity.localeCompare(q.entity) || p.reason.localeCompare(q.reason));

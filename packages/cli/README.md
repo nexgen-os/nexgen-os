@@ -74,7 +74,9 @@ release named first), `unknown_module`, `unknown_pack`,
 `schema_version_missing`, `history_missing`, `vocabulary_empty` and
 `module_table_detached` (a table of a module schema that carries
 `organisation_id` and reaches no table of the core but `organisations` by a
-path of foreign keys, decision 0042).
+path of foreign keys, decision 0042) and `attachments_orphaned` (attributes,
+identifiers, links, documents, series, runs or a module's attachments whose
+object no longer exists, listed by kind, decision 0044).
 
 `pack build` and `pack check` refuse with `not_a_checkout` (no
 `packs/schema/pack.1.json` under the root), `unknown_pack` and

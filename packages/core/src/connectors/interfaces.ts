@@ -91,7 +91,8 @@ export interface PlacesProvider {
 
 export interface SeriesTarget {
   organisationId: string;
-  /** The object the series is about: a site, a meter, a building, a zone. */
+  /** The object the series is about, by its kind and its id: a site, a meter, a building, a zone. */
+  objectKind: string;
   objectId: string;
   sourceCode: string;
   kind: 'measured' | 'simulated' | 'forecast' | 'setpoint';
@@ -119,7 +120,7 @@ export async function storeSeries(
   options: { issuedAt?: string } = {},
 ): Promise<{ seriesId: string; inserted: number }> {
   const stored = await store(db, {
-    object_id: target.objectId, quantity_code: series.quantity_code, kind: target.kind, value_kind: series.value_kind,
+    object_kind: target.objectKind, object_id: target.objectId, quantity_code: series.quantity_code, kind: target.kind, value_kind: series.value_kind,
     step: series.step, source_code: target.sourceCode, scenario_id: target.scenarioId ?? null, name: target.name ?? null,
   }, series.values, { unit: series.unit ?? null, issuedAt: options.issuedAt ?? null });
   return { seriesId: stored.seriesId, inserted: stored.changed };

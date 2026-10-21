@@ -83,11 +83,11 @@ export async function addFace(
 }
 
 /** An attribute read from a file, with the file as its source, through `set_attribute()`. */
-export async function attributeFromFile(db: Db, objectId: string, property: string, value: unknown, sourceCode: string, scenarioId: string | null): Promise<void> {
-  await db.query(`select set_attribute($1, $2, $3::jsonb, null, $4, null, $5)`, [objectId, property, JSON.stringify(value), sourceCode, scenarioId]);
+export async function attributeFromFile(db: Db, kind: string, objectId: string, property: string, value: unknown, sourceCode: string, scenarioId: string | null): Promise<void> {
+  await db.query(`select set_attribute($1, $2, $3, $4::jsonb, null, $5, null, $6)`, [kind, objectId, property, JSON.stringify(value), sourceCode, scenarioId]);
 }
 
 /** An identifier an object is known by in a file, through `add_identifier()`. */
-export async function identifierFromFile(db: Db, objectId: string, scheme: string, value: string): Promise<void> {
-  await db.query(`select add_identifier($1, $2, $3)`, [objectId, scheme, value]);
+export async function identifierFromFile(db: Db, kind: string, objectId: string, scheme: string, value: string): Promise<void> {
+  await db.query(`select add_identifier($1, $2, $3, $4)`, [kind, objectId, scheme, value]);
 }
