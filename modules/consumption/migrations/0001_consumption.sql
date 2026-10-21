@@ -1,18 +1,18 @@
--- Nexgen OS — module `consumption`: the consumption curve of a site.
+-- Nexgen OS — module `consumption`: the consumption curve of a participant.
 --
--- A site's consumption over time is known three ways: measured, by a meter
+-- A participant's consumption over time is known three ways: measured, by a meter
 -- or a data hub, as a series of the core; reconstructed, from the energy of
--- a bill spread over its period by a load profile and the site's activity
+-- a bill spread over its period by a load profile and the participant's activity
 -- hours; typical, from an annual consumption and a load profile. This
 -- module holds what the last two need — load profiles as data, the activity
--- hours of a site — and reads the curve of a site whichever way it is
+-- hours of a participant — and reads the curve of a participant whichever way it is
 -- known (`consumption.curve()`).
 --
 -- A reconstruction is a run of this module (`modules/consumption/src/curve.ts`):
--- its curve is a `simulated` series of the core on the site that belongs to
--- the run, with the source of the energy it was scaled to.
+-- its curve is a `simulated` series of the core on the participant the run is
+-- about, with the source of the energy it was scaled to.
 --
--- What a building or a site is used for is the core's vocabulary
+-- What a building or a place is used for is the core's vocabulary
 -- (`profiles`); a load profile says which use it describes. The module
 -- ships `flat`; an installation adds its own, each with its source.
 
@@ -31,7 +31,7 @@ create table consumption.load_profiles (
   -- The use it describes (an office, a school, a dwelling); null for any.
   use_code         text references profiles(code),
   -- day_shapes: the weight of each slot of the day, by day type, as given;
-  -- activity_hours: a slot weighs 1 while the site is open, `closed_ratio`
+  -- activity_hours: a slot weighs 1 while the participant is open, `closed_ratio`
   -- while it is closed, pro rata of the part of the slot that is open.
   method           text not null,
   -- 24 (hours), 48 (half-hours) or 96 (quarter-hours): the step of the
@@ -66,7 +66,7 @@ create table consumption.load_profiles (
 );
 
 comment on table consumption.load_profiles is
-  'How energy spreads over the slots of a day, the day types of a week and the months of a year: by day shapes, or by the site''s activity hours. Vocabulary: read by everyone signed in, written by migrations, modules and the installation.';
+  'How energy spreads over the slots of a day, the day types of a week and the months of a year: by day shapes, or by the participant''s activity hours. Vocabulary: read by everyone signed in, written by migrations, modules and the installation.';
 
 -- The shapes of a day are of the three day types and carry one weight per
 -- slot, none negative.
@@ -112,19 +112,19 @@ grant select on consumption.load_profiles to authenticated;
 grant select, insert, update, delete on consumption.load_profiles to service_role;
 
 -- ---------------------------------------------------------------------------
--- activity_hours — when a site is open, in its own time zone.
+-- activity_hours — when a participant is open, in its own time zone.
 -- ---------------------------------------------------------------------------
 
 create table consumption.activity_hours (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from what is open by `attach()`.
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A site, a building, a space: what is open, by its kind and its id.
+  -- A participant, a building, a space: what is open, by its kind and its id.
   object_kind      text not null references kinds(kind),
   object_id        uuid not null,
   -- ISO day of the week, 1 Monday to 7 Sunday.
   weekday          smallint not null,
-  -- Local wall-clock times of the site; `24:00` closes at midnight. Two
+  -- Local wall-clock times of the participant; `24:00` closes at midnight. Two
   -- rows on a day for a break at noon.
   opens            time not null,
   closes           time not null,
@@ -142,7 +142,7 @@ create table consumption.activity_hours (
 );
 
 comment on table consumption.activity_hours is
-  'When a site, a building or a space is open, day of the week by day of the week, in the local time of its site, over a period: what a reconstruction by activity hours reads.';
+  'When a participant, a building or a space is open, day of the week by day of the week, in the local time of its participant, over a period: what a reconstruction by activity hours reads.';
 
 create index activity_hours_object_idx on consumption.activity_hours (object_kind, object_id);
 create index activity_hours_organisation_idx on consumption.activity_hours (organisation_id);
@@ -154,16 +154,16 @@ create trigger activity_hours_attach
 call secure_table('consumption.activity_hours');
 
 -- ---------------------------------------------------------------------------
--- curve — the consumption of a site, whichever way it is known.
+-- curve — the consumption of a participant, whichever way it is known.
 -- ---------------------------------------------------------------------------
 
--- The series a site's consumption is read from over a period: of all the
--- `consumption_energy` series of the site or of anything on it holding
+-- The series a participant's consumption is read from over a period: of all the
+-- `consumption_energy` series of the participant or of anything of it holding
 -- values in the period, a measured one before a reconstruction of this
--- module, the one on the site itself before those of a meter or a building
--- on it, then the latest. Null when there is none. Reads under the
+-- module, the one on the participant itself before those of a meter, a device
+-- or a building of it, then the latest. Null when there is none. Reads under the
 -- caller's row level security.
-create or replace function consumption.curve_series(p_site_id uuid, p_from timestamptz, p_to timestamptz, p_scenario_id uuid default null)
+create or replace function consumption.curve_series(p_participant_id uuid, p_from timestamptz, p_to timestamptz, p_scenario_id uuid default null)
 returns uuid
 language sql
 stable
@@ -173,21 +173,21 @@ as $$
     from series se
     left join runs r on r.id = se.run_id
    where se.quantity_code = 'consumption_energy'
-     and (se.object_id = p_site_id or site_of(se.object_kind, se.object_id) = p_site_id)
+     and (se.object_id = p_participant_id or participant_of(se.object_kind, se.object_id) = p_participant_id)
      and se.scenario_id is not distinct from p_scenario_id
      and (se.kind = 'measured' or (se.kind = 'simulated' and r.module_code = 'consumption' and r.status = 'succeeded'))
      and exists (select 1 from series_values v where v.series_id = se.id and v.at >= p_from and v.at < p_to and v.quality <> 3)
-   order by se.kind = 'measured' desc, se.object_id = p_site_id desc, r.finished_at desc nulls last, se.created_at desc
+   order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, r.finished_at desc nulls last, se.created_at desc
    limit 1;
 $$;
 
 comment on function consumption.curve_series(uuid, timestamptz, timestamptz, uuid) is
-  'The series the consumption of a site is read from over a period: measured first, the one on the site itself before those of a meter or a building on it, otherwise the latest reconstruction of this module holding values in the period.';
+  'The series the consumption of a participant is read from over a period: measured first, the one on the participant itself before those of a meter, a device or a building of it, otherwise the latest reconstruction of this module holding values in the period.';
 
--- The consumption of a site over a period, on a step, as `resample()` gives
+-- The consumption of a participant over a period, on a step, as `resample()` gives
 -- it, with the series it was read from and whether it was measured or
--- simulated. Nothing when the site has no consumption series.
-create or replace function consumption.curve(p_site_id uuid, p_from timestamptz, p_to timestamptz, p_step interval, p_scenario_id uuid default null)
+-- simulated. Nothing when the participant has no consumption series.
+create or replace function consumption.curve(p_participant_id uuid, p_from timestamptz, p_to timestamptz, p_step interval, p_scenario_id uuid default null)
 returns table (bucket timestamptz, value double precision, series_id uuid, kind text)
 language sql
 stable
@@ -196,15 +196,15 @@ as $$
   select r.bucket, r.value, se.id, se.kind
     from series se
     cross join lateral resample(se.id, p_from, p_to, p_step) r
-   where se.id = consumption.curve_series(p_site_id, p_from, p_to, p_scenario_id);
+   where se.id = consumption.curve_series(p_participant_id, p_from, p_to, p_scenario_id);
 $$;
 
 comment on function consumption.curve(uuid, timestamptz, timestamptz, interval, uuid) is
-  'The consumption of a site over a period on a step, measured when it is, reconstructed otherwise, with the series read and its kind.';
+  'The consumption of a participant over a period on a step, measured when it is, reconstructed otherwise, with the series read and its kind.';
 
 grant execute on function consumption.curve_series(uuid, timestamptz, timestamptz, uuid) to authenticated, service_role;
 grant execute on function consumption.curve(uuid, timestamptz, timestamptz, interval, uuid) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('consumption', 'Consumption', '0.1.0', 'consumption', '0.2.0',
-        'The consumption curve of a site: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as a run, and the curve read measured first.');
+        'The consumption curve of a participant: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as a run, and the curve read measured first.');

@@ -18,7 +18,7 @@ set search_path = nexgen, public, extensions;
 insert into tasks.templates (code, published_by, country, project_kind, phase, role, name, description, documents, depends_on_code, position) values
   -- A photovoltaic installation on an existing roof.
   ('pv_roof_study',              'tasks', null, 'pv_roof', 'study',           'owner',         'Feasibility study: yield, self-consumption share, budget',
-   'The roof, its orientation and shading, the site''s consumption curve, the expected yield and the share self-consumed, the budget and the return.',
+   'The roof, its orientation and shading, the participant''s consumption curve, the expected yield and the share self-consumed, the budget and the return.',
    '{"Feasibility report"}', null, 10),
   ('pv_roof_design',             'tasks', null, 'pv_roof', 'design',          'installer',     'Structural check of the roof and electrical design',
    'The roof carries the arrays; the strings, the inverter and the protections follow the electrical installation standard of the country.',

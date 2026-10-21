@@ -1,7 +1,7 @@
 -- Nexgen OS — module `weather`: which weather a place reads.
 --
--- Weather belongs to a place, not to a device: two PV systems on one site
--- share it, a heat pump on the same site reads the same temperature. This
+-- Weather belongs to a place, not to a device: two PV systems of one
+-- participant share it, its heat pump reads the same temperature. This
 -- module holds what every other module needs to read it (decision 0012,
 -- "Weather: a module of its own, chosen per place"):
 --
@@ -9,12 +9,13 @@
 --            resolution, and on which grid
 --   rules    what a pack or an installation decides for a country or a
 --            region
---   points   the grid cell or the station a site reads; the weather series
---            hang on the point, once, whatever the number of sites in it
+--   points   the grid cell or the station a participant reads; the weather
+--            series hang on the point, once, whatever the number of
+--            participants in it
 --
--- A site is linked to its point through the core `links` table
+-- A participant is linked to its point through the core `links` table
 -- (`weather_from`), and may pin a model through the attribute
--- `weather_source`. `weather.source_for()` resolves the model for one site
+-- `weather_source`. `weather.source_for()` resolves the model for one participant
 -- and one purpose; `weather.point_for()` finds or creates the point. The
 -- database calls no weather API: connectors write the series on the points.
 
@@ -95,7 +96,7 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- points — the cell or the station a site reads.
+-- points — the cell or the station a participant reads.
 -- ---------------------------------------------------------------------------
 
 create table weather.points (
@@ -122,7 +123,7 @@ create table weather.points (
 );
 
 comment on table weather.points is
-  'A grid cell or a station of a weather model that sites read. Weather series hang on it once, whatever the number of sites linked to it (weather_from).';
+  'A grid cell or a station of a weather model that participants read. Weather series hang on it once, whatever the number of participants linked to it (weather_from).';
 
 -- One point per cell of a model in an organisation.
 create unique index points_one_per_cell on weather.points
@@ -190,35 +191,35 @@ insert into weather.models (source_code, purposes, resolution_m, grid_deg, prior
 
 insert into link_types (code, name, inverse_name, description, subject_kinds, object_kinds, published_by) values
   ('weather_from', 'reads its weather from', 'gives the weather of',
-   'The weather point (grid cell or station) a site reads its weather from.', '{site}', '{weather_point}', 'weather');
+   'The weather point (grid cell or station) a participant reads its weather from.', '{participant}', '{weather_point}', 'weather');
 
 insert into property_defs (code, name, description, datatype, applies_to, published_by) values
   ('weather_source', 'Weather source',
-   'The weather model (a source code of weather.models) a site or a project reads, pinned against the rules and the defaults.',
-   'text', '{site,project}', 'weather');
+   'The weather model (a source code of weather.models) a participant or a project reads, pinned against the rules and the defaults.',
+   'text', '{participant,project}', 'weather');
 
 -- ---------------------------------------------------------------------------
--- source_for — the model one site reads for one purpose.
+-- source_for — the model one participant reads for one purpose.
 -- ---------------------------------------------------------------------------
 
-create or replace function weather.source_for(p_site_id uuid, p_purpose text)
+create or replace function weather.source_for(p_participant_id uuid, p_purpose text)
 returns text
 language plpgsql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  s       sites%rowtype;
+  s       participants%rowtype;
   pinned  text;
   found_code text;
 begin
-  select * into s from sites where id = p_site_id;
+  select * into s from participants where id = p_participant_id;
   if not found then
-    raise exception 'site_not_found: %', p_site_id using errcode = 'no_data_found';
+    raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
 
-  -- (a) The site's own choice, when that model serves the purpose.
-  pinned := attributes_of(p_site_id, now(), s.scenario_id) ->> 'weather_source';
+  -- (a) The participant's own choice, when that model serves the purpose.
+  pinned := attributes_of(p_participant_id, now(), s.scenario_id) ->> 'weather_source';
   if pinned is not null then
     select m.source_code into found_code
       from weather.models m
@@ -243,7 +244,7 @@ begin
     return found_code;
   end if;
 
-  -- (c) The rule of the site's region, then of its whole country.
+  -- (c) The rule of the participant's region, then of its whole country.
   select r.source_code into found_code
     from weather.rules r
    where r.country = s.country
@@ -255,7 +256,7 @@ begin
     return found_code;
   end if;
 
-  -- (d) The preferred model that covers the site's country and region.
+  -- (d) The preferred model that covers the participant's country and region.
   select m.source_code into found_code
     from weather.models m
     join sources src on src.code = m.source_code
@@ -268,33 +269,33 @@ begin
     return found_code;
   end if;
 
-  raise exception 'weather_source_unknown: no weather model for % at site %', p_purpose, p_site_id
+  raise exception 'weather_source_unknown: no weather model for % at participant %', p_purpose, p_participant_id
     using errcode = 'no_data_found';
 end;
 $$;
 
 comment on function weather.source_for(uuid, text) is
-  'The weather model a site reads for a purpose: the site''s attribute weather_source, else an active connector of its organisation, else the rule of its region then its country, else the preferred model covering it. Named error weather_source_unknown when none.';
+  'The weather model a participant reads for a purpose: the participant''s attribute weather_source, else an active connector of its organisation, else the rule of its region then its country, else the preferred model covering it. Named error weather_source_unknown when none.';
 
 -- ---------------------------------------------------------------------------
--- point_for — the point one site reads for one model.
+-- point_for — the point one participant reads for one model.
 -- ---------------------------------------------------------------------------
 
-create or replace function weather.point_for(p_site_id uuid, p_source_code text)
+create or replace function weather.point_for(p_participant_id uuid, p_source_code text)
 returns uuid
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  s         sites%rowtype;
+  s         participants%rowtype;
   m         weather.models%rowtype;
   position  geometry;
   c         numeric[];
   point_id  uuid;
 begin
-  select * into s from sites where id = p_site_id;
+  select * into s from participants where id = p_participant_id;
   if not found then
-    raise exception 'site_not_found: %', p_site_id using errcode = 'no_data_found';
+    raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
   select * into m from weather.models where source_code = p_source_code;
   if not found then
@@ -303,11 +304,11 @@ begin
 
   position := ST_Centroid(s.geometry);
   if position is null then
-    raise exception 'site_without_position: %', p_site_id using errcode = 'invalid_parameter_value';
+    raise exception 'participant_without_position: %', p_participant_id using errcode = 'invalid_parameter_value';
   end if;
   c := weather.cell_of(position, m.grid_deg);
 
-  -- Points belong to reality: a site of a scenario reads the same weather.
+  -- Points belong to reality: a participant of a scenario reads the same weather.
   select p.id into point_id
     from weather.points p
    where p.organisation_id = s.organisation_id
@@ -328,12 +329,12 @@ begin
 
   if not exists (
     select 1 from links l
-     where l.subject_kind = 'site' and l.subject_id = p_site_id and l.type_code = 'weather_from'
+     where l.subject_kind = 'participant' and l.subject_id = p_participant_id and l.type_code = 'weather_from'
        and l.object_kind = 'weather_point' and l.object_id = point_id
        and (l.valid_to is null or l.valid_to > now())
   ) then
     insert into links (subject_kind, subject_id, type_code, object_kind, object_id, scenario_id)
-    values ('site', p_site_id, 'weather_from', 'weather_point', point_id, s.scenario_id);
+    values ('participant', p_participant_id, 'weather_from', 'weather_point', point_id, s.scenario_id);
   end if;
 
   return point_id;
@@ -341,7 +342,7 @@ end;
 $$;
 
 comment on function weather.point_for(uuid, text) is
-  'The weather point a site reads for a model: the organisation''s point in the model''s cell of the site''s position, created when missing, with the weather_from link. Named error site_without_position when the site has no geometry.';
+  'The weather point a participant reads for a model: the organisation''s point in the model''s cell of the participant''s position, created when missing, with the weather_from link. Named error participant_without_position when the participant has no geometry.';
 
 grant execute on function weather.cell_of(geometry, numeric), weather.source_for(uuid, text), weather.point_for(uuid, text)
   to authenticated, service_role;
@@ -349,4 +350,4 @@ grant execute on function weather.points_set_cell() to authenticated, service_ro
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('weather', 'Weather', '0.1.0', 'weather', '0.1.0',
-        'Weather points sites are linked to, weather models as sources, and the model each site reads, resolved from its attribute, its organisation, the pack and the coverage.');
+        'Weather points participants are linked to, weather models as sources, and the model each participant reads, resolved from its attribute, its organisation, the pack and the coverage.');

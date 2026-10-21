@@ -175,7 +175,7 @@ function defaultsBlock(values: PackDefault[], cc: string, by: string): string[] 
   );
   return [
     `-- defaults: ${values.length} value(s)${regional > 0 ? `, ${regional} of them for a region` : ''}. What parameter_of() answers`,
-    '-- for a site of the country when nothing nearer gives a value.',
+    '-- for a participant of the country when nothing nearer gives a value.',
     `do ${QUOTE}`,
     'declare',
     '  refused text;',

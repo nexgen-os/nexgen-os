@@ -7,9 +7,10 @@
 -- OpenSolar's module group, Orange Button's PVArray). The physics of a
 -- module or an inverter product is attached to its row of the core
 -- `device_directory`, in pvlib's parameter names. An array carries its own
--- azimuth and tilt; the roof face it sits on, when the `building` module
--- describes one, is a dated `placed_on` link (`building.place_array`). A far
--- horizon belongs to a site or a surface. A yield profile is a named set of modelling choices
+-- azimuth and tilt, and nothing else of where it is: the system belongs to
+-- a participant, whose point the yield reads (decision 0045). A far
+-- horizon belongs to a participant's place or to a surface the `building`
+-- module describes. A yield profile is a named set of modelling choices
 -- with an ordered list of losses, so that a run says what it was computed
 -- with.
 --
@@ -38,7 +39,7 @@ create table solar.pv_systems (
   kwp_dc                    numeric(12, 3),
   kva_ac                    numeric(12, 3),
   -- injection: everything produced goes to the grid; self_consumption: the
-  -- site uses what it can and injects the rest; off_grid: no connection.
+  -- participant uses what it can and injects the rest; off_grid: no connection.
   grid_connection           text,
   commissioned_on           date,
   -- Yearly loss of output from ageing, and the loss of the first months
@@ -280,22 +281,22 @@ call secure_table('solar.pv_arrays');
 
 insert into kinds (kind, table_name, published_by) values ('pv_array', 'solar.pv_arrays', 'solar');
 
--- The site of a PV array: its system's, a device of the core. `site_of()`
--- of the core hands this module its kind.
-create or replace function solar.site_of(p_kind text, p_id uuid)
+-- The participant of a PV array: its system's, a device of the core.
+-- `participant_of()` of the core hands this module its kind.
+create or replace function solar.participant_of(p_kind text, p_id uuid)
 returns uuid
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select d.site_id from solar.pv_arrays a join devices d on d.id = a.pv_system_id
+  select d.participant_id from solar.pv_arrays a join devices d on d.id = a.pv_system_id
    where p_kind = 'pv_array' and a.id = p_id;
 $$;
 
-comment on function solar.site_of(text, uuid) is
-  'The site a PV array is on: its system''s. What site_of() of the core answers for the kind of this module.';
+comment on function solar.participant_of(text, uuid) is
+  'The participant a PV array belongs to: its system''s. What participant_of() of the core answers for the kind of this module.';
 
-grant execute on function solar.site_of(text, uuid) to authenticated, service_role;
+grant execute on function solar.participant_of(text, uuid) to authenticated, service_role;
 
 -- DC power of a system: the sum of its arrays, or its own figure when it
 -- has none. In a scenario, the arrays of reality and of the scenario and
@@ -323,7 +324,7 @@ comment on function solar.system_kwp(uuid, uuid) is
   'Peak DC power of a PV system in kWp: the sum of its arrays, or the system''s own kwp_dc when it has no array.';
 
 -- ---------------------------------------------------------------------------
--- horizons — the far horizon of a site or a surface.
+-- horizons — the far horizon of a participant's place or of a surface.
 -- ---------------------------------------------------------------------------
 
 -- A profile is a non-empty array of [azimuth_deg, elevation_deg] pairs:
@@ -351,7 +352,7 @@ create table solar.horizons (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from the object by trigger (`attach`).
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A site or a surface, by its kind and its id.
+  -- A participant (its place) or a surface, by its kind and its id.
   object_kind      text not null references kinds(kind),
   object_id        uuid not null,
   profile          jsonb not null,
@@ -367,7 +368,7 @@ create table solar.horizons (
 );
 
 comment on table solar.horizons is
-  'The far horizon of a site or a surface: [azimuth_deg, elevation_deg] pairs, azimuth clockwise from true north. One per object and scenario; every yield run on it reads it.';
+  'The far horizon of a participant''s place or of a surface: [azimuth_deg, elevation_deg] pairs, azimuth clockwise from true north. One per object and scenario; every yield run on it reads it.';
 
 create unique index horizons_one_per_object on solar.horizons (object_kind, object_id, scenario_id) nulls not distinct;
 
@@ -377,8 +378,8 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
-  if new.object_kind not in ('site', 'surface') then
-    raise exception 'horizon_on_site_or_surface_only' using errcode = 'check_violation';
+  if new.object_kind not in ('participant', 'surface') then
+    raise exception 'horizon_on_participant_or_surface_only' using errcode = 'check_violation';
   end if;
   return new;
 end;

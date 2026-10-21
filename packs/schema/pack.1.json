@@ -92,7 +92,7 @@
       "type": "object",
       "required": ["currency", "languages", "time_zones", "region_level", "regions"],
       "additionalProperties": false,
-      "description": "Who the country is: what site creation, the geocoders and the applications read. Compiled into countries and regions.",
+      "description": "Who the country is: what joining a project, the geocoders and the applications read. Compiled into countries and regions.",
       "properties": {
         "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "description": "ISO 4217." },
         "languages": {
@@ -107,11 +107,11 @@
           "minItems": 1,
           "uniqueItems": true,
           "items": { "type": "string", "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$" },
-          "description": "IANA time zones; the first is the one a site of the country gets when its region names none."
+          "description": "IANA time zones; the first is the one a participant of the country gets when its region names none."
         },
         "region_level": {
           "$ref": "#/$defs/code",
-          "description": "The subdivision the pack's rows and sites use, in English: region, province, department, state."
+          "description": "The subdivision the pack's rows and places use, in English: region, province, department, state."
         },
         "postal_code_pattern": {
           "type": "string",
@@ -126,7 +126,7 @@
           "type": "array",
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/region" },
-          "description": "The subdivisions at region_level, and their parents when a row or a site names one. Every region a row of the pack names is declared here."
+          "description": "The subdivisions at region_level, and their parents when a row or a place names one. Every region a row of the pack names is declared here."
         }
       }
     },

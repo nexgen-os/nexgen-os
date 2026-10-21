@@ -120,7 +120,7 @@ on conflict (code) do update set
 where operators.published_by = excluded.published_by;
 
 -- defaults: 11 value(s), 3 of them for a region. What parameter_of() answers
--- for a site of the country when nothing nearer gives a value.
+-- for a participant of the country when nothing nearer gives a value.
 do $seed$
 declare
   refused text;

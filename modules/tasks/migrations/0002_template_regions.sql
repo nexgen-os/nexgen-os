@@ -4,9 +4,9 @@
 -- Wallonia each set their own permits, regulator and rules on energy
 -- sharing. A template carries its regions (ISO 3166-2) as a rule does; no
 -- region means the whole country. `tasks.plan()` reads the regions of the
--- sites taking part in the project and keeps the templates of those
--- regions; a regional template on a project none of whose sites says its
--- region is skipped and said so (`region_missing`), never guessed.
+-- participants taking part in the project and keeps the templates of those
+-- regions; a regional template on a project none of whose participants
+-- says its region is skipped and said so (`region_missing`), never guessed.
 
 set search_path = nexgen, public, extensions;
 
@@ -38,11 +38,10 @@ begin
     raise exception 'project_not_found: %', p_project_id using errcode = 'no_data_found';
   end if;
 
-  -- The regions of a project are those of the sites taking part in it.
-  select coalesce(array_agg(distinct s.region order by s.region), '{}') into v_regions
+  -- The regions of a project are those of the participants taking part in it.
+  select coalesce(array_agg(distinct pa.region order by pa.region), '{}') into v_regions
     from participants pa
-    join sites s on s.id = pa.site_id
-   where pa.project_id = p_project_id and s.region is not null;
+   where pa.project_id = p_project_id and pa.region is not null;
 
   for t in
     select * from tasks.templates tp
@@ -115,6 +114,6 @@ end;
 $$;
 
 comment on function tasks.plan(uuid, uuid) is
-  'Creates the tasks of a project from the templates that match its country, the regions of its sites, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
+  'Creates the tasks of a project from the templates that match its country, the regions of its participants, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
 
 grant execute on function tasks.plan(uuid, uuid) to authenticated, service_role;
