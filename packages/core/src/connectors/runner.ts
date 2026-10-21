@@ -1,7 +1,9 @@
-// The runner of external engines (decision 0013).
+// The runner of the program connectors (decision 0013).
 //
-// An engine is a program in any language that reads one request as JSON on
-// stdin and answers one result as JSON on stdout; stderr is its log. The
+// A program connector is a program in any language that reads one request
+// as JSON on stdin and answers one result as JSON on stdout; stderr is its
+// log. It is the engine of the runs it computes, and the contract names it
+// by that word (`engine`, `NEXGEN_ENGINE_<NAME>`, the `engine_*` refusals). The
 // runner sends the envelope, waits for the answer, checks the contract and
 // turns every failure into a named error. It never reads the database and
 // never guesses a command: the caller gives it, or the environment variable
@@ -126,7 +128,7 @@ export async function describeEngine(spec: EngineSpec): Promise<EngineDescriptio
 }
 
 function installHint(spec: EngineSpec): string {
-  const how = spec.install ?? `install it as engines/${spec.name}/README.md says`;
+  const how = spec.install ?? `install it as packages/connectors/${spec.name}/README.md says`;
   return `${how}, then give its command or set ${envName(spec.name)}`;
 }
 

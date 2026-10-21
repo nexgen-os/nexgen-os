@@ -1,14 +1,14 @@
 // The `pv_yield` request kind, as a caller in TypeScript builds it and reads
-// its answer (engines/pvlib/README.md). Any engine that accepts `pv_yield`
+// its answer (packages/connectors/pvlib/README.md). Any engine that accepts `pv_yield`
 // answers in this shape; pvlib is the first.
 
-import type { CollectedSeries } from '../connectors.js';
+import type { CollectedSeries } from './interfaces.js';
 import type { EngineSpec } from './runner.js';
 
 /** What `runEngine` needs to start the pvlib engine; the command comes from the caller or `NEXGEN_ENGINE_PVLIB`. */
 export const PVLIB_ENGINE: Pick<EngineSpec, 'name' | 'install'> = {
   name: 'pvlib',
-  install: 'python3 -m venv .venv-pvlib && .venv-pvlib/bin/pip install -e engines/pvlib, NEXGEN_ENGINE_PVLIB=".venv-pvlib/bin/python -m nexgen_pvlib"',
+  install: 'python3 -m venv .venv-pvlib && .venv-pvlib/bin/pip install -e packages/connectors/pvlib, NEXGEN_ENGINE_PVLIB=".venv-pvlib/bin/python -m nexgen_pvlib"',
 };
 
 /** A series sent to or returned by an engine: a `CollectedSeries`, with its unit and, when it belongs to one array, the array's name. */

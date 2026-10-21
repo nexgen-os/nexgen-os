@@ -5,7 +5,7 @@ installation and attaches what you know to it, with its source. It reads
 the way the model is read (`attributes_of`, `resample` and the series
 reads, `site_of`, `country_of`), writes values the one way they are
 written (`store`), and computes nothing: a figure is a run of a module, and
-an engine (`engines/`) is where a computation of your own goes. Requires
+a program connector (`packages/connectors/`) is where a computation of your own goes. Requires
 Python 3.9 or later and [psycopg 3](https://www.psycopg.org/psycopg3/);
 Arrow, pandas and Polars are optional extras.
 

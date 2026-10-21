@@ -10,7 +10,7 @@ run. Decision [0011](../../docs/decisions/0011-external-data.md).
 A connector comes in one of two kinds:
 
 - **a client of an external API**, in TypeScript: a library that implements
-  one of the interfaces of [`@nexgen-os/core`](../core/src/connectors.ts) and
+  one of the interfaces of [`@nexgen-os/core`](../core/src/connectors/interfaces.ts) and
   answers in the core's terms, so that what it brings back lands on ordinary
   objects, attributes, documents and series, each carrying its source;
 - **a program in any language** that reads one JSON request on stdin and
@@ -147,7 +147,7 @@ answers, and to know the engine string before a run.
 
 **Time and series.** Every stamp is ISO 8601 with its offset and dates the
 **start** of its interval, as everywhere in the core. A series is the
-`CollectedSeries` of [`packages/core/src/connectors.ts`](../core/src/connectors.ts), with
+`CollectedSeries` of [`packages/core/src/connectors/interfaces.ts`](../core/src/connectors/interfaces.ts), with
 its unit and, when it belongs to one part of the request, that part's name:
 
 ```json

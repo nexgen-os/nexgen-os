@@ -39,8 +39,8 @@ is specific to a trade lives here, one folder and one schema per module.
 
 ## Modules
 
-A module computes in TypeScript or hands a computation to an external
-engine (`engines/`, decision [0013](../docs/decisions/0013-external-engines.md)):
+A module computes in TypeScript or hands a computation to a program
+connector (`packages/connectors/`, decision [0013](../docs/decisions/0013-external-engines.md)):
 a program in any language, JSON in and out, that never reads the database.
 
 What an owner publishes is the core's, not a module's: a frozen document and a schema of its own

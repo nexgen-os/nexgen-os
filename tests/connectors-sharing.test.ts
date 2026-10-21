@@ -1,5 +1,5 @@
 // The `energy_sharing` engine contract: the example engine
-// (engines/sharing-example, pure Python) on a day of three participants
+// (packages/connectors/sharing-example, pure Python) on a day of three participants
 // whose result is written by hand in JSON, its named refusals, and a run of
 // the `community` module on the energy community of example 3, its key an
 // attribute of the project, recorded with the engine's version and stored
@@ -19,14 +19,14 @@ const PLANT = '00000000-0000-4000-8000-000300000054';
 const GROUP = '00000000-0000-4000-8000-000300000055';
 
 // The engine from its folder, with the Python on the path: no installation needed.
-const folder = join(repoRoot, 'engines', 'sharing-example');
+const folder = join(repoRoot, 'packages', 'connectors', 'sharing-example');
 const spec: EngineSpec = {
   ...SHARING_EXAMPLE_ENGINE,
   command: ['python3', '-c', `import sys; sys.path.insert(0, ${JSON.stringify(folder)}); from nexgen_sharing_example.run import main; sys.exit(main())`],
 };
 const installed = await describeEngine(spec).catch(() => null);
 const skipped = installed ? '' : ' (skipped: python3 is not on the path)';
-const fake: EngineSpec = { name: 'fake', command: [process.execPath, join(repoRoot, 'tests', 'fixtures', 'engines', 'fake.mjs'), 'echo'] };
+const fake: EngineSpec = { name: 'fake', command: [process.execPath, join(repoRoot, 'tests', 'fixtures', 'connectors', 'fake.mjs'), 'echo'] };
 
 interface Fixture {
   request: EnergySharingRequest;
@@ -36,7 +36,7 @@ interface Fixture {
     steps: Record<string, Record<string, Record<string, number>>>;
   };
 }
-const fixture = JSON.parse(await readFile(join(repoRoot, 'tests', 'fixtures', 'engines', 'sharing-day.json'), 'utf8')) as Fixture;
+const fixture = JSON.parse(await readFile(join(repoRoot, 'tests', 'fixtures', 'connectors', 'sharing-day.json'), 'utf8')) as Fixture;
 const share = (request: EnergySharingRequest) => runEngine<EnergySharingRequest, EnergySharingResult>(spec, request);
 const changed = (f: (r: EnergySharingRequest) => void): EnergySharingRequest => {
   const r = structuredClone(fixture.request);

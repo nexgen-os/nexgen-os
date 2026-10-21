@@ -10,7 +10,7 @@
  */
 import { WEATHER_QUANTITIES, type WeatherFile, type WeatherFileLocation, type WeatherFileWarning, type WeatherSeries, type WeatherYear } from '@nexgen-os/weather-files';
 import type { Db } from '../db.js';
-import { storeSeries } from '../connectors.js';
+import { storeSeries } from '../connectors/interfaces.js';
 
 const HOUR_MS = 3_600_000;
 

@@ -90,7 +90,7 @@ npx nexgen-os doctor                    # what is wrong, by name
 ```
 
 Engines are optional: a yield computed by pvlib needs Python and
-`engines/pvlib` installed, as [`engines/README.md`](engines/README.md) says.
+`packages/connectors/pvlib` installed, as [`packages/connectors/README.md`](packages/connectors/README.md#programs-in-any-language) says.
 
 From Python, the client reads the model and attaches with a source:
 [`packages/python/README.md`](packages/python/README.md).
@@ -188,15 +188,14 @@ core/                  the core: migrations in the schema `nexgen` (`public` sta
 modules/               one Postgres schema per module (billing, grid, community, consumption, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
-packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue
+packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
 packages/formats/      one MIT package per file format (homeassistant, cityjson, geojson, ifc, panond, parquet, weather-files)
-packages/connectors/   one MIT package per outside service: weather (open-meteo, pvgis) and geocoders (nominatim, photon, ban, geopunt, urbis, icar)
+packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis) and geocoders (nominatim, photon, ban, geopunt, urbis, icar), and the programs in other languages, JSON in and out (pvlib, optional)
 packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
-engines/               external computations in other languages, JSON in and out (pvlib, optional), MIT
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  model, decisions, how a release is cut
 scripts/               hygiene, and what a release publishes
-tests/                 the core's tests, the examples, the modules, the packages, the packs, the engines
+tests/                 the core's tests, the examples, the modules, the packages, the packs, the connectors
 ```
 
 ## Help, and the platform built on it
@@ -225,7 +224,7 @@ interval. The [`contracts`](modules/README.md) module gives under which
 contract and at which price: a supply, an injection, a physical or virtual
 PPA (power purchase agreement), an internal community tariff, each with its
 price signals. A settlement engine
-([`engines/README.md`](engines/README.md)) turns both into settlement lines:
+([`packages/connectors/README.md`](packages/connectors/README.md#programs-in-any-language)) turns both into settlement lines:
 over each interval, the energy, the price and who pays whom.
 
 That is where Nexgen OS stops. It keeps no invoice and no ledger: a

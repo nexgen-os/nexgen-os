@@ -27,8 +27,8 @@ jobs:
       - run: npm run build
       - run: npm test
 
-  engine-pvlib:
-    name: engine-pvlib
+  connector-pvlib:
+    name: connector-pvlib
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,9 +40,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: pip install -e engines/pvlib
+      - run: pip install -e packages/connectors/pvlib
       - run: echo '{"engine":"pvlib","contract":1,"request":{"describe":true}}' | python -m nexgen_pvlib
-      - run: npx vitest run tests/engines-pvlib.test.ts tests/engines-runner.test.ts
+      - run: npx vitest run tests/connectors-pvlib.test.ts tests/connectors-runner.test.ts
         env:
           NEXGEN_ENGINE_PVLIB: python -m nexgen_pvlib
 

@@ -27,7 +27,7 @@ The module keeps the model and an engine shares:
   metered behind each one (its meters through `participant_meters()`)
   resampled on one grid of steps, and hands them with the key, the
   participants' attributes and the caller's `rules` to an engine of the
-  `energy_sharing` kind ([engines/README.md](../../engines/README.md));
+  `energy_sharing` kind ([packages/connectors/README.md](../../packages/connectors/README.md#programs-in-any-language));
 - the answer is a run of this module on the project, its engine and version
   recorded: for each participant, `shared_offtake_energy`,
   `shared_injection_energy` and what is left of its `offtake_energy` and
@@ -50,7 +50,7 @@ Refusals before an engine starts: `project_not_found`, `period_empty`,
 `key_outside_period`, `key_invalid`, `engine_kind_unsupported`,
 `participants_missing`, `series_incomplete`; then the engine's own
 (`key_unknown`, `rule_unknown`…), passed on as they come.
-[`engines/sharing-example`](../../engines/sharing-example/README.md) shares
+[`packages/connectors/sharing-example`](../../packages/connectors/sharing-example/README.md) shares
 in proportion to offtake and is meant to be copied: the key a community
 applies is its engine, never a function of this module.
 

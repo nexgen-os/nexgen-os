@@ -62,7 +62,7 @@ the MCP server and the Nexgen application reading a Nexgen OS database
   has to move, as Ekwo's does.
 - [x] Continuous integration: the test suite on three Node versions, a
   hygiene check (no country literal in code, no secret, English only), the
-  DCO check, and `engine-pvlib` (the pvlib engine on Python 3.12, compared
+  DCO check, and `connector-pvlib` (the pvlib connector on Python 3.12, compared
   with `modules/solar/src/pvwatts.ts`).
 
 ### Before the first users

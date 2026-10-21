@@ -12,7 +12,7 @@ import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 
-const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/engines/fake.mjs`, 'pv_yield'] };
+const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/connectors/fake.mjs`, 'pv_yield'] };
 
 let db: PGlite;
 let org: string;
@@ -114,6 +114,6 @@ describe('a yield run computed by an engine', () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, engine: fake })).rejects.toThrow(/^profile_required/);
     await expect(
       runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, engine: { name: 'pvlib', command: ['/nonexistent/python'] } }, { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) }),
-    ).rejects.toThrow(/^engine_not_found: pvlib could not be started .*pip install -e engines\/pvlib/);
+    ).rejects.toThrow(/^engine_not_found: pvlib could not be started .*pip install -e packages\/connectors\/pvlib/);
   });
 });

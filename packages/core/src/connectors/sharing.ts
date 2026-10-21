@@ -1,10 +1,10 @@
-// The `energy_sharing` request kind (engines/README.md): the participants of
+// The `energy_sharing` request kind (packages/connectors/README.md): the participants of
 // a sharing with their offtake and injection on one grid of steps, an
 // allocation key as data, and the rules a country or a project sets, passed
 // as they are; back, what each participant received from the sharing and
 // gave to it, step by step, and what is left for the grid. Any engine that
 // accepts `energy_sharing` answers in this shape; how it shares is its own:
-// the example engine (engines/sharing-example) shares in proportion to
+// the example engine (packages/connectors/sharing-example) shares in proportion to
 // offtake, and is meant to be copied and replaced.
 
 import type { EngineSpec } from './runner.js';
@@ -15,7 +15,7 @@ export type { EngineSeries };
 /** What `runEngine` needs to start the example engine; the command comes from the caller or `NEXGEN_ENGINE_SHARING_EXAMPLE`. */
 export const SHARING_EXAMPLE_ENGINE: Pick<EngineSpec, 'name' | 'install'> = {
   name: 'sharing_example',
-  install: 'pip install -e engines/sharing-example, NEXGEN_ENGINE_SHARING_EXAMPLE="python3 -m nexgen_sharing_example"',
+  install: 'pip install -e packages/connectors/sharing-example, NEXGEN_ENGINE_SHARING_EXAMPLE="python3 -m nexgen_sharing_example"',
 };
 
 /** The quantities a participant sends: its metered `offtake_energy` and `injection_energy`, kWh per step. */

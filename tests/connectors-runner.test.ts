@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { describeEngine, engineCommand, runEngine } from '@nexgen-os/core';
 import { repoRoot } from './helpers/db.js';
 
-const fake = (mode: string) => [process.execPath, `${repoRoot}/tests/fixtures/engines/fake.mjs`, mode];
+const fake = (mode: string) => [process.execPath, `${repoRoot}/tests/fixtures/connectors/fake.mjs`, mode];
 
 describe('the engine runner', () => {
   it('sends the envelope on stdin and returns the version, the result and the log', async () => {
@@ -51,7 +51,7 @@ describe('the engine runner', () => {
     } finally {
       if (env !== undefined) process.env.NEXGEN_ENGINE_NOWHERE = env;
     }
-    await expect(runEngine({ name: 'nowhere', command: ['/nonexistent/engine'] }, {})).rejects.toThrow(/^engine_not_found: nowhere could not be started \(\/nonexistent\/engine: ENOENT\); install it as engines\/nowhere\/README.md says/);
+    await expect(runEngine({ name: 'nowhere', command: ['/nonexistent/engine'] }, {})).rejects.toThrow(/^engine_not_found: nowhere could not be started \(\/nonexistent\/engine: ENOENT\); install it as packages\/connectors\/nowhere\/README.md says/);
   });
 
   it('reads the command from NEXGEN_ENGINE_<NAME>, as words or as a JSON array; the caller\'s command wins', () => {

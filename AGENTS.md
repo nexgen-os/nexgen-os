@@ -45,7 +45,7 @@ has the rest.
 
 Engines are optional: everything installs and runs without them. A yield
 computed by pvlib needs Python and the `pvlib` engine on the machine that
-runs it ([`engines/README.md`](engines/README.md)); check it with
+runs it ([`packages/connectors/README.md`](packages/connectors/README.md#programs-in-any-language)); check it with
 `echo '{"engine":"pvlib","contract":1,"request":{"describe":true}}' | $NEXGEN_ENGINE_PVLIB`,
 and report `engine_not_found` with the install line it prints.
 
@@ -120,8 +120,8 @@ Read `CONTRIBUTING.md` (DCO sign-off, English, no country in code),
 are as they are, including the ones taken back). Run only the test file you
 touch while you work, the whole suite once at the end; never two suites at
 once. Commits and pull requests are made in the project's name.
-A third party's name goes in `packages/connectors/` (its data), `engines/`
-(its computation) or `packages/formats/` (its files), and a published method keeps the
+A third party's name goes in `packages/connectors/` (its data and its
+computation) or `packages/formats/` (its files), and a published method keeps the
 name the literature cites it by; every function of ours says what it
 computes and takes the model as data (`profile`, `key`, `model`), and no
 name carries a country or a product ([0016](docs/decisions/0016-naming-third-party-methods.md)).

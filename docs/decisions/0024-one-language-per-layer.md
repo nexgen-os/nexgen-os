@@ -26,24 +26,25 @@ format libraries, the connectors, the core client and the MCP server are
 TypeScript, shipped as packages; one language to maintain, review and
 standardise.
 
-**Any other language is an engine.** A computation in Python, R or Julia
-runs behind the engine contract, one JSON request in and one JSON result
-out ([0013](0013-external-engines.md)), and never reads or writes the
-database.
+**Any other language is a connector.** A computation in Python, R or Julia
+is a program connector in `packages/connectors/`, behind the contract of
+[0013](0013-external-engines.md): one JSON request in and one JSON result
+out, never a read or a write of the database. What it answers is the
+engine of a run.
 
 **Python is the first-class client of the scientist.** The Python client
 reads and writes through the same SQL functions as every other client, with
-dataframe readers as optional extras; the engines are first-class. Neither
+dataframe readers as optional extras; the program connectors are first-class. Neither
 carries business logic.
 
 **Nothing is implemented twice.** A rule exists once, in SQL; a computation
-exists once, in one module or one engine.
+exists once, in one module or one program connector.
 
 ## What it forbids
 
 - Business logic in the Python client.
-- A second engine in TypeScript for a computation an engine already does,
-  or the reverse.
+- A second implementation in TypeScript of what a program connector already
+  computes, or the reverse.
 - A tool of the toolchain in another language than TypeScript.
 - A rule reimplemented in a client because its function was not called.
 
@@ -56,7 +57,7 @@ statement of which one is the reference.
 
 - Inherits the principle of Ekwo OS that one rule exists once, and 0056
   (*The command line computes no amount*).
-- [0013](0013-external-engines.md) — the engine contract.
+- [0013](0013-external-engines.md) — the contract of the program connectors.
 - [0016](0016-naming-third-party-methods.md) — where a third party's name
   goes.
 - [0035](0035-a-format-library-touches-no-database.md) — what a format

@@ -37,6 +37,22 @@ new path:
 - `modules/ekwo` → `modules/billing`: schema `billing`, tables
   `billing.companies` and `billing.contacts`, module code `billing`.
 - `site/` leaves the repository; `site/README.md` points to the new home.
+- `engines/pvlib`, `engines/settlement-example`, `engines/sharing-example` →
+  `packages/connectors/pvlib`, `packages/connectors/settlement-example`,
+  `packages/connectors/sharing-example`: code that reaches outside is a
+  connector, whatever language it runs (decision 0013, rewritten). The root
+  `engines/` folder is gone; its README is the "Programs in any language"
+  section of `packages/connectors/README.md`, and each program keeps its own
+  `LICENSE`. The contract does not change: the envelope's `engine`,
+  `runEngine()`, `NEXGEN_ENGINE_<NAME>` and the `engine_*` refusals keep the
+  word, which names what computed a run.
+- `packages/core/src/engines/*` → `packages/core/src/connectors/*` (the
+  runner and the `pv_yield`, `settlement` and `energy_sharing` kinds), and
+  `packages/core/src/connectors.ts` → `packages/core/src/connectors/interfaces.ts`;
+  `@nexgen-os/core` exports the same names. `tests/engines-*.test.ts` →
+  `tests/connectors-*.test.ts`, `tests/fixtures/engines` →
+  `tests/fixtures/connectors`, and the CI job `engine-pvlib` →
+  `connector-pvlib`.
 
 ### Changed
 

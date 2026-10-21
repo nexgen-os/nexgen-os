@@ -1,7 +1,7 @@
 # `sharing_example` — an energy_sharing engine to copy
 
 An engine of the `energy_sharing` kind ([`../README.md`](../README.md),
-[`sharing.ts`](../../packages/core/src/engines/sharing.ts)) in pure Python, without a
+[`sharing.ts`](../../packages/core/src/connectors/sharing.ts)) in pure Python, without a
 dependency: the energy the participants inject is shared among them in
 proportion to their offtake. It is an example, meant to be copied and
 replaced by the key a community actually applies; `nexgen-os init` does
@@ -14,7 +14,7 @@ each one injecting gives its share in proportion to its injection; what is
 left is offtake from its supplier and injection to the grid.
 
 ```bash
-pip install -e engines/sharing-example
+pip install -e packages/connectors/sharing-example
 export NEXGEN_ENGINE_SHARING_EXAMPLE="python3 -m nexgen_sharing_example"
 echo '{"engine":"sharing_example","contract":1,"request":{"describe":true}}' | $NEXGEN_ENGINE_SHARING_EXAMPLE
 ```

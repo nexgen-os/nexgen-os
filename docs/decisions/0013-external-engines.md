@@ -1,6 +1,6 @@
-# 0013 — An engine reads one request and answers one result
+# 0013 — A program connector reads one request and answers one result
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026
+> Status: accepted · 13/10/2026, rewritten 19/10/2026 and 21/10/2026
 
 ## Context
 
@@ -16,14 +16,22 @@ talks to an engine.
 
 ## Decision
 
-**An engine is a program that reads one request as JSON on stdin and
-answers one result as JSON on stdout.** stderr is its log; exit code 0 with
+**A computation in another language is a connector: a program that reads
+one request as JSON on stdin and answers one result as JSON on stdout.**
+It lives in `packages/connectors/<name>/`, beside the clients of the
+external APIs: code that reaches outside the database is a connector,
+whatever language it runs ([0011](0011-external-data.md)).
+**The word "engine" means what computed a run** (`runs.engine`,
+`engine_version`): PVGIS, `pvwatts.ts` or a program connector. The
+contract names the program by that word, since its answer is a run's
+engine: the envelope's `engine`, `runEngine()`, `describeEngine()`,
+`NEXGEN_ENGINE_<NAME>` and the `engine_*` refusals keep it. stderr is its log; exit code 0 with
 the answer, or exit code 1 with `{ "error": "<named_error>", "detail": "…" }`.
 The envelope carries the engine's name and the contract version
 (`{ "engine", "contract": 1, "request" }` → `{ "engine", "version",
 "contract": 1, "result", "log" }`); `{ "describe": true }` answers the
 engine's version, its dependencies and the request kinds it accepts. The
-full contract is [`engines/README.md`](../../engines/README.md).
+full contract is in [`packages/connectors/README.md`](../../packages/connectors/README.md#programs-in-any-language).
 
 - **Series are the connectors' series.** An engine reads and answers series
   in the shape the connectors collect (ISO 8601 with offsets, values dated
@@ -50,8 +58,8 @@ chooses the inputs, the models and the losses; the engine computes. The
 module builds the request from its rows, stores the answer as `simulated`
 series, and the run records the engine string and the profile apart.
 
-**A new engine changes nothing in the runner**: a program in its own folder,
-a request kind written down in its README, the types of that kind, and the
+**A new program changes nothing in the runner**: a program in its own folder
+of `packages/connectors/`, a request kind written down in its README, the types of that kind, and the
 module that builds the request.
 
 ## What it forbids
@@ -66,7 +74,10 @@ module that builds the request.
 ## What it replaced
 
 Bindings or rewrites as the only ways to reach a scientific library, and a
-yield whose engine was the edge function that happened to compute it.
+yield whose engine was the edge function that happened to compute it. Until
+21/10/2026 the programs had a root folder of their own, `engines/`, beside
+`packages/connectors/`: two words and two places for code that reaches
+outside, folded into one.
 
 ## See also
 
@@ -74,4 +85,5 @@ yield whose engine was the edge function that happened to compute it.
   translated: one engine contract, several request kinds.
 - [0004](0004-deterministic-runs.md), [0012](0012-solar-module.md),
   [0016](0016-naming-third-party-methods.md).
-- `packages/core/src/engines/runner.ts`, `engines/pvlib`, `tests/engines-pvlib.test.ts`.
+- `packages/core/src/connectors/runner.ts`, `packages/connectors/pvlib`, `tests/connectors-pvlib.test.ts`,
+  `tests/connectors-runner.test.ts`.

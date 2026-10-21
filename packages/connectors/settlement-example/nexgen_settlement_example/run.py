@@ -1,6 +1,6 @@
 """An example settlement engine: a fixed price times the volume a contract names.
 
-Contract 1 (engines/README.md): the envelope arrives on stdin, the answer
+Contract 1 (packages/connectors/README.md): the envelope arrives on stdin, the answer
 leaves on stdout, stderr is a log. A refusal is `{"error": name, "detail":
 text}` on stdout with exit code 1. Pure Python, no dependency: nothing here
 reads a database, calls the network or writes a file.

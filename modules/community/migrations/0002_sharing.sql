@@ -6,7 +6,7 @@
 -- source (the general assembly that voted it); what a key reads about one
 -- participant (a fixed share, a rank) is an attribute of the participant.
 -- Nothing here interprets a key: an engine of the `energy_sharing` kind
--- does (engines/README.md, decision 0013), and its answer comes back as a
+-- does (packages/connectors/README.md, decision 0013), and its answer comes back as a
 -- run of this module whose series are on the participants
 -- (`modules/community/src/sharing.ts`).
 

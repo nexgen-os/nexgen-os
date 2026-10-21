@@ -156,7 +156,7 @@ the run records `bifacial: 'not modelled'` for each bifacial array.
 A profile and an engine are two axes. The profile chooses the weather,
 the models and the losses; the engine computes them. With `engine: { name:
 'pvlib', command? }` (decision [0013](../../docs/decisions/0013-external-engines.md),
-[`engines/pvlib`](../../engines/pvlib/README.md)), `runYield` runs any
+[`packages/connectors/pvlib`](../../packages/connectors/pvlib/README.md)), `runYield` runs any
 profile whose models the engine has, and needs `profileCode`
 (`profile_required` otherwise) and the site's time zone:
 

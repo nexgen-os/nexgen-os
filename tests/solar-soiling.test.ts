@@ -13,7 +13,7 @@ import { runYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 
-const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/engines/fake.mjs`, 'pv_yield'] };
+const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/connectors/fake.mjs`, 'pv_yield'] };
 
 describe('withSoiling', () => {
   const pvsyst = [{ code: 'iam', pct: null }, { code: 'soiling', pct: 2 }, { code: 'lid', pct: 2 }];

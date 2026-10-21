@@ -1,4 +1,4 @@
-// The pvlib engine (engines/pvlib), when it is installed: the same roof
+// The pvlib engine (packages/connectors/pvlib), when it is installed: the same roof
 // computed by modules/solar/src/pvwatts.ts and by pvlib with the same model
 // choices, day by day; pvlib's own transposition against the source's; its
 // named refusals; and a yield run through it. Without the engine, every test

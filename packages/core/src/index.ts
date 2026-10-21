@@ -10,9 +10,9 @@ export { orientation, polygonWkt, closed, type Point as Vertex } from './geometr
 export * from './address.js';
 export * from './series.js';
 export * from './time.js';
-export * from './connectors.js';
-export * from './engines/runner.js';
-export * from './engines/pvlib.js';
-export * from './engines/settlement.js';
-export * from './engines/sharing.js';
+export * from './connectors/interfaces.js';
+export * from './connectors/runner.js';
+export * from './connectors/pvlib.js';
+export * from './connectors/settlement.js';
+export * from './connectors/sharing.js';
 export * from './files/index.js';

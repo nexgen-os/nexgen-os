@@ -35,7 +35,7 @@ connection. `importProduct()` of the `solar` module
 adds the product to `device_directory`, or gives its physics to the one the
 directory already knows by manufacturer and model, and refuses physics
 given twice (`already_imported`). A module imported this way runs as it is
-through the pvlib engine (`engines/pvlib`, DC model `pvsyst`) once an
+through the pvlib engine (`packages/connectors/pvlib`, DC model `pvsyst`) once an
 array names it.
 
 ## The diode currents

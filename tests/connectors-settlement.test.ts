@@ -1,5 +1,5 @@
 // The `settlement` engine contract: the example engine
-// (engines/settlement-example, pure Python) on six hours of a cold store
+// (packages/connectors/settlement-example, pure Python) on six hours of a cold store
 // whose lines are worked out by hand in JSON, and its named refusals.
 // Without Python, the engine's tests are skipped and say so.
 import { readFile } from 'node:fs/promises';
@@ -10,7 +10,7 @@ import { describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
 import { repoRoot } from './helpers/db.js';
 
 // The engine from its folder, with the Python on the path: no installation needed.
-const folder = join(repoRoot, 'engines', 'settlement-example');
+const folder = join(repoRoot, 'packages', 'connectors', 'settlement-example');
 const spec: EngineSpec = {
   ...SETTLEMENT_EXAMPLE_ENGINE,
   command: ['python3', '-c', `import sys; sys.path.insert(0, ${JSON.stringify(folder)}); from nexgen_settlement_example.run import main; sys.exit(main())`],
@@ -22,7 +22,7 @@ interface Fixture {
   request: SettlementRequest;
   expected: { lines: Omit<SettlementLine, 'seller' | 'buyer'>[]; contracts: SettlementResult['contracts'] };
 }
-const fixture = JSON.parse(await readFile(join(repoRoot, 'tests', 'fixtures', 'engines', 'settlement-day.json'), 'utf8')) as Fixture;
+const fixture = JSON.parse(await readFile(join(repoRoot, 'tests', 'fixtures', 'connectors', 'settlement-day.json'), 'utf8')) as Fixture;
 const settle = (request: SettlementRequest) => runEngine<SettlementRequest, SettlementResult>(spec, request);
 const changed = (f: (r: SettlementRequest) => void): SettlementRequest => {
   const r = structuredClone(fixture.request);

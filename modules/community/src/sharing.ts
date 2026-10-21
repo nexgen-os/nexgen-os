@@ -6,7 +6,7 @@
 // holds as its attribute, what each participant carries for a key (its
 // attributes) and the rules the caller passes (a country's pack, the
 // project's statutes); it hands them to an engine of the `energy_sharing`
-// kind (packages/core/src/engines/sharing.ts) and stores what the engine
+// kind (packages/core/src/connectors/sharing.ts) and stores what the engine
 // answers — for each participant, what it received from the sharing and
 // gave to it, and what is left for its supplier and the grid — as
 // simulated series of the run, on the participant.

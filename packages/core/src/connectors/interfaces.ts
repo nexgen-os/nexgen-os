@@ -14,9 +14,9 @@
 // own data service). A private package implements the same interface and
 // registers its `sources` rows; the core and the pages never import it.
 
-import type { Db } from './db.js';
-import type { Address } from './address.js';
-import { store, type SeriesPoint } from './series.js';
+import type { Db } from '../db.js';
+import type { Address } from '../address.js';
+import { store, type SeriesPoint } from '../series.js';
 
 
 export interface Point {

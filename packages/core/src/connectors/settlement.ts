@@ -1,4 +1,4 @@
-// The `settlement` request kind (engines/README.md): the contracts in force
+// The `settlement` request kind (packages/connectors/README.md): the contracts in force
 // over a period, each with its price signals in the shape the `contracts`
 // module keeps them and the series its volume is read from; back, the
 // settlement lines of each contract — the energy, the price and the amount
@@ -6,7 +6,7 @@
 // that accepts `settlement` answers in this shape; how it matches energy
 // with contracts (pay as consumed, pay as produced, a cascade by priority)
 // and how it reads an index is its own: the example engine
-// (engines/settlement-example) multiplies a fixed price by the volume, and
+// (packages/connectors/settlement-example) multiplies a fixed price by the volume, and
 // is meant to be copied and replaced. No invoice comes out of an engine:
 // a line goes to Ekwo, which knows who is legally a party (decision 0010).
 
@@ -18,7 +18,7 @@ export type { EngineSeries };
 /** What `runEngine` needs to start the example engine; the command comes from the caller or `NEXGEN_ENGINE_SETTLEMENT_EXAMPLE`. */
 export const SETTLEMENT_EXAMPLE_ENGINE: Pick<EngineSpec, 'name' | 'install'> = {
   name: 'settlement_example',
-  install: 'pip install -e engines/settlement-example, NEXGEN_ENGINE_SETTLEMENT_EXAMPLE="python3 -m nexgen_settlement_example"',
+  install: 'pip install -e packages/connectors/settlement-example, NEXGEN_ENGINE_SETTLEMENT_EXAMPLE="python3 -m nexgen_settlement_example"',
 };
 
 /** A price signal of a contract, as a row of `contracts.price_signals`: start included, end excluded, no end until further notice. */

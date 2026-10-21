@@ -1,6 +1,6 @@
 """An example energy_sharing engine: the energy injected is shared in proportion to offtake.
 
-Contract 1 (engines/README.md): the envelope arrives on stdin, the answer
+Contract 1 (packages/connectors/README.md): the envelope arrives on stdin, the answer
 leaves on stdout, stderr is a log. A refusal is `{"error": name, "detail":
 text}` on stdout with exit code 1. Pure Python, no dependency: nothing here
 reads a database, calls the network or writes a file.
