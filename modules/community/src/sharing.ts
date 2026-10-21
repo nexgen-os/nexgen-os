@@ -110,12 +110,12 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
     throw new Error(`engine_kind_unsupported: ${request.engine.name} accepts ${described.kinds.join(', ')}, not energy_sharing`);
   }
 
-  // The participants taking part over the period, groups left out: a group's meters are its members'.
+  // The participants taking part over the period, groups left out: a group carries no meter of its own.
   const participants = (
     await db.query<ParticipantRow>(
       `select p.id, p.name, p.role, attributes_of(p.id, $2::timestamptz) attributes
          from participants p
-        where p.project_id = $1 and p.site_id is not null and p.scenario_id is null
+        where p.project_id = $1 and p.country is not null and p.scenario_id is null
           and (p.join_date is null or p.join_date < $3::timestamptz) and (p.leave_date is null or p.leave_date >= $2::timestamptz)
         order by p.name, p.id`,
       [request.projectId, from, to],

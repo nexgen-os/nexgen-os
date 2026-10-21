@@ -5,7 +5,7 @@
 // refused by name, never guessed. Pack values are dated and cited.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -28,9 +28,9 @@ interface Parameter {
 const parameterOf = async (kind: string, object: string, property: string, at = '2026-06-01', scenario: string | null = null) =>
   (await one<{ p: Parameter }>(db, 'select parameter_of($1, $2, $3, $4, $5) p', [kind, object, property, at, scenario])).p;
 
-// The cascade through what is built is the building module's: a device on a roof face.
-const placedParameterOf = async (device: string, property: string) =>
-  (await one<{ p: Parameter }>(db, `select building.parameter_of('device', $1, $2, '2026-06-01') p`, [device, property])).p;
+// The cascade through what is built is the building module's: a roof face, then its building, then the participant.
+const builtParameterOf = async (kind: string, object: string, property: string) =>
+  (await one<{ p: Parameter }>(db, `select building.parameter_of($1, $2, $3, '2026-06-01') p`, [kind, object, property])).p;
 
 beforeAll(async () => {
   db = await freshDatabase(['building']);
@@ -46,11 +46,10 @@ beforeAll(async () => {
                     ('pv_specific_yield_fallback', 'ZZ', null, '980', '2026-01-01', null, 'zz_statistics', 'yearbook 2025, table 4', 'pack:zz'),
                     ('pv_specific_yield_fallback', 'ZZ', 'ZZ-SO', '1150', '2020-01-01', null, 'zz_statistics', 'yearbook 2025, table 5', 'pack:zz'),
                     ('offpeak_hours', 'ZZ', null, null, null, null, 'zz_statistics', 'depends on the supply contract', 'pack:zz')`);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Farm', country: 'ZZ', region: 'ZZ-NO' });
-  building = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'Barn' });
+  site = await participant(db, { organisation_id: org, name: 'Farm', country: 'ZZ', region: 'ZZ-NO' });
+  building = await insert(db, 'building.buildings', { organisation_id: org, participant_id: site, name: 'Barn' });
   roof = await insert(db, 'building.surfaces', { organisation_id: org, building_id: building, name: 'Roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20 });
-  device = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Array', device_type: 'solar' });
-  await db.query('select building.place_device($1, p_surface_id => $2)', [device, roof]);
+  device = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Array', device_type: 'solar' });
 });
 
 afterAll(async () => {
@@ -66,8 +65,8 @@ describe('parameter_of', () => {
   });
 
   it('reads the region before the country', async () => {
-    const south = await insert(db, 'sites', { organisation_id: org, name: 'Vineyard', country: 'ZZ', region: 'ZZ-SO' });
-    expect(await parameterOf('site', south, 'pv_specific_yield_fallback')).toMatchObject({ value: 1150, level: 'region', region: 'ZZ-SO' });
+    const south = await participant(db, { organisation_id: org, name: 'Vineyard', country: 'ZZ', region: 'ZZ-SO' });
+    expect(await parameterOf('participant', south, 'pv_specific_yield_fallback')).toMatchObject({ value: 1150, level: 'region', region: 'ZZ-SO' });
   });
 
   it('reads the organisation before its region: an attribute of the organisation, which is an object', async () => {
@@ -77,15 +76,17 @@ describe('parameter_of', () => {
   });
 
   it('reads the parents of the object nearest first, then the object itself; the module of a place reads its own first', async () => {
-    await db.query(`select set_attribute('site', $1, 'pv_specific_yield_fallback', '1020', null, 'zz_statistics', 'site survey')`, [site]);
-    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'site', object_id: site, source_code: 'zz_statistics' });
-    await db.query(`select set_attribute('surface', $1, 'pv_specific_yield_fallback', '1030', null, null, 'roof survey')`, [roof]);
-    expect(await placedParameterOf(device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1030, level: 'surface', object_id: roof });
-    // The core's cascade follows the device's own foreign keys: its site.
-    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'site' });
+    await db.query(`select set_attribute('participant', $1, 'pv_specific_yield_fallback', '1020', null, 'zz_statistics', 'site survey')`, [site]);
+    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'participant', object_id: site, source_code: 'zz_statistics' });
+    await db.query(`select set_attribute('building', $1, 'pv_specific_yield_fallback', '1030', null, null, 'roof survey')`, [building]);
+    expect(await builtParameterOf('surface', roof, 'pv_specific_yield_fallback')).toMatchObject({ value: 1030, level: 'building', object_id: building });
+    await db.query(`delete from attributes where object_id = $1`, [building]);
+    expect(await builtParameterOf('surface', roof, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'participant', object_id: site });
+    // A device is its participant's: the core's cascade, wherever it sits.
+    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'participant' });
     await db.query(`select set_attribute('device', $1, 'pv_specific_yield_fallback', '1040', null, null, 'monitoring')`, [device]);
     expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1040, level: 'object', object_id: device });
-    expect(await placedParameterOf(device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1040, level: 'object' });
+    expect(await builtParameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1040, level: 'object' });
   });
 
   it('reads a scenario before reality', async () => {

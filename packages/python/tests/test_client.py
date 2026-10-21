@@ -30,19 +30,19 @@ class ClientTest(unittest.TestCase):
     def test_reads_the_schema_version(self):
         self.assertEqual(self.nexgen.schema_version(), FIXTURE["schema_version"])
 
-    def test_finds_the_organisation_and_its_sites(self):
+    def test_finds_the_organisation_and_its_participants(self):
         self.assertIn(FIXTURE["organisation"], [str(o["id"]) for o in self.nexgen.organisations()])
-        sites = {str(s["id"]): s for s in self.nexgen.sites(FIXTURE["organisation"])}
-        self.assertEqual(sites[FIXTURE["site"]]["time_zone"], "Europe/Brussels")
-        self.assertIsNone(sites[FIXTURE["site_without_time_zone"]]["time_zone"])
-        self.assertEqual(self.nexgen.sites(str(uuid.uuid4())), [])
+        participants = {str(p["id"]): p for p in self.nexgen.participants(FIXTURE["organisation"])}
+        self.assertEqual(participants[FIXTURE["participant"]]["time_zone"], "Europe/Brussels")
+        self.assertIsNone(participants[FIXTURE["participant_without_time_zone"]]["time_zone"])
+        self.assertEqual(self.nexgen.participants(str(uuid.uuid4())), [])
 
     def test_places_an_object(self):
-        self.assertEqual(self.nexgen.site_of("device", FIXTURE["meter"]), FIXTURE["site"])
+        self.assertEqual(self.nexgen.participant_of("device", FIXTURE["meter"]), FIXTURE["participant"])
         self.assertEqual(self.nexgen.country_of("device", FIXTURE["meter"]), FIXTURE["country"])
-        self.assertIsNone(self.nexgen.site_of("device", str(uuid.uuid4())))
+        self.assertIsNone(self.nexgen.participant_of("device", str(uuid.uuid4())))
 
-    def test_resamples_by_day_in_the_site_time_zone(self):
+    def test_resamples_by_day_in_the_participant_time_zone(self):
         days = self.nexgen.resample(
             FIXTURE["series"], datetime(2026, 6, 1, tzinfo=UTC) - timedelta(hours=2), datetime(2026, 6, 2, 22, tzinfo=UTC), "1 day"
         )
@@ -97,19 +97,19 @@ class ClientTest(unittest.TestCase):
             self.assertEqual(hours.to_arrow().num_rows, 2)
 
     def test_attaches_with_a_period_and_a_source_and_reads_it_back(self):
-        site = FIXTURE["site"]
+        participant = FIXTURE["participant"]
         first = self.nexgen.attach(
-            "site", site, "annual_consumption", 41000, source="2025 invoices",
+            "participant", participant, "annual_consumption", 41000, source="2025 invoices",
             valid_from=datetime(2025, 1, 1, tzinfo=UTC), valid_to=datetime(2026, 1, 1, tzinfo=UTC),
         )
-        self.nexgen.attach("site", site, "annual_consumption", 38500, source="2026 invoices", valid_from=datetime(2026, 1, 1, tzinfo=UTC))
+        self.nexgen.attach("participant", participant, "annual_consumption", 38500, source="2026 invoices", valid_from=datetime(2026, 1, 1, tzinfo=UTC))
         uuid.UUID(first)
-        self.assertEqual(self.nexgen.attributes_of(site, datetime(2025, 6, 1, tzinfo=UTC)), {"annual_consumption": 41000})
-        self.assertEqual(self.nexgen.attributes_of(site), {"annual_consumption": 38500})
-        self.assertEqual(self.nexgen.attributes_of(site, datetime(2024, 6, 1, tzinfo=UTC)), {})
+        self.assertEqual(self.nexgen.attributes_of(participant, datetime(2025, 6, 1, tzinfo=UTC)), {"annual_consumption": 41000})
+        self.assertEqual(self.nexgen.attributes_of(participant), {"annual_consumption": 38500})
+        self.assertEqual(self.nexgen.attributes_of(participant, datetime(2024, 6, 1, tzinfo=UTC)), {})
 
         with self.assertRaises(NexgenError) as refused:
-            self.nexgen.attach("site", site, "annual_consumption", 1, source="a guess", valid_from=datetime(2025, 6, 1, tzinfo=UTC))
+            self.nexgen.attach("participant", participant, "annual_consumption", 1, source="a guess", valid_from=datetime(2025, 6, 1, tzinfo=UTC))
         self.assertEqual(refused.exception.code, "overlapping_value")
         with self.assertRaises(NexgenError) as refused:
             self.nexgen.attach("device", FIXTURE["meter"], "annual_consumption", -5, source="a reading")
@@ -117,7 +117,7 @@ class ClientTest(unittest.TestCase):
 
     def test_refuses_a_value_without_a_source(self):
         with self.assertRaises(NexgenError) as refused:
-            self.nexgen.attach("site", FIXTURE["site"], "annual_consumption", 1)
+            self.nexgen.attach("participant", FIXTURE["participant"], "annual_consumption", 1)
         self.assertEqual(refused.exception.code, "source_required")
 
 

@@ -1,10 +1,11 @@
 /**
- * A site, or every site taking part in a project, as one GeoJSON
- * FeatureCollection, written by `@nexgen-os/geojson`.
+ * A participant, or every participant taking part in a project, as one
+ * GeoJSON FeatureCollection, written by `@nexgen-os/geojson`.
  *
- * The project's perimeter, the sites, their devices and — when the `building`
- * module is installed — their buildings, their roof faces, facades and
- * ground areas and where each device is placed, each a feature with its
+ * The project's perimeter, the participants at their place, their devices
+ * (without a geometry: a device is not placed, decision 0026) and — when the
+ * `building` module is installed — their ground, their buildings, their
+ * roof faces, facades and ground areas, each a feature with its
  * columns, its attributes (`attributes_of()`), the identifiers it is known
  * by and the runs computed on it, so that a scenario can be shown beside
  * the places it is about. Coordinates are WGS 84 longitude, latitude and
@@ -28,7 +29,7 @@ export interface RunSummary {
   results: unknown;
 }
 
-export type FeatureKind = 'project' | 'site' | 'building' | 'surface' | 'device';
+export type FeatureKind = 'project' | 'participant' | 'site' | 'building' | 'surface' | 'device';
 
 export interface FeatureProperties {
   kind: FeatureKind;
@@ -64,8 +65,8 @@ export type GeoJsonExport = FeatureCollection<FeatureProperties> & {
 };
 
 export interface GeoJsonTarget {
-  siteId?: string;
-  /** Every site taking part in the project, and the project's perimeter. */
+  participantId?: string;
+  /** Every participant taking part in the project, and the project's perimeter. */
   projectId?: string;
 }
 
@@ -113,7 +114,7 @@ interface RunRow {
 }
 
 export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJsonExportOptions = {}): Promise<GeoJsonExport> {
-  if (!target.siteId === !target.projectId) throw new Error('target_required: give a siteId or a projectId');
+  if (!target.participantId === !target.projectId) throw new Error('target_required: give a participantId or a projectId');
   const open = options.open ?? false;
   const scenarioId = options.scenarioId ?? null;
   const at = options.at === undefined ? null : new Date(options.at).toISOString();
@@ -132,7 +133,6 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const geojson = (column: string) => `ST_AsGeoJSON(ST_ForcePolygonCCW(${column}), ${PRECISION})`;
 
   const projects: Row[] = [];
-  let siteIds: string[];
   if (target.projectId) {
     const project = await db.query<Row>(
       `select p.id, p.name, p.kind project_kind, p.country, p.status, p.start_date::text, p.end_date::text, p.tags, null source_code,
@@ -142,63 +142,68 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     );
     if (project.rows.length === 0) throw new Error(`project_not_found: ${target.projectId}`);
     projects.push(...project.rows);
-    siteIds = (await db.query<{ site_id: string }>(
-      `select distinct p.site_id from participants p where p.project_id = $1 and p.site_id is not null and ${visible('p')}`,
-      [target.projectId, chain],
-    )).rows.map((r) => r.site_id);
-  } else {
-    siteIds = [target.siteId!];
   }
 
-  const sites = await db.query<Row>(
-    `select s.id, s.name, s.country, s.street, s.address_extra, s.postal_code, s.city, s.region,
-            s.time_zone, s.location_precision, s.profile, s.tags, s.location_source_code source_code, ${geojson('s.geometry')} geometry
-       from sites s where s.id = any($1::uuid[]) and ${visible('s')}
-      order by s.created_at, s.id`,
-    [siteIds, chain],
+  // The participants with a place: a group has none, and is not a feature.
+  const participants = await db.query<Row>(
+    `select p.id, p.name, p.project_id, p.role, p.status, p.country, p.street, p.address_extra, p.postal_code, p.city, p.region,
+            p.time_zone, p.location_precision, p.profile, p.tags, p.location_source_code source_code, ${geojson('p.geometry')} geometry
+       from participants p
+      where (p.id = $1::uuid or p.project_id = $3::uuid) and p.country is not null and ${visible('p')}
+      order by p.created_at, p.id`,
+    [target.participantId ?? null, chain, target.projectId ?? null],
   );
-  if (target.siteId && sites.rows.length === 0) throw new Error(`site_not_found: ${target.siteId}`);
-  const found = sites.rows.map((s) => s.id);
+  if (target.participantId && participants.rows.length === 0) throw new Error(`participant_not_found: ${target.participantId}`);
+  const found = participants.rows.map((p) => p.id);
 
-  // The physical description of the sites is the `building` module's, read only
-  // where it is installed.
+  // The physical description of their places is the `building` module's,
+  // read only where it is installed.
   const described = (await db.query<{ installed: boolean }>(`select to_regclass('building.buildings') is not null installed`)).rows[0].installed;
+  const grounds = described
+    ? (await db.query<Row>(
+        `select s.id, s.name, s.participant_id, s.profile, s.area_m2::float8 area_m2, s.tags, s.source_code, s.metadata,
+                ${geojson('s.geometry')} geometry
+           from building.sites s where s.participant_id = any($1::uuid[]) and ${visible('s')}
+          order by s.created_at, s.id`,
+        [found, chain],
+      )).rows
+    : [];
   const buildings = described
     ? (await db.query<Row>(
-        `select b.id, b.name, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
+        `select b.id, b.name, b.participant_id, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
                 b.status, b.tags, b.source_code, b.metadata,
                 ${geojson('b.footprint')} geometry
-           from building.buildings b where b.site_id = any($1::uuid[]) and ${visible('b')}
+           from building.buildings b where b.participant_id = any($1::uuid[]) and ${visible('b')}
           order by b.created_at, b.id`,
         [found, chain],
       )).rows
     : [];
   const surfaces = described
     ? (await db.query<Row>(
-        `select f.id, f.name, f.kind surface_kind, coalesce(f.site_id, b.site_id) site_id, f.building_id,
+        `select f.id, f.name, f.kind surface_kind, coalesce(s.participant_id, b.participant_id) participant_id, f.site_id, f.building_id,
                 f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.tags, f.source_code, f.metadata,
                 ${geojson('f.geometry')} geometry
-           from building.surfaces f left join building.buildings b on b.id = f.building_id
-          where coalesce(f.site_id, b.site_id) = any($1::uuid[]) and ${visible('f')}
+           from building.surfaces f left join building.buildings b on b.id = f.building_id left join building.sites s on s.id = f.site_id
+          where coalesce(s.participant_id, b.participant_id) = any($1::uuid[]) and ${visible('f')}
           order by f.created_at, f.id`,
         [found, chain],
       )).rows
     : [];
   const devices = await db.query<Row>(
-    `select d.id, d.name, d.device_type, d.site_id,
-            ${described ? 'p.building_id, p.space_id, p.surface_id,' : ''}
+    `select d.id, d.name, d.device_type, d.participant_id,
             d.manufacturer, d.model, d.serial_number,
             d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text, d.tags, d.metadata,
-            d.source_code, ${geojson('d.geometry')} geometry
-       from devices d ${described ? 'left join building.devices p on p.device_id = d.id' : ''}
-      where d.site_id = any($1::uuid[]) and ${visible('d')}
+            d.source_code, null geometry
+       from devices d
+      where d.participant_id = any($1::uuid[]) and ${visible('d')}
       order by d.created_at, d.id`,
     [found, chain],
   );
 
   const all: [FeatureKind, Row][] = [
     ...projects.map((r) => ['project', r] as [FeatureKind, Row]),
-    ...sites.rows.map((r) => ['site', r] as [FeatureKind, Row]),
+    ...participants.rows.map((r) => ['participant', r] as [FeatureKind, Row]),
+    ...grounds.map((r) => ['site', r] as [FeatureKind, Row]),
     ...buildings.map((r) => ['building', r] as [FeatureKind, Row]),
     ...surfaces.map((r) => ['surface', r] as [FeatureKind, Row]),
     ...devices.rows.map((r) => ['device', r] as [FeatureKind, Row]),
@@ -265,11 +270,11 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const features: (Feature<FeatureProperties> & { id: string })[] = [];
   for (const [kind, row] of all) {
     const { id, name, geometry, source_code, ...columns } = row;
-    const parentWithheld = ['site_id', 'building_id', 'surface_id'].some((c) => typeof columns[c] === 'string' && withheldIds.has(columns[c] as string));
+    const parentWithheld = ['participant_id', 'site_id', 'building_id'].some((c) => typeof columns[c] === 'string' && withheldIds.has(columns[c] as string));
     let shape: Geometry | null = geometry ? (JSON.parse(geometry) as Geometry) : null;
     if (open && source_code && closed.has(source_code)) {
-      // A site keeps its address and loses the point; a described object goes.
-      if (kind !== 'site') {
+      // A participant keeps its address and loses the point; a described object goes.
+      if (kind !== 'participant') {
         withheldIds.add(id);
         continue;
       }
@@ -291,7 +296,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
       kind,
       name,
       ...columns,
-      ...(kind === 'site' ? { location_source_code: source_code } : kind === 'building' || kind === 'surface' ? { source_code } : {}),
+      ...(kind === 'participant' ? { location_source_code: source_code } : kind === 'site' || kind === 'building' || kind === 'surface' ? { source_code } : {}),
       attributes,
       external_ids: externalIds.map(({ scheme, value }) => ({ scheme, value })),
       runs: runs.get(id) ?? [],

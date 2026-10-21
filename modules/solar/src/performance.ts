@@ -9,7 +9,7 @@
 //
 // They are computed on the hours where every series read has a value, so
 // that a missing reading never counts as a dark hour; how many hours that
-// is, is part of the answer. Months are cut in the site's time zone. The
+// is, is part of the answer. Months are cut in the participant's time zone. The
 // in-plane irradiance is measured when a sensor on the system (or on its one
 // array) gives it, else the yield run's simulated irradiance of each array,
 // weighted by the arrays' power, and the answer says which. The result is a
@@ -23,7 +23,7 @@ const G_REF_W_M2 = 1000;
 
 export interface PerformanceRequest {
   pvSystemId: string;
-  /** First and last day included, `YYYY-MM-DD` in the site's time zone. */
+  /** First and last day included, `YYYY-MM-DD` in the participant's time zone. */
   from: string;
   to: string;
   /** The yield run the measurement is compared with: the energy performance index, and the irradiance when no sensor gives it. */
@@ -31,7 +31,7 @@ export interface PerformanceRequest {
 }
 
 export interface PeriodIndicators {
-  /** `YYYY-MM` in the site's time zone, or `total`. */
+  /** `YYYY-MM` in the participant's time zone, or `total`. */
   period: string;
   /** Hours where every series read has a value. */
   hours: number;
@@ -74,13 +74,13 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
               (($3::date + 1)::timestamp at time zone coalesce(s.time_zone, 'UTC'))::text "end"
          from solar.pv_systems p
          join devices d on d.id = p.id
-         join sites s on s.id = d.site_id
+         join participants s on s.id = d.participant_id
         where p.id = $1`,
       [request.pvSystemId, request.from, request.to],
     )
   ).rows[0];
   if (!system) throw new Error(`pv_system_not_found: ${request.pvSystemId}`);
-  if (!system.time_zone) throw new Error('time_zone_required: the site of the PV system has no time zone; the indicators are given by month in it');
+  if (!system.time_zone) throw new Error('time_zone_required: the participant of the PV system has no time zone; the indicators are given by month in it');
   const timeZone = system.time_zone;
   const kwp = Number(system.kwp_dc);
   const read = (seriesId: string) => readHourly(db, seriesId, system.start, system.end);
@@ -135,7 +135,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
 
   const expected = run?.results.series_id ? await read(run.results.series_id) : null;
 
-  // The hours every series has; months in the site's time zone.
+  // The hours every series has; months in the participant's time zone.
   const month = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit' });
   const sums = new Map<string, { hours: number; e: number; h: number; x: number }>();
   for (const [at, e] of energy.values) {
@@ -182,7 +182,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     conventions: {
       hours: 'hours where every series read has a value',
       g_ref_w_m2: G_REF_W_M2,
-      months: "cut in the site's time zone",
+      months: "cut in the participant's time zone",
     },
   };
   const recorded = await db.query<{ id: string }>(

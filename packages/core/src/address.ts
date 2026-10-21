@@ -1,7 +1,7 @@
 // The standard shape of a place, and the one interface of a geocoder.
 //
-// A form takes an address or a pair of coordinates and shows both; a site
-// keeps the address in the fields every country has, the point, how precise
+// A form takes an address or a pair of coordinates and shows both; a
+// participant keeps the address in the fields every country has, the point, how precise
 // the point is and who placed it (decision 0009). Every geocoder is a
 // connector (`@nexgen-os/nominatim`, `photon`, `ban`, `geopunt`, `urbis`,
 // `icar`…) that answers in this shape, and `geocoderFor()` chains them: the
@@ -9,7 +9,7 @@
 // service the installation pays for.
 //
 // Nothing here touches the database. A geocoder returns places; what to do
-// with them — write a site, offer a choice — is the caller's.
+// with them — place a participant, offer a choice — is the caller's.
 
 /** The postal address, in the fields every country has (schema.org PostalAddress). */
 export interface Address {
@@ -27,7 +27,7 @@ export interface Address {
   country: string;
 }
 
-/** How close a point is to the real place. The values of `sites.location_precision`. */
+/** How close a point is to the real place. The values of `participants.location_precision`. */
 export type Precision = 'rooftop' | 'parcel' | 'street' | 'postal_code' | 'city' | 'region';
 
 /** One place a geocoder answered with. */
@@ -36,7 +36,7 @@ export interface Place {
   lon: number;
   lat: number;
   precision: Precision;
-  /** The `sources.code` of the geocoder, so the site says who placed it. */
+  /** The `sources.code` of the geocoder, so the participant says who placed it. */
   source_code: string;
   /** What the geocoder calls it, for a list of candidates. */
   label: string;
@@ -67,12 +67,13 @@ export interface Geocoder {
 export type Fetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
 
 /**
- * The columns of `sites` a place fills: the address, the point as GeoJSON,
- * the precision and the source. Spread it into an insert or an update. The
- * municipality code is not a column: it is an identifier of the site under
+ * The place columns of `participants` a place fills: the address, the
+ * point as GeoJSON, the precision and the source. Spread it into an insert
+ * or an update. The municipality code is not a column: it is an identifier
+ * of the participant under
  * the scheme its country's pack publishes.
  */
-export function siteFields(place: Place) {
+export function placeFields(place: Place) {
   return {
     street: place.address.street ?? null,
     address_extra: place.address.address_extra ?? null,

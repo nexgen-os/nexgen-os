@@ -5,9 +5,10 @@
  * the model is placed in; this importer writes them through the gestures
  * of the core:
  *
- *   the site's origin   → `locate_site()`, at `rooftop` precision with a map
- *                         conversion, `parcel` with the site's coordinates,
- *                         when the site had no position or a coarser one
+ *   the IfcSite origin  → `locate_participant()`, at `rooftop` precision with a
+ *                         map conversion, `parcel` with the IfcSite's
+ *                         coordinates, when the participant had no position
+ *                         or a coarser one
  *   building            → `building.add_building()`: its footprint in WGS 84, its
  *                         elevation and height; its year (`set_attribute()`)
  *   storey, space       → `building.add_space()`, kinds floor and room; a room's
@@ -15,8 +16,10 @@
  *   roof face           → `building.add_surface()`, kind roof, azimuth (true north)
  *                         and tilt
  *   product             → `install_device()`, when a device type names its
- *                         IFC class (`device_types.ifc_class`), in its
- *                         building and room
+ *                         IFC class (`device_types.ifc_class`), under the
+ *                         participant; its building, room and position stay
+ *                         in its metadata (a device is not placed, decision
+ *                         0026)
  *   GlobalId            → `add_identifier()`, scheme `ifc_guid`
  *
  * Every row has the source the caller names, and what the file says that
@@ -24,11 +27,12 @@
  */
 import type { Georeference, IfcModel, IfcRoom, FootprintSource } from '@nexgen-os/ifc';
 import type { Db } from '@nexgen-os/core';
-import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfSite, refuseKnown, toWgs84, type Crs } from './faces.js';
+import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfParticipant, refuseKnown, toWgs84, type Crs } from './faces.js';
 
 export interface IfcTarget {
-  siteId: string;
-  /** A scenario the building belongs to; the site's by default. */
+  /** The participant whose building it is. */
+  participantId: string;
+  /** A scenario the building belongs to; the participant's by default. */
   scenarioId?: string | null;
 }
 
@@ -41,12 +45,12 @@ export interface IfcImportOptions {
 
 export interface IfcImport {
   georeference: Georeference;
-  /** The CRS the model was placed in: `EPSG:28992`, or the local transverse Mercator built from the site's coordinates. */
+  /** The CRS the model was placed in: `EPSG:28992`, or the local transverse Mercator built from the IfcSite's coordinates. */
   crs: string;
-  /** What the site's position is worth: `rooftop` with a map conversion, `parcel` with the site's coordinates. */
+  /** What the participant's position is worth: `rooftop` with a map conversion, `parcel` with the IfcSite's coordinates. */
   locationPrecision: 'rooftop' | 'parcel' | null;
-  /** Whether the site's position and precision were set from the file (only when it had none, or a coarser one). */
-  siteUpdated: boolean;
+  /** Whether the participant's position and precision were set from the file (only when it had none, or a coarser one). */
+  participantUpdated: boolean;
   schema: string;
   buildings: { id: string; globalId: string; footprint: FootprintSource }[];
   counts: { buildings: number; floors: number; spaces: number; roofs: number; devices: number };
@@ -58,7 +62,7 @@ const PRECISION: Record<Georeference, 'rooftop' | 'parcel' | null> = { map_conve
 const PRECISION_RANK = ['rooftop', 'parcel', 'street', 'postal_code', 'city', 'region'];
 
 /**
- * Writes an IFC model on a site. Refuses `crs_unknown` when the
+ * Writes an IFC model for a participant. Refuses `crs_unknown` when the
  * installation cannot transform from the model's EPSG code, and
  * `already_imported` when a building is known to the organisation by its
  * GlobalId — before writing anything.
@@ -66,7 +70,7 @@ const PRECISION_RANK = ['rooftop', 'parcel', 'street', 'postal_code', 'city', 'r
 export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, options: IfcImportOptions): Promise<IfcImport> {
   const { georeference: g } = model;
   if (g.srid !== null) await checkSrid(db, g.srid);
-  const organisationId = await organisationOfSite(db, target.siteId);
+  const organisationId = await organisationOfParticipant(db, target.participantId);
   await refuseKnown(db, organisationId, 'ifc_guid', model.buildings.map((b) => b.globalId), 'IfcBuilding');
   const scenarioId = target.scenarioId ?? null;
   const crs: Crs = { srid: g.srid, proj: g.proj };
@@ -75,7 +79,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     georeference: g.kind,
     crs: g.crs,
     locationPrecision: precision,
-    siteUpdated: false,
+    participantUpdated: false,
     schema: model.schema,
     buildings: [],
     counts: { buildings: 0, floors: 0, spaces: 0, roofs: 0, devices: 0 },
@@ -87,21 +91,21 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     else result.skipped.push({ entity, count: 1, reason });
   };
 
-  // The site: its position, at the precision of the georeference, when the
-  // site had none or a coarser one.
+  // The participant: its position, at the precision of the georeference,
+  // when it had none or a coarser one.
   if (precision) {
     const [x, y, z] = model.site.origin;
     const coarser = await db.query<{ point: Record<string, unknown> }>(
       `select ST_AsGeoJSON(ST_Force3D(${toWgs84('ST_MakePoint($2, $3, $4)', 5, 6)}), 9)::jsonb point
-         from sites where id = $1
+         from participants where id = $1
           and (geometry is null or array_position($8::text[], location_precision) > array_position($8::text[], $7::text))`,
-      [target.siteId, x, y, z, crs.srid, crs.proj, precision, PRECISION_RANK],
+      [target.participantId, x, y, z, crs.srid, crs.proj, precision, PRECISION_RANK],
     );
     if (coarser.rows.length) {
-      await db.query(`select locate_site($1, $2)`, [target.siteId, JSON.stringify({
+      await db.query(`select locate_participant($1, $2)`, [target.participantId, JSON.stringify({
         geometry: coarser.rows[0].point, location_precision: precision, location_source_code: options.sourceCode,
       })]);
-      result.siteUpdated = true;
+      result.participantUpdated = true;
     }
   }
 
@@ -132,7 +136,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
                                    from unnest($3::text[]) w) x) g),
                 $4, $7, $8, $9, $10, $12) id`,
       [
-        target.siteId, b.name, b.footprint.pieces.map(planWkt), b.elevation, crs.srid, crs.proj,
+        target.participantId, b.name, b.footprint.pieces.map(planWkt), b.elevation, crs.srid, crs.proj,
         b.height, options.profile ?? null, options.sourceCode, JSON.stringify(metadata), b.footprint.source === 'walls', scenarioId,
       ],
     );
@@ -216,23 +220,25 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
       skip(p.entity, 'several device types share this IFC class');
       continue;
     }
-    const at = precision ? p.position : null;
+    // Where the file puts it is kept as the file says it: a device is not placed.
     const device = await db.query<{ id: string }>(
       `select install_device($1, $2, $3,
-                case when $4::float8 is null then null
-                     else ST_AsGeoJSON(ST_Force3D(${toWgs84('ST_MakePoint($4, $5, $6)', 7, 8)}), 9)::jsonb end,
-                p_source_code => $9, p_scenario_id => $10, p_nameplate => $11, p_metadata => $12, p_status => 'in_service') id`,
+                p_source_code => $4, p_scenario_id => $5, p_nameplate => $6, p_metadata => $7, p_status => 'in_service') id`,
       [
-        target.siteId, deviceType, p.name,
-        at?.[0] ?? null, at?.[1] ?? null, at?.[2] ?? null, crs.srid, crs.proj,
+        target.participantId, deviceType, p.name,
         options.sourceCode, scenarioId,
         JSON.stringify({ manufacturer: p.manufacturer, model: p.model, serial_number: p.serialNumber }),
-        JSON.stringify({ ifc: { ...p.description, header: model.header } }),
+        JSON.stringify({ ifc: {
+          ...p.description, header: model.header,
+          placement: {
+            building: (p.building && buildingRows.get(p.building)) || null,
+            space: (p.room && roomRows.get(p.room)) || null,
+            position: p.position ?? null,
+            crs: g.crs,
+          },
+        } }),
       ],
     );
-    const building = (p.building && buildingRows.get(p.building)) || null;
-    const room = (p.room && roomRows.get(p.room)) || null;
-    if (building || room) await db.query('select building.place_device($1, $2, $3)', [device.rows[0].id, building, room]);
     if (p.globalId) await identifierFromFile(db, 'device', device.rows[0].id, 'ifc_guid', p.globalId);
     result.counts.devices += 1;
   }
