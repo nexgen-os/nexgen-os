@@ -157,7 +157,7 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
     manufacturer: string | null; model: string | null; serial_number: string | null;
   }>(
     `select d.name, d.metadata->'ha' ha, d.manufacturer, d.model, d.serial_number
-       from devices d join three_d.placements p on p.device_id = d.id
+       from devices d join three_d.devices p on p.device_id = d.id
       where p.building_id = $1 and d.metadata ? 'ha' order by d.name`,
     [buildingId]);
   const points = await db.query<{ id: string; unit: string; quantity: string; kind: HomePoint['role']; value_kind: HomePoint['valueKind'];

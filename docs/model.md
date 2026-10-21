@@ -60,10 +60,10 @@ erDiagram
   spaces ||--o{ spaces : "inside"
   buildings ||--o{ surfaces : "roof faces, facades"
   sites ||--o{ surfaces : "ground areas"
-  devices ||--o| placements : "placed"
-  buildings ||--o{ placements : in
-  spaces ||--o{ placements : in
-  surfaces ||--o{ placements : on
+  devices ||--o| three_d_devices : "placed"
+  buildings ||--o{ three_d_devices : in
+  spaces ||--o{ three_d_devices : in
+  surfaces ||--o{ three_d_devices : on
   participants }o--o{ spaces : "occupies (link)"
 ```
 
@@ -347,7 +347,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
-| `3d` | `three_d` | the physical description of a site: `buildings`, `spaces` (floors, rooms, zones, units, one tree) and `surfaces` (roof faces, facades, ground areas) as kinds of object, `placements` (where a device is, with the device's id), the `occupies` link of a participant on a building, a floor or a unit, the `placed_on` link of a PV array on a face, the importers of CityJSON, IFC and Home Assistant homes |
+| `3d` | `three_d` | the physical description of a site: `buildings`, `spaces` (floors, rooms, zones, units, one tree) and `surfaces` (roof faces, facades, ground areas) as kinds of object, `devices` (the 3d side of a device of the core: where on its site it is, with the device's id), the `occupies` link of a participant on a building, a floor or a unit, the `placed_on` link of a PV array on a face, the importers of CityJSON, IFC and Home Assistant homes |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 

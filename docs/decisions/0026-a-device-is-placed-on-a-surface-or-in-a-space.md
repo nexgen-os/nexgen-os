@@ -23,7 +23,7 @@ Home Assistant alike.
 `3d` module knows where on the site it is.** A device always belongs to a
 site and may be behind a meter of it (`devices.site_id`,
 `devices.meter_id`). Its placement — the building it is in, the space it
-is in, the surface it is mounted on — is one row of `three_d.placements`,
+is in, the surface it is mounted on — is one row of `three_d.devices`,
 with the device's id ([0042](0042-a-module-starts-from-an-object-of-the-core.md)),
 written by `three_d.place_device()`. The places are few and known, so they
 are columns of that row, checked together: the building of the surface or
@@ -31,7 +31,7 @@ of the space is the placement's building, and all of them are on the
 device's site. `three_d.move_device()` keeps the place a device leaves as a
 dated `placed_in` link.
 
-**A placed device keeps its parents.** The module declares the placements
+**A placed device keeps its parents.** The module declares its `devices` table
 as giving a device parents (`declare_parents()`), read before the device's
 own columns: `site_of()`, `three_d.building_of()` and the cascade of
 `parameter_of()` go through its surface, its space, its building, then its

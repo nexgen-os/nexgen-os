@@ -54,7 +54,7 @@ describe('the module', () => {
   it('leaves no building, space or surface in the core, and no column of the core naming one', async () => {
     const tables = await db.query<{ table_schema: string; table_name: string }>(
       `select table_schema, table_name from information_schema.tables
-        where table_name in ('buildings', 'spaces', 'surfaces', 'placements') order by table_name`);
+        where table_schema = 'three_d' and table_name in ('buildings', 'spaces', 'surfaces', 'devices') order by table_name`);
     expect(tables.rows.every((r) => r.table_schema === 'three_d')).toBe(true);
     const columns = await one<{ n: number }>(
       db, `select count(*)::int n from information_schema.columns
@@ -84,7 +84,7 @@ describe('the placement of a device', () => {
   it('places a device in a unit, and fills the building from it', async () => {
     await db.query('select three_d.place_device($1, p_space_id => $2)', [heatPump, flatA]);
     const p = await one<{ building_id: string; space_id: string; organisation_id: string }>(
-      db, 'select building_id, space_id, organisation_id from three_d.placements where device_id = $1', [heatPump]);
+      db, 'select building_id, space_id, organisation_id from three_d.devices where device_id = $1', [heatPump]);
     expect(p).toEqual({ building_id: block, space_id: flatA, organisation_id: org });
     const r = await one<{ site: string; building: string }>(db, 'select site_of($1) site, three_d.building_of($1) building', [heatPump]);
     expect(r).toEqual({ site, building: block });
@@ -103,7 +103,7 @@ describe('the placement of a device', () => {
   it('moves a device and keeps where it was as a dated placed_in link', async () => {
     await db.query(`select three_d.move_device($1, p_surface_id => $2, p_at => '2026-05-01')`, [heatPump, roof]);
     const now = await one<{ building_id: string; space_id: string | null; surface_id: string }>(
-      db, 'select building_id, space_id, surface_id from three_d.placements where device_id = $1', [heatPump]);
+      db, 'select building_id, space_id, surface_id from three_d.devices where device_id = $1', [heatPump]);
     expect(now).toEqual({ building_id: block, space_id: null, surface_id: roof });
     const was = await db.query<{ object_id: string; valid_to: string }>(
       `select object_id, valid_to::date::text valid_to from links where subject_id = $1 and type_code = 'placed_in'`, [heatPump]);
@@ -120,7 +120,7 @@ describe('the placement of a device', () => {
     const probe = (await one<{ id: string }>(db, `select install_device($1, 'sensor', 'Probe') id`, [site])).id;
     await db.query('select three_d.place_device($1, p_space_id => $2)', [probe, flatA]);
     await db.query('delete from devices where id = $1', [probe]);
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from three_d.placements where device_id = $1', [probe]);
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from three_d.devices where device_id = $1', [probe]);
     expect(r.n).toBe(0);
   });
 });

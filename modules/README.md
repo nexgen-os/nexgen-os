@@ -16,7 +16,7 @@ is specific to a trade lives here, one folder and one schema per module.
    '{site_id}')`), so that attributes, identifiers, links, series and
    documents attach to it and `site_of()` finds its site. A module that
    gives an object of the core a place of its own declares it too
-   (`call declare_parents('three_d.placements', 'device', 'device_id',
+   (`call declare_parents('three_d.devices', 'device', 'device_id',
    '{space_id,surface_id,building_id}')`). A module table never names a
    table of another module: an array of `solar` sits on a surface of `3d`
    through a dated `placed_on` link. Every module table that carries

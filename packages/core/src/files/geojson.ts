@@ -190,7 +190,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
             d.manufacturer, d.model, d.serial_number,
             d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text, d.tags, d.metadata,
             d.source_code, ${geojson('d.geometry')} geometry
-       from devices d ${described ? 'left join three_d.placements p on p.device_id = d.id' : ''}
+       from devices d ${described ? 'left join three_d.devices p on p.device_id = d.id' : ''}
       where d.site_id = any($1::uuid[]) and ${visible('d')}
       order by d.created_at, d.id`,
     [found, chain],

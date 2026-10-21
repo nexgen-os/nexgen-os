@@ -68,7 +68,7 @@ select '00000000-0000-4000-8000-000200000001', s.id, case when q.kind = 'setpoin
        q.quantity, q.kind, 'instant', case when q.kind = 'measured' then interval '10 minutes' end,
        format('mqtt://school/%s/%s', lower(replace(s.name, ' ', '-')), q.topic)
   from three_d.spaces s
-  join three_d.placements d on d.space_id = s.id
+  join three_d.devices d on d.space_id = s.id
   cross join (values ('temperature', 'measured', 'temp'),
                      ('co2', 'measured', 'co2'),
                      ('occupancy', 'measured', 'presence'),

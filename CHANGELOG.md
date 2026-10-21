@@ -269,7 +269,7 @@ the physical description of a place leaves the core for the `3d` module:
 - `devices` loses `building_id`, `space_id` and `surface_id`;
   `install_device()` takes a GeoJSON geometry (`p_geometry`) in place of the
   placement object and refuses `invalid_geometry`; `move_device()` leaves the
-  core. The placement is `three_d.placements`, one row per placed device,
+  core. The placement is `three_d.devices`, one row per placed device,
   written by `three_d.place_device()` and `three_d.move_device()` (decision
   0026, rewritten). `declare_parents()` and `object_parent_tables` let a
   module give an object of the core parents of its own: `site_of()`,
@@ -285,7 +285,7 @@ the physical description of a place leaves the core for the `3d` module:
   `@nexgen-os/core` to `modules/3d/src`; `@nexgen-os/core` no longer depends
   on `@nexgen-os/cityjson`, `@nexgen-os/homeassistant` and
   `@nexgen-os/ifc`. `exportGeoJson()` adds the buildings, surfaces and
-  placements of a site when the module is installed. `nexgen-os status`
+  placed devices of a site when the module is installed. `nexgen-os status`
   counts devices instead of buildings.
 
 ### Changed — schema 0.2.0: the place, the device and the series

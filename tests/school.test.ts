@@ -79,7 +79,7 @@ describe('a school, inside', () => {
   });
 
   it('places the multisensor in its room, and its building with it', async () => {
-    const r = await one<{ space: string; building: string }>(db, 'select space_id space, building_id building from three_d.placements where device_id = $1', [probe]);
+    const r = await one<{ space: string; building: string }>(db, 'select space_id space, building_id building from three_d.devices where device_id = $1', [probe]);
     expect(r).toEqual({ space: classroom1, building: school });
   });
 
@@ -143,7 +143,7 @@ describe('a school, inside', () => {
       `select (select count(*)::int from three_d.spaces where building_id = $1) spaces,
               (select count(*)::int from series) series,
               (select count(*)::int from objects where kind = 'space') objects,
-              (select count(*)::int from three_d.placements where space_id is not null or building_id is not null) placed`,
+              (select count(*)::int from three_d.devices where space_id is not null or building_id is not null) placed`,
       [school],
     );
     expect(r).toEqual({ spaces: 0, series: 0, objects: 0, placed: 0 });

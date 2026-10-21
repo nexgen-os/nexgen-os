@@ -79,7 +79,7 @@ describe('site_of across modules', () => {
         ['space', true, true], ['pv_array', true, true], ['device in a room', true, true], ['floor', true, true],
       ]);
       const observed = await one<{ site: string; building: string }>(
-        both, `select site_of(object_id) site, (select building_id from three_d.placements where device_id = s.device_id) building from series s where id = $1`, [series.id]);
+        both, `select site_of(object_id) site, (select building_id from three_d.devices where device_id = s.device_id) building from series s where id = $1`, [series.id]);
       expect(observed).toEqual({ site: site.id, building: building.id });
       const kinds = await both.query<{ kind: string; published_by: string }>(`select kind, published_by from object_kinds where kind in ('space', 'pv_array', 'weather_point', 'device', 'organisation') order by kind`);
       expect(kinds.rows).toEqual([

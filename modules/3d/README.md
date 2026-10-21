@@ -17,7 +17,7 @@ with `npx nexgen-os init --modules 3d`; examples 02, 05, 06 and 07 need it.
 | `three_d.buildings` | a building on a site: footprint, elevation, height, profile, status, the source it was described from (CityGML `Building`, `IfcBuilding`) |
 | `three_d.spaces` | the inside of a building, one tree: floors (with their level), rooms, zones and units (a flat, an office lot), each with its parent space (`IfcBuildingStorey`, `IfcSpace`, CityGML `Storey`, `BuildingRoom`) |
 | `three_d.surfaces` | roof faces, facades, ground areas and carports, on a building or straight on a site, with azimuth (degrees clockwise from true north) and tilt (CityGML `RoofSurface`, `WallSurface`) |
-| `three_d.placements` | where on its site a device is: the building, the space, the surface, one row per placed device with the device's id |
+| `three_d.devices` | where on its site a device is: the building, the space, the surface, one row per placed device with the device's id |
 
 Buildings, spaces and surfaces are kinds of object declared with
 `declare_object()`: attributes, identifiers, links, documents and series

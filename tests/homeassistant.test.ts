@@ -55,7 +55,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
     ]);
     const placed = await db.query<{ name: string; room: string | null; building: boolean }>(
       `select d.name, s.name room, p.building_id = $1 building
-         from devices d join three_d.placements p on p.device_id = d.id left join three_d.spaces s on s.id = p.space_id order by d.name`, [building]);
+         from devices d join three_d.devices p on p.device_id = d.id left join three_d.spaces s on s.id = p.space_id order by d.name`, [building]);
     expect(placed.rows).toEqual([
       { name: 'Inverter', room: 'Garage', building: true },
       { name: 'Living room thermostat', room: 'Living room', building: true },

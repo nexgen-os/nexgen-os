@@ -207,7 +207,7 @@ describe('an IFC4 model with its equipment', () => {
       name: string; device_type: string; in_building: boolean; manufacturer: string | null; model: string | null; serial: string | null;
       guid: string; source: string; predefined: string; lon: number; lat: number;
     }>(
-      `select d.name, d.device_type, (select p.building_id = $2 from three_d.placements p where p.device_id = d.id) in_building, d.manufacturer, d.model, d.serial_number serial,
+      `select d.name, d.device_type, (select p.building_id = $2 from three_d.devices p where p.device_id = d.id) in_building, d.manufacturer, d.model, d.serial_number serial,
               (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
               d.source_code source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
               ST_X(d.geometry)::float lon, ST_Y(d.geometry)::float lat

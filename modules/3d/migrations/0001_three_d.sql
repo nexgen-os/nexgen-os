@@ -12,7 +12,7 @@
 --   three_d.buildings    a footprint, an elevation, a height
 --   three_d.spaces       floors, rooms, zones and units of a building, one tree
 --   three_d.surfaces     roof faces, facades, ground areas, carports
---   three_d.placements   the building, space and surface a device is in or on
+--   three_d.devices   the building, space and surface a device is in or on
 --
 -- Buildings, spaces and surfaces are kinds of object declared with
 -- `declare_object()`: `site_of()`, `country_of()`, `parameter_of()` and the
@@ -224,7 +224,7 @@ create table three_d.spaces (
 );
 
 comment on table three_d.spaces is
-  'The spatial structure inside a building, one tree: floors (IfcBuildingStorey, CityGML Storey), rooms (IfcSpace, CityGML BuildingRoom, Brick Room), zones and units. A device is placed in a space (three_d.placements), a participant occupies one; a series observes one.';
+  'The spatial structure inside a building, one tree: floors (IfcBuildingStorey, CityGML Storey), rooms (IfcSpace, CityGML BuildingRoom, Brick Room), zones and units. A device is placed in a space (three_d.devices), a participant occupies one; a series observes one.';
 
 create unique index spaces_one_floor_per_level on three_d.spaces (building_id, level, scenario_id) nulls not distinct where kind = 'floor';
 create index spaces_building_idx on three_d.spaces (building_id);
@@ -433,10 +433,10 @@ comment on function three_d.add_surface(uuid, text, text, geometry, numeric, num
   'Describes a roof face, a facade, a ground area or a carport on a building or a site, in its host''s scenario; a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
 
 -- ---------------------------------------------------------------------------
--- placements — where on its site a device is.
+-- devices — the 3d side of a device of the core: where on its site it is.
 -- ---------------------------------------------------------------------------
 
-create table three_d.placements (
+create table three_d.devices (
   device_id        uuid primary key references devices(id) on delete cascade,
   -- Copied from the device by trigger.
   organisation_id  uuid not null references organisations(id) on delete cascade,
@@ -450,20 +450,20 @@ create table three_d.placements (
   updated_at       timestamptz not null default now()
 );
 
-comment on table three_d.placements is
+comment on table three_d.devices is
   'Where on its site a device is: the building it is in, the space it is in, the surface it is mounted on (IfcRelContainedInSpatialStructure), one row per placed device with the device''s id. Written by three_d.place_device() and three_d.move_device().';
 
-create index placements_building_idx on three_d.placements (building_id);
-create index placements_space_idx on three_d.placements (space_id);
-create index placements_surface_idx on three_d.placements (surface_id);
-create index placements_organisation_idx on three_d.placements (organisation_id);
+create index devices_building_idx on three_d.devices (building_id);
+create index devices_space_idx on three_d.devices (space_id);
+create index devices_surface_idx on three_d.devices (surface_id);
+create index devices_organisation_idx on three_d.devices (organisation_id);
 
 -- The places a placement names fit inside each other and on the device's
 -- site: the building on the site, the space in that building, the surface
 -- on that building or on the site. A space or a surface given without its
 -- building gives the building. A place that exists only in a scenario
 -- holds only devices of that scenario.
-create or replace function three_d.placements_check()
+create or replace function three_d.devices_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -516,18 +516,18 @@ begin
 end;
 $$;
 
-comment on function three_d.placements_check() is
-  'BEFORE INSERT / UPDATE on three_d.placements: building on the device''s site, space in the building, surface on the building or the site, a place of a scenario only for a device of it; fills the building from the space or the surface and copies the device''s organisation. Refuses the device_*_mismatch of a placement, parent_in_other_scenario.';
+comment on function three_d.devices_check() is
+  'BEFORE INSERT / UPDATE on three_d.devices: building on the device''s site, space in the building, surface on the building or the site, a place of a scenario only for a device of it; fills the building from the space or the surface and copies the device''s organisation. Refuses the device_*_mismatch of a placement, parent_in_other_scenario.';
 
-create trigger placements_check before insert or update on three_d.placements
-  for each row execute function three_d.placements_check();
-create trigger placements_set_updated_at before update on three_d.placements
+create trigger devices_check before insert or update on three_d.devices
+  for each row execute function three_d.devices_check();
+create trigger devices_set_updated_at before update on three_d.devices
   for each row execute function set_updated_at();
-call secure_table('three_d.placements');
+call secure_table('three_d.devices');
 -- A placed device has the finest place it names as its first parents:
 -- `site_of()`, `three_d.building_of()` and the cascade of `parameter_of()`
 -- go through its surface, its space, its building, then its site.
-call declare_parents('three_d.placements', 'device', 'device_id', '{space_id,surface_id,building_id}');
+call declare_parents('three_d.devices', 'device', 'device_id', '{space_id,surface_id,building_id}');
 
 -- The building an object is in or on: a space or a surface by its columns,
 -- a device by its placement, an object of a device (a PV array of a system)
@@ -555,7 +555,7 @@ comment on function three_d.building_of(uuid) is
 
 insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, brick_relation, ifc_relation, description, published_by) values
   ('placed_in', 'was placed in', 'held',          '{device}',                    '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure',
-   'Where a device was before it moved, over the period it was there (three_d.placements holds today''s).', '3d'),
+   'Where a device was before it moved, over the period it was there (three_d.devices holds today''s).', '3d'),
   ('placed_on', 'is placed on',  'carries',       '{pv_array}',                  '{surface}',                     null, 'IfcRelConnectsElements',
    'The roof face, facade or ground area a PV array sits on, over the period it does. The array keeps its own azimuth and tilt.', '3d'),
   ('occupies',  'occupies',      'is occupied by', '{organisation,participant}', '{building,space}',              null, 'IfcRelOccupiesSpaces',
@@ -596,10 +596,10 @@ begin
     raise exception 'device_not_found: %', p_device_id using errcode = 'no_data_found';
   end if;
   if p_building_id is null and p_space_id is null and p_surface_id is null then
-    delete from three_d.placements where device_id = p_device_id;
+    delete from three_d.devices where device_id = p_device_id;
     return;
   end if;
-  insert into three_d.placements (device_id, organisation_id, building_id, space_id, surface_id)
+  insert into three_d.devices (device_id, organisation_id, building_id, space_id, surface_id)
   values (p_device_id, (select organisation_id from devices where id = p_device_id), p_building_id, p_space_id, p_surface_id)
   on conflict (device_id) do update set building_id = excluded.building_id, space_id = excluded.space_id, surface_id = excluded.surface_id;
 end;
@@ -624,7 +624,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   d    devices%rowtype;
-  p    three_d.placements%rowtype;
+  p    three_d.devices%rowtype;
 begin
   select * into d from devices where id = p_device_id;
   if not found then
@@ -633,7 +633,7 @@ begin
   if d.status = 'removed' then
     raise exception 'device_retired: % was removed on %', d.name, d.removal_date using errcode = 'check_violation';
   end if;
-  select * into p from three_d.placements where device_id = p_device_id;
+  select * into p from three_d.devices where device_id = p_device_id;
   insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
   values (p_device_id, 'placed_in', coalesce(p.space_id, p.surface_id, p.building_id, d.site_id), d.installation_date, p_at, d.scenario_id)
   on conflict do nothing;

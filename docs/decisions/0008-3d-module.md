@@ -23,7 +23,8 @@ becoming a second description of it.
 `three_d`, holds the skeleton of what is built: `buildings`, `spaces` (one
 tree of floors, rooms, zones and units) and `surfaces` (roof faces,
 facades, ground areas, carports), each a kind of object declared with
-`declare_object()`, and `placements`, where on its site a device is
+`declare_object()`, and `devices`, the 3d side of a device of the core: where
+on its site it is
 ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md)). The
 module publishes the link types of that description (`placed_in`,
 `placed_on`, `occupies`) and the properties of a building and of its faces
