@@ -1,7 +1,7 @@
--- Nexgen OS — module `accounting`: the bridge to the accounting side.
+-- Nexgen OS — module `billing`: the bridge to the invoicing side.
 --
 -- Who a company or a person legally is, how to reach them and how they are
--- invoiced is kept by an accounting application; Ekwo OS is the open one
+-- invoiced is kept by an invoicing application; Ekwo OS is the open one
 -- built on the same playbook (decision 0010). The core names no product and
 -- keeps no personal contact data: an organisation is a name, a contact is a
 -- name and a kind. This module keeps, beside them and keyed by the same
@@ -10,10 +10,10 @@
 
 set search_path = nexgen, public, extensions;
 
-create schema accounting;
-grant usage on schema accounting to authenticated, service_role;
+create schema billing;
+grant usage on schema billing to authenticated, service_role;
 
-create table accounting.companies (
+create table billing.companies (
   -- The organisation, by its own id.
   organisation_id  uuid primary key references organisations(id) on delete cascade,
   -- The company it is in Ekwo.
@@ -22,15 +22,15 @@ create table accounting.companies (
   updated_at       timestamptz not null default now()
 );
 
-comment on table accounting.companies is
+comment on table billing.companies is
   'The Ekwo company an organisation is: its legal identity and its invoices live there.';
 
-create unique index companies_one_ekwo_company on accounting.companies (ekwo_company_id);
-create trigger accounting_companies_set_updated_at before update on accounting.companies
+create unique index companies_one_ekwo_company on billing.companies (ekwo_company_id);
+create trigger billing_companies_set_updated_at before update on billing.companies
   for each row execute function set_updated_at();
-call secure_table('accounting.companies');
+call secure_table('billing.companies');
 
-create table accounting.contacts (
+create table billing.contacts (
   -- The contact, by its own id.
   id               uuid primary key references contacts(id) on delete cascade,
   organisation_id  uuid not null references organisations(id) on delete cascade,
@@ -43,11 +43,11 @@ create table accounting.contacts (
   constraint contacts_email_format check (email is null or email ~ '^[^@\s]+@[^@\s]+$')
 );
 
-comment on table accounting.contacts is
-  'How a contact is reached and which Ekwo contact it is: email, phone, Ekwo id. Personal data, kept where the accounting side manages it.';
+comment on table billing.contacts is
+  'How a contact is reached and which Ekwo contact it is: email, phone, Ekwo id. Personal data, kept where the invoicing side manages it.';
 
 -- The organisation is the contact's: copied, never chosen.
-create or replace function accounting.contacts_attach()
+create or replace function billing.contacts_attach()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -61,15 +61,15 @@ begin
 end;
 $$;
 
-comment on function accounting.contacts_attach() is
-  'BEFORE INSERT / UPDATE on accounting.contacts: copies the organisation of the contact.';
+comment on function billing.contacts_attach() is
+  'BEFORE INSERT / UPDATE on billing.contacts: copies the organisation of the contact.';
 
-create trigger contacts_attach before insert or update on accounting.contacts
-  for each row execute function accounting.contacts_attach();
-create trigger accounting_contacts_set_updated_at before update on accounting.contacts
+create trigger contacts_attach before insert or update on billing.contacts
+  for each row execute function billing.contacts_attach();
+create trigger billing_contacts_set_updated_at before update on billing.contacts
   for each row execute function set_updated_at();
-call secure_table('accounting.contacts');
+call secure_table('billing.contacts');
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('accounting', 'Accounting', '0.1.0', 'accounting', '0.2.0',
-        'The bridge to the accounting side: the Ekwo company an organisation is, the Ekwo contact a contact is, and how a contact is reached.');
+values ('billing', 'Billing', '0.1.0', 'billing', '0.2.0',
+        'The bridge to the invoicing side: the Ekwo company an organisation is, the Ekwo contact a contact is, and how a contact is reached.');

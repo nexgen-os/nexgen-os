@@ -160,7 +160,7 @@ and what each run records: [modules/solar/README.md](modules/solar/README.md).
 
 ```
 core/                  the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies, the model in one screen
-modules/               one Postgres schema per module (accounting, grid, community, consumption, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
+modules/               one Postgres schema per module (billing, grid, community, consumption, weather, solar and tasks shipped); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr: the law as rules with their sources, grid operators, task templates; be: identifiers, sources)
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue
@@ -204,12 +204,12 @@ price signals. A settlement engine
 over each interval, the energy, the price and who pays whom.
 
 That is where Nexgen OS stops. It keeps no invoice and no ledger: a
-settlement line is handed to an accounting application, and
+settlement line is handed to an invoicing application, and
 [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)),
-the open accounting core built on the same playbook, is the one it is built
-for. The [`accounting`](modules/accounting/README.md) module is the bridge:
+the open invoicing and bookkeeping core built on the same playbook, is the one it is built
+for. The [`billing`](modules/billing/README.md) module is the bridge:
 an organisation's Ekwo company, a contact's Ekwo contact, and the details of
-a contact that the accounting side manages, so that the core holds no
+a contact that the invoicing side manages, so that the core holds no
 personal data ([decision 0010](docs/decisions/0010-ekwo-link.md)).
 
 The two install side by side on one database: Nexgen OS takes the schema

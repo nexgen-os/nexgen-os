@@ -24,10 +24,10 @@ three forms and no other:
 - **a derived table**, with the same id as the core object it enriches:
   `solar.pv_systems` derives devices of type `solar` through
   `derive_devices()`, `grid.meters` adds the operator and the voltage
-  level of a meter, `accounting.companies` is keyed by the organisation's
+  level of a meter, `billing.companies` is keyed by the organisation's
   own id. A derived table that is the module's side of a core object carries
   that object's name in the module schema — `grid.meters` is the meter as the
-  grid sees it, `accounting.contacts` the contact as the accounts see it: one
+  grid sees it, `billing.contacts` the contact as the invoicing side sees it: one
   word per thing across schemas — and a derived table that holds a subtype
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object: `tasks.tasks`

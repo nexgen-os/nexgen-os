@@ -80,7 +80,7 @@ export async function tablesWithoutRls(db: SqlClient, schemas: string[]): Promis
  * holds a notion of its own beside it. `organisation_id` alone is the
  * tenancy every table carries, not an object it enriches — unless it is the
  * table's primary key: a table keyed by the organisation's id derives the
- * organisation itself (`accounting.companies`). A partition is left out, as
+ * organisation itself (`billing.companies`). A partition is left out, as
  * above.
  */
 export async function detachedModuleTables(db: SqlClient, schemas: string[]): Promise<string[]> {

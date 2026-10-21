@@ -34,9 +34,8 @@ new path:
   (`packages/core`). `engines/` keeps the programs in other languages.
 - `sdk/python` → `packages/python`.
 - `modules/solar/*.ts` → `modules/solar/src/*.ts`.
-- `modules/ekwo` → `modules/accounting`: schema `accounting`, tables
-  `accounting.companies` and `accounting.contacts`, module code
-  `accounting`.
+- `modules/ekwo` → `modules/billing`: schema `billing`, tables
+  `billing.companies` and `billing.contacts`, module code `billing`.
 - `site/` leaves the repository; `site/README.md` points to the new home.
 
 ### Changed
@@ -94,7 +93,7 @@ new path:
 - `doctor` names `series_partitions_missing`: weeks of `series_values` that
   hold values with no weekly partition.
 - The README says where the line between Nexgen OS and invoicing is, and why
-  Ekwo OS is the accounting application it is built for.
+  Ekwo OS is the invoicing application it is built for.
 
 ### Added
 
@@ -133,9 +132,9 @@ new path:
   applied there (the ground reflection is the weather source's).
 - Nexgen OS and Ekwo OS on one database: `docs/with-ekwo-os.md` says how
   both are installed on one project, what each installer owns, what the
-  `accounting` module holds, and that the schema name `ekwo` is Ekwo's.
+  `billing` module holds, and that the schema name `ekwo` is Ekwo's.
   `tests/cross-install.test.ts` installs the Ekwo OS core from its published
-  package and the Nexgen OS core with `accounting`, in both orders, and finds
+  package and the Nexgen OS core with `billing`, in both orders, and finds
   no collision, each side's grants intact and one member reading both.
 - The `settlement` request kind of the engines (`packages/core/src/engines/settlement.ts`):
   contracts with their price signals and the series their volume is read
@@ -227,6 +226,22 @@ rewritten) — and a module starts from one of them and enriches it
   schema that carries `organisation_id` and reaches no table of the core
   but `organisations` by a path of foreign keys.
 - Examples 01, 04, 05, 06 and 07 need the core only.
+- The bridge to the invoicing side is the `billing` module (schema
+  `billing`, module code `billing`), and the participant of the core is the
+  one who is billed (decision 0043, decision 0010 rewritten):
+  `billing.invoices` holds one row per Ekwo invoice issued for or to a
+  participant — its Ekwo id, the participant, the counterparty participant
+  of a bill inside a community, `sale` or `purchase`, the period and the
+  settlement run — and no amount, currency, status or line, which stay
+  Ekwo's. Gestures `billing.link_company()`, `billing.link_contact()`,
+  `billing.record_invoice()` (`participant_not_found`,
+  `participant_contact_missing`, `ekwo_invoice_not_found`), a read
+  `billing.invoices_of()`, and `billing.unlinked_keys()`. When Ekwo OS
+  shares the database, the module's Ekwo ids take real foreign keys to
+  `public.companies`, `public.contacts` and `public.documents`; a remote
+  Ekwo raises `ekwo_remote_not_supported`. `nexgen-os doctor` names
+  `billing_key_unlinked`. Example 03 records one bill between two
+  participants.
 
 ### Changed — schema 0.2.0: the place, the device and the series
 
@@ -238,9 +253,9 @@ floor is 0.2.0. Table by table:
 
 - `organisations` is an object of the registry (decision 0023): its
   attributes, identifiers, links and documents attach to it.
-  `ekwo_company_id` leaves it for `accounting.companies`.
+  `ekwo_company_id` leaves it for `billing.companies`.
 - `contacts` keeps a name and a kind; `email`, `phone` and
-  `ekwo_contact_id` move to `accounting.contacts` (new module `accounting`).
+  `ekwo_contact_id` move to `billing.contacts` (new module `billing`).
 - `projects` and `participants` move to the new module `community`
   (`community.projects`, `community.participants`, with `join_project()`,
   `leave_project()`, `participant_meters()`); `country_of()` no longer

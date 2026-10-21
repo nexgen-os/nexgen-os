@@ -7,7 +7,7 @@ with the statuses, is in [`decisions/`](decisions/README.md).
 ## The spirit
 
 Six sentences every record answers to, written the way the founder says
-them; Ekwo OS, the accounting core built on the same playbook, is the
+them; Ekwo OS, the invoicing and bookkeeping core built on the same playbook, is the
 measure.
 
 - **Simple.** A repository that reads in one screen — the core, the modules,
@@ -80,7 +80,7 @@ measure.
 - [0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md) A module starts from an object of the core and enriches it: a derived table, a secondary table or vocabulary rows
 - [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
 - [0041](decisions/0041-a-module-names-one-thing.md) A module names one thing with its own physics, and there is no catch-all
-- Records of single modules: [0010](decisions/0010-ekwo-link.md) the accounting bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
+- Records of single modules: [0010](decisions/0010-ekwo-link.md) the billing bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
 
 ## Packs
 
@@ -112,7 +112,7 @@ measure.
 
 ## Inherited
 
-These decisions of Ekwo OS, the accounting core built on the same playbook,
+These decisions of Ekwo OS, the invoicing and bookkeeping core built on the same playbook,
 apply as they are written there: 0002 *The surface is closed, not merely
 empty* · 0003 *The schema grants its own rights* · 0005 *A guard answers
 true or false, and reads as the schema* · 0007 *An invitation names an

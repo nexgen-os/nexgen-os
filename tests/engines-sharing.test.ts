@@ -91,7 +91,7 @@ describe('energy sharing in a project, as a run', () => {
   const day = { from: '2026-05-02T00:00:00+02:00', to: '2026-05-03T00:00:00+02:00', step: '15 minutes' };
 
   beforeAll(async () => {
-    db = await freshDatabase(['accounting', 'community', 'grid']);
+    db = await freshDatabase(['billing', 'community', 'grid']);
     await db.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
     await db.query(
       `insert into attributes (object_id, property_code, value, valid_from, valid_to, source)

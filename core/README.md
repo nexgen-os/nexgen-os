@@ -38,7 +38,7 @@ after the gesture — `create_site`, `add_space`, `install_device`,
 `series_ensure`, `store`, `record_run`, `merge_objects`, `join_project`,
 `declare_meter`, `connect_device`… — that refuses by name. The grid side of
 a connection point (`grid`), the energy sharing of a community
-(`community`) and the accounting bridge (`accounting`) are modules with their
+(`community`) and the billing bridge (`billing`) are modules with their
 own schema, each starting from an object of the core
 ([0042](../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)). Details, diagram and rules: [docs/model.md](../docs/model.md); the
 rules and why: [docs/doctrine.md](../docs/doctrine.md).

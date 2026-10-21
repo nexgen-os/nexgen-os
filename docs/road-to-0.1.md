@@ -189,7 +189,7 @@ decisions of the audit of 19 October 2026.
   community as modules, the law out of the repository, sensors folded into
   devices and series, one notion of space, devices placed by columns,
   splits and merges as links, columns that repeated a property removed,
-  the bridge columns to the `accounting` module, a run's own series, the
+  the bridge columns to the `billing` module, a run's own series, the
   defaults and their one resolution, organisations in the registry of
   objects. Records 0006, 0018, 0019, 0021, 0022, 0023, 0026, 0028.
 - [ ] **The packs** (27–35): five sections in JSON against a published

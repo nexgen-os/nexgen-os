@@ -5,7 +5,7 @@ and the spaces inside its buildings, its devices and the series they read,
 attachments, and the queries a page would run on it. They load on a fresh
 database after the core migrations, the core vocabularies and the modules
 they name in their first line (`grid` for the operator of a connection
-point, `community` for energy sharing, `accounting` for the accounting side),
+point, `community` for energy sharing, `billing` for the invoicing side),
 and the
 test suite loads every one of them (`tests/examples.test.ts`).
 

@@ -1,13 +1,13 @@
 // Nexgen OS and Ekwo OS installed on one database, in both orders.
 //
-// Ekwo OS, the accounting core built on the same playbook, lives in `public`;
+// Ekwo OS, the invoicing and bookkeeping core built on the same playbook, lives in `public`;
 // Nexgen OS lives in `nexgen` and one schema per module (decision 0010). This
 // file installs both on one PGlite with PostGIS, each by its own installer —
 // Ekwo's migration runner from the published `ekwo-os` package, which carries
 // its migrations, and `nexgen-os init` — and checks that neither touches what
 // the other created: no name collides, each side keeps its schemas, Ekwo's
 // revocations on `public` leave Nexgen's grants as they were, a person who
-// belongs to both sides reads both, and the `accounting` module points at an
+// belongs to both sides reads both, and the `billing` module points at an
 // Ekwo company. Ekwo OS needs no extension, so all of it runs on PGlite;
 // what it leaves to a real project is in `docs/with-ekwo-os.md`.
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
@@ -19,7 +19,7 @@ import * as ekwo from 'ekwo-os';
 import { doctor, install } from '../packages/cli/src/index.js';
 import { asUser, one, repoRoot, sqlClient, USER_A, USER_B } from './helpers/db.js';
 
-const NEXGEN_SCHEMAS = ['nexgen', 'accounting'];
+const NEXGEN_SCHEMAS = ['nexgen', 'billing'];
 const EKWO_SCHEMAS = ['public', 'supabase_migrations'];
 
 /**
@@ -67,7 +67,7 @@ async function installEkwo(db: PGlite) {
 
 async function installNexgen(db: PGlite) {
   await newSession(db);
-  await install(sqlClient(db), { root: repoRoot, modules: ['accounting'], packs: [] });
+  await install(sqlClient(db), { root: repoRoot, modules: ['billing'], packs: [] });
 }
 
 /**
@@ -215,7 +215,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
 
   it("the second installation leaves the grants of the first as they were", () => {
     // Ekwo first: Ekwo's rights on public; Nexgen first: Nexgen's on nexgen
-    // and accounting, through every revocation Ekwo makes on public.
+    // and billing, through every revocation Ekwo makes on public.
     expect(Object.keys(run.before).length).toBeGreaterThan(100);
     expect(run.after).toEqual(run.before);
   });
@@ -255,14 +255,14 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       expect(stranger).toEqual({ organisations: 0, companies: 0 });
     });
 
-    it('links the organisation to its Ekwo company through accounting.companies', async () => {
+    it('links the organisation to its Ekwo company through billing.companies', async () => {
       await asUser(db, USER_A, () =>
-        db.query('insert into accounting.companies (organisation_id, ekwo_company_id) values ($1, $2)', [organisationId, companyId]),
+        db.query('insert into billing.companies (organisation_id, ekwo_company_id) values ($1, $2)', [organisationId, companyId]),
       );
       const joined = await asUser(db, USER_A, () =>
         db.query<{ organisation: string; company: string }>(
           `select o.name as organisation, c.name as company
-             from accounting.companies a
+             from billing.companies a
              join nexgen.organisations o on o.id = a.organisation_id
              join public.companies c on c.id = a.ekwo_company_id`,
         ),
@@ -271,10 +271,10 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
     });
 
     it('takes a real foreign key to public.companies when both share the database', async () => {
-      await db.exec(`alter table accounting.companies
+      await db.exec(`alter table billing.companies
         add constraint companies_ekwo_company_fk foreign key (ekwo_company_id) references public.companies (id)`);
       await expect(
-        db.query('update accounting.companies set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
+        db.query('update billing.companies set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
       ).rejects.toThrow(/foreign key/);
     });
   });
@@ -307,7 +307,7 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
     const ekwoModules = await created(join(ekwo.resolveBundleDir(), 'modules'));
     const nexgenModules = await created(join(repoRoot, 'modules'));
     expect(ekwoModules.size).toBeGreaterThan(0);
-    expect(nexgenModules).toContain('accounting');
+    expect(nexgenModules).toContain('billing');
     expect([...nexgenModules].filter((s) => ekwoModules.has(s) || EKWO_SCHEMAS.includes(s))).toEqual([]);
     // The schema name `ekwo` is reserved for Ekwo OS.
     expect(nexgenModules.has('ekwo')).toBe(false);
@@ -320,7 +320,7 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
       new Set([...set].filter((o) => !o.startsWith('schema ') && !/_(pkey|key)$/.test(o)).map(nameOf));
     const ekwoNames = named(e);
     // Each core reaches its own through its search path: `nexgen, public` for
-    // Nexgen OS, `public` for Ekwo OS; `accounting.companies` and
+    // Nexgen OS, `public` for Ekwo OS; `billing.companies` and
     // `public.companies` are read by their schema.
     expect([...named(n)].filter((x) => ekwoNames.has(x)).sort()).toEqual([
       'function set_updated_at()',

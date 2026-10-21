@@ -61,8 +61,8 @@ parents. Attachments point to the registry; pages read the named tables.
   ([0023](decisions/0023-an-organisation-is-an-object.md)): its identifiers,
   documents and its own defaults attach to it as to any other.
 - **contacts** — a person or a company the organisation deals with: a name
-  and a kind. How to reach and invoice them is the accounting side's (the
-  `accounting` module, [0010](decisions/0010-ekwo-link.md)). Nexgen OS keeps
+  and a kind. How to reach and invoice them is the invoicing side's (the
+  `billing` module, [0010](decisions/0010-ekwo-link.md)). Nexgen OS keeps
   no invoice and no ledger: a settlement line goes to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os)
   ([why](../README.md#invoicing-and-ekwo-os)), which installs beside it on one
   database ([with Ekwo OS](with-ekwo-os.md)).
@@ -313,7 +313,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
-| `accounting` | `accounting` | the accounting bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
+| `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 
 ## Geometry

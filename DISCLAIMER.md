@@ -28,7 +28,7 @@ own terms.*
 - **A rule in a country pack is a reading of a text at a date**, written so
   that anyone can check it against the source it names. The text prevails.
 - **A settlement computed here is a computation**; the invoice, the tax and
-  the accounting entry are issued by the tool you use for that.
+  the ledger entry are issued by the tool you use for that.
 
 ## What you keep
 

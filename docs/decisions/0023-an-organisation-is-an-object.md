@@ -33,7 +33,7 @@ those of any object it owns: its members read them, those who may write
 for it write them.
 
 **Legal identity and invoicing stay referenced.** What an organisation is
-in law and how it is invoiced is the accounting side's
+in law and how it is invoiced is the invoicing side's
 ([0010](0010-ekwo-link.md)); the object holds what describing and studying
 places needs.
 
