@@ -18,7 +18,7 @@ their sites, the meters that connect those sites to a network, the
 devices installed on them, the series they produce — and attaches
 everything else to any of them. A site is geolocated, not described: its
 buildings, floors, rooms and roof faces, and where a device sits among
-them, are the `3d` module's ([`modules/3d`](../modules/3d/README.md)). Each
+them, are the `building` module's ([`modules/building`](../modules/building/README.md)). Each
 named object is a table with the columns every row has; what a trade knows
 beyond them is an attribute with its period and its source.
 
@@ -50,7 +50,7 @@ Every act that writes several rows or carries a rule is one function named
 after the gesture — `create_site`, `install_device`,
 `series_ensure`, `store`, `record_run`, `merge_objects`, `join_project`,
 `declare_meter`, `assign_meter`, `connect_device`… — that refuses by name. The grid side of
-a connection point (`grid`), the physical description of a site (`3d`:
+a connection point (`grid`), the physical description of a site (`building`:
 buildings, spaces, surfaces, the placement of a device), the energy sharing
 of a community (`community`) and the billing bridge (`billing`) are
 modules with their own schema, each starting from an object of the core

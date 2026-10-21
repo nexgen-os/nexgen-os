@@ -36,7 +36,7 @@ schema `nexgen`. In plain words:
   everything in front of it is the grid's, the market's or the community's.
   Several participants may share one site, one per occupant or per meter;
 - **the site** is the place, geolocated with its address and point; what is
-  built on it is the `3d` module's;
+  built on it is the `building` module's;
 - **the meter** is the connection point to a network, under the identifier
   its operator knows — the frontier between the grid and the place;
 - **the device** is anything installed, from a PV system to a probe, behind a
@@ -56,7 +56,7 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 ## Principles
 
 1. **Concrete objects, generic attachments.** A site is a row of `sites`, a
-   building a row of `three_d.buildings`. A new kind of thing is a module table with the same id; a new
+   building a row of `building.buildings`. A new kind of thing is a module table with the same id; a new
    property is a vocabulary row; a new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
@@ -64,7 +64,7 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 3. **One way to read, one way to write.** `attributes_of()` for attributes,
    `resample()` for series (the amount of each bucket, a register's
    consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
-   beside it), `site_of()` and `country_of()` for where, `three_d.building_volume()`
+   beside it), `site_of()` and `country_of()` for where, `building.building_volume()`
    for a derived 3D block. Values are written by `store()` alone, which
    converts their unit, checks their quality and step, and keeps the
    aggregates and the latest value; clients never resample, convert or fill.
@@ -151,8 +151,8 @@ example in `examples/` is a complete, loadable dataset.
 From the house loaded above, in a clone of this repository (`npm ci` once):
 
 6. Describe its PV system in the `solar` module, with one array facing
-   south at 30°, its own azimuth and tilt (the `3d` module can say which
-   roof face it sits on, `three_d.place_array()`):
+   south at 30°, its own azimuth and tilt (the `building` module can say which
+   roof face it sits on, `building.place_array()`):
 
    ```sql
    set search_path = nexgen;

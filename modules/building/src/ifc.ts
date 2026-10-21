@@ -8,11 +8,11 @@
  *   the site's origin   → `locate_site()`, at `rooftop` precision with a map
  *                         conversion, `parcel` with the site's coordinates,
  *                         when the site had no position or a coarser one
- *   building            → `three_d.add_building()`: its footprint in WGS 84, its
+ *   building            → `building.add_building()`: its footprint in WGS 84, its
  *                         elevation and height; its year (`set_attribute()`)
- *   storey, space       → `three_d.add_space()`, kinds floor and room; a room's
+ *   storey, space       → `building.add_space()`, kinds floor and room; a room's
  *                         area as the attribute `floor_area`
- *   roof face           → `three_d.add_surface()`, kind roof, azimuth (true north)
+ *   roof face           → `building.add_surface()`, kind roof, azimuth (true north)
  *                         and tilt
  *   product             → `install_device()`, when a device type names its
  *                         IFC class (`device_types.ifc_class`), in its
@@ -121,7 +121,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     // they are joined, so that walls that meet after rounding do, and the
     // holes they leave filled.
     const row = await db.query<{ id: string }>(
-      `select three_d.add_building($1, $2,
+      `select building.add_building($1, $2,
                 (select case when g.u is null then null else
                           ST_Force3D(${toWgs84('ST_CollectionExtract(ST_MakeValid(g.u), 3)', 5, 6)}, coalesce($4, 0)) end
                    from (select case when $11::boolean
@@ -148,7 +148,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
 
     const addRoom = async (room: IfcRoom, floorId: string | null) => {
       const space = await db.query<{ id: string }>(
-        `select three_d.add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6) id`,
+        `select building.add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6) id`,
         [id, room.name, floorId, room.height, options.sourceCode, JSON.stringify({ ifc: room.description })],
       );
       const spaceId = space.rows[0].id;
@@ -161,7 +161,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     };
     for (const f of b.floors) {
       const floor = await db.query<{ id: string }>(
-        `select three_d.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
+        `select building.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
         [id, f.name, f.level, f.elevation, f.height, options.sourceCode, JSON.stringify({ ifc: f.description })],
       );
       if (f.globalId) await identifierFromFile(db, floor.rows[0].id, 'ifc_guid', f.globalId);
@@ -232,7 +232,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     );
     const building = (p.building && buildingRows.get(p.building)) || null;
     const room = (p.room && roomRows.get(p.room)) || null;
-    if (building || room) await db.query('select three_d.place_device($1, $2, $3)', [device.rows[0].id, building, room]);
+    if (building || room) await db.query('select building.place_device($1, $2, $3)', [device.rows[0].id, building, room]);
     if (p.globalId) await identifierFromFile(db, device.rows[0].id, 'ifc_guid', p.globalId);
     result.counts.devices += 1;
   }

@@ -7,8 +7,8 @@
 -- OpenSolar's module group, Orange Button's PVArray). The physics of a
 -- module or an inverter product is attached to its row of the core
 -- `device_directory`, in pvlib's parameter names. An array carries its own
--- azimuth and tilt; the roof face it sits on, when the `3d` module
--- describes one, is a dated `placed_on` link (`three_d.place_array`). A far
+-- azimuth and tilt; the roof face it sits on, when the `building` module
+-- describes one, is a dated `placed_on` link (`building.place_array`). A far
 -- horizon belongs to a site or a surface. A yield profile is a named set of modelling choices
 -- with an ordered list of losses, so that a run says what it was computed
 -- with.
@@ -207,7 +207,7 @@ create table solar.pv_arrays (
   pv_system_id         uuid not null references solar.pv_systems(id) on delete cascade,
   name                 text not null,
   -- Its own, always: tilted frames on a flat roof differ from the roof. The
-  -- `3d` module fills them from the surface it places the array on when
+  -- `building` module fills them from the surface it places the array on when
   -- they are not given. For a tracker: its axis, or null.
   azimuth_deg          numeric(6, 2),
   tilt_deg             numeric(5, 2),

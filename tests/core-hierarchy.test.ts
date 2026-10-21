@@ -202,7 +202,7 @@ describe('the grid module on top of a meter of the core', () => {
 
 describe('every module', () => {
   it('starts from an object of the core: no table of a module schema is detached', async () => {
-    const all = await freshDatabase(['3d', 'billing', 'community', 'consumption', 'grid', 'solar', 'tasks', 'weather']);
+    const all = await freshDatabase(['building', 'billing', 'community', 'consumption', 'grid', 'solar', 'tasks', 'weather']);
     try {
       const schemas = (await all.query<{ schema_name: string }>('select schema_name from modules')).rows.map((r) => r.schema_name);
       expect(schemas).toHaveLength(8);

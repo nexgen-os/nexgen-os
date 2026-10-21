@@ -23,7 +23,7 @@ const place = {
 };
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   org = await organisation(db, 'A firm', USER_A);
   // What a country pack publishes: a country, two regions, one of them in
   // another time zone.
@@ -80,15 +80,15 @@ describe('a site from the standard shape of a place', () => {
 describe('a building and its roof, by the gestures of the core', () => {
   it('derives the orientation of a roof face from its 3D polygon: 30° tilted, facing south', async () => {
     const site = (await one<{ id: string }>(db, `select create_site($1, 'House', '{"country": "ZZ"}') id`, [org])).id;
-    const house = (await one<{ id: string }>(db, `select three_d.add_building($1, 'House', null, 12, 7.5, 'residential') id`, [site])).id;
+    const house = (await one<{ id: string }>(db, `select building.add_building($1, 'House', null, 12, 7.5, 'residential') id`, [site])).id;
     // A 10 m wide face rising 5 m over 8.66 m towards the north: it faces south at 30°.
     const roof = (await one<{ id: string }>(
       db,
-      `select three_d.add_surface($1, 'roof', 'South face', ST_Transform(ST_SetSRID(ST_GeomFromText(
+      `select building.add_surface($1, 'roof', 'South face', ST_Transform(ST_SetSRID(ST_GeomFromText(
          'POLYGON Z((600000 5600000 10, 600010 5600000 10, 600010 5600008.66 15, 600000 5600008.66 15, 600000 5600000 10))'), 32631), 4326)) id`,
       [house],
     )).id;
-    const r = await one<{ azimuth: number; tilt: number; building: string }>(db, 'select azimuth_deg::float azimuth, tilt_deg::float tilt, three_d.building_of(id) building from three_d.surfaces where id = $1', [roof]);
+    const r = await one<{ azimuth: number; tilt: number; building: string }>(db, 'select azimuth_deg::float azimuth, tilt_deg::float tilt, building.building_of(id) building from building.surfaces where id = $1', [roof]);
     expect(r.tilt).toBeCloseTo(30, 0);
     expect(r.azimuth).toBeGreaterThan(178);
     expect(r.azimuth).toBeLessThan(182);
@@ -97,12 +97,12 @@ describe('a building and its roof, by the gestures of the core', () => {
 
   it('refuses a roof face with neither orientation nor shape, and a surface on a device', async () => {
     const site = (await one<{ id: string }>(db, `select create_site($1, 'Barn', '{"country": "ZZ"}') id`, [org])).id;
-    const barn = (await one<{ id: string }>(db, `select three_d.add_building($1, 'Barn') id`, [site])).id;
-    await expect(db.query(`select three_d.add_surface($1, 'roof', 'Somewhere up')`, [barn])).rejects.toThrow(/orientation_unknown/);
-    const flat = await one<{ id: string }>(db, `select three_d.add_surface($1, 'ground', 'Yard') id`, [site]);
+    const barn = (await one<{ id: string }>(db, `select building.add_building($1, 'Barn') id`, [site])).id;
+    await expect(db.query(`select building.add_surface($1, 'roof', 'Somewhere up')`, [barn])).rejects.toThrow(/orientation_unknown/);
+    const flat = await one<{ id: string }>(db, `select building.add_surface($1, 'ground', 'Yard') id`, [site]);
     expect(flat.id).toBeTruthy();
     const device = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Battery') id`, [site])).id;
-    await expect(db.query(`select three_d.add_surface($1, 'roof', 'On a battery', null, 180, 30)`, [device])).rejects.toThrow(/surface_host_kind/);
+    await expect(db.query(`select building.add_surface($1, 'roof', 'On a battery', null, 180, 30)`, [device])).rejects.toThrow(/surface_host_kind/);
   });
 
   it('creates a variant on top of another, and refuses a parent of another organisation', async () => {

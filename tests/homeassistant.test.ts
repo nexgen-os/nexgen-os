@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { freshDatabase, insert, one, organisation, repoRoot, square } from './helpers/db.js';
 import { readHomeAssistant, writeHomeAssistant, type HaSnapshot } from '@nexgen-os/homeassistant';
-import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '../modules/3d/src/index.js';
+import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '../modules/building/src/index.js';
 
 // The home of the format library's own tests: two floors, four areas,
 // three devices, nine entities and their recorder states.
@@ -28,10 +28,10 @@ let building: string;
 let imported: HomeImport;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   org = await organisation(db, 'A home');
   const site = await insert(db, 'sites', { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
-  building = await insert(db, 'three_d.buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
+  building = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
   imported = await importHomeAssistant(db, { siteId: site, buildingId: building }, readHomeAssistant(snapshot));
 });
 
@@ -44,7 +44,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
     const r = await db.query<{ kind: string; n: number }>(`select kind, count(*)::int n from objects where organisation_id = $1 group by kind order by kind`, [org]);
     expect(Object.fromEntries(r.rows.map((x) => [x.kind, x.n]))).toEqual({ building: 1, device: 3, organisation: 1, site: 1, space: 6 });
     const rooms = await db.query<{ name: string; kind: string; floor: string | null }>(
-      `select s.name, s.kind, f.name floor from three_d.spaces s left join three_d.spaces f on f.id = s.parent_id where s.building_id = $1 order by s.kind, s.name`, [building]);
+      `select s.name, s.kind, f.name floor from building.spaces s left join building.spaces f on f.id = s.parent_id where s.building_id = $1 order by s.kind, s.name`, [building]);
     expect(rooms.rows).toEqual([
       { name: 'First floor', kind: 'floor', floor: null },
       { name: 'Ground floor', kind: 'floor', floor: null },
@@ -55,7 +55,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
     ]);
     const placed = await db.query<{ name: string; room: string | null; building: boolean }>(
       `select d.name, s.name room, p.building_id = $1 building
-         from devices d join three_d.devices p on p.device_id = d.id left join three_d.spaces s on s.id = p.space_id order by d.name`, [building]);
+         from devices d join building.devices p on p.device_id = d.id left join building.spaces s on s.id = p.space_id order by d.name`, [building]);
     expect(placed.rows).toEqual([
       { name: 'Inverter', room: 'Garage', building: true },
       { name: 'Living room thermostat', room: 'Living room', building: true },

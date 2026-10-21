@@ -1,4 +1,4 @@
--- Example 5 — a district built from open data, in Dakar. Needs the `3d`
+-- Example 5 — a district built from open data, in Dakar. Needs the `building`
 -- module.
 --
 -- A city's district plan with its perimeter, six plots and their buildings
@@ -19,7 +19,7 @@ insert into sites (id, organisation_id, name, country, city, profile)
 select ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, '00000000-0000-4000-8000-000500000001', 'Plot ' || i, 'SN', 'Dakar', 'mixed'
   from generate_series(1, 6) i;
 
-insert into three_d.buildings (id, organisation_id, site_id, name, profile, footprint, height_m, source_code)
+insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, height_m, source_code)
 select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid,
        'Building ' || i, case when i in (2, 5) then 'office' else 'mixed' end,
        ST_SetSRID(ST_MakeEnvelope(236100 + 120 * i, 1630400, 236100 + 120 * i + 20, 1630415), 32628),
@@ -44,7 +44,7 @@ insert into documents (object_id, name, kind, uri, media_type, source_code, sour
   ('00000000-0000-4000-8000-000500000020', 'Height model tile', 'document', 's3://nexgen-os-examples/dakar/dem-n14w018.tif', 'image/tiff', 'copernicus_dem', 'GLO-30 tile N14 W018');
 
 -- A roof face per building, flat, ready for the solar study.
-insert into three_d.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg)
+insert into building.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg)
 select ('00000000-0000-4000-8000-0005000000' || (50 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'Roof ' || i, 'roof', 180, 0
   from generate_series(1, 6) i;
 
@@ -68,10 +68,10 @@ select split_object('00000000-0000-4000-8000-000500000036',
 -- Queries a page would run
 -- Buildings inside the perimeter, with their roof area:
 --   select b.name, b.height_m, area_m2(b.footprint) roof_m2
---     from three_d.buildings b, projects p
+--     from building.buildings b, projects p
 --    where p.id = '00000000-0000-4000-8000-000500000020' and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry)) order by b.name;
 -- Which roofs are shaded:
---   select s.name, b.name shaded_by from links l join three_d.surfaces s on s.id = l.object_id join three_d.buildings b on b.id = l.subject_id where l.type_code = 'shades';
+--   select s.name, b.name shaded_by from links l join building.surfaces s on s.id = l.object_id join building.buildings b on b.id = l.subject_id where l.type_code = 'shades';
 -- What plot 6 became:
 --   select s.name, l.valid_from from links l join sites s on s.id = l.object_id
 --    where l.type_code = 'split_into' and l.subject_id = '00000000-0000-4000-8000-000500000036';

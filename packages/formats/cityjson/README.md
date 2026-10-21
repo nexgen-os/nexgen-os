@@ -30,10 +30,10 @@ const out = writeCityJson(model);      // CityJSON 2.0
 Refuses by name `not_cityjson` and `crs_required` (no reference system in
 the file nor in the options). What it never does: compute a height, an
 azimuth or a tilt, transform coordinates, open a connection. Into Nexgen
-OS, `importCityJson()` of the `3d` module (`modules/3d/src`) writes each
-building through `three_d.add_building()` (its footprint unioned in WGS 84,
+OS, `importCityJson()` of the `building` module (`modules/building/src`) writes each
+building through `building.add_building()` (its footprint unioned in WGS 84,
 elevation, height), `set_attribute()` (floors, year), `add_identifier()`
-(scheme `cityjson`) and `three_d.add_surface()` (roof and wall faces,
+(scheme `cityjson`) and `building.add_surface()` (roof and wall faces,
 azimuth against true north), refusing
 a building already imported (`already_imported`); `exportCityJson()` reads
 a site's buildings back, in its UTM zone, and the export lands the same way

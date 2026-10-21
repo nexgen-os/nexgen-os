@@ -1,4 +1,4 @@
--- Example 6 — a roof surveyed by drone, in Bologna. Needs the `3d` module.
+-- Example 6 — a roof surveyed by drone, in Bologna. Needs the `building` module.
 --
 -- A surveyor's organisation, a client's site with a factory hall, a drone
 -- flight whose outputs are documents (orthophoto, photos, video), the roof
@@ -15,7 +15,7 @@ insert into contacts (id, organisation_id, name, kind) values
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
   ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', 'Felsinea plant', 'IT', 'Via Emilia Levante 210', '40139', 'Bologna', 'IT-45', 'industrial');
 
-insert into three_d.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000600000020', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000010', 'Hall A', 'industrial',
    ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11);
 
@@ -38,7 +38,7 @@ insert into documents (object_id, name, kind, uri, media_type, source_code, sour
    '{"points": 48200000, "density_per_m2": 850, "note": "a survey output kept as a document; the hosted capture tools read it"}');
 
 -- Roof faces measured on the orthophoto: two pitches of a sawtooth roof and a flat annex.
-insert into three_d.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg, geometry) values
+insert into building.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg, geometry) values
   ('00000000-0000-4000-8000-000600000031', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, south pitches', 'roof', 180, 25,
    ST_GeomFromText('POLYGON Z((11.3850 44.4805 60, 11.3862 44.4805 60, 11.3862 44.4808 63, 11.3850 44.4808 63, 11.3850 44.4805 60))', 4326)),
   ('00000000-0000-4000-8000-000600000032', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000020', 'Sawtooth, north glazing', 'roof', 0, 60,
@@ -67,10 +67,10 @@ insert into participants (organisation_id, project_id, site_id, name, role, cont
 --   select name, kind, media_type, captured_at, metadata from documents where source_code = 'rae_drone_survey' order by name;
 -- The roof faces, with the area measured and the plan area of their outline:
 --   select s.name, s.azimuth_deg, s.tilt_deg, attributes_of(s.id)->>'roof_area' measured_m2, area_m2(s.geometry) plan_m2
---     from three_d.surfaces s where s.building_id = '00000000-0000-4000-8000-000600000020' order by s.name;
+--     from building.surfaces s where s.building_id = '00000000-0000-4000-8000-000600000020' order by s.name;
 -- Where the building's data came from, with license and attribution:
 --   select distinct src.name, src.license, src.attribution from attributes a join sources src on src.code = a.source_code
---    where a.object_id in (select id from three_d.surfaces where building_id = '00000000-0000-4000-8000-000600000020');
+--    where a.object_id in (select id from building.surfaces where building_id = '00000000-0000-4000-8000-000600000020');
 
 -- Daily readings are cut in the site's time zone.
 update sites set time_zone = 'Europe/Rome' where organisation_id = '00000000-0000-4000-8000-000600000001';

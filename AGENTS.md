@@ -96,7 +96,7 @@ Four things only you do here:
    (code and unit), `property_defs` (what an attribute may hold),
    `sources` (what exists outside, with its licence), `id_schemes`.
 3. **Describe, with a source**: the site and its meters, the participants
-   of a project carrying them; with the `3d` module, a building with its
+   of a project carrying them; with the `building` module, a building with its
    footprint from a CityJSON file (`packages/formats/cityjson`), a roof face
    with its azimuth and tilt; a PV system and its arrays, each with its own
    orientation; the geocoder for an address.

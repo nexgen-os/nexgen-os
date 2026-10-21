@@ -29,7 +29,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readIfc, type ReadOptions } from '@nexgen-os/ifc';
-import { importIfc as importModel, type IfcImportOptions, type IfcTarget } from '../modules/3d/src/index.js';
+import { importIfc as importModel, type IfcImportOptions, type IfcTarget } from '../modules/building/src/index.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(join(repoRoot, 'packages', 'formats', 'ifc', 'tests', 'fixtures', name)).then((b) => new Uint8Array(b));
@@ -44,7 +44,7 @@ let mapFile: Uint8Array;
 let siteFile: Uint8Array;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   org = await organisation(db, 'An architect', USER_A);
   await db.query(`insert into sources (code, name, kind, license, attribution, countries) values ('architect_model', 'Architect model', 'file', 'proprietary', '© The architect', '{NL}')`);
   mapFile = await fixture('ifc-house-map-conversion.ifc');
@@ -67,15 +67,15 @@ const building = (id: string) =>
   one<BuildingRow>(
     db,
     `select b.name, b.elevation_m::float elevation, b.height_m::float height,
-            (select count(*)::int from three_d.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level >= 0) above,
-            (select count(*)::int from three_d.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level < 0) below,
+            (select count(*)::int from building.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level >= 0) above,
+            (select count(*)::int from building.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level < 0) below,
             (attributes_of(b.id)->>'year_built')::int built, area_m2(b.footprint)::float area, b.source_code source,
             ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat,
             (select value from external_ids where object_id = b.id and scheme = 'ifc_guid') guid,
             (b.metadata->'ifc'->'psets'->'Pset_BuildingCommon'->>'IsLandmarked')::boolean landmarked,
             b.metadata->'ifc'->'header'->>'schema' schema, b.metadata->'ifc'->'header'->>'name' file,
             s.location_precision site_precision, ST_X(s.geometry) site_lon, ST_Y(s.geometry) site_lat
-       from three_d.buildings b join sites s on s.id = b.site_id where b.id = $1`,
+       from building.buildings b join sites s on s.id = b.site_id where b.id = $1`,
     [id],
   );
 
@@ -84,7 +84,7 @@ const floors = (buildingId: string) =>
     `select f.name, f.level, f.elevation_m::float elevation, f.height_m::float height,
             (select value from external_ids where object_id = f.id and scheme = 'ifc_guid') guid,
             (f.metadata->'ifc'->'psets'->'Pset_BuildingStoreyCommon'->>'AboveGround')::boolean above
-       from three_d.spaces f where f.building_id = $1 and f.kind = 'floor' order by f.level`,
+       from building.spaces f where f.building_id = $1 and f.kind = 'floor' order by f.level`,
     [buildingId],
   ).then((r) => r.rows);
 
@@ -94,7 +94,7 @@ const spaces = (buildingId: string) =>
             (select value from external_ids where object_id = s.id and scheme = 'ifc_guid') guid,
             s.metadata->'ifc'->'psets'->'Pset_SpaceCoveringRequirements'->>'FloorFinish' finish,
             s.metadata->'ifc'->'attributes'->>'Name' number
-       from three_d.spaces s join three_d.spaces f on f.id = s.parent_id where f.building_id = $1 and s.kind = 'room' order by s.name`,
+       from building.spaces s join building.spaces f on f.id = s.parent_id where f.building_id = $1 and s.kind = 'room' order by s.name`,
     [buildingId],
   ).then((r) => r.rows);
 
@@ -102,7 +102,7 @@ const roofs = (buildingId: string) =>
   db.query<{ name: string; azimuth: number; tilt: number; zmin: number; zmax: number; area: number; guid: string; source: string }>(
     `select f.name, f.azimuth_deg::float azimuth, f.tilt_deg::float tilt, ST_ZMin(f.geometry)::float zmin, ST_ZMax(f.geometry)::float zmax,
             area_m2(f.geometry)::float area, (select value from external_ids where object_id = f.id and scheme = 'ifc_guid') guid, f.source_code source
-       from three_d.surfaces f where f.building_id = $1 and f.kind = 'roof'`,
+       from building.surfaces f where f.building_id = $1 and f.kind = 'roof'`,
     [buildingId],
   ).then((r) => r.rows);
 
@@ -143,7 +143,7 @@ describe('an IFC4 model with an IfcMapConversion', () => {
     expect(b.landmarked).toBe(true);
     expect(b.schema).toBe('IFC4');
     expect(b.file).toBe('ifc-house-map-conversion.ifc');
-    const m = await one<{ ifc: Record<string, any> }>(db, `select metadata->'ifc' ifc from three_d.buildings where id = $1`, [id]);
+    const m = await one<{ ifc: Record<string, any> }>(db, `select metadata->'ifc' ifc from building.buildings where id = $1`, [id]);
     expect(m.ifc.attributes).toMatchObject({ Name: 'Canal house', LongName: 'Het Grachtenhuis', Description: 'A narrow house on a canal', ElevationOfRefHeight: 0 });
     expect(m.ifc.psets.Pset_BuildingCommon.YearOfConstruction).toBe('1962');
     expect(m.ifc.georeference.mapConversion).toMatchObject({ Eastings: 121000, Northings: 487000, XAxisOrdinate: 0.5 });
@@ -207,7 +207,7 @@ describe('an IFC4 model with its equipment', () => {
       name: string; device_type: string; in_building: boolean; manufacturer: string | null; model: string | null; serial: string | null;
       guid: string; source: string; predefined: string; lon: number; lat: number;
     }>(
-      `select d.name, d.device_type, (select p.building_id = $2 from three_d.devices p where p.device_id = d.id) in_building, d.manufacturer, d.model, d.serial_number serial,
+      `select d.name, d.device_type, (select p.building_id = $2 from building.devices p where p.device_id = d.id) in_building, d.manufacturer, d.model, d.serial_number serial,
               (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
               d.source_code source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
               ST_X(d.geometry)::float lon, ST_Y(d.geometry)::float lat

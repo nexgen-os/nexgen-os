@@ -29,7 +29,7 @@ const parameterOf = async (object: string, property: string, at = '2026-06-01', 
   (await one<{ p: Parameter }>(db, 'select parameter_of($1, $2, $3, $4) p', [object, property, at, scenario])).p;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   org = await organisation(db, 'A developer', USER_A);
   await organisation(db, 'A neighbour', USER_B);
   // A pack: a country, a region, its statistics office, two properties it decides.
@@ -43,10 +43,10 @@ beforeAll(async () => {
                     ('pv_specific_yield_fallback', 'ZZ', 'ZZ-SO', '1150', '2020-01-01', null, 'zz_statistics', 'yearbook 2025, table 5', 'pack:zz'),
                     ('offpeak_hours', 'ZZ', null, null, null, null, 'zz_statistics', 'depends on the supply contract', 'pack:zz')`);
   site = await insert(db, 'sites', { organisation_id: org, name: 'Farm', country: 'ZZ', region: 'ZZ-NO' });
-  building = await insert(db, 'three_d.buildings', { organisation_id: org, site_id: site, name: 'Barn' });
-  roof = await insert(db, 'three_d.surfaces', { organisation_id: org, building_id: building, name: 'Roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20 });
+  building = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'Barn' });
+  roof = await insert(db, 'building.surfaces', { organisation_id: org, building_id: building, name: 'Roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20 });
   device = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Array', device_type: 'solar' });
-  await db.query('select three_d.place_device($1, p_surface_id => $2)', [device, roof]);
+  await db.query('select building.place_device($1, p_surface_id => $2)', [device, roof]);
 });
 
 afterAll(async () => {

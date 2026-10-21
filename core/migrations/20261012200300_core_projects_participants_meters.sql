@@ -8,7 +8,7 @@
 -- the period it is in. It may be a whole site, or one occupant of it: a
 -- building with two flats is one site with two participants, each carrying
 -- its own meter. Which building, floor or unit it occupies is a fact of the
--- physical description, held by the `3d` module as a link. A participant is
+-- physical description, held by the `building` module as a link. A participant is
 -- in one project; participants may be grouped (two tenants of one landlord,
 -- a campus), a group having no site of its own.
 --
@@ -76,7 +76,7 @@ create table participants (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   project_id       uuid not null references projects(id) on delete cascade,
   -- The site it is on: the whole site, or the building, floor or unit of it
-  -- the `3d` module says it occupies. Several participants may share a site.
+  -- the `building` module says it occupies. Several participants may share a site.
   -- Null for a group.
   site_id          uuid references sites(id) on delete cascade,
   -- The group it is part of.

@@ -6,7 +6,7 @@
 -- annual consumption known from invoices, the product rows the devices are
 -- instances of, and a PVGIS estimate for each array as a run with the
 -- orientation it assumed. The barn, the stable and their roof faces are a
--- physical description, the `3d` module's; the GeoJSON test adds them.
+-- physical description, the `building` module's; the GeoJSON test adds them.
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000400000001', 'GAEC du Mont Noir');

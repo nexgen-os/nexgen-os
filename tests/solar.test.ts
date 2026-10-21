@@ -16,22 +16,22 @@ let moduleProduct: string;
 let inverterProduct: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d', 'solar']);
+  db = await freshDatabase(['building', 'solar']);
   org = await organisation(db, 'A family');
   site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
-  house = await insert(db, 'three_d.buildings', {
+  house = await insert(db, 'building.buildings', {
     organisation_id: org, site_id: site, name: 'House', footprint: square(-5.98, 37.39, 10, 8), height_m: 7.5,
   });
-  south = await insert(db, 'three_d.surfaces', {
+  south = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
-  west = await insert(db, 'three_d.surfaces', {
+  west = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'West roof face', kind: 'roof', azimuth_deg: 270, tilt_deg: 25,
   });
   pv = await insert(db, 'devices', {
     organisation_id: org, site_id: site, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
   });
-  await db.query('select three_d.place_device($1, $2)', [pv, house]);
+  await db.query('select building.place_device($1, $2)', [pv, house]);
   moduleProduct = await insert(db, 'device_directory', {
     device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 425', unit_power_kw: 0.425, published_by: 'solar',
   });
@@ -82,7 +82,7 @@ describe('the solar module', () => {
     expect(Number(r.kwp)).toBe(5);
   });
 
-  it('places two arrays on two roof faces of the 3d module, with the orientation of each face', async () => {
+  it('places two arrays on two roof faces of the building module, with the orientation of each face', async () => {
     const southArray = await insert(db, 'solar.pv_arrays', {
       organisation_id: org, pv_system_id: pv, name: 'South', mounting: 'roof_parallel',
       module_product_id: moduleProduct, module_count: 8, modules_per_string: 8, strings: 1,
@@ -92,8 +92,8 @@ describe('the solar module', () => {
       organisation_id: org, pv_system_id: pv, name: 'West', mounting: 'roof_parallel',
       module_product_id: moduleProduct, module_count: 4, kwp_dc: 1.7,
     });
-    await db.query('select three_d.place_array($1, $2)', [southArray, south]);
-    await db.query('select three_d.place_array($1, $2)', [westArray, west]);
+    await db.query('select building.place_array($1, $2)', [southArray, south]);
+    await db.query('select building.place_array($1, $2)', [westArray, west]);
     const r = await db.query<{ name: string; azimuth_deg: string; tilt_deg: string; kwp_dc: string }>(
       `select name, azimuth_deg, tilt_deg, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by name`,
       [pv],
@@ -107,14 +107,14 @@ describe('the solar module', () => {
   });
 
   it('keeps an orientation given for a rack, over the surface it stands on', async () => {
-    const flat = await insert(db, 'three_d.surfaces', {
+    const flat = await insert(db, 'building.surfaces', {
       organisation_id: org, building_id: house, name: 'Flat roof', kind: 'roof', azimuth_deg: 0, tilt_deg: 0,
     });
     const rack = await insert(db, 'solar.pv_arrays', {
       organisation_id: org, pv_system_id: pv, name: 'Rack', mounting: 'open_rack',
       azimuth_deg: 180, tilt_deg: 15, scenario_id: null,
     });
-    await db.query('select three_d.place_array($1, $2)', [rack, flat]);
+    await db.query('select building.place_array($1, $2)', [rack, flat]);
     const r = await one<{ azimuth_deg: string; tilt_deg: string }>(
       db, 'select azimuth_deg, tilt_deg from solar.pv_arrays where id = $1', [rack],
     );
@@ -129,11 +129,11 @@ describe('the solar module', () => {
 
   it('throws a named error (`array_outside_system_site`) for an array on a surface of another site', async () => {
     const other = await insert(db, 'sites', { organisation_id: org, name: 'Barn', country: 'ES' });
-    const ground = await insert(db, 'three_d.surfaces', {
+    const ground = await insert(db, 'building.surfaces', {
       organisation_id: org, site_id: other, name: 'Field', kind: 'ground', azimuth_deg: 180, tilt_deg: 0,
     });
     const stray = await insert(db, 'solar.pv_arrays', { organisation_id: org, pv_system_id: pv, name: 'Stray', azimuth_deg: 180, tilt_deg: 10 });
-    await expect(db.query('select three_d.place_array($1, $2)', [stray, ground])).rejects.toThrow(/array_outside_system_site/);
+    await expect(db.query('select building.place_array($1, $2)', [stray, ground])).rejects.toThrow(/array_outside_system_site/);
     await db.query('delete from solar.pv_arrays where id = $1', [stray]);
   });
 

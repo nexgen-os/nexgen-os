@@ -167,7 +167,7 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 -- is never repeated here: the use of a site is its `profile`, a device's
 -- power its `rated_power_kw`, its commissioning its `installation_date`.
 -- What describes a building or a roof face (its year, floors, label,
--- material) is published by the `3d` module with its kinds.
+-- material) is published by the `building` module with its kinds.
 -- ---------------------------------------------------------------------------
 
 insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values

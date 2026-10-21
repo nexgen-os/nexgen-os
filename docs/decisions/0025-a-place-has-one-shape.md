@@ -45,7 +45,7 @@ the database calls a geocoder: the core stores what came back and from
 whom.
 
 **The 3D model of a place enriches it without changing it**
-([0008](0008-3d-module.md)): volumes and models attach to the place; the
+([0008](0008-building-module.md)): volumes and models attach to the place; the
 shape stays the same.
 
 ## What it forbids

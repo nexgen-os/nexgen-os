@@ -51,7 +51,7 @@ export function toWgs84(expr: string, k: number, p: number): string {
 export const round = (n: number, digits: number) => Math.round(n * 10 ** digits) / 10 ** digits;
 
 /**
- * A face of a building as a surface, through `three_d.add_surface()`: its tilt
+ * A face of a building as a surface, through `building.add_surface()`: its tilt
  * from the outward normal, its azimuth against true north — the face's
  * centre and a point ten metres down its slope, both taken to WGS 84,
  * whatever the projection's convergence. Returns null for a face without
@@ -68,7 +68,7 @@ export async function addFace(
   const horizontal = Math.hypot(normal[0], normal[1]);
   const sloped = tilt >= 1 && horizontal > 0;
   const r = await db.query<{ id: string }>(
-    `select three_d.add_surface($1, $2, $3, ${toWgs84('ST_GeomFromText($4)', 5, 6)},
+    `select building.add_surface($1, $2, $3, ${toWgs84('ST_GeomFromText($4)', 5, 6)},
                         case when $7::boolean then round(degrees(ST_Azimuth(
                           ${toWgs84('ST_MakePoint($8, $9)', 5, 6)}::geography,
                           ${toWgs84('ST_MakePoint($10, $11)', 5, 6)}::geography))::numeric, 2) end,

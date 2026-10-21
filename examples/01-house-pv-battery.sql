@@ -6,7 +6,7 @@
 -- the permit as documents, a battery in a scenario, and a production
 -- estimate recorded as a run with the orientation it assumed. The house as
 -- a building, its roof faces and its energy label are a physical
--- description, the `3d` module's (examples 02, 05, 06, 07).
+-- description, the `building` module's (examples 02, 05, 06, 07).
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000100000001', 'The Moreno family');

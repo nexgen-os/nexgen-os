@@ -13,7 +13,7 @@
 -- the grid side (a weather station) has none. The column is the truth of
 -- today: the meter a device leaves is kept as a dated `behind_meter` link.
 -- Where on the site it is — the building, the room, the roof face — is the
--- physical description of the place, the `3d` module's (decision 0026).
+-- physical description of the place, the `building` module's (decision 0026).
 
 set search_path = nexgen, public, extensions;
 
@@ -107,7 +107,7 @@ create table devices (
 );
 
 comment on table devices is
-  'A thing installed on a site, behind a meter of it: a PV system, a battery, a charger, a heat pump, a meter, a thermometer. The instrument that measures is a device; what it measures is a series. A module derives its own types into a table with the same id; the 3d module says where on the site it is.';
+  'A thing installed on a site, behind a meter of it: a PV system, a battery, a charger, a heat pump, a meter, a thermometer. The instrument that measures is a device; what it measures is a series. A module derives its own types into a table with the same id; the building module says where on the site it is.';
 
 create index devices_site_idx on devices (site_id);
 create index devices_meter_idx on devices (meter_id);

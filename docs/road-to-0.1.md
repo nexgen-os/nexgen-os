@@ -132,15 +132,15 @@ used to carry are kept here, each under the record that holds its rule.
   storage (sorted, zstd), read back through the host's reader (an Iceberg
   wrapper, `pg_parquet`, `pg_duckdb`, DuckDB in a worker); TimescaleDB's
   columnstore as an accelerator when a self-hosted installation has it.
-- **The `3d` module** ([0008](decisions/0008-3d-module.md)): schema
-  `three_d` with `models` (one georeferenced model of a building, a site or
+- **The `building` module** ([0008](decisions/0008-building-module.md)): schema
+  `building` with `models` (one georeferenced model of a building, a site or
   a device: format, file address and checksum, CRS, origin on the globe and
   in the native CRS, rotation, scale, up axis, units, vertical datum,
   bounding box, level of detail, the source's georeferencing block),
   `drawings` (plans, sections, elevations with an optional georeference)
   and `tilesets` (3D Tiles 1.1 built by a run), and one function placing a
   model in the world. The parametric roof model and the module layouts of
-  the platform move in as functions of `3d` and `solar`, their result
+  the platform move in as functions of `building` and `solar`, their result
   persisted as a model produced by a run. Serving in three tiers: vector
   tiles and extrusions for every building in view, 3D Tiles for real
   geometry, one glTF for the object of the page, on MapLibre GL JS. Drone

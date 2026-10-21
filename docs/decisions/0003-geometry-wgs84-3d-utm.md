@@ -26,7 +26,7 @@ everywhere.
 **A geometry in the database is a shape, not a model.** Footprints, roof
 faces, points and parcels are rows; a point cloud, a mesh, a BIM file, a
 raster or a tileset is a file on object storage that a row points to
-([0008](0008-3d-module.md)).
+([0008](0008-building-module.md)).
 
 ## What it forbids
 
@@ -42,7 +42,7 @@ Nothing: written with the first core.
 
 ## See also
 
-- [0008](0008-3d-module.md) — heavy geometry stays in object storage.
+- [0008](0008-building-module.md) — heavy geometry stays in object storage.
 - [0025](0025-a-place-has-one-shape.md) — the point of a place, in WGS 84.
 - [0035](0035-a-format-library-touches-no-database.md) — the libraries
   transform on the way in.

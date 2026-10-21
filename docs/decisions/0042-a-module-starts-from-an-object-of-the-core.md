@@ -24,7 +24,7 @@ three forms and no other:
 - **a derived table**, with the same id as the core object it enriches:
   `solar.pv_systems` derives devices of type `solar` through
   `derive_devices()`, `grid.meters` adds the operator and the voltage
-  level of a meter, `three_d.devices` says where on its site a device is,
+  level of a meter, `building.devices` says where on its site a device is,
   `billing.companies` is keyed by the organisation's
   own id. A derived table that is the module's side of a core object carries
   that object's name in the module schema — `grid.meters` is the meter as the
@@ -33,7 +33,7 @@ three forms and no other:
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object: `tasks.tasks`
   is about one object of the registry, `solar.pv_arrays` belongs to a PV
-  system, `three_d.buildings` stands on a site — a kind of object of the
+  system, `building.buildings` stands on a site — a kind of object of the
   module, declared with `declare_object()`, which `site_of()` reaches like
   any other;
 - **vocabulary rows** in the core's vocabularies, marked with the module in
@@ -51,13 +51,13 @@ installation and names the table that does not (`module_table_detached`).
 project → participant → site → meter → device → series
 ([0006](0006-named-objects.md)). A module enriches any of them; none of
 them is a module's. The physical description of a site — its buildings,
-spaces and surfaces, where a device sits among them — is the `3d`
+spaces and surfaces, where a device sits among them — is the `building`
 module's.
 
 **The examples say which modules they need, and need no more.** Examples
 01 (a house) and 04 (a farm) need the core only; 03 (an energy community)
 needs `community`, `grid` and `billing`; 02 (a school), 05 (a district),
-06 (a drone survey) and 07 (an office) describe buildings and install `3d`
+06 (a drone survey) and 07 (an office) describe buildings and install `building`
 first.
 
 ## What it forbids
@@ -80,7 +80,7 @@ kept the operators and now derives the core's meter in a `grid.meters` of its
 own, the grid side of it; `community` kept energy
 sharing; the `behind_meter` link became `devices.meter_id`, the link
 keeping the history. The same release moved `buildings`, `spaces` and
-`surfaces` and the placement of a device from the core to the `3d` module,
+`surfaces` and the placement of a device from the core to the `building` module,
 and `solar.pv_arrays.surface_id` became a `placed_on` link.
 
 ## See also

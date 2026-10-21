@@ -11,7 +11,7 @@
 -- time zone, geolocated but not described. What a place physically is —
 -- its buildings, their floors, rooms and units, their roof faces and
 -- facades, where a device sits among them — is the description of a
--- building, the `3d` module's (decision 0008), which declares its own kinds
+-- building, the `building` module's (decision 0008), which declares its own kinds
 -- of object with `declare_object()` and is found by `site_of()` like any
 -- other.
 --
@@ -173,8 +173,8 @@ declare
   v_by text := 'core';
 begin
   -- A kind of a module's schema is published by the module that owns it,
-  -- under its code, which may differ from the schema's name (`3d` owns
-  -- `three_d`); `modules` is created after this function, hence the
+  -- under its code, which may differ from the schema's name (`building` owns
+  -- `building`); `modules` is created after this function, hence the
   -- dynamic query.
   if position('.' in p_table) > 0 then
     execute 'select code from modules where schema_name = $1' into v_by using split_part(p_table, '.', 1);

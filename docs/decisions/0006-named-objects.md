@@ -45,8 +45,8 @@ page walks them:
   time zone ([0025](0025-a-place-has-one-shape.md)), geolocated but not
   described. What it physically is — its buildings, their floors, rooms
   and units, their roof faces and facades, where a device sits among them —
-  is the description of a building, the `3d` module's
-  ([0008](0008-3d-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
+  is the description of a building, the `building` module's
+  ([0008](0008-building-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
 - **the meter**: the connection point of a site to a network, under the
   identifier its operator knows (an EAN, a PRM, a GSRN), carried by a
   participant of the site, the frontier between the grid and the place;
@@ -83,11 +83,11 @@ decides, [0020](0020-a-pack-holds-what-a-function-reads.md)).
 **A trade of its own is a module.** The grid side of a connection point
 (who operates it, how it is connected, mandates, tariffs) and the sharing
 of an energy community (allocation keys, the shares an engine computes) are
-modules beside `solar` and `3d`; the objects themselves — the meter, the
+modules beside `solar` and `building`; the objects themselves — the meter, the
 project, the participant — are the core's, and a module starts from them
 ([0042](0042-a-module-starts-from-an-object-of-the-core.md)). The physical
 description of a place is a trade too, the territory of BIM and CityGML:
-the `3d` module holds the buildings, spaces and surfaces and declares them
+the `building` module holds the buildings, spaces and surfaces and declares them
 as kinds of object of its own.
 The law is not held in the open repository.
 
@@ -108,7 +108,7 @@ sensors in it (19/10/2026), then the 0.2 core, which named three notions —
 the place, the device, the series — and held the project, the participant
 and the connection point in the `community` and `grid` modules (21/10/2026);
 the same day, the buildings, spaces and surfaces of the 0.2 core left it
-for the `3d` module, and the participant became an actor at any level of a
+for the `building` module, and the participant became an actor at any level of a
 building, carrying its meters.
 
 ## See also

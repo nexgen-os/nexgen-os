@@ -16,14 +16,14 @@ let meter: string;
 let pv: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   org = await organisation(db, 'A family');
   site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
-  house = await insert(db, 'three_d.buildings', {
+  house = await insert(db, 'building.buildings', {
     organisation_id: org, site_id: site, name: 'House', profile: 'residential',
     footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5,
   });
-  roof = await insert(db, 'three_d.surfaces', {
+  roof = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
   meter = await insert(db, 'meters', {
@@ -33,7 +33,7 @@ beforeAll(async () => {
     organisation_id: org, site_id: site,
     name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
   });
-  await db.query('select three_d.place_device($1, p_surface_id => $2)', [pv, roof]);
+  await db.query('select building.place_device($1, p_surface_id => $2)', [pv, roof]);
   await db.query(`select connect_device($1, $2)`, [pv, meter]);
 });
 
@@ -46,7 +46,7 @@ describe('a house', () => {
     const r = await one<{ dims: number; srid: number; area: string; utm: number }>(
       db,
       `select ST_NDims(footprint) dims, ST_SRID(footprint) srid, area_m2(footprint) area, metric_srid(footprint) utm
-         from three_d.buildings where id = $1`,
+         from building.buildings where id = $1`,
       [house],
     );
     expect(r.dims).toBe(3);
@@ -58,7 +58,7 @@ describe('a house', () => {
   it('derives a level-of-detail 1 block from footprint, elevation and height', async () => {
     const r = await one<{ type: string; zmin: number; zmax: number }>(
       db,
-      `select GeometryType(g) type, ST_ZMin(g) zmin, ST_ZMax(g) zmax from (select three_d.building_volume($1) g) b`,
+      `select GeometryType(g) type, ST_ZMin(g) zmin, ST_ZMax(g) zmax from (select building.building_volume($1) g) b`,
       [house],
     );
     expect(r.type).toBe('POLYHEDRALSURFACE');
@@ -85,7 +85,7 @@ describe('a house', () => {
   it('refuses a device on a surface of another site', async () => {
     const other = await insert(db, 'sites', { organisation_id: org, name: 'Elsewhere', country: 'ES' });
     const stray = await insert(db, 'devices', { organisation_id: org, site_id: other, name: 'Stray', device_type: 'battery' });
-    await expect(db.query('select three_d.place_device($1, p_surface_id => $2)', [stray, roof])).rejects.toThrow(/device_surface_site_mismatch/);
+    await expect(db.query('select building.place_device($1, p_surface_id => $2)', [stray, roof])).rejects.toThrow(/device_surface_site_mismatch/);
     await db.query('delete from devices where id = $1', [stray]);
   });
 
@@ -203,7 +203,7 @@ describe('a house', () => {
       organisation_id: org, site_id: site, name: 'Battery', device_type: 'battery',
       rated_power_kw: 5, scenario_id: sc.id,
     });
-    await db.query('select three_d.place_device($1, $2)', [battery, house]);
+    await db.query('select building.place_device($1, $2)', [battery, house]);
     await db.query(
       `insert into attributes (object_id, property_code, value, scenario_id) values ($1, 'efficiency', '0.92', $2)`,
       [battery, sc.id],
@@ -227,10 +227,10 @@ describe('a house', () => {
   });
 
   it('removes everything attached when the building goes', async () => {
-    const shed = await insert(db, 'three_d.buildings', { organisation_id: org, site_id: site, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
+    const shed = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
     await db.query(`insert into attributes (object_id, property_code, value) values ($1, 'floor_area', '9')`, [shed]);
     await db.query(`insert into documents (object_id, name, uri) values ($1, 'Photo', 's3://photos/shed.jpg')`, [shed]);
-    await db.query('delete from three_d.buildings where id = $1', [shed]);
+    await db.query('delete from building.buildings where id = $1', [shed]);
     const r = await one<{ objects: number; attrs: number; docs: number }>(
       db,
       `select (select count(*)::int from objects where id = $1) objects,

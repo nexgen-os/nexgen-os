@@ -1,5 +1,5 @@
 /**
- * The importers and exporters of the `3d` module: what turns the plain
+ * The importers and exporters of the `building` module: what turns the plain
  * shapes of a format library that describes buildings — CityJSON, IFC, a
  * Home Assistant home — into buildings, spaces, surfaces and placed devices,
  * through the gestures of the module, and reads them back. A format library

@@ -245,7 +245,7 @@ rewritten) — and a module starts from one of them and enriches it
   schema that carries `organisation_id` and reaches no table of the core
   but `organisations` by a path of foreign keys.
 - Examples 01 and 04 need the core only; 02, 05, 06 and 07 install the
-  `3d` module first (below).
+  `building` module first (below).
 - The bridge to the invoicing side is the `billing` module (schema
   `billing`, module code `billing`), and the participant of the core is the
   one who is billed (decision 0043, decision 0010 rewritten):
@@ -264,7 +264,7 @@ rewritten) — and a module starts from one of them and enriches it
   participants.
 
 The participant is an actor of the project at any level of a building, and
-the physical description of a place leaves the core for the `3d` module:
+the physical description of a place leaves the core for the `building` module:
 
 - `meters.participant_id`: the participant that carries a connection point,
   of the same organisation and on the meter's site (`meters_check`:
@@ -275,11 +275,11 @@ the physical description of a place leaves the core for the `3d` module:
   optional `p_participant_id`; `participant_meters()` reads the column,
   groups included. The rule `participant_site_already_in_project` is
   dropped: several participants share a site, one per flat or per meter.
-- `buildings`, `spaces` and `surfaces` move to the schema `three_d` of the
-  `3d` module, version 0.1.0, which needs core 0.3.0
-  (`modules/3d/migrations/0001_three_d.sql`), with `add_building()`,
+- `buildings`, `spaces` and `surfaces` move to the schema `building` of the
+  `building` module, version 0.1.0, which needs core 0.3.0
+  (`modules/building/migrations/0001_building.sql`), with `add_building()`,
   `add_space()`, `add_surface()`, `building_volume()`, `building_of()`,
-  `footprint_volume()` and `surface_orientation()`, now `three_d.*`; the
+  `footprint_volume()` and `surface_orientation()`, now `building.*`; the
   link types `placed_in` and `occupies` and the properties `floor_area`,
   `energy_label`, `year_built`, `floors_above_ground`,
   `floors_below_ground`, `roof_area`, `material`, `u_value` and
@@ -288,20 +288,20 @@ the physical description of a place leaves the core for the `3d` module:
 - `devices` loses `building_id`, `space_id` and `surface_id`;
   `install_device()` takes a GeoJSON geometry (`p_geometry`) in place of the
   placement object and refuses `invalid_geometry`; `move_device()` leaves the
-  core. The placement is `three_d.devices`, one row per placed device,
-  written by `three_d.place_device()` and `three_d.move_device()` (decision
+  core. The placement is `building.devices`, one row per placed device,
+  written by `building.place_device()` and `building.move_device()` (decision
   0026, rewritten). `declare_parents()` and `object_parent_tables` let a
   module give an object of the core parents of its own: `site_of()`,
   `ancestor_of()` and `parameter_of()` go through a placed device's surface,
   space and building.
 - `solar.pv_arrays` loses `surface_id` and keeps its own azimuth and tilt;
-  `three_d.place_array()` puts an array on a surface as a dated `placed_on`
+  `building.place_array()` puts an array on a surface as a dated `placed_on`
   link and fills its orientation from the face when it has none. A PV
   system without arrays has no orientation: the yield asks for an array
   (`array_without_orientation`).
 - `importCityJson()`, `exportCityJson()`, `importIfc()`,
   `importHomeAssistant()` and `exportHomeAssistant()` move from
-  `@nexgen-os/core` to `modules/3d/src`; `@nexgen-os/core` no longer depends
+  `@nexgen-os/core` to `modules/building/src`; `@nexgen-os/core` no longer depends
   on `@nexgen-os/cityjson`, `@nexgen-os/homeassistant` and
   `@nexgen-os/ifc`. `exportGeoJson()` adds the buildings, surfaces and
   placed devices of a site when the module is installed. `nexgen-os status`

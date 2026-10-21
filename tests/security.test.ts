@@ -14,7 +14,7 @@ let orgB: string;
 let siteA: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['3d']);
+  db = await freshDatabase(['building']);
   orgA = await organisation(db, 'Firm A', USER_A);
   orgB = await organisation(db, 'Firm B', USER_B);
   await db.query('insert into auth.users (id) values ($1)', [VIEWER]);
@@ -48,7 +48,7 @@ describe('row level security', () => {
 
   it('refuses a building on a site of another organisation', async () => {
     await expect(
-      insert(db, 'three_d.buildings', { organisation_id: orgB, site_id: siteA, name: 'Cross-border' }),
+      insert(db, 'building.buildings', { organisation_id: orgB, site_id: siteA, name: 'Cross-border' }),
     ).rejects.toThrow(/parent_in_other_organisation/);
   });
 
@@ -182,8 +182,8 @@ describe('what the core publishes', () => {
     const r = await one<{ registered: number; named: number }>(
       db,
       `select (select count(*)::int from objects) registered,
-              (select count(*) from organisations) + (select count(*) from sites) + (select count(*) from three_d.buildings)
-              + (select count(*) from three_d.spaces) + (select count(*) from three_d.surfaces) + (select count(*) from devices) as named`,
+              (select count(*) from organisations) + (select count(*) from sites) + (select count(*) from building.buildings)
+              + (select count(*) from building.spaces) + (select count(*) from building.surfaces) + (select count(*) from devices) as named`,
     );
     expect(Number(r.named)).toBe(r.registered);
   });

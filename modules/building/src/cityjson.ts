@@ -5,14 +5,14 @@
  * file's reference system; this importer writes each through the gestures
  * of the core:
  *
- *   building            → `three_d.add_building()`: the plan of its footprint faces,
+ *   building            → `building.add_building()`: the plan of its footprint faces,
  *                         unioned, at its lowest point, in WGS 84; its
  *                         height measured, else from its lowest to its
  *                         highest point
  *   storeys, year       → `set_attribute()`: `floors_above_ground`,
  *                         `floors_below_ground`, `year_built`
  *   CityObject id       → `add_identifier()`, scheme `cityjson`
- *   roof and wall faces → `three_d.add_surface()`, kind `roof` or `facade`, with
+ *   roof and wall faces → `building.add_surface()`, kind `roof` or `facade`, with
  *                         azimuth (true north) and tilt
  *
  * Every row has the source the caller names, and what the file says that
@@ -70,7 +70,7 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
     const height = b.measuredHeight ?? (b.zRange ? round(b.zRange[1] - b.zRange[0], 3) : null);
     const elevation = minZ !== null ? round(minZ, 3) : null;
     const building = await db.query<{ id: string }>(
-      `select three_d.add_building($1, $2,
+      `select building.add_building($1, $2,
                 (select case when g.u is null then null else
                           ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($4, 0)), $5), 4326) end
                    from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($3::text[]) w) g),
@@ -153,7 +153,7 @@ const polygonsOf = (geojson: string): CityPoint[][][] => {
 
 /**
  * The buildings of a site as a CityJSON model, for `writeCityJson()`: a
- * LoD 1 solid from the footprint and height (`three_d.building_volume()`), the
+ * LoD 1 solid from the footprint and height (`building.building_volume()`), the
  * roof and wall surfaces with their semantics, the CityGML attributes from
  * the columns and the attributes, the file's own attributes back from
  * `metadata.cityjson`. Refuses `nothing_to_export` for a site without a
@@ -161,13 +161,13 @@ const polygonsOf = (geojson: string): CityPoint[][][] => {
  */
 export async function exportCityJson(db: Db, where: { siteId: string }, options: CityJsonExportOptions = {}): Promise<CityModel> {
   const buildings = await db.query<BuildingRow>(
-    `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from three_d.buildings where site_id = $1)) srid)
+    `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from building.buildings where site_id = $1)) srid)
      select b.id, b.name, b.height_m, attributes_of(b.id) attributes, b.metadata,
             (select value from external_ids e where e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
             s.srid,
             ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
-            (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(three_d.building_volume(b.id)) d) volume
-       from three_d.buildings b, s
+            (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(building.building_volume(b.id)) d) volume
+       from building.buildings b, s
       where b.site_id = $1 and b.scenario_id is null
       order by b.created_at, b.id`,
     [where.siteId, options.srid ?? null],
@@ -176,7 +176,7 @@ export async function exportCityJson(db: Db, where: { siteId: string }, options:
   const srid = buildings.rows[0].srid;
   const surfaces = await db.query<SurfaceRow>(
     `select f.building_id, f.name, f.kind, f.metadata, ST_AsGeoJSON(ST_Transform(f.geometry, $2::int)) geometry
-       from three_d.surfaces f join three_d.buildings b on b.id = f.building_id
+       from building.surfaces f join building.buildings b on b.id = f.building_id
       where b.site_id = $1 and f.scenario_id is null and f.geometry is not null
       order by f.created_at, f.id`,
     [where.siteId, srid],

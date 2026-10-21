@@ -1,8 +1,8 @@
 -- Example 2 — a school, inside and out, in a small municipality. Needs the
--- `3d` module.
+-- `building` module.
 --
 -- A municipality's site, the main building with two floors and five rooms
--- (spaces of the `3d` module, one tree), a multisensor in each classroom reading
+-- (spaces of the `building` module, one tree), a multisensor in each classroom reading
 -- temperature, CO2 and presence, a presence detector in the canteen, a
 -- heating setpoint asked of the heat pump per classroom, a heat pump serving
 -- the building, a morning of readings, and the acoustic class of each room
@@ -17,16 +17,16 @@ insert into contacts (id, organisation_id, name, kind) values
 insert into sites (id, organisation_id, name, country, street, postal_code, city, region, profile) values
   ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', 'École du Centre', 'BE', 'Rue de l''École 12', '1380', 'Valbrisée', 'BE-WBR', 'school');
 
-insert into three_d.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into building.buildings (id, organisation_id, site_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', 'Main building', 'school',
    ST_GeomFromText('POLYGON((4.4702 50.6802, 4.4708 50.6802, 4.4708 50.6805, 4.4702 50.6805, 4.4702 50.6802))', 4326), 112, 9.5);
 
 -- Two floors, and the rooms on them: one tree of spaces.
-insert into three_d.spaces (id, organisation_id, building_id, kind, name, level, elevation_m, height_m) values
+insert into building.spaces (id, organisation_id, building_id, kind, name, level, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000200000030', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', 'floor', 'Ground floor', 0, 112, 3.2),
   ('00000000-0000-4000-8000-000200000031', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', 'floor', 'First floor', 1, 115.2, 3);
 
-insert into three_d.spaces (id, organisation_id, building_id, parent_id, kind, name) values
+insert into building.spaces (id, organisation_id, building_id, parent_id, kind, name) values
   ('00000000-0000-4000-8000-000200000041', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000030', 'room', 'Classroom 1'),
   ('00000000-0000-4000-8000-000200000042', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000030', 'room', 'Classroom 2'),
   ('00000000-0000-4000-8000-000200000043', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000030', 'room', 'Canteen'),
@@ -46,16 +46,16 @@ insert into attributes (object_id, property_code, value, source) values
 insert into devices (id, organisation_id, site_id, name, device_type, manufacturer, model, rated_power_kw, installation_date) values
   ('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010',
    'Air-to-water heat pump', 'heat_pump', 'Daikin', 'Altherma 3 H HT 18', 18, '2023-10-02');
-select three_d.place_device('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000020');
+select building.place_device('00000000-0000-4000-8000-000200000050', '00000000-0000-4000-8000-000200000020');
 
 -- Each instrument is installed on the site, then placed in its room.
-select three_d.place_device(
+select building.place_device(
          install_device('00000000-0000-4000-8000-000200000010',
                         case when s.name = 'Canteen' then 'sensor' else 'sensor_box' end,
                         s.name || case when s.name = 'Canteen' then ' — presence detector' else ' — multisensor' end,
                         p_installed_on => '2024-09-01'),
          p_space_id => s.id)
-  from three_d.spaces s
+  from building.spaces s
  where s.name like 'Classroom%' or s.name = 'Canteen';
 
 insert into links (subject_id, type_code, object_id) values
@@ -67,8 +67,8 @@ insert into series (organisation_id, object_id, device_id, quantity_code, kind, 
 select '00000000-0000-4000-8000-000200000001', s.id, case when q.kind = 'setpoint' then '00000000-0000-4000-8000-000200000050'::uuid else d.device_id end,
        q.quantity, q.kind, 'instant', case when q.kind = 'measured' then interval '10 minutes' end,
        format('mqtt://school/%s/%s', lower(replace(s.name, ' ', '-')), q.topic)
-  from three_d.spaces s
-  join three_d.devices d on d.space_id = s.id
+  from building.spaces s
+  join building.devices d on d.space_id = s.id
   cross join (values ('temperature', 'measured', 'temp'),
                      ('co2', 'measured', 'co2'),
                      ('occupancy', 'measured', 'presence'),
@@ -96,7 +96,7 @@ on conflict (code) do nothing;
 
 insert into attributes (object_id, property_code, value, source)
 select id, 'acoustic_class', to_jsonb(case when name like 'Classroom%' then 'B' else 'C' end), 'acoustic survey 2024'
-  from three_d.spaces where kind = 'room';
+  from building.spaces where kind = 'room';
 
 insert into attributes (object_id, property_code, value, source) values
   ('00000000-0000-4000-8000-000200000020', 'floor_area', '1840', 'as-built drawings'),
@@ -110,7 +110,7 @@ insert into documents (object_id, name, kind, uri, media_type, source) values
 -- Queries a page would run
 -- The rooms with their points, floor by floor:
 --   select f.level, f.name floor, r.name room, count(se.id) points
---     from three_d.spaces f join three_d.spaces r on r.parent_id = f.id
+--     from building.spaces f join building.spaces r on r.parent_id = f.id
 --     left join series se on se.object_id = r.id
 --    where f.building_id = '00000000-0000-4000-8000-000200000020' and f.kind = 'floor'
 --    group by f.level, f.name, r.name order by f.level, r.name;
