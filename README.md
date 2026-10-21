@@ -21,8 +21,11 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 ## The model in one screen
 
-Three notions — the places, the devices installed on them, the series they
-produce — and attachments to anything else, in the schema `nexgen`. The table
+Seven objects, in the order a page walks them — the organisation, the
+project it works on, the participants taking part in it, their places, the
+meters that connect those places to a network, the devices installed on
+them, the series they produce — and attachments to anything else, in the
+schema `nexgen`. The table
 that groups the core's tables, the functions that act on them and the
 standards they follow is in [core/README.md](core/README.md); the diagram and
 the rules are in [docs/model.md](docs/model.md).
@@ -84,8 +87,8 @@ The tests describe real cases end to end: a house (site, building, roof
 face, PV system derived by a module, attributes over time, documents,
 scenario), a school with the core alone (floors and rooms as one tree of
 spaces, a multisensor whose readings are series, setpoints, a heat pump
-serving the building), an energy community with the `community` and `grid`
-modules (project, participants behind their meters, contacts,
+serving the building), an energy community on the core's projects, participants and meters
+(participants behind their meters, contacts,
 groups, meter swap, cumulative register, a site in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries, shading,
 plot split as links), the cascade of defaults, security (row level security, viewers, run immutability,
@@ -191,8 +194,8 @@ repository.
 ## Invoicing, and Ekwo OS
 
 Nexgen OS describes places, devices and series, and computes what moved and
-at what price. The [`community`](modules/README.md) module gives who takes part, and
-who received how much: allocation keys, and the volume of each participant over each
+at what price. The core gives who takes part in a project, behind which meter; the
+[`community`](modules/README.md) module gives who received how much: allocation keys, and the volume of each participant over each
 interval. The [`contracts`](modules/README.md) module gives under which
 contract and at which price: a supply, an injection, a physical or virtual
 PPA (power purchase agreement), an internal community tariff, each with its

@@ -7,11 +7,18 @@ is specific to a trade lives here, one folder and one schema per module.
 
 1. **One schema, and the core is not it.** A module depends on `nexgen` by
    foreign key; the core has no hook and no idea it exists.
-2. **Derive, never widen.** A module that needs more about a device adds a
-   table with the same id (`call derive_devices('solar.pv_systems',
-   'solar')`); one that adds a kind of object declares it
-   (`call declare_object('grid.meters', 'meter', '{site_id}')`)
-   so that attributes, identifiers, links, series and documents attach to it.
+2. **Start from an object of the core, and enrich it** ([0042](../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
+   A module that needs more about an object of the core adds a table with
+   the same id (`call derive_devices('solar.pv_systems', 'solar')`;
+   `grid.connections`, keyed by the meter's id); one that adds a kind of
+   object of its own gives it a foreign key to the core object it belongs to
+   and declares it (`call declare_object('solar.pv_arrays', 'pv_array',
+   '{pv_system_id,surface_id}')`), so that attributes, identifiers, links,
+   series and documents attach to it. Every module table that carries
+   `organisation_id` reaches a core table other than `organisations` by its
+   foreign keys; `nexgen-os doctor` names one that does not
+   (`module_table_detached`). The project, the participant and the meter
+   are the core's: a module never holds a notion of its own beside them.
 3. **Read the core freely, write it through its functions** (`record_run()`,
    `series_ensure()`, `store()`, `link_objects()`…). A module may
    also publish vocabulary rows (device types, profiles, properties,
@@ -37,8 +44,8 @@ and `tasks` carries what has to be done, with its legal reference and its condit
 
 | Module | Objects it adds | Computes |
 |---|---|---|
-| `grid` (shipped) | connection points (`meters`) with the identifier their operator knows, and the operators of a country (`operators`, written by packs); a device behind a meter is a `behind_meter` link | the meters behind a participant; later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
-| `community` (shipped) | projects (an energy community, a portfolio, a study, a district plan) and participants, a site's role in a project over a period; the allocation key of a project and what it reads of a participant, as their attributes; the volumes allocated to each participant as series of a run | who takes part in what, and behind which meters (with `grid`); who received how much: self-consumption on a site, energy sharing in a community, volumes per participant and interval, through a sharing engine; with `contracts` a settlement engine turns them into settlement lines, handed to the accounting side through `accounting` ([why](../README.md#invoicing-and-ekwo-os)) |
+| `grid` (shipped) | the grid side of a meter of the core: the operators of a country (`operators`, written by packs) and, for each meter, its operator and its voltage level (`connections`, the meter's id) | later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
+| `community` (shipped) | energy sharing on the projects and participants of the core: the allocation key of a project and what it reads of a participant, as their attributes; the volumes allocated to each participant as series of a run | who received how much: self-consumption on a site, energy sharing in a community, volumes per participant and interval, through a sharing engine; with `contracts` a settlement engine turns them into settlement lines, handed to the accounting side through `accounting` ([why](../README.md#invoicing-and-ekwo-os)) |
 | `accounting` (shipped, [0010](../docs/decisions/0010-ekwo-link.md)) | the accounting bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact; the line where Nexgen OS stops is in the [README](../README.md#invoicing-and-ekwo-os) | nothing: a settlement line is handed to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)), which keeps legal identity, invoices and the ledger; the two install side by side on one database ([with Ekwo OS](../docs/with-ekwo-os.md)) |
 | `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
 | `solar` (schema shipped, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles | PV yield as a run that says its weather, period, conventions, models and losses, computed by PVGIS, by `pvwatts.ts` or by the pvlib engine ([0013](../docs/decisions/0013-external-engines.md)); IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |

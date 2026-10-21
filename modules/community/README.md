@@ -1,26 +1,19 @@
-# `community` — projects, and the sites taking part in them
+# `community` — energy sharing among the participants of a project
 
-Status: shipped with schema 0.2. Schema: `community`.
+Status: shipped with schema 0.3. Schema: `community`.
 
-A project is a working perimeter — an energy community, a portfolio, a
-study, a construction site, a district plan — with the country whose rules
-apply and a lifecycle (`simulation`, `creation`, `active`, `inactive`,
-`archived`). A participant is a site's role in a project — producer,
-consumer or prosumer — with the contact who answers for it and the period it
-is in. A site takes part in a project once at a time; participants may be
-grouped, a group having no site of its own.
-
-| Table / function | Holds / does |
-|---|---|
-| `community.projects` | the project, an object: attributes, documents, tasks and runs attach to it |
-| `community.participants` | a site's role in a project over a period, or a group of participants |
-| `community.join_project()` | a site joins a project from a day; refuses `participant_site_already_in_project`, `participant_contact_in_other_organisation` |
-| `community.leave_project()` | a participant leaves on a day, and may join again; refuses `participant_not_in_project` |
-| `community.participant_meters()` | the connection points behind a participant, groups included; needs the `grid` module (`module_required`) |
+The project and the sites taking part in it are the core's: `projects`,
+`participants`, `join_project()`, `leave_project()` and
+`participant_meters()` ([docs/model.md](../../docs/model.md), decision
+[0042](../../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
+This module starts from them and adds what an energy community does with
+them: share the energy some participants produce among the others. It adds
+no table; it publishes the vocabulary sharing reads and writes (0002) and
+the function that runs it.
 
 ## Energy sharing
 
-Who received how much lives here, beside the participants it describes
+Who received how much lives here, on the participants it describes
 (decision [0041](../../docs/decisions/0041-a-module-names-one-thing.md)).
 The module keeps the model and an engine shares:
 
@@ -61,4 +54,4 @@ Refusals before an engine starts: `project_not_found`, `period_empty`,
 in proportion to offtake and is meant to be copied: the key a community
 applies is its engine, never a function of this module.
 
-The `tasks` module depends on it. Install: `npx nexgen-os init --modules community`.
+Install: `npx nexgen-os init --modules community`.

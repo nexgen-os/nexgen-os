@@ -1,6 +1,6 @@
 # 0006 — The core names a few objects, and everything else is attached to them
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026
+> Status: accepted · 12/10/2026, rewritten 19/10/2026 and 21/10/2026
 
 ## Context
 
@@ -19,23 +19,42 @@ gives each many functions, not because its tables are narrow. A trade the
 core describes in full (the grid, the energy community) is a trade every
 installation carries, whether it practises it or not.
 
+The 0.2 core then named too few: the place, the device and the series, with
+the project, the participant and the connection point left to the
+`community` and `grid` modules. A module and the core's own GeoJSON export
+read them anyway, and a person signed in works on a project before any
+trade is chosen ([0042](0042-a-module-starts-from-an-object-of-the-core.md)).
+
 ## Decision
 
-**The core names three notions, in the words of the trades:**
+**The core names seven objects, in the words of the trades**, in the order a
+page walks them:
 
+- **the organisation**: who owns the data, with its members
+  ([0023](0023-an-organisation-is-an-object.md));
+- **the project**: what a person works on — an energy community, a
+  portfolio, a study, a construction site, a district plan — with its
+  country and its lifecycle;
+- **the participant**: a site's role in a project (producer, consumer,
+  prosumer), with the contact who answers for it and its period; it groups
+  what is behind the meters of its site, and a participant without a site
+  groups others;
 - **the place**: the site, the building on it, the surfaces of the building
   or the ground (a roof face, a facade, a carport), and the spaces inside it
   (floors, rooms, zones, units) ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
+- **the meter**: the connection point of a site to a network, under the
+  identifier its operator knows (an EAN, a PRM, a GSRN), the frontier
+  between the grid and the place;
 - **the device**: anything installed on the place, from a PV system to a
-  meter or a probe, an instance of a product of the catalogue
+  physical meter or a probe, an instance of a product of the catalogue,
+  behind a meter when it is on the grid side
   ([0022](0022-the-instrument-is-a-device-the-point-is-the-series.md),
   [0027](0027-a-product-is-a-catalogue-entry.md));
 - **the series**: a quantity over time, measured, simulated or forecast,
   belonging to one object ([0029](0029-a-series-belongs-to-an-object.md)).
 
-Around them, what every installation needs and no trade owns: the
-organisation and its members ([0023](0023-an-organisation-is-an-object.md)),
-the contacts it deals with, the scenarios of a study, the runs that compute
+Around them, what every installation needs and no trade owns: the contacts
+an organisation deals with, the scenarios of a study, the runs that compute
 ([0004](0004-deterministic-runs.md)), the sources and connections of
 external data ([0011](0011-external-data.md)).
 
@@ -56,10 +75,13 @@ object, or what a trade adds to one, is a module table with the same id,
 [0032](0032-a-module-has-its-own-schema.md)), and the packs (what a country
 decides, [0020](0020-a-pack-holds-what-a-function-reads.md)).
 
-**A trade of its own is a module.** The grid (operators, connection points,
-mandates, tariffs) and the energy community (projects, participants,
-allocation) are modules beside `solar` and `architecture`; the law is not
-held in the open repository.
+**A trade of its own is a module.** The grid side of a connection point
+(who operates it, how it is connected, mandates, tariffs) and the sharing
+of an energy community (allocation keys, the shares an engine computes) are
+modules beside `solar` and `architecture`; the objects themselves — the
+meter, the project, the participant — are the core's, and a module starts
+from them ([0042](0042-a-module-starts-from-an-object-of-the-core.md)).
+The law is not held in the open repository.
 
 ## What it forbids
 
@@ -74,7 +96,9 @@ held in the open repository.
 
 The entity table of [0001](0001-one-entity-table-attached-values.md), then
 the 0.1 core of forty tables, with the grid, the community, the law and the
-sensors in it.
+sensors in it (19/10/2026), then the 0.2 core, which named three notions —
+the place, the device, the series — and held the project, the participant
+and the connection point in the `community` and `grid` modules (21/10/2026).
 
 ## See also
 
@@ -82,4 +106,6 @@ sensors in it.
   translated: a description (objects) and a computation (runs, series) are
   two layers; and 0044 (*A product is a catalogue entry in the core*).
 - [`docs/model.md`](../model.md) — the tables of the model.
+- [0042](0042-a-module-starts-from-an-object-of-the-core.md) — how a module
+  starts from these objects.
 - [`modules/README.md`](../../modules/README.md) — the modules.

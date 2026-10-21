@@ -1,19 +1,20 @@
-# `grid` — connection points, and who runs the grid
+# `grid` — the grid side of a connection point
 
-Status: shipped with schema 0.2. Schema: `grid`.
+Status: shipped with schema 0.3. Schema: `grid`.
 
-A meter, in the sense of the grid, is a connection point to a network: the
-identifier its operator knows, on a site, with what it can do (take, inject,
-both) and the period that identifier names that point (IEC CIM
-*UsagePoint*). The physical meter is a device of the core, of type `meter`,
-and can be swapped; the devices behind a connection point say so with a
-`behind_meter` link, dated like any link.
+The connection point is the core's: `meters`, the identifier its operator
+knows on a site, what it can do (take, inject, both) and the period that
+identifier names it, with `declare_meter()` and `close_meter()`; a device
+behind it names it in `devices.meter_id` ([docs/model.md](../../docs/model.md)).
+This module starts from that meter and adds what the grid knows about it
+(decision [0042](../../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)):
+who runs the grid, and how each point is connected to it.
 
 | Table / function | Holds / does |
 |---|---|
-| `grid.operators` | the distribution and transmission operators of a country, what they cover, where a third party reads meter data with the customer's consent, and the identifier scheme of the metering points they issue; written by the country packs |
-| `grid.meters` | connection points: identifier and scheme (checked against the scheme's pattern), resource, direction, operator, validity; an object, so attributes, documents and series attach to it |
-| `grid.declare_meter()` | declares a connection point on a site; refuses `invalid_identifier`, `meter_already_open` |
-| `grid.close_meter()` | ends the period an identifier names a point; refuses `meter_not_open` |
+| `grid.operators` | the distribution and transmission operators of a country, what they cover, where a third party reads meter data with the customer's consent, and the identifier scheme of the metering points they issue; a vocabulary written by the country packs |
+| `grid.connections` | one row per meter that has grid details, with the meter's id: the operator that runs it and the voltage level it is connected at (a code of the country's `voltage_levels`); its organisation is the meter's, copied; it goes with its meter. Subscribed power is an attribute of the meter |
+| `grid.connect_to_operator()` | says which operator runs a meter, and at which voltage level; a second call updates it; refuses `meter_not_found`, `grid_operator_unknown` |
 
-Install: `npx nexgen-os init --modules grid`.
+A country pack with `grid.json` operators lists `grid` in its modules; its
+operators land in `grid.operators` only. Install: `npx nexgen-os init --modules grid`.

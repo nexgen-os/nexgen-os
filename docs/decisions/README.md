@@ -59,6 +59,7 @@ describes; its record is written once the fix has shipped.
 ## Modules
 
 - [0032](0032-a-module-has-its-own-schema.md) · A module has its own schema and writes the core through a function · accepted
+- [0042](0042-a-module-starts-from-an-object-of-the-core.md) · A module starts from an object of the core and enriches it · accepted
 - [0033](0033-a-module-code-outlives-its-names.md) · A module code outlives its names · accepted
 
 ## Packs

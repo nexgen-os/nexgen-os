@@ -1,15 +1,24 @@
 # The core model
 
-The core holds three notions — the places, the devices installed on them,
-and the series those devices and places produce — and the engine that
-attaches everything else to any of them. A trade that needs more adds a
-module with its own schema; a country adds a pack.
+The core names seven objects, in the order a page walks them:
+organisation → project → participant → site (buildings, spaces, surfaces)
+→ meter → device → series ([0006](decisions/0006-named-objects.md)); and the
+engine that attaches everything else to any of them. A trade that needs
+more adds a module with its own schema, starting from one of these objects
+([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)); a
+country adds a pack.
 
 ```mermaid
 erDiagram
   organisations ||--o{ organisation_members : "who may work"
   organisations ||--o{ contacts : "deals with"
+  organisations ||--o{ projects : "works on"
+  projects ||--o{ participants : "takes part"
+  participants ||--o{ participants : "groups"
+  sites ||--o{ participants : "as"
   organisations ||--o{ sites : owns
+  sites ||--o{ meters : "connected by"
+  meters ||--o{ devices : "behind"
   sites ||--o{ buildings : holds
   buildings ||--o{ spaces : "floors, rooms, zones, units"
   spaces ||--o{ spaces : "inside"
@@ -37,9 +46,9 @@ erDiagram
   regions ||--o{ defaults : decides
 ```
 
-`objects` is the registry: one row per organisation, site, building, space,
-surface or device (and per object a module declares: a connection point, a
-project, a participant, a task), with its kind, its organisation and its
+`objects` is the registry: one row per organisation, project, participant,
+site, building, space, surface, meter or device (and per object a module
+declares: a PV array, a task), with its kind, its organisation and its
 scenario. The named tables keep it up to date by trigger; `declare_object()`
 registers a module's table as a kind, with the columns that lead to its
 parents. Attachments point to the registry; pages read the named tables.
@@ -58,7 +67,23 @@ parents. Attachments point to the registry; pages read the named tables.
   ([why](../README.md#invoicing-and-ekwo-os)), which installs beside it on one
   database ([with Ekwo OS](with-ekwo-os.md)).
 
-## Where
+## On what
+
+- **projects** — what a person works on: an energy community, a
+  portfolio, a study, a construction site, a district plan (`kind`), with
+  the country whose rules apply, a perimeter on the map, a status from
+  `simulation` to `archived` and its dates. The allocation key of a
+  community, the installed power of a portfolio are attributes; the tasks of
+  its works are the `tasks` module's.
+- **participants** — a site's role in a project, `producer`, `consumer` or
+  `prosumer`, with the contact who answers for it (the owner, the tenant,
+  the company), its status and the period it takes part. It groups what is
+  behind the meters of its site; a participant without a site groups others
+  (two tenants of one landlord, a campus), of the same project. A site takes
+  part in a project once at a time and may take part in several projects.
+  `join_project`, `leave_project`; `participant_meters(participant)` lists
+  the connection points it is behind, groups included.
+
 
 - **sites** — the place a person owns, rents or operates, in the one
   standard shape of a place ([0025](decisions/0025-a-place-has-one-shape.md)),
@@ -111,6 +136,19 @@ names a row of `sources`; `identifiers` (a municipality code, a cadastral
 parcel, an address register id) become `external_ids` of the site. Any other
 key is refused (`place_key_unknown`).
 
+## Connected by
+
+- **meters** — the connection point of a site to a network (electricity,
+  gas, heat, water), the frontier between the grid and the place (IEC CIM
+  *UsagePoint*): the identifier its operator knows and its scheme (a GS1
+  GSRN, or a scheme a pack publishes, checked by `identifier_valid`), what
+  it can do (`offtake`, `injection`, `both`) and the period that identifier
+  names it. `declare_meter` refuses `invalid_identifier` and
+  `meter_already_open`; `close_meter` ends the period when the register
+  retires the number. Its subscribed power is an attribute. The physical
+  meter is a device of type `meter` and can be swapped; who operates the
+  point and how it is connected are the `grid` module's (`grid.connections`).
+
 ## What
 
 - **devices** — anything installed, including the instruments that measure:
@@ -119,11 +157,15 @@ key is refused (`place_key_unknown`).
   Type (from `device_types`), site, and where on it — building, space,
   surface — checked together by `devices_check`; catalogue product,
   manufacturer, model, rated power, unit count, status, installation and
-  removal dates. `install_device` (with the nameplate and `metadata` of the
-  file it was read from, when no product is named), `move_device` (the place it leaves stays
-  as a `placed_in` link), `retire_device`, `replace_device` (a `replaces`
-  link). Anything else about where it belongs — the meter it is behind, the
-  zone it serves — is a link. A module derives the types it owns:
+  removal dates, and the meter of its site it is behind (`meter_id`, none
+  for an instrument that measures nothing on the grid side). `install_device`
+  (with the nameplate and `metadata` of the file it was read from, when no
+  product is named, and its meter), `move_device` (the place it leaves stays
+  as a `placed_in` link), `connect_device` (the meter it leaves stays as a
+  `behind_meter` link: the column is today, the links are the history),
+  `retire_device`, `replace_device` (a `replaces` link, same place, same
+  meter). Anything else about where it belongs — the zone it serves — is a
+  link. A module derives the types it owns:
   `call derive_devices('solar.pv_systems', 'solar')` makes a table with the
   same id, refused for any other type.
 - **device_directory** — products: manufacturer, model, unit power,
@@ -269,8 +311,8 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 
 | Module | Schema | Holds |
 |---|---|---|
-| `grid` | `grid` | `operators` (who runs the grid, written by packs) and `meters`, connection points with the identifier their operator knows (`declare_meter`, `close_meter`); a device behind a meter is a `behind_meter` link |
-| `community` | `community` | `projects` (an energy community, a portfolio, a study) and `participants`, a site's role in a project (`join_project`, `leave_project`, `participant_meters`) |
+| `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `connections`, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
+| `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
 | `accounting` | `accounting` | the accounting bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |
 

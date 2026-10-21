@@ -188,7 +188,47 @@ and reference. Its legal texts and its twenty-three task templates are no
 longer in the open repository; a Belgian project is planned from the generic
 templates of the `tasks` module.
 
-### Changed — schema 0.2.0: the core of three notions
+### Changed — schema 0.3.0: projects, participants and meters are objects of the core
+
+**Breaking.** The core migrations are rewritten in place again, with no
+upgrade from 0.2.0, which nothing installed: `nexgen_schema_version()`
+answers `0.3.0` and the command line's schema version and floor are both
+0.3.0. The core names seven objects — the organisation, the project, the
+participant, the place, the meter, the device, the series (decision 0006,
+rewritten) — and a module starts from one of them and enriches it
+(decision 0042).
+
+- `community.projects` and `community.participants` move to the core as
+  `projects` and `participants`, with `participants_check()`,
+  `join_project()`, `leave_project()` and `participant_meters()`, now a
+  plain read of the core that needs no module
+  (`core/migrations/20261012200300_core_projects_participants_meters.sql`).
+- `grid.meters` moves to the core as `meters`, with `meters_check()`,
+  `declare_meter()` and `close_meter()`; its `grid_operator` column is
+  dropped and `declare_meter()` loses its `p_grid_operator` argument. The
+  property `subscribed_power` is the core's.
+- `devices.meter_id`: the meter of its site a device is behind, checked by
+  `devices_check` (`device_meter_site_mismatch`). `install_device()` takes
+  an optional `p_meter_id`; `replace_device()` keeps the meter;
+  `connect_device(device, meter, on)` moves it to another meter and keeps
+  the one it leaves as a dated `behind_meter` link, now a link type of the
+  core. A `behind_meter` link is no longer how a device says which meter it
+  is behind today.
+- The `grid` module keeps `grid.operators` and adds `grid.connections`, one
+  row per meter with the meter's id: its operator and its voltage level,
+  written by `grid.connect_to_operator()`. Version 0.2.0, needs core 0.3.0.
+- The `community` module keeps energy sharing (the allocation properties,
+  the shared quantities, `runSharing()`), on the core's participants; its
+  first migration only creates its schema and registers it. Version 0.3.0,
+  needs core 0.3.0.
+- The `tasks` module and the GeoJSON export of `@nexgen-os/core` read the
+  core's projects and participants: `tasks` installs without `community`.
+- `nexgen-os doctor` names `module_table_detached`: a table of a module
+  schema that carries `organisation_id` and reaches no table of the core
+  but `organisations` by a path of foreign keys.
+- Examples 01, 04, 05, 06 and 07 need the core only.
+
+### Changed — schema 0.2.0: the place, the device and the series
 
 The core migrations are rewritten in place, since nothing was installed
 from them yet: the schema `nexgen` now reads as places, the devices on

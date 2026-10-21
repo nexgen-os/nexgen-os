@@ -52,6 +52,6 @@ object or its sensor).
 - Inherits Ekwo OS 0009 (*Accounts have types and are resolved by role*),
   translated: a device or a series is found by its type and its quantity,
   never by a name pattern.
-- [0006](0006-named-objects.md) — the three notions of the core.
+- [0006](0006-named-objects.md) — the seven objects of the core.
 - [0031](0031-one-way-to-write-a-series-one-way-to-read-it.md) — how values
   are written and read.

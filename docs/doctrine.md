@@ -13,8 +13,9 @@ measure.
 - **Simple.** A repository that reads in one screen — the core, the modules,
   the packs, the formats, the connectors, the engines — and nothing between
   them ([README](../README.md), [0024](decisions/0024-one-language-per-layer.md)).
-- **Concrete.** The core names things of the trades — a site, a device, a
-  series — never an abstraction that stands for several
+- **Concrete.** The core names things of the trades — an organisation, a
+  project, a participant, a site, a meter, a device, a series — never an
+  abstraction that stands for several
   ([0006](decisions/0006-named-objects.md), [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
 - **Factorised.** Two objects that are one are merged; one shape of a place;
   one way to write a series; one function per gesture; nothing implemented
@@ -28,9 +29,11 @@ measure.
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md),
   [0001](decisions/0001-one-entity-table-attached-values.md),
   [0018](decisions/0018-one-function-per-gesture.md)).
-- **A module is one thing.** Its own objects, its own physics, its own
-  schema, named after what it holds and never after a drawer
-  ([0041](decisions/0041-a-module-names-one-thing.md),
+- **A module is one thing.** It starts from an object of the core and
+  enriches it, with its own physics and its own schema, named after what it
+  holds and never after a drawer
+  ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md),
+  [0041](decisions/0041-a-module-names-one-thing.md),
   [0032](decisions/0032-a-module-has-its-own-schema.md)).
 - **A country is data, a figure is a run, a file is a library.** Packs
   compiled into SQL, runs that never change, format libraries that touch no
@@ -40,7 +43,7 @@ measure.
 
 ## Objects
 
-- [0006](decisions/0006-named-objects.md) The core names a few objects (the place, the device, the series), and everything else is attached to them
+- [0006](decisions/0006-named-objects.md) The core names seven objects (the organisation, the project, the participant, the place, the meter, the device, the series), and everything else is attached to them
 - [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
 - [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
 - [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
@@ -74,6 +77,7 @@ measure.
 ## Modules
 
 - [0032](decisions/0032-a-module-has-its-own-schema.md) A module has its own schema and writes the core through a function
+- [0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md) A module starts from an object of the core and enriches it: a derived table, a secondary table or vocabulary rows
 - [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
 - [0041](decisions/0041-a-module-names-one-thing.md) A module names one thing with its own physics, and there is no catch-all
 - Records of single modules: [0010](decisions/0010-ekwo-link.md) the accounting bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
