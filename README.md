@@ -14,7 +14,7 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 > Status: **0.1, the first release** — the core schema, the `architecture`, `weather`,
 > `solar` and `tasks` modules, the format libraries, the Open-Meteo and PVGIS connectors,
-> external engines in any language with pvlib (Python) as the first, the `nexgen-os`
+> program connectors in any language with pvlib (Python) as the first, the `nexgen-os`
 > installer, the `fr` and `be` country packs and seven example datasets; each is described
 > in the [changelog](CHANGELOG.md). Tested; names may still change until 1.0, and every
 > change is written down.
@@ -89,7 +89,7 @@ npx nexgen-os init                      # the core and every module; --packs <cc
 npx nexgen-os doctor                    # what is wrong, by name
 ```
 
-Engines are optional: a yield computed by pvlib needs Python and
+Program connectors are optional: a yield computed by pvlib needs Python and
 `packages/connectors/pvlib` installed, as [`packages/connectors/README.md`](packages/connectors/README.md#programs-in-any-language) says.
 
 From Python, the client reads the model and attaches with a source:
@@ -248,6 +248,6 @@ How to install both, and what the bridge needs when they share a database:
 ## Licence
 
 The core, the modules, the packs and the installer are AGPL-3.0
-([LICENSE](LICENSE)). The format libraries, the connectors, the engines and the
+([LICENSE](LICENSE)). The format libraries, the connectors and the
 Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
 can live inside any product.

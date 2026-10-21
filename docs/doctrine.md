@@ -11,7 +11,7 @@ them; Ekwo OS, the invoicing and bookkeeping core built on the same playbook, is
 measure.
 
 - **Simple.** A repository that reads in one screen — the core, the modules,
-  the packs, the formats, the connectors, the engines — and nothing between
+  the packs, the formats, the connectors — and nothing between
   them ([README](../README.md), [0024](decisions/0024-one-language-per-layer.md)).
 - **Concrete.** The core names things of the trades — an organisation, a
   project, a participant, a site, a meter, a device, a series — never an
@@ -25,9 +25,13 @@ measure.
   [0018](decisions/0018-one-function-per-gesture.md)).
 - **Few words.** One word per thing, across schemas, folders and documents:
   the meter is `meters` in the core and `grid.meters` in the grid module,
-  the device is `devices` in the core and `three_d.devices` in the 3d module;
-  no synonym, no second name for a thing the core already names
-  ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
+  the device is `devices` in the core and `building.devices` in the building
+  module, code that reaches outside is a connector whatever language it
+  runs, in the folder and in the table; no synonym, no second name for a
+  thing the core already names
+  ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md),
+  [0011](decisions/0011-external-data.md),
+  [0013](decisions/0013-external-engines.md)).
 - **Proven.** The shape follows the platform this core was taken from, which
   earned it in the field — organisation, project, participant, meter, device —
   and when two structures compete, the one the platform runs wins
@@ -49,7 +53,6 @@ measure.
   database ([0020](decisions/0020-a-pack-holds-what-a-function-reads.md),
   [0004](decisions/0004-deterministic-runs.md),
   [0035](decisions/0035-a-format-library-touches-no-database.md)).
-
 ## Objects
 
 - [0006](decisions/0006-named-objects.md) The core names seven objects (the organisation, the project, the participant, the place, the meter, the device, the series), and everything else is attached to them
@@ -82,8 +85,8 @@ built on it is the `3d` module's.
 
 - [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
 - [0004](decisions/0004-deterministic-runs.md) A figure is a run, and a finished run never changes
-- [0013](decisions/0013-external-engines.md) An engine reads one request and answers one result
-- [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as an engine
+- [0013](decisions/0013-external-engines.md) A program connector reads one request and answers one result; "engine" names what computed a run
+- [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as a connector
 - [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is
 
 ## Modules

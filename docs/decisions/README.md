@@ -52,7 +52,7 @@ describes; its record is written once the fix has shipped.
 
 - [0018](0018-one-function-per-gesture.md) · One function per gesture · accepted
 - [0004](0004-deterministic-runs.md) · A figure is a run, and a finished run never changes · accepted
-- [0013](0013-external-engines.md) · An engine reads one request and answers one result · accepted
+- [0013](0013-external-engines.md) · A program connector reads one request and answers one result · accepted
 - [0024](0024-one-language-per-layer.md) · One language per layer · accepted
 - [0016](0016-naming-third-party-methods.md) · A third party's name goes where its data, its computation or its file is · accepted
 

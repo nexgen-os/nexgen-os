@@ -50,8 +50,9 @@ full contract is in [`packages/connectors/README.md`](../../packages/connectors/
   calls the network unless the request says so and the result records it
   (fetching weather is a connector's job), and never writes outside a
   temporary directory it removes. Every choice it makes is in its answer.
-- **Engines are optional and MIT.** An installation without Python runs
-  everything else; each engine keeps its own licence for the tool it wraps.
+- **Program connectors are optional and MIT.** An installation without
+  Python runs everything else; each keeps its own licence beside it, and
+  the tool it wraps keeps its own.
 
 **A profile and an engine are two axes.** The module's named profile
 chooses the inputs, the models and the losses; the engine computes. The

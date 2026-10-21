@@ -1,4 +1,4 @@
-// The runner of external engines (decision 0013), against a fake engine
+// The runner of the program connectors (decision 0013), against a fake program
 // written in Node: the envelope goes in on stdin, the answer comes back on
 // stdout, and every failure is a named error.
 import { describe, expect, it } from 'vitest';
