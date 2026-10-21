@@ -299,7 +299,7 @@ describe('a pvwatts yield run', () => {
     const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvwatts', '{"pdc0": 400, "gamma_pdc": -0.0037}')`, [product]);
     await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, module_product_id, module_count) values ($1, $2, 180, 30, 'South', 'roof_parallel', $3, 50)`, [org, system, product]);
-    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc, bifacial) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10, true)`, [org, system]);
+    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc, bifacial, created_at) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10, true, now() + interval '1 second')`, [org, system]);
     pvcalc = await fixture('pvgis-pvcalc-brussels-south30.json');
   });
 
@@ -359,7 +359,7 @@ describe('a pvwatts yield run', () => {
       remaining_fraction: 0.86,
       typical_year: { months: Array(12).fill(2023), hours_from_mean: 0, rescale_factor: 1, calendar_year: 2023, leap_hours_left_out: 0 },
       anchoring: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', annual_kwh: 2 * pvgisAnnual },
-      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the site's time zone" },
+      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the participant's time zone" },
     });
     // A monofacial array says nothing about a rear side.
     expect(run.inputs.arrays[0]).not.toHaveProperty('bifacial');

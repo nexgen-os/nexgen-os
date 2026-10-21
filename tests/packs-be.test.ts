@@ -14,7 +14,7 @@ import { geopunt } from '@nexgen-os/geopunt';
 import { icar as walloon } from '@nexgen-os/icar';
 import { urbis } from '@nexgen-os/urbis';
 import { checkPacks } from '../packages/cli/src/index.js';
-import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant, joinWithPlace } from './helpers/db.js';
 
 const recorded = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8')) as unknown;
 /** Answers each URL with the first recorded body whose key it contains; an empty answer otherwise. */
@@ -60,7 +60,7 @@ describe('the be pack', () => {
   const p = async (site: string, property: string, at = '2026-10-20') =>
     (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
   const siteIn = async (org: string, region: string) =>
-    (await one<{ id: string }>(db, `select create_site($1, $2, jsonb_build_object('country', 'BE', 'region', $3::text)) id`, [org, `A site in ${region}`, region])).id;
+    joinWithPlace(db, org, `A participant in ${region}`, { country: 'BE', region });
 
   it('says who the country is: currency, languages, time zone and the three regions', async () => {
     const be = await one<Record<string, unknown>>(db,
@@ -72,7 +72,7 @@ describe('the be pack', () => {
     const org = await organisation(db, 'Une commune', USER_A);
     const site = await siteIn(org, 'BE-WAL');
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [site])).time_zone).toBe('Europe/Brussels');
-    await expect(db.query(`select create_site($1, 'Nowhere', '{"country": "BE", "region": "BE-XXX"}')`, [org])).rejects.toThrow(/region_unknown: BE-XXX/);
+    await expect(joinWithPlace(db, org, 'Nowhere', { country: 'BE', region: 'BE-XXX' })).rejects.toThrow(/region_unknown: BE-XXX/);
   });
 
   it('brings its sources, each regional one saying its region, and the texts its values cite', async () => {
@@ -126,7 +126,7 @@ describe('the be pack', () => {
     expect(elia).toEqual({ kind: 'tso', regions: [] });
   });
 
-  it('answers parameter_of() for a site in each region: a regional value with its source, a country value, a yearly value by its date', async () => {
+  it('answers parameter_of() for a participant in each region: a regional value with its source, a country value, a yearly value by its date', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
     const flanders = await siteIn(org, 'BE-VLG');
     const brussels = await siteIn(org, 'BE-BRU');

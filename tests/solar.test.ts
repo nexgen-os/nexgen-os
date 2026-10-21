@@ -1,5 +1,6 @@
 // The `solar` module: a house with a PV system on two roof faces, the
-// physics of its module and inverter products, a far horizon on the site,
+// physics of its module and inverter products, a far horizon on the
+// participant's place,
 // the four yield profiles, and who sees what.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -7,10 +8,9 @@ import { USER_B, asUser, freshDatabase, insert, one, organisation, square, parti
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let house: string;
 let south: string;
-let west: string;
 let pv: string;
 let moduleProduct: string;
 let inverterProduct: string;
@@ -18,20 +18,19 @@ let inverterProduct: string;
 beforeAll(async () => {
   db = await freshDatabase(['building', 'solar']);
   org = await organisation(db, 'A family');
-  site = await participant(db, { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
+  home = await participant(db, { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'building.buildings', {
-    organisation_id: org, participant_id: site, name: 'House', footprint: square(-5.98, 37.39, 10, 8), height_m: 7.5,
+    organisation_id: org, participant_id: home, name: 'House', footprint: square(-5.98, 37.39, 10, 8), height_m: 7.5,
   });
   south = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
-  west = await insert(db, 'building.surfaces', {
+  await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'West roof face', kind: 'roof', azimuth_deg: 270, tilt_deg: 25,
   });
   pv = await insert(db, 'devices', {
-    organisation_id: org, participant_id: site, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
+    organisation_id: org, participant_id: home, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
   });
-  await db.query('select building.place_device($1, $2)', [pv, house]);
   moduleProduct = await insert(db, 'device_directory', {
     device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 425', unit_power_kw: 0.425, published_by: 'solar',
   });
@@ -70,7 +69,7 @@ describe('the solar module', () => {
       [pv],
     );
     expect(r).toEqual({ name: 'PV system', organisation_id: org, grid_connection: 'self_consumption' });
-    const battery = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Battery', device_type: 'battery' });
+    const battery = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Battery', device_type: 'battery' });
     await expect(db.query('insert into solar.pv_systems (id) values ($1)', [battery])).rejects.toThrow(/device_type_mismatch/);
     await expect(
       db.query(`update solar.pv_systems set grid_connection = 'sometimes' where id = $1`, [pv]),
@@ -82,18 +81,16 @@ describe('the solar module', () => {
     expect(Number(r.kwp)).toBe(5);
   });
 
-  it('places two arrays on two roof faces of the building module, with the orientation of each face', async () => {
+  it('describes two arrays, each with its own orientation, read from the roof faces it looks like', async () => {
     const southArray = await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'South', mounting: 'roof_parallel',
+      organisation_id: org, pv_system_id: pv, name: 'South', mounting: 'roof_parallel', azimuth_deg: 180, tilt_deg: 30,
       module_product_id: moduleProduct, module_count: 8, modules_per_string: 8, strings: 1,
       inverter_product_id: inverterProduct, inverter_count: 1,
     });
-    const westArray = await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'West', mounting: 'roof_parallel',
+    await insert(db, 'solar.pv_arrays', {
+      organisation_id: org, pv_system_id: pv, name: 'West', mounting: 'roof_parallel', azimuth_deg: 270, tilt_deg: 25,
       module_product_id: moduleProduct, module_count: 4, kwp_dc: 1.7,
     });
-    await db.query('select building.place_array($1, $2)', [southArray, south]);
-    await db.query('select building.place_array($1, $2)', [westArray, west]);
     const r = await db.query<{ name: string; azimuth_deg: string; tilt_deg: string; kwp_dc: string }>(
       `select name, azimuth_deg, tilt_deg, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by name`,
       [pv],
@@ -102,39 +99,17 @@ describe('the solar module', () => {
       { name: 'South', azimuth_deg: '180.00', tilt_deg: '30.00', kwp_dc: '3.400' },
       { name: 'West', azimuth_deg: '270.00', tilt_deg: '25.00', kwp_dc: '1.700' },
     ]);
-    const kind = await one<{ table_name: string; site: string }>(db, `select table_name, site_of('pv_array', $1) site from kinds where kind = 'pv_array'`, [southArray]);
-    expect(kind).toEqual({ table_name: 'solar.pv_arrays', site });
-  });
-
-  it('keeps an orientation given for a rack, over the surface it stands on', async () => {
-    const flat = await insert(db, 'building.surfaces', {
-      organisation_id: org, building_id: house, name: 'Flat roof', kind: 'roof', azimuth_deg: 0, tilt_deg: 0,
-    });
-    const rack = await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'Rack', mounting: 'open_rack',
-      azimuth_deg: 180, tilt_deg: 15, scenario_id: null,
-    });
-    await db.query('select building.place_array($1, $2)', [rack, flat]);
-    const r = await one<{ azimuth_deg: string; tilt_deg: string }>(
-      db, 'select azimuth_deg, tilt_deg from solar.pv_arrays where id = $1', [rack],
-    );
-    expect(r).toEqual({ azimuth_deg: '180.00', tilt_deg: '15.00' });
-    await db.query('delete from solar.pv_arrays where id = $1', [rack]);
+    const kind = await one<{ table_name: string; participant: string }>(db, `select table_name, participant_of('pv_array', $1) participant from kinds where kind = 'pv_array'`, [southArray]);
+    expect(kind).toEqual({ table_name: 'solar.pv_arrays', participant: home });
+    // An array is not placed on a roof face: it keeps its own azimuth and tilt, nothing else.
+    const columns = await db.query<{ column_name: string }>(
+      `select column_name from information_schema.columns where table_schema = 'solar' and table_name = 'pv_arrays' and column_name in ('surface_id', 'geometry')`);
+    expect(columns.rows).toEqual([]);
   });
 
   it('sums the arrays into the DC power of the system', async () => {
     const r = await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv]);
     expect(Number(r.kwp)).toBeCloseTo(5.1, 3);
-  });
-
-  it('throws a named error (`array_outside_system_site`) for an array on a surface of another site', async () => {
-    const other = await participant(db, { organisation_id: org, name: 'Barn', country: 'ES' });
-    const ground = await insert(db, 'building.surfaces', {
-      organisation_id: org, participant_id: other, name: 'Field', kind: 'ground', azimuth_deg: 180, tilt_deg: 0,
-    });
-    const stray = await insert(db, 'solar.pv_arrays', { organisation_id: org, pv_system_id: pv, name: 'Stray', azimuth_deg: 180, tilt_deg: 10 });
-    await expect(db.query('select building.place_array($1, $2)', [stray, ground])).rejects.toThrow(/array_outside_system_site/);
-    await db.query('delete from solar.pv_arrays where id = $1', [stray]);
   });
 
   it('refuses a string layout that does not add up', async () => {
@@ -188,13 +163,13 @@ describe('product physics', () => {
 });
 
 describe('horizons', () => {
-  it('keeps a far horizon on the site, azimuth from north', async () => {
+  it('keeps a far horizon on the participant\'s place, azimuth from north', async () => {
     await db.query(
       `insert into solar.horizons (object_kind, object_id, profile, source_code) values ('participant', $1, '[[0, 2], [90, 5.5], [180, 1], [270, 8]]', 'pvgis')`,
-      [site],
+      [home],
     );
     const r = await one<{ organisation_id: string; n: number }>(
-      db, 'select organisation_id, jsonb_array_length(profile) n from solar.horizons where object_id = $1', [site],
+      db, 'select organisation_id, jsonb_array_length(profile) n from solar.horizons where object_id = $1', [home],
     );
     expect(r).toEqual({ organisation_id: org, n: 4 });
   });
@@ -208,7 +183,7 @@ describe('horizons', () => {
     ).rejects.toThrow(/horizons_profile_pairs/);
     await expect(
       db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[[0, 2]]')`, [pv]),
-    ).rejects.toThrow(/horizon_on_site_or_surface_only/);
+    ).rejects.toThrow(/horizon_on_participant_or_surface_only/);
   });
 });
 

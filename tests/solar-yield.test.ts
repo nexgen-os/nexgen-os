@@ -78,6 +78,6 @@ describe('a pvgis_like yield run', () => {
     const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
     const device = await insert(db, 'devices', { organisation_id: org, participant_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
-    await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/site_without_position/);
+    await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/participant_without_position/);
   });
 });

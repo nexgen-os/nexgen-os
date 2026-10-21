@@ -124,7 +124,7 @@ describe('a place on a site', () => {
       [id],
     );
     expect(row).toEqual({ street: 'Rue de la Loi 12', address_extra: 'Floor 3', region: 'BE-BRU', how_precise: 'rooftop', source: 'nominatim', lon: 4.35247, lat: 50.84673, dims: 3 });
-    await expect(participant(db, { organisation_id: org, name: 'Vague', country: 'BE', location_precision: 'somewhere' })).rejects.toThrow(/sites_location_precision/);
+    await expect(participant(db, { organisation_id: org, name: 'Vague', country: 'BE', location_precision: 'somewhere' })).rejects.toThrow(/participants_location_precision/);
     expect(addressLines(place.address)).toEqual(['Rue de la Loi 12', 'Floor 3', '1000 Bruxelles', 'BE-BRU', 'BE']);
   });
 });

@@ -78,7 +78,7 @@ describe('doctor', () => {
       await db.exec('set local session_replication_role = origin');
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems).toEqual([
-        { code: 'attachments_orphaned', detail: 'site: 1 in nexgen.attributes, 1 in nexgen.external_ids name a site that no longer exists' },
+        { code: 'attachments_orphaned', detail: 'participant: 1 in nexgen.attributes, 1 in nexgen.external_ids name a participant that no longer exists' },
       ]);
     } finally {
       await db.exec('rollback');
@@ -116,15 +116,15 @@ describe('doctor', () => {
 });
 
 describe('status and the command line', () => {
-  it('counts organisations, sites, devices and series', async () => {
+  it('counts organisations, participants, devices and series', async () => {
     const org = await organisation(db, 'Status firm');
     await participant(db, { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
     const r = await status(sqlClient(db));
-    expect(r).toMatchObject({ schemaVersion: '0.3.0', packs: ['fr'], counts: { organisations: 1, sites: 1, devices: 0, series: 0 } });
+    expect(r).toMatchObject({ schemaVersion: '0.3.0', packs: ['fr'], counts: { organisations: 1, participants: 1, devices: 0, series: 0 } });
     expect([...r.modules].sort()).toEqual(['grid', 'solar', 'weather']);
     const cli = await run(['status']);
     expect(cli.code).toBe(0);
-    expect(cli.out).toMatch(/^Nexgen OS 0\.3\.0\nmodules {8}grid, solar, weather\npacks {10}fr\norganisations {2}1\nsites/);
+    expect(cli.out).toMatch(/^Nexgen OS 0\.3\.0\nmodules {8}grid, solar, weather\npacks {10}fr\norganisations {2}1\nparticipants/);
   });
 
   it('init through the command line: a dry run, then the run, then nothing to apply', async () => {

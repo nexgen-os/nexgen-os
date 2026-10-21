@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { parquetMetadata, parquetReadObjects } from 'hyparquet';
-import { USER_A, freshDatabase, insert, organisation, participant } from './helpers/db.js';
+import { USER_A, freshDatabase, organisation, participant } from './helpers/db.js';
 import { exportSeriesParquet, serverParquetWriter, store } from '@nexgen-os/core';
 import { SERIES_FILE_SCHEMA, writeSeriesParquet } from '@nexgen-os/parquet';
 
