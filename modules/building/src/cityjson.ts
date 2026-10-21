@@ -17,16 +17,17 @@
  *
  * Every row has the source the caller names, and what the file says that
  * no column holds travels in `metadata.cityjson`. The exporter reads a
- * site's buildings back into the same shapes, in the site's UTM zone, for
+ * participant's buildings back into the same shapes, in their UTM zone, for
  * `writeCityJson()`.
  */
 import type { CityBuilding, CityModel, Point as CityPoint } from '@nexgen-os/cityjson';
 import type { Db } from '@nexgen-os/core';
-import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfSite, refuseKnown, round } from './faces.js';
+import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfParticipant, refuseKnown, round } from './faces.js';
 
 export interface CityJsonTarget {
-  siteId: string;
-  /** A scenario the buildings belong to; the site's by default. */
+  /** The participant whose buildings they are. */
+  participantId: string;
+  /** A scenario the buildings belong to; the participant's by default. */
   scenarioId?: string | null;
 }
 
@@ -52,14 +53,14 @@ const SURFACE_KINDS: Record<string, 'roof' | 'facade'> = {
 };
 
 /**
- * Writes the buildings of a CityJSON model on a site. Refuses
+ * Writes the buildings of a CityJSON model for a participant. Refuses
  * `crs_unknown` when the installation cannot transform from the file's
  * reference system, and `already_imported` when a building is known to
  * the organisation by its CityObject id — before writing anything.
  */
 export async function importCityJson(db: Db, target: CityJsonTarget, model: CityModel, options: CityJsonImportOptions): Promise<CityJsonImport> {
   await checkSrid(db, model.srid);
-  const organisationId = await organisationOfSite(db, target.siteId);
+  const organisationId = await organisationOfParticipant(db, target.participantId);
   await refuseKnown(db, organisationId, 'cityjson', model.buildings.map((b) => b.id), 'CityObject');
   const scenarioId = target.scenarioId ?? null;
   const result: CityJsonImport = { buildings: [], surfaces: 0, skipped: [...(model.skipped ?? [])] };
@@ -76,7 +77,7 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
                    from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($3::text[]) w) g),
                 $4, $6, $7, $8, $9, $10) id`,
       [
-        target.siteId, b.name ?? b.id, b.footprint.map(planWkt), elevation, model.srid, height,
+        target.participantId, b.name ?? b.id, b.footprint.map(planWkt), elevation, model.srid, height,
         options.profile ?? null, options.sourceCode,
         JSON.stringify({ cityjson: { id: b.id, parts: b.parts ?? [], lods: b.lods ?? [], attributes: b.attributes } }),
         scenarioId,
@@ -118,7 +119,7 @@ function planWkt(polygon: CityPoint[][]): string {
 }
 
 export interface CityJsonExportOptions {
-  /** EPSG code of the output; default: the UTM zone of the site. */
+  /** EPSG code of the output; default: the UTM zone of the buildings. */
   srid?: number;
 }
 
@@ -152,34 +153,34 @@ const polygonsOf = (geojson: string): CityPoint[][][] => {
 };
 
 /**
- * The buildings of a site as a CityJSON model, for `writeCityJson()`: a
+ * The buildings of a participant as a CityJSON model, for `writeCityJson()`: a
  * LoD 1 solid from the footprint and height (`building.building_volume()`), the
  * roof and wall surfaces with their semantics, the CityGML attributes from
  * the columns and the attributes, the file's own attributes back from
- * `metadata.cityjson`. Refuses `nothing_to_export` for a site without a
- * building.
+ * `metadata.cityjson`. Refuses `nothing_to_export` for a participant
+ * without a building.
  */
-export async function exportCityJson(db: Db, where: { siteId: string }, options: CityJsonExportOptions = {}): Promise<CityModel> {
+export async function exportCityJson(db: Db, where: { participantId: string }, options: CityJsonExportOptions = {}): Promise<CityModel> {
   const buildings = await db.query<BuildingRow>(
-    `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from building.buildings where site_id = $1)) srid)
+    `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from building.buildings where participant_id = $1)) srid)
      select b.id, b.name, b.height_m, attributes_of(b.id) attributes, b.metadata,
             (select value from external_ids e where e.object_kind = 'building' and e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
             s.srid,
             ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
             (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(building.building_volume(b.id)) d) volume
        from building.buildings b, s
-      where b.site_id = $1 and b.scenario_id is null
+      where b.participant_id = $1 and b.scenario_id is null
       order by b.created_at, b.id`,
-    [where.siteId, options.srid ?? null],
+    [where.participantId, options.srid ?? null],
   );
-  if (buildings.rows.length === 0) throw new Error('nothing_to_export: the site has no building');
+  if (buildings.rows.length === 0) throw new Error('nothing_to_export: the participant has no building');
   const srid = buildings.rows[0].srid;
   const surfaces = await db.query<SurfaceRow>(
     `select f.building_id, f.name, f.kind, f.metadata, ST_AsGeoJSON(ST_Transform(f.geometry, $2::int)) geometry
        from building.surfaces f join building.buildings b on b.id = f.building_id
-      where b.site_id = $1 and f.scenario_id is null and f.geometry is not null
+      where b.participant_id = $1 and f.scenario_id is null and f.geometry is not null
       order by f.created_at, f.id`,
-    [where.siteId, srid],
+    [where.participantId, srid],
   );
 
   return {

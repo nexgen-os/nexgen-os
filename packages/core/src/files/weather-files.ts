@@ -16,7 +16,7 @@ const HOUR_MS = 3_600_000;
 
 export interface WeatherTarget {
   organisationId: string;
-  /** The object the weather is about, by its kind and its id: a weather point, a site. */
+  /** The object the weather is about, by its kind and its id: a weather point, a participant. */
   objectKind: string;
   objectId: string;
 }

@@ -10,6 +10,6 @@ const [place] = await geocoder.search('Korenmarkt 10, 9000 Gent');
 ```
 
 The place is the standard shape of `@nexgen-os/core` (address, WGS 84 point,
-precision, source); `siteFields(place)` gives the columns of `sites` it fills.
+precision, source); `placeFields(place)` gives the place columns of `participants` it fills.
 Decision [0009](../../../docs/decisions/0009-addresses-and-geocoding.md).
 

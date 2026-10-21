@@ -20,7 +20,7 @@ export interface SeriesPoint {
 
 /** What names a series when it may not exist yet: the keys of `series_ensure()`. */
 export interface SeriesIdentity {
-  /** The kind of the object observed (`site`, `meter`, `device`, `space`…), from `kinds`. */
+  /** The kind of the object observed (`participant`, `meter`, `device`, `space`…), from `kinds`. */
   object_kind: string;
   object_id: string;
   quantity_code: string;

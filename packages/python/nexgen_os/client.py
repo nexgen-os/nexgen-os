@@ -1,7 +1,7 @@
 """A client of a Nexgen OS installation, over its Postgres connection.
 
 It reads the model the one way the model is read (``attributes_of``,
-``resample``, ``site_of``, ``country_of``, and the series reads ``window``,
+``resample``, ``participant_of``, ``country_of``, and the series reads ``window``,
 ``latest``, ``fill``, ``coverage``, ``forecast_at``, ``export_rows``),
 writes values the one way they are written (``store``), and attaches an
 attribute with its period and its source. Every method is one call of the
@@ -125,11 +125,11 @@ class Nexgen:
         """The organisations the connection may read."""
         return self._rows("select id, name from nexgen.organisations order by name, id")
 
-    def sites(self, organisation_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """The sites the connection may read, of one organisation when given."""
+    def participants(self, organisation_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """The participants the connection may read, with their place, of one organisation when given."""
         return self._rows(
-            """select id, organisation_id, name, country, region, time_zone, location_precision
-                 from nexgen.sites
+            """select id, organisation_id, project_id, name, role, country, region, time_zone, location_precision
+                 from nexgen.participants
                 where %(organisation)s::uuid is null or organisation_id = %(organisation)s::uuid
                 order by name, id""",
             {"organisation": organisation_id},
@@ -153,7 +153,7 @@ class Nexgen:
     ) -> List[Bucket]:
         """A series on a regular step over ``[start, end)``, combined the way its quantity says.
 
-        A step of a day or more is cut in the site's time zone (or ``time_zone``);
+        A step of a day or more is cut in the participant's time zone (or ``time_zone``);
         a forecast gives its latest issue, or the latest before ``issued_before``.
         """
         rows = self._rows(
@@ -232,13 +232,13 @@ class Nexgen:
         """A value converted between two units of the core's vocabulary, by code or symbol."""
         return self._one("select nexgen.convert_unit(%s, %s, %s)", (value, from_unit, to_unit))
 
-    def site_of(self, kind: str, object_id: str) -> Optional[str]:
-        """The site an object (its kind and its id) is on; ``None`` for an object that is not somewhere."""
-        site = self._one("select nexgen.site_of(%s, %s::uuid)", (kind, object_id))
-        return None if site is None else str(site)
+    def participant_of(self, kind: str, object_id: str) -> Optional[str]:
+        """The participant an object (its kind and its id) belongs to; ``None`` for an object of no participant."""
+        participant = self._one("select nexgen.participant_of(%s, %s::uuid)", (kind, object_id))
+        return None if participant is None else str(participant)
 
     def country_of(self, kind: str, object_id: str) -> Optional[str]:
-        """The country of the site an object (its kind and its id) is on (ISO 3166-1 alpha-2), None when it is on none."""
+        """The country of the place of the participant an object (its kind and its id) belongs to (ISO 3166-1 alpha-2), None when none."""
         return self._one("select nexgen.country_of(%s, %s::uuid)", (kind, object_id))
 
     # -- writing values ----------------------------------------------------

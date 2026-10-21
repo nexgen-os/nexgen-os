@@ -1,10 +1,10 @@
 // The hierarchy of the core, in the order a page walks it: an organisation,
-// a project, a participant taking part in it on a site, a meter it carries,
-// a device installed behind it, and the meter it leaves kept as a dated
-// link; then a building with two flats, one site with two participants each
-// carrying its own meter. No module is needed for any of it; the grid
-// module, installed on a second database, adds the operator of the meter on
-// top.
+// a project, a participant taking part in it with its place, a meter it
+// carries, a device behind it; then two flats of one building, two
+// participants each carrying its own meter, grouped, and the participant a
+// meter leaves kept as a dated link. No module is needed for any of it; the
+// grid module, installed on a second database, adds the operator of the
+// meter on top.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { detachedModuleTables } from '../packages/cli/src/doctor.js';
@@ -13,21 +13,20 @@ import { freshDatabase, insert, one, organisation, sqlClient } from './helpers/d
 let db: PGlite;
 let org: string;
 let project: string;
-let site: string;
-let participant: string;
+let unit: string;
 let meter: string;
 let device: string;
+
+const place = (street: string) => JSON.stringify({ street, city: 'Rotterdam', country: 'NL' });
 
 beforeAll(async () => {
   db = await freshDatabase();
   org = await organisation(db, 'A cooperative');
   project = await insert(db, 'projects', { organisation_id: org, name: 'Riverside community', kind: 'energy_community', country: 'NL', status: 'creation' });
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Unit 1', country: 'NL', time_zone: 'Europe/Amsterdam' });
-  participant = (await one<{ id: string }>(db, `select join_project($1, $2, 'Unit 1', 'prosumer', null, '2026-01-01') id`, [project, site])).id;
-  meter = (await one<{ id: string }>(
-    db, `select declare_meter($1, '871000000000000001', 'gs1_gsrn', p_participant_id => $2) id`, [site, participant])).id;
-  device = (await one<{ id: string }>(
-    db, `select install_device($1, 'solar', 'Roof array', '{}', null, 6, '2026-02-01', p_meter_id => $2) id`, [site, meter])).id;
+  unit = (await one<{ id: string }>(
+    db, `select join_project($1, 'Unit 1', $2, 'prosumer', null, '2026-01-01', p_time_zone => 'Europe/Amsterdam') id`, [project, place('Kade 1')])).id;
+  meter = (await one<{ id: string }>(db, `select declare_meter($1, '871000000000000001', 'gs1_gsrn') id`, [unit])).id;
+  device = (await one<{ id: string }>(db, `select install_device($1, 'solar', 'Roof array', null, 6, '2026-02-01') id`, [unit])).id;
 });
 
 afterAll(async () => {
@@ -35,93 +34,72 @@ afterAll(async () => {
 });
 
 describe('the hierarchy of the core', () => {
-  it('needs no module: projects, participants and meters are the core\'s', async () => {
+  it('needs no module: projects, participants, meters and devices are the core\'s, and sites are not', async () => {
     const r = await one<{ modules: number; kinds: string[] }>(
       db,
       `select (select count(*)::int from modules) modules,
-              (select array_agg(kind order by kind) from kinds where published_by = 'core' and kind in ('project', 'participant', 'meter')) kinds`,
+              (select array_agg(kind order by kind) from kinds where published_by = 'core') kinds`,
     );
-    expect(r).toEqual({ modules: 0, kinds: ['meter', 'participant', 'project'] });
+    expect(r).toEqual({ modules: 0, kinds: ['device', 'meter', 'organisation', 'participant', 'project', 'run', 'series'] });
   });
 
-  it('walks from the project to the device through the participant, its site and its meter', async () => {
-    const r = await one<{ project: string; participant: string; identifier: string; device: string }>(
+  it('walks from the project to the meter and the device through the participant, which carries the place', async () => {
+    const r = await one<{ project: string; participant: string; street: string; identifier: string; device: string }>(
       db,
-      `select pr.name project, p.name participant, m.identifier, d.name device
+      `select pr.name project, p.name participant, p.street, m.identifier, d.name device
          from projects pr
          join participants p on p.project_id = pr.id
          join meters m on m.participant_id = p.id
-         join devices d on d.meter_id = m.id
+         join devices d on d.participant_id = p.id
         where pr.id = $1`,
       [project],
     );
-    expect(r).toEqual({ project: 'Riverside community', participant: 'Unit 1', identifier: '871000000000000001', device: 'Roof array' });
+    expect(r).toEqual({ project: 'Riverside community', participant: 'Unit 1', street: 'Kade 1', identifier: '871000000000000001', device: 'Roof array' });
   });
 
-  it('lists the meters a participant carries without the grid module', async () => {
-    const r = await db.query<{ meter_id: string }>('select meter_id from participant_meters($1)', [participant]);
-    expect(r.rows.map((x) => x.meter_id)).toEqual([meter]);
-  });
-
-  it('keeps the meter a device leaves as a dated behind_meter link', async () => {
-    const second = (await one<{ id: string }>(db, `select declare_meter($1, '871000000000000002', 'gs1_gsrn', 'electricity', 'injection') id`, [site])).id;
-    await db.query(`select connect_device($1, $2, '2026-06-01')`, [device, second]);
-    const today = await one<{ meter_id: string }>(db, 'select meter_id from devices where id = $1', [device]);
-    expect(today.meter_id).toBe(second);
-    const history = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
-      `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_kind = 'device' and subject_id = $1 and type_code = 'behind_meter'`,
+  it('has one path from a device to its meters and its place: its participant', async () => {
+    const r = await one<{ participant: string; country: string; meters: string[] }>(
+      db,
+      `select participant_of('device', $1) participant, country_of('device', $1) country,
+              (select array_agg(meter_id) from participant_meters(participant_of('device', $1))) meters`,
       [device],
     );
-    expect(history.rows).toEqual([{ object_id: meter, valid_from: '2026-02-01', valid_to: '2026-06-01' }]);
-    // Back to the first meter: the second stint starts where the first ended.
-    await db.query(`select connect_device($1, $2, '2026-09-01')`, [device, meter]);
-    const back = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
-      `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_kind = 'device' and subject_id = $1 and type_code = 'behind_meter' order by valid_to`,
-      [device],
+    expect(r).toEqual({ participant: unit, country: 'NL', meters: [meter] });
+    const columns = await db.query<{ column_name: string }>(
+      `select column_name from information_schema.columns where table_schema = 'nexgen' and table_name = 'devices' and column_name in ('site_id', 'meter_id', 'geometry')`,
     );
-    expect(back.rows).toEqual([
-      { object_id: meter, valid_from: '2026-02-01', valid_to: '2026-06-01' },
-      { object_id: second, valid_from: '2026-06-01', valid_to: '2026-09-01' },
-    ]);
+    expect(columns.rows).toEqual([]);
   });
 
-  it('refuses a device behind a meter of another site', async () => {
-    const other = await insert(db, 'sites', { organisation_id: org, name: 'Unit 2', country: 'NL' });
-    const elsewhere = (await one<{ id: string }>(db, `select declare_meter($1, '871000000000000003', 'gs1_gsrn') id`, [other])).id;
-    await expect(db.query(`select connect_device($1, $2)`, [device, elsewhere])).rejects.toThrow(/device_meter_site_mismatch/);
-    await expect(db.query(`select install_device($1, 'battery', 'Battery', p_meter_id => $2)`, [site, elsewhere]))
-      .rejects.toThrow(/device_meter_site_mismatch/);
+  it('refuses a device of a participant of another organisation', async () => {
+    const theirs = await organisation(db, 'Another cooperative');
+    await expect(insert(db, 'devices', { organisation_id: theirs, participant_id: unit, name: 'Battery', device_type: 'battery' }))
+      .rejects.toThrow(/parent_in_other_organisation/);
   });
 });
 
-describe('a building with two flats', () => {
-  let block: string;
+describe('two flats of one building', () => {
   const flats: { participant: string; meter: string; device: string }[] = [];
 
   beforeAll(async () => {
-    block = await insert(db, 'sites', { organisation_id: org, name: 'Canal block', country: 'NL', time_zone: 'Europe/Amsterdam' });
     for (const [n, gsrn] of [[1, '871000000000000011'], [2, '871000000000000012']] as const) {
       const participant = (await one<{ id: string }>(
-        db, `select join_project($1, $2, $3, 'consumer', null, '2026-01-01') id`, [project, block, `Flat ${n}`])).id;
-      const meter = (await one<{ id: string }>(
-        db, `select declare_meter($1, $2, 'gs1_gsrn', p_participant_id => $3) id`, [block, gsrn, participant])).id;
-      const device = (await one<{ id: string }>(
-        db, `select install_device($1, 'heat_pump', $2, '{}', null, 4, '2026-01-15', p_meter_id => $3) id`, [block, `Heat pump ${n}`, meter])).id;
+        db, `select join_project($1, $2, $3, 'consumer', null, '2026-01-01') id`,
+        [project, `Flat ${n}`, JSON.stringify({ street: 'Kade 2', address_extra: `Flat ${n}`, city: 'Rotterdam', country: 'NL' })])).id;
+      const meter = (await one<{ id: string }>(db, `select declare_meter($1, $2, 'gs1_gsrn') id`, [participant, gsrn])).id;
+      const device = (await one<{ id: string }>(db, `select install_device($1, 'heat_pump', $2, null, 4, '2026-01-15') id`, [participant, `Heat pump ${n}`])).id;
       flats.push({ participant, meter, device });
     }
   });
 
-  it('is one site with two participants, each carrying its own meter and the devices behind it', async () => {
+  it('are two participants, each carrying its own meter and the devices behind it', async () => {
     const r = await db.query<{ participant: string; identifier: string; device: string }>(
       `select p.name participant, m.identifier, d.name device
          from participants p
          join meters m on m.participant_id = p.id
-         join devices d on d.meter_id = m.id
-        where p.site_id = $1
+         join devices d on d.participant_id = p.id
+        where p.street = 'Kade 2'
         order by p.name`,
-      [block],
     );
     expect(r.rows).toEqual([
       { participant: 'Flat 1', identifier: '871000000000000011', device: 'Heat pump 1' },
@@ -133,18 +111,24 @@ describe('a building with two flats', () => {
     }
   });
 
-  it('groups the two flats, and finds both meters behind the group', async () => {
-    const group = await insert(db, 'participants', { organisation_id: org, project_id: project, name: 'Canal block owners' });
+  it('are grouped by a participant without a place, which finds both meters and carries none of its own', async () => {
+    const group = (await one<{ id: string }>(db, `select join_project($1, 'Kade 2 owners') id`, [project])).id;
+    expect((await one<{ place: unknown }>(db, 'select place_of($1) place', [group])).place).toBeNull();
     await db.query('update participants set parent_id = $1 where id = any ($2)', [group, flats.map((f) => f.participant)]);
     const r = await db.query<{ meter_id: string }>('select meter_id from participant_meters($1)', [group]);
     expect(r.rows.map((x) => x.meter_id).sort()).toEqual(flats.map((f) => f.meter).sort());
-    // A group has no site, so it carries no meter of its own.
-    await expect(db.query(`select assign_meter($1, $2)`, [flats[0].meter, group])).rejects.toThrow(/meter_participant_site_mismatch/);
+    await expect(db.query(`select assign_meter($1, $2)`, [flats[0].meter, group])).rejects.toThrow(/participant_group_carries/);
+    await expect(db.query(`select declare_meter($1, '871000000000000013', 'gs1_gsrn')`, [group])).rejects.toThrow(/participant_group_carries/);
+    await expect(db.query(`select install_device($1, 'battery', 'Shared battery')`, [group])).rejects.toThrow(/participant_group_carries/);
+    await expect(db.query(`select join_project($1, 'Flat 3', $2, p_parent_id => $3)`, [project, place('Kade 2'), flats[0].participant]))
+      .rejects.toThrow(/participant_parent_not_a_group/);
+    await expect(db.query(`update participants set country = null, street = null, city = null where id = $1`, [flats[0].participant]))
+      .rejects.toThrow(/participant_group_carries|participants_group_has_no_place/);
   });
 
   it('keeps the participant a meter leaves as a dated carried_by link', async () => {
     const tenant = (await one<{ id: string }>(
-      db, `select join_project($1, $2, 'Flat 1, new tenant', 'consumer', null, '2026-07-01') id`, [project, block])).id;
+      db, `select join_project($1, 'Flat 1, new tenant', $2, 'consumer', null, '2026-07-01') id`, [project, place('Kade 2')])).id;
     await db.query(`select leave_project($1, '2026-06-30')`, [flats[0].participant]);
     await db.query(`select assign_meter($1, $2, '2026-07-01')`, [flats[0].meter, tenant]);
     const today = await one<{ participant_id: string }>(db, 'select participant_id from meters where id = $1', [flats[0].meter]);
@@ -156,12 +140,6 @@ describe('a building with two flats', () => {
     );
     expect(history.rows).toEqual([{ object_id: flats[0].participant, valid_from: '2026-01-01', valid_to: '2026-07-01' }]);
   });
-
-  it('refuses a meter carried by a participant of another site', async () => {
-    await expect(db.query(`select assign_meter($1, $2)`, [flats[1].meter, participant])).rejects.toThrow(/meter_participant_site_mismatch/);
-    await expect(db.query(`select declare_meter($1, '871000000000000013', 'gs1_gsrn', p_participant_id => $2)`, [site, flats[1].participant]))
-      .rejects.toThrow(/meter_participant_site_mismatch/);
-  });
 });
 
 describe('the grid module on top of a meter of the core', () => {
@@ -171,8 +149,9 @@ describe('the grid module on top of a meter of the core', () => {
   beforeAll(async () => {
     grid = await freshDatabase(['grid']);
     const o = await organisation(grid, 'A cooperative');
-    const s = await insert(grid, 'sites', { organisation_id: o, name: 'Unit 1', country: 'NL' });
-    gridMeter = (await one<{ id: string }>(grid, `select declare_meter($1, '871000000000000001', 'gs1_gsrn') id`, [s])).id;
+    const pr = await insert(grid, 'projects', { organisation_id: o, name: 'Riverside', country: 'NL' });
+    const p = (await one<{ id: string }>(grid, `select join_project($1, 'Unit 1', $2) id`, [pr, place('Kade 1')])).id;
+    gridMeter = (await one<{ id: string }>(grid, `select declare_meter($1, '871000000000000001', 'gs1_gsrn') id`, [p])).id;
     await grid.query(`insert into grid.operators (code, name, kind, country, published_by) values ('dso_x', 'Operator X', 'dso', 'NL', 'installation')`);
   });
 

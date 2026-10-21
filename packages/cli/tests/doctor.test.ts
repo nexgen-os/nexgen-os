@@ -1,7 +1,7 @@
 // doctor and status, and the command line that prints them.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { emptyDatabase, freshDatabase, insert, organisation, repoRoot, sqlClient } from '../../../tests/helpers/db.js';
+import { emptyDatabase, freshDatabase, insert, organisation, repoRoot, sqlClient, participant } from '../../../tests/helpers/db.js';
 import { doctor, main, readCatalogue, status } from '../src/index.js';
 
 let db: PGlite;
@@ -35,16 +35,16 @@ describe('doctor', () => {
   });
 
   it('names a table whose row level security was disabled, in the core and in a module, and exits 1', async () => {
-    await db.exec('begin; alter table nexgen.sites disable row level security; alter table solar.pv_arrays disable row level security;');
+    await db.exec('begin; alter table nexgen.participants disable row level security; alter table solar.pv_arrays disable row level security;');
     try {
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems).toEqual([
-        { code: 'rls_disabled', detail: 'nexgen.sites has no row level security' },
+        { code: 'rls_disabled', detail: 'nexgen.participants has no row level security' },
         { code: 'rls_disabled', detail: 'solar.pv_arrays has no row level security' },
       ]);
       const cli = await run(['doctor']);
       expect(cli.code).toBe(1);
-      expect(cli.out).toContain('  rls_disabled: nexgen.sites has no row level security');
+      expect(cli.out).toContain('  rls_disabled: nexgen.participants has no row level security');
     } finally {
       await db.exec('rollback');
     }
@@ -67,14 +67,14 @@ describe('doctor', () => {
 
   it('names, by kind, attachments whose object no longer exists', async () => {
     const org = await organisation(db, 'Orphans');
-    const site = await insert(db, 'nexgen.sites', { organisation_id: org, name: 'Gone', country: 'ZZ' });
-    await db.query(`select nexgen.set_attribute('site', $1, 'annual_consumption', '1200')`, [site]);
-    await db.query(`select nexgen.add_identifier('site', $1, 'osm', 'way/7')`, [site]);
+    const site = await participant(db, { organisation_id: org, name: 'Gone', country: 'ZZ' });
+    await db.query(`select nexgen.set_attribute('participant', $1, 'annual_consumption', '1200')`, [site]);
+    await db.query(`select nexgen.add_identifier('participant', $1, 'osm', 'way/7')`, [site]);
     await db.exec('begin');
     try {
       // Deleted around its trigger, as a restore or a hand in the database would.
       await db.exec('set local session_replication_role = replica');
-      await db.query('delete from nexgen.sites where id = $1', [site]);
+      await db.query('delete from nexgen.participants where id = $1', [site]);
       await db.exec('set local session_replication_role = origin');
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems).toEqual([
@@ -118,7 +118,7 @@ describe('doctor', () => {
 describe('status and the command line', () => {
   it('counts organisations, sites, devices and series', async () => {
     const org = await organisation(db, 'Status firm');
-    await insert(db, 'sites', { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
+    await participant(db, { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
     const r = await status(sqlClient(db));
     expect(r).toMatchObject({ schemaVersion: '0.3.0', packs: ['fr'], counts: { organisations: 1, sites: 1, devices: 0, series: 0 } });
     expect([...r.modules].sort()).toEqual(['grid', 'solar', 'weather']);
@@ -155,8 +155,8 @@ describe('status and the command line', () => {
     await db.exec('begin');
     try {
       const org = await organisation(db, 'Partitions firm');
-      const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'ZZ', time_zone: 'UTC' });
-      const meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
+      const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'ZZ', time_zone: 'UTC' });
+      const meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
       const series = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
       await db.query(`insert into series_values (series_id, at, value) values ($1, '2026-03-25T10:00:00Z', 1)`, [series]);
       expect((await doctor(client, await readCatalogue(repoRoot))).problems).toEqual([

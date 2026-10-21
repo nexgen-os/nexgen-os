@@ -1,23 +1,23 @@
-// The consumption curve of a site, reconstructed: an energy spread over its
+// The consumption curve of a participant, reconstructed: an energy spread over its
 // period by a load profile, recorded as a run.
 //
-// A bill says how much a site consumed between two dates; an annual
+// A bill says how much a participant consumed between two dates; an annual
 // consumption says how much in a year. Neither says when. A load profile
 // says how energy spreads over the slots of a day, the day types of a week
-// and the months of a year — by shapes given as data, or by the site's
+// and the months of a year — by shapes given as data, or by the participant's
 // activity hours — and the reconstruction gives each slot of the period its
 // share of the energy:
 //
-//   1. weigh   each slot of the period, cut in the site's local days: the
+//   1. weigh   each slot of the period, cut in the participant's local days: the
 //              shape of its day type (weekday, saturday, sunday) at its
-//              local time, or 1 while the site is open and the profile's
+//              local time, or 1 while the participant is open and the profile's
 //              `closed_ratio` while it is closed, pro rata of the part of
 //              the slot that is open; then the factor of its local month;
 //   2. spread  the energy over the slots in proportion to their weights,
 //              so that the curve adds up to the energy of the period.
 //
 // Conventions: every value is the energy of its slot, in kWh, dated at the
-// start of the slot, in UTC. Days are the site's local days, daylight-saving
+// start of the slot, in UTC. Days are the participant's local days, daylight-saving
 // time included, since a timetable is read on the wall clock: the spring
 // day has one hour less, its missing hour weighs nothing, and the autumn
 // day one more, its repeated hour weighed twice. Public holidays are not
@@ -43,7 +43,7 @@ export interface LoadProfile {
   source_code: string | null;
 }
 
-/** Hours a site is open on a day of the week, local wall clock (`08:00`, `24:00`), over a period of dates, the end excluded. */
+/** Hours a participant is open on a day of the week, local wall clock (`08:00`, `24:00`), over a period of dates, the end excluded. */
 export interface OpeningHours {
   /** ISO day of the week, 1 Monday to 7 Sunday. */
   weekday: number;
@@ -91,7 +91,7 @@ function dayType(isoWeekday: number): DayType {
  * `hours`; one by day shapes ignores them.
  */
 export function slotWeights(profile: LoadProfile, from: string, to: string, timeZone: string, hours: OpeningHours[] = []): WeightedSlot[] {
-  if (!timeZone) throw new Error('time_zone_required: a consumption curve is cut in the site\'s local days');
+  if (!timeZone) throw new Error('time_zone_required: a consumption curve is cut in the participant\'s local days');
   const first = dayNumber(from);
   const last = dayNumber(to);
   if (!(last > first)) throw new Error(`period_empty: ${from} to ${to}`);
@@ -147,7 +147,7 @@ export function spreadEnergy(kwh: number, slots: WeightedSlot[]): SeriesPoint[] 
 // ---------------------------------------------------------------------------
 
 export interface ReconstructionRequest {
-  siteId: string;
+  participantId: string;
   /** First local day of the period, `YYYY-MM-DD`. */
   from: string;
   /** Local day after the last, `YYYY-MM-DD`. */
@@ -155,7 +155,7 @@ export interface ReconstructionRequest {
   profileCode: string;
   /**
    * The energy of the period: a bill, with where it comes from. Without
-   * it, the site's `annual_consumption` attribute on the first day, and the
+   * it, the participant's `annual_consumption` attribute on the first day, and the
    * period must then be one year.
    */
   energy?: { kwh: number; sourceCode?: string | null; source?: string | null; documentId?: string | null };
@@ -171,9 +171,9 @@ export interface ReconstructionResult {
 }
 
 export async function reconstructConsumption(db: Db, request: ReconstructionRequest): Promise<ReconstructionResult> {
-  const site = (await db.query<{ time_zone: string | null }>('select time_zone from sites where id = $1', [request.siteId])).rows[0];
-  if (!site) throw new Error(`site_not_found: ${request.siteId}`);
-  if (!site.time_zone) throw new Error('time_zone_required: the site has no time zone; a consumption curve is cut in its local days');
+  const place = (await db.query<{ time_zone: string | null }>('select time_zone from participants where id = $1', [request.participantId])).rows[0];
+  if (!place) throw new Error(`participant_not_found: ${request.participantId}`);
+  if (!place.time_zone) throw new Error('time_zone_required: the participant has no time zone; a consumption curve is cut in its local days');
   const profile = (
     await db.query<LoadProfile>(
       `select code, method, slots_per_day, day_shapes, closed_ratio, monthly_factors, source_code
@@ -193,36 +193,36 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
           where object_id = $1 and (scenario_id is null or scenario_id = $4)
             and (valid_from is null or valid_from < $3::date) and (valid_to is null or valid_to > $2::date)
           order by weekday, opens, closes, valid_from nulls first`,
-        [request.siteId, request.from, request.to, scenarioId],
+        [request.participantId, request.from, request.to, scenarioId],
       )
     ).rows;
-    if (hours.length === 0) throw new Error(`activity_hours_required: ${profile.code} spreads energy by activity hours and the site has none over ${request.from} to ${request.to}`);
+    if (hours.length === 0) throw new Error(`activity_hours_required: ${profile.code} spreads energy by activity hours and the participant has none over ${request.from} to ${request.to}`);
   }
 
-  const energy = request.energy ?? (await annualConsumption(db, request, site.time_zone, scenarioId));
-  const values = spreadEnergy(energy.kwh, slotWeights(profile, request.from, request.to, site.time_zone, hours));
+  const energy = request.energy ?? (await annualConsumption(db, request, place.time_zone, scenarioId));
+  const values = spreadEnergy(energy.kwh, slotWeights(profile, request.from, request.to, place.time_zone, hours));
   const step = `${DAY_MINUTES / profile.slots_per_day} minutes`;
 
   const inputs = {
-    period: { from: request.from, to: request.to, time_zone: site.time_zone },
+    period: { from: request.from, to: request.to, time_zone: place.time_zone },
     energy: { kwh: energy.kwh, source_code: energy.sourceCode ?? null, source: energy.source ?? null, document_id: energy.documentId ?? null },
     profile,
     activity_hours: hours,
-    conventions: { time: 'interval start, UTC', energy: 'kWh per slot', days: 'local days of the site, daylight-saving time included', holidays: 'not modelled' },
+    conventions: { time: 'interval start, UTC', energy: 'kWh per slot', days: 'local days of the participant, daylight-saving time included', holidays: 'not modelled' },
   };
 
   // The run of these inputs: the finished one when it exists, else a new
   // one whose series is written before it is final.
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('consumption', $1, 'site', $2, $3, $4::jsonb)`,
-    [CONSUMPTION_ENGINE_VERSION, request.siteId, scenarioId, JSON.stringify(inputs)],
+    `select run_id, finished from start_run('consumption', $1, 'participant', $2, $3, $4::jsonb)`,
+    [CONSUMPTION_ENGINE_VERSION, request.participantId, scenarioId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
     const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from runs where id = $1', [started.run_id])).rows[0];
     return { runId: started.run_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
   }
   const { seriesId } = await store(db, {
-    object_kind: 'site', object_id: request.siteId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
+    object_kind: 'participant', object_id: request.participantId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
     source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, scenario_id: scenarioId, run_id: started.run_id,
   }, values);
   const kwh = round(values.reduce((sum, v) => sum + v.value, 0));
@@ -231,7 +231,7 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
   return { runId: started.run_id, seriesId, kwh, step, slots: values.length };
 }
 
-/** The site's annual consumption at the start of the first local day, for a period of one year. */
+/** The participant's annual consumption at the start of the first local day, for a period of one year. */
 async function annualConsumption(db: Db, request: ReconstructionRequest, timeZone: string, scenarioId: string | null): Promise<NonNullable<ReconstructionRequest['energy']>> {
   const first = new Date(dayNumber(request.from) * DAY_MINUTES * MINUTE_MS);
   const yearLater = new Date(Date.UTC(first.getUTCFullYear() + 1, first.getUTCMonth(), first.getUTCDate())).toISOString().slice(0, 10);
@@ -239,12 +239,12 @@ async function annualConsumption(db: Db, request: ReconstructionRequest, timeZon
     throw new Error(`energy_required: ${request.from} to ${request.to} is not one year; give the energy of the period`);
   }
   const row = (
-    await db.query<{ kwh: string | null }>(`select attributes_of($1, ($2::date)::timestamp at time zone $4, $3) ->> 'annual_consumption' kwh`, [request.siteId, request.from, scenarioId, timeZone])
+    await db.query<{ kwh: string | null }>(`select attributes_of($1, ($2::date)::timestamp at time zone $4, $3) ->> 'annual_consumption' kwh`, [request.participantId, request.from, scenarioId, timeZone])
   ).rows[0];
   if (row?.kwh === null || row?.kwh === undefined) {
-    throw new Error('energy_required: the site has no annual_consumption on the first day of the period; give the energy of the period');
+    throw new Error('energy_required: the participant has no annual_consumption on the first day of the period; give the energy of the period');
   }
-  return { kwh: Number(row.kwh), sourceCode: null, source: 'annual_consumption of the site' };
+  return { kwh: Number(row.kwh), sourceCode: null, source: 'annual_consumption of the participant' };
 }
 
 function round(n: number): number {

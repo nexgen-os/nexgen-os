@@ -1,5 +1,5 @@
 // Time zones, read through the platform's `Intl`: what a module needs to cut
-// days, weeks and months in a site's own time, without a dependency.
+// days, weeks and months in a participant's own time, without a dependency.
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 

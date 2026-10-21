@@ -59,7 +59,7 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
 
   const seriesId = run.results.series_id;
   const tz = (await db.query<{ tz: string | null }>('select series_time_zone($1) tz', [seriesId])).rows[0]?.tz;
-  if (!tz) throw new Error('time_zone_required: the years of the run are cut in the site\'s time zone');
+  if (!tz) throw new Error('time_zone_required: the years of the run are cut in the participant\'s time zone');
   const values = (
     await db.query<{ bucket: string | Date; value: number }>(
       `select bucket, value from resample($1, ($2::text || '-01-01')::timestamp at time zone $4, ($3::text || '-01-01')::timestamp at time zone $4, '1 hour')`,

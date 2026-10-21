@@ -78,6 +78,19 @@ export async function insert(db: PGlite, table: string, fields: Record<string, u
   return r.id;
 }
 
+/**
+ * A participant with its place, joining a project of its own whose rules
+ * are those of the place's country. Fields are the columns of
+ * `participants`; returns its id.
+ */
+export async function participant(db: PGlite, fields: Record<string, unknown>): Promise<string> {
+  const project = await insert(db, 'projects', {
+    organisation_id: fields.organisation_id, name: `Project of ${String(fields.name)}`, country: fields.country,
+    ...(fields.scenario_id ? { scenario_id: fields.scenario_id } : {}),
+  });
+  return insert(db, 'participants', { project_id: project, ...fields });
+}
+
 export const USER_A = '00000000-0000-4000-8000-00000000000a';
 export const USER_B = '00000000-0000-4000-8000-00000000000b';
 

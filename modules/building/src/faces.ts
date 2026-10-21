@@ -19,10 +19,10 @@ export async function checkSrid(db: Db, srid: number): Promise<void> {
   if (known.rows[0].n === 0) throw new Error(`crs_unknown: EPSG:${srid} is not in spatial_ref_sys`);
 }
 
-/** The organisation of a site. Refuses `site_not_found`. */
-export async function organisationOfSite(db: Db, siteId: string): Promise<string> {
-  const r = await db.query<{ organisation_id: string }>('select organisation_id from sites where id = $1', [siteId]);
-  if (!r.rows.length) throw new Error(`site_not_found: ${siteId}`);
+/** The organisation of a participant. Refuses `participant_not_found`. */
+export async function organisationOfParticipant(db: Db, participantId: string): Promise<string> {
+  const r = await db.query<{ organisation_id: string }>('select organisation_id from participants where id = $1', [participantId]);
+  if (!r.rows.length) throw new Error(`participant_not_found: ${participantId}`);
   return r.rows[0].organisation_id;
 }
 

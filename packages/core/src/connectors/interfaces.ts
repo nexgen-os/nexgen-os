@@ -69,7 +69,7 @@ export interface MeterDataProvider {
   readings(meter: { identifier: string; scheme: string }, from: string, to: string, options?: { step?: string }): Promise<CollectedSeries[]>;
 }
 
-/** A place a register or a map knows: becomes a site or a building, with its identifiers and attributes. */
+/** A place a register or a map knows: becomes a participant or a building, with its identifiers and attributes. */
 export interface PlaceRecord {
   name: string;
   lon: number;
@@ -91,7 +91,7 @@ export interface PlacesProvider {
 
 export interface SeriesTarget {
   organisationId: string;
-  /** The object the series is about, by its kind and its id: a site, a meter, a building, a zone. */
+  /** The object the series is about, by its kind and its id: a participant, a meter, a device, a building, a zone. */
   objectKind: string;
   objectId: string;
   sourceCode: string;

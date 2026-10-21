@@ -6,13 +6,13 @@
 // plane-of-array irradiance, temperature and wind of a reanalysis read
 // through a weather connector (Open-Meteo's ERA5 archive), a Faiman cell
 // temperature, the PVWatts DC model, the profile's losses, a typical year
-// chosen month by month in the site's local calendar, and optionally an
+// chosen month by month in the participant's local calendar, and optionally an
 // annual anchored on PVGIS.
 //
 // Either way the run records the system, the arrays, the weather and its
 // period, the models and losses, and the conventions the series are written
 // in. The hourly energy lands as a `simulated` series on the PV system, the
-// air temperature on its site; the run keeps the summary. Engines run
+// air temperature on its participant; the run keeps the summary. Engines run
 // outside Postgres; the database holds the parameters, the series and the
 // run.
 //
@@ -97,8 +97,8 @@ export interface YieldClients {
 
 interface SystemRow {
   organisation_id: string;
-  site_id: string;
-  /** IANA time zone of the site. */
+  participant_id: string;
+  /** IANA time zone of the participant's place. */
   time_zone: string | null;
   kwp_dc: string | null;
   lon: number | null;
@@ -188,7 +188,7 @@ export async function runYield(db: Db, request: YieldRequest, clients: YieldClie
     throw new Error(`profile_not_runnable_here: ${profileCode} needs an engine; pvgis_like runs through PVGIS, pvwatts here`);
   }
   if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
-  // `pvwatts` and the engines cut days and months in the site's local calendar.
+  // `pvwatts` and the engines cut days and months in the participant's local calendar.
   const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined, request.years);
   if (request.engine) return runWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
   return profileCode === 'pvgis_like'
@@ -200,18 +200,18 @@ export async function runYield(db: Db, request: YieldRequest, clients: YieldClie
 async function loadContext(db: Db, pvSystemId: string, profileCode: string, needsTimeZone: boolean, years: { from: number }): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
-      `select d.organisation_id, d.site_id, s.time_zone, p.kwp_dc,
+      `select d.organisation_id, d.participant_id, s.time_zone, p.kwp_dc,
               ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat
          from solar.pv_systems p
          join devices d on d.id = p.id
-         join sites s on s.id = d.site_id
+         join participants s on s.id = d.participant_id
         where p.id = $1`,
       [pvSystemId],
     )
   ).rows[0];
   if (!system) throw new Error(`pv_system_not_found: ${pvSystemId}`);
-  if (system.lon === null || system.lat === null) throw new Error('site_without_position: the site of the PV system has no geometry');
-  if (needsTimeZone && !system.time_zone) throw new Error(`time_zone_required: the site of the PV system has no time zone; ${profileCode} cuts days and months in it`);
+  if (system.lon === null || system.lat === null) throw new Error('participant_without_position: the participant of the PV system has no geometry');
+  if (needsTimeZone && !system.time_zone) throw new Error(`time_zone_required: the participant of the PV system has no time zone; ${profileCode} cuts days and months in it`);
 
   const profile = (
     await db.query<ProfileRow>(
@@ -259,7 +259,7 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
 /**
  * The soiling an array (or the system, for the array of a system described
  * without arrays) is computed with, as it holds at the start of the first
- * year asked: its own, its system's, its site's, its organisation's, its
+ * year asked: its own, its system's, its participant's, its organisation's, its
  * pack's; null when none says it.
  */
 async function soilingOf(db: Db, objectId: string, fromYear: number): Promise<Soiling | null> {
@@ -311,12 +311,12 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
     perArray.push({ array: a, spec, answer: await client.hourly(where, spec, request.years, { raddatabase: request.raddatabase }) });
   }
 
-  // Energies add up across arrays, hour by hour; the temperature is the site's, taken once.
+  // Energies add up across arrays, hour by hour; the temperature is the participant's, taken once.
   const energy = sumSeries(perArray.map((x) => x.answer.series.find((s) => s.quantity_code === 'production_energy')!));
   const temperature = perArray[0].answer.series.find((s) => s.quantity_code === 'temperature')!;
   const owned: OwnedSeries[] = [
     { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: client.source_code, series: energy },
-    { key: 'temperature', objectKind: 'site', objectId: system.site_id, sourceCode: client.source_code, series: temperature },
+    { key: 'temperature', objectKind: 'participant', objectId: system.participant_id, sourceCode: client.source_code, series: temperature },
   ];
 
   const nYears = request.years.to - request.years.from + 1;
@@ -353,12 +353,12 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const typical = request.typicalYear !== false;
   const timeZone = system.time_zone!;
   const years = request.years;
-  // The years are the site's: one day more on each side is read, then
+  // The years are the participant's: one day more on each side is read, then
   // every value outside the local years is left out.
   const period = weatherPeriod(years);
   const local = (points: SeriesPoint[]) => withinLocalYears(points, timeZone, years);
 
-  let siteTemperature: CollectedSeries | null = null;
+  let placeTemperature: CollectedSeries | null = null;
   const perArray = [];
   for (const a of arrays) {
     const { gamma, source: gammaSource } = gammaOf(a, request);
@@ -367,9 +367,9 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       quantities: ['poa_irradiance', 'temperature', 'wind_speed'], tilt_deg: a.tilt_deg, azimuth_deg: a.azimuth_deg, model: WEATHER_MODEL,
     });
     const read = (q: string) => answer.find((s) => s.quantity_code === q)?.values ?? [];
-    if (!siteTemperature) {
+    if (!placeTemperature) {
       const t = answer.find((s) => s.quantity_code === 'temperature');
-      if (t) siteTemperature = { ...t, values: local(t.values) };
+      if (t) placeTemperature = { ...t, values: local(t.values) };
     }
     const { hours, stats } = cleanWeather(alignWeather(local(read('poa_irradiance')), read('temperature'), read('wind_speed')));
     const energy = arrayEnergy(hours, { kwp: a.kwp, gammaPdc: gamma }, { u0, u1, remainingFraction: remaining });
@@ -389,7 +389,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const grid = toYearGrid(realYears, timeZone);
   const months = typical ? selectTypicalMonths(grid) : null;
   let energy = realYears;
-  let temperature = siteTemperature?.values ?? [];
+  let temperature = placeTemperature?.values ?? [];
   let rescale = 1;
   let fromMean = 0;
   let annual: number;
@@ -400,7 +400,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
     energy = scaled(year.points, rescale);
     fromMean = year.fromMean;
     annual = total(energy);
-    if (siteTemperature) temperature = typicalYear(toYearGrid(temperature, timeZone), months, years.to, timeZone).points;
+    if (placeTemperature) temperature = typicalYear(toYearGrid(temperature, timeZone), months, years.to, timeZone).points;
   } else {
     const covered = meanAnnualOverCoveredYears(realYears, timeZone, years);
     annual = covered.annual;
@@ -410,7 +410,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const name = months ? `typical year ${years.from}-${years.to}` : null;
   const owned: OwnedSeries[] = [
     { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
-    ...(siteTemperature ? [{ key: 'temperature', objectKind: 'site', objectId: system.site_id, sourceCode: weather.source_code, name, series: { ...siteTemperature, values: rounded(temperature) } }] : []),
+    ...(placeTemperature ? [{ key: 'temperature', objectKind: 'participant', objectId: system.participant_id, sourceCode: weather.source_code, name, series: { ...placeTemperature, values: rounded(temperature) } }] : []),
   ];
 
   const annualKwh = round(annual);
@@ -452,7 +452,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       remaining_fraction: round(remainingFraction),
       typical_year: months
         ? {
-            method: 'month by month in the site\'s local standard time, the real month whose daily energies are closest to all years (Finkelstein-Schafer on daily energy, at least 95 % of the hours, the most recent year on a tie), an hour the chosen month lacks taken from the multi-year mean of that hour, scaled to the mean annual total over the years used',
+            method: 'month by month in the participant\'s local standard time, the real month whose daily energies are closest to all years (Finkelstein-Schafer on daily energy, at least 95 % of the hours, the most recent year on a tie), an hour the chosen month lacks taken from the multi-year mean of that hour, scaled to the mean annual total over the years used',
             months,
             hours_from_mean: fromMean,
             rescale_factor: round(rescale),
@@ -466,7 +466,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
       conventions: {
         ...CONVENTIONS,
         losses: 'each applies to what the previous ones left',
-        days: 'local standard time of the site\'s time zone',
+        days: 'local standard time of the participant\'s time zone',
         typical_year: 'simulated, 365-day grid, 29 February left out',
         real_years: 'the mean annual total over the years covered, a year counting with at least 95 % of its hours',
       },
@@ -491,7 +491,7 @@ function engineModule(a: PvArray, request: YieldRequest): Pick<PvYieldArray, 'mo
 /**
  * The one list of losses an engine request carries: every array's must be
  * the same (`losses_differ_between_arrays` otherwise), which a soiling said
- * by the system or its site, rather than by one array, gives.
+ * by the system or its participant, rather than by one array, gives.
  */
 function engineLosses(profile: ProfileRow, arrays: PvArray[]): { code: string; pct: number | null }[] {
   const lists = arrays.map((a) => lossesOf(profile, a));
@@ -618,7 +618,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
       inverter: { ...engineRequest.inverter, ...(arrays[0].inverter_model === 'ond' ? { fitted_from: 'ond' } : {}) },
       model: answer.result.meta,
       losses,
-      conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the site\'s time zone' },
+      conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the participant\'s time zone' },
     },
     owned,
     (ids) => {

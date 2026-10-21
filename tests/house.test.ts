@@ -1,15 +1,15 @@
 // A house, described the way an installer, an architect and a resident each
-// would: a site, a building with its footprint, a roof face, a PV system on
-// it behind the house's meter, a module deriving that PV system into its own
+// would: a participant with its place and its meter, a building with its
+// footprint, a roof face, a PV system behind the meter, a module deriving that PV system into its own
 // table, attributes with their history, a drone video as a document, a
 // measured series and a simulated one in a scenario.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation, square } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let house: string;
 let roof: string;
 let meter: string;
@@ -18,23 +18,21 @@ let pv: string;
 beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A family');
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
+  home = await participant(db, { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'building.buildings', {
-    organisation_id: org, site_id: site, name: 'House', profile: 'residential',
+    organisation_id: org, participant_id: home, name: 'House', profile: 'residential',
     footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5,
   });
   roof = await insert(db, 'building.surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
   meter = await insert(db, 'meters', {
-    organisation_id: org, site_id: site, identifier: '871000000000000001', scheme: 'gs1_gsrn',
+    organisation_id: org, participant_id: home, identifier: '871000000000000001', scheme: 'gs1_gsrn',
   });
   pv = await insert(db, 'devices', {
-    organisation_id: org, site_id: site,
+    organisation_id: org, participant_id: home,
     name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
   });
-  await db.query('select building.place_device($1, p_surface_id => $2)', [pv, roof]);
-  await db.query(`select connect_device($1, $2)`, [pv, meter]);
 });
 
 afterAll(async () => {
@@ -67,8 +65,11 @@ describe('a house', () => {
   });
 
   it('knows where everything is and whose rules apply', async () => {
-    const r = await one<{ site: string; country: string }>(db, `select site_of('device', $1) site, country_of('device', $1) country`, [pv]);
-    expect(r.site).toBe(site);
+    const r = await one<{ participant: string; country: string; meters: string[] }>(
+      db, `select participant_of('device', $1) participant, country_of('device', $1) country,
+                  (select array_agg(meter_id) from participant_meters(participant_of('device', $1))) meters`, [pv]);
+    expect(r.participant).toBe(home);
+    expect(r.meters).toEqual([meter]);
     expect(r.country).toBe('ES');
   });
 
@@ -78,21 +79,19 @@ describe('a house', () => {
        union all select 'device', count(*)::int from devices where organisation_id = $1
        union all select 'meter', count(*)::int from meters where organisation_id = $1
        union all select 'organisation', count(*)::int from organisations where id = $1
-       union all select 'site', count(*)::int from sites where organisation_id = $1
+       union all select 'participant', count(*)::int from participants where organisation_id = $1
        union all select 'surface', count(*)::int from building.surfaces where organisation_id = $1
        order by kind`,
       [org],
     );
     expect(r.rows).toEqual([
-      { kind: 'building', n: 1 }, { kind: 'device', n: 1 }, { kind: 'meter', n: 1 }, { kind: 'organisation', n: 1 }, { kind: 'site', n: 1 }, { kind: 'surface', n: 1 },
+      { kind: 'building', n: 1 }, { kind: 'device', n: 1 }, { kind: 'meter', n: 1 }, { kind: 'organisation', n: 1 }, { kind: 'participant', n: 1 }, { kind: 'surface', n: 1 },
     ]);
   });
 
-  it('refuses a device on a surface of another site', async () => {
-    const other = await insert(db, 'sites', { organisation_id: org, name: 'Elsewhere', country: 'ES' });
-    const stray = await insert(db, 'devices', { organisation_id: org, site_id: other, name: 'Stray', device_type: 'battery' });
-    await expect(db.query('select building.place_device($1, p_surface_id => $2)', [stray, roof])).rejects.toThrow(/device_surface_site_mismatch/);
-    await db.query('delete from devices where id = $1', [stray]);
+  it('describes the roof face and says nothing of where a device sits on it', async () => {
+    expect((await one<{ participant: string }>(db, `select participant_of('surface', $1) participant`, [roof])).participant).toBe(home);
+    expect((await one<{ t: string | null }>(db, `select to_regclass('building.devices')::text t`)).t).toBeNull();
   });
 
   it('lets a module derive the PV system into its own table, with the same id', async () => {
@@ -113,7 +112,7 @@ describe('a house', () => {
       [pv],
     );
     expect(r).toEqual({ name: 'PV system', rated_power_kw: '3.600', panel_technology: 'mono' });
-    const battery = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Not a PV', device_type: 'battery' });
+    const battery = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Not a PV', device_type: 'battery' });
     await expect(db.query(`insert into energy.pv_systems (id) values ($1)`, [battery])).rejects.toThrow(/device_type_mismatch/);
     await db.query('delete from devices where id = $1', [battery]);
   });
@@ -206,10 +205,9 @@ describe('a house', () => {
   it('lets a scenario add a device and override an attribute without touching reality', async () => {
     const sc = await one<{ id: string }>(db, `select id from scenarios where name = 'Add a battery'`);
     const battery = await insert(db, 'devices', {
-      organisation_id: org, site_id: site, name: 'Battery', device_type: 'battery',
+      organisation_id: org, participant_id: home, name: 'Battery', device_type: 'battery',
       rated_power_kw: 5, scenario_id: sc.id,
     });
-    await db.query('select building.place_device($1, $2)', [battery, house]);
     await db.query(
       `insert into attributes (object_kind, object_id, property_code, value, scenario_id) values ('device', $1, 'efficiency', '0.92', $2)`,
       [battery, sc.id],
@@ -233,7 +231,7 @@ describe('a house', () => {
   });
 
   it('removes everything attached when the building goes', async () => {
-    const shed = await insert(db, 'building.buildings', { organisation_id: org, site_id: site, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
+    const shed = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
     await db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('building', $1, 'floor_area', '9')`, [shed]);
     await db.query(`insert into documents (object_kind, object_id, name, uri) values ('building', $1, 'Photo', 's3://photos/shed.jpg')`, [shed]);
     await db.query('delete from building.buildings where id = $1', [shed]);

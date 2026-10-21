@@ -8,8 +8,9 @@
  *
  *   space   → `building.add_space()`, kind floor or room (a floor's level is the
  *             file's, else its rank)
- *   device  → `install_device()`, type `sensor_box`, in its room, with its
- *             nameplate, in service
+ *   device  → `install_device()`, type `sensor_box`, under the participant,
+ *             with its nameplate, in service; its room stays in its
+ *             metadata (a device is not placed, decision 0026)
  *   point   → `series_ensure()`, on its device, else its room, else the
  *             building; its quantity from its class and unit; its kind from
  *             its role
@@ -62,7 +63,9 @@ async function quantityFor(db: Db, point: HomePoint): Promise<{ quantity: string
 }
 
 export interface HomeTarget {
-  siteId: string;
+  /** The participant the devices belong to. */
+  participantId: string;
+  /** Its building, where the floors and rooms are described. */
   buildingId: string;
 }
 
@@ -79,9 +82,9 @@ async function id(db: Db, sql: string, params: unknown[]): Promise<string> {
   return r.rows[0].id;
 }
 
-/** Writes a home into a building: its floors and rooms, its devices, one series per point and their readings. */
+/** Writes a home: its floors and rooms into a building, its devices under the participant, one series per point and their readings. */
 export async function importHomeAssistant(db: Db, target: HomeTarget, home: Home): Promise<HomeImport> {
-  const { siteId, buildingId } = target;
+  const { participantId, buildingId } = target;
   await db.query(
     `insert into sources (code, name, kind, docs_url, auth, published_by, description)
      values ($1, 'Home Assistant', 'api', 'https://developers.home-assistant.io/docs/api/rest/', 'api_key', 'homeassistant',
@@ -105,13 +108,11 @@ export async function importHomeAssistant(db: Db, target: HomeTarget, home: Home
 
   const devices = new Map<string, string>();
   for (const d of home.devices) {
-    const room = (d.space && spaces.get(d.space)) || null;
     const device = await id(db,
       `select install_device($1, 'sensor_box', $2, p_source_code => $3, p_nameplate => $4, p_metadata => $5, p_status => 'in_service') id`,
-      [siteId, d.name, HOMEASSISTANT_SOURCE,
+      [participantId, d.name, HOMEASSISTANT_SOURCE,
        { manufacturer: d.manufacturer, model: d.model, serial_number: d.serialNumber },
        { ha: { key: d.key, space: d.space, extra: d.extra } }]);
-    await db.query('select building.place_device($1, $2, $3)', [device, buildingId, room]);
     devices.set(d.key, device);
   }
 
@@ -148,7 +149,7 @@ interface Stored<T> {
   ha: T;
 }
 
-/** A building read back as a home: the spaces, devices and points an import wrote, with their readings in the units they came in. */
+/** A building read back as a home: the spaces, the devices of its participant and the points an import wrote, with their readings in the units they came in. */
 export async function exportHomeAssistant(db: Db, buildingId: string): Promise<Home> {
   const floors = await db.query<Stored<{ key: string; level: number | null; extra: Record<string, unknown> }>>(
     `select name, metadata->'ha' ha from building.spaces where building_id = $1 and kind = 'floor' and metadata ? 'ha' order by level`, [buildingId]);
@@ -158,14 +159,15 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
     manufacturer: string | null; model: string | null; serial_number: string | null;
   }>(
     `select d.name, d.metadata->'ha' ha, d.manufacturer, d.model, d.serial_number
-       from devices d join building.devices p on p.device_id = d.id
-      where p.building_id = $1 and d.metadata ? 'ha' order by d.name`,
+       from devices d join building.buildings b on b.participant_id = d.participant_id
+      where b.id = $1 and d.metadata ? 'ha' order by d.name`,
     [buildingId]);
   const points = await db.query<{ id: string; unit: string; quantity: string; kind: HomePoint['role']; value_kind: HomePoint['valueKind'];
     ha: { key: string; device: string | null; space: string | null; unit: string | null; binary: boolean; converted: boolean; extra: Record<string, unknown> } }>(
     `select se.id, q.unit, se.quantity_code quantity, se.kind, se.value_kind, se.metadata->'ha' ha
        from series se join quantities q on q.code = se.quantity_code
-      where se.metadata ? 'ha' and building.building_of(se.object_kind, se.object_id) = $1
+      where se.metadata ? 'ha' and (building.building_of(se.object_kind, se.object_id) = $1
+             or (se.object_kind = 'device' and participant_of('device', se.object_id) = (select participant_id from building.buildings where id = $1)))
       order by se.metadata->'ha'->>'key'`, [buildingId]);
 
   const spaces: HomeSpace[] = [

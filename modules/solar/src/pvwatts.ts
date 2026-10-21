@@ -23,7 +23,7 @@
 //              annual equals a reference (PVGIS), the hourly shape kept.
 //
 // Conventions: every value is dated at the start of its hour, in UTC. Days,
-// months and years are the site's: they are cut in the local standard time
+// months and years are the participant's: they are cut in the local standard time
 // of its time zone (no daylight-saving shift, as in TMY files), so that a
 // sunlit day is never split by UTC midnight. A typical year is laid on a
 // 365-day grid (8,760 hours), 29 February left out. Nothing here reads a
@@ -189,7 +189,7 @@ export function remainingAfterLosses(losses: { code: string; pct: number | null 
 
 /**
  * The losses of a profile with the soiling of a place: the fraction an
- * array, its system or its site says (`soiling_loss`, 0.02 for 2 %) takes
+ * array, its system or its participant says (`soiling_loss`, 0.02 for 2 %) takes
  * the place of the profile's `soiling` loss, at its rank, as a percentage.
  * A profile without a `soiling` loss of its own folds it into an aggregate
  * (PVGIS's and PVWatts's `system`): its losses stay as they are and
@@ -256,7 +256,7 @@ const standardOffsets = new Map<string, number>();
  * name that is not an IANA time zone.
  */
 export function standardOffsetMinutes(timeZone: string, year: number): number {
-  if (!timeZone) throw new Error('time_zone_required: days and months of a yield are cut in the site\'s time zone');
+  if (!timeZone) throw new Error('time_zone_required: days and months of a yield are cut in the participant\'s time zone');
   const key = `${timeZone}|${year}`;
   let offset = standardOffsets.get(key);
   if (offset === undefined) {
