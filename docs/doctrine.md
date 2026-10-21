@@ -78,6 +78,7 @@ measure.
 
 - [0032](decisions/0032-a-module-has-its-own-schema.md) A module has its own schema and writes the core through a function
 - [0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md) A module starts from an object of the core and enriches it: a derived table, a secondary table or vocabulary rows
+- [0043](decisions/0043-the-participant-is-billed.md) The participant is billed, Ekwo OS keeps the invoice: a thin bridge module, with direct keys when both share a database
 - [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
 - [0041](decisions/0041-a-module-names-one-thing.md) A module names one thing with its own physics, and there is no catch-all
 - Records of single modules: [0010](decisions/0010-ekwo-link.md) the billing bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
