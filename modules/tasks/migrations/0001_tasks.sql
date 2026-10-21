@@ -17,18 +17,10 @@
 -- that match a project and creates its tasks, once. `tasks.progress()` sums
 -- the tasks of a site or a project up on a day.
 --
--- Projects and their participants are the `community` module's, which has
--- to be installed first.
+-- Projects and their participants are the core's: a task is a secondary
+-- table of the core objects it is about (decision 0042).
 
 set search_path = nexgen, public, extensions;
-
-do $$
-begin
-  if to_regclass('community.projects') is null then
-    raise exception 'module_required: tasks needs the community module (projects and participants)' using errcode = 'undefined_table';
-  end if;
-end
-$$;
 
 create schema tasks;
 grant usage on schema tasks to authenticated, service_role;
@@ -110,7 +102,7 @@ create table tasks.templates (
   published_by     text not null,
   -- The country whose rules ask for it (ISO 3166-1 alpha-2); null: every country.
   country          char(2),
-  -- The kind of project it applies to (`community.projects.kind`); null: every kind.
+  -- The kind of project it applies to (`projects.kind`); null: every kind.
   project_kind     text,
   phase            text not null references tasks.phases(code),
   role             text references tasks.roles(code),
@@ -259,7 +251,7 @@ declare
   v_applies   boolean;
   t           record;
 begin
-  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from community.projects p where p.id = p_project_id;
+  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from projects p where p.id = p_project_id;
   if not found then
     raise exception 'project_not_found: %', p_project_id using errcode = 'no_data_found';
   end if;
@@ -352,7 +344,7 @@ as $$
   sites as (
     select p_object_id as id
     union
-    select p.site_id from community.participants p where p.project_id = p_object_id and p.site_id is not null
+    select p.site_id from participants p where p.project_id = p_object_id and p.site_id is not null
   ),
   m as (
     select m.*, ph.position

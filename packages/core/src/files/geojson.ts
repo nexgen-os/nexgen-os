@@ -136,13 +136,13 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     const project = await db.query<Row>(
       `select p.id, p.name, p.kind project_kind, p.country, p.status, p.start_date::text, p.end_date::text, p.tags, null source_code,
               ${geojson('p.geometry')} geometry
-         from community.projects p where p.id = $1 and ${visible('p')}`,
+         from projects p where p.id = $1 and ${visible('p')}`,
       [target.projectId, chain],
     );
     if (project.rows.length === 0) throw new Error(`project_not_found: ${target.projectId}`);
     projects.push(...project.rows);
     siteIds = (await db.query<{ site_id: string }>(
-      `select distinct p.site_id from community.participants p where p.project_id = $1 and p.site_id is not null and ${visible('p')}`,
+      `select distinct p.site_id from participants p where p.project_id = $1 and p.site_id is not null and ${visible('p')}`,
       [target.projectId, chain],
     )).rows.map((r) => r.site_id);
   } else {

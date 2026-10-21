@@ -69,7 +69,8 @@ insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, b
   ('split_into', 'was split into', 'was split from', null,            null,                 null,          null,                      'The subject was divided into the object (a parcel split by the cadastre); one link per part.'),
   ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
   ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
-  ('placed_in', 'was placed in',  'held',            '{device}',       '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure', 'Where a device was before it moved, over the period it was there.');
+  ('placed_in', 'was placed in',  'held',            '{device}',       '{site,building,space,surface}', null, 'IfcRelContainedInSpatialStructure', 'Where a device was before it moved, over the period it was there.'),
+  ('behind_meter', 'was behind',  'had behind it',   '{device}',       '{meter}',            null,          null,                      'The connection point a device was behind before it was connected to another one, over the period it was there (devices.meter_id holds today''s).');
 
 -- ---------------------------------------------------------------------------
 -- Quantities, each with the one unit it is stored in (QUDT unit codes).
@@ -182,7 +183,9 @@ insert into property_defs (code, name, datatype, quantity_code, minimum, maximum
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{site,building,participant}', null,              null),
   -- The sum over a site or a project; a device's own is its rated power.
-  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site}',      null,                         null);
+  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,site}',      null,                         null),
+  -- What the contract of a connection point allows it to take.
+  ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
 
 -- The values a country or a region decides, published as `defaults` rows by
 -- its pack and read through parameter_of(); an organisation or an object

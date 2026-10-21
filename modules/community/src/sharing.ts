@@ -71,7 +71,7 @@ interface ParticipantRow {
 const iso = (at: string | Date) => new Date(at).toISOString().replace('.000Z', 'Z');
 
 export async function runSharing(db: Db, request: SharingRunRequest): Promise<SharingRunResult> {
-  const project = (await db.query<{ id: string }>('select id from community.projects where id = $1', [request.projectId])).rows[0];
+  const project = (await db.query<{ id: string }>('select id from projects where id = $1', [request.projectId])).rows[0];
   if (!project) throw new Error(`project_not_found: ${request.projectId}`);
 
   const grid = (
@@ -114,7 +114,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
   const participants = (
     await db.query<ParticipantRow>(
       `select p.id, p.name, p.role, attributes_of(p.id, $2::timestamptz) attributes
-         from community.participants p
+         from participants p
         where p.project_id = $1 and p.site_id is not null and p.scenario_id is null
           and (p.join_date is null or p.join_date < $3::timestamptz) and (p.leave_date is null or p.leave_date >= $2::timestamptz)
         order by p.name, p.id`,
@@ -133,7 +133,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
         await db.query<{ id: string }>(
           `select id from series
             where quantity_code = $2 and kind = 'measured' and scenario_id is null
-              and (object_id = $1 or object_id in (select meter_id from community.participant_meters($1)))
+              and (object_id = $1 or object_id in (select meter_id from participant_meters($1)))
             order by id`,
           [p.id, quantity],
         )

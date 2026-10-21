@@ -33,14 +33,14 @@ declare
   v_regions   text[];
   t           record;
 begin
-  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from community.projects p where p.id = p_project_id;
+  select p.country, p.kind, p.organisation_id into v_country, v_kind, v_org from projects p where p.id = p_project_id;
   if not found then
     raise exception 'project_not_found: %', p_project_id using errcode = 'no_data_found';
   end if;
 
   -- The regions of a project are those of the sites taking part in it.
   select coalesce(array_agg(distinct s.region order by s.region), '{}') into v_regions
-    from community.participants pa
+    from participants pa
     join sites s on s.id = pa.site_id
    where pa.project_id = p_project_id and s.region is not null;
 

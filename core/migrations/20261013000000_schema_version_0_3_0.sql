@@ -20,7 +20,7 @@ language sql
 immutable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select '0.2.0'::text;
+  select '0.3.0'::text;
 $$;
 
 comment on function nexgen_schema_version() is

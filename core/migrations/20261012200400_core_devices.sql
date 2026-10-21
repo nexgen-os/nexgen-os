@@ -11,8 +11,11 @@
 --
 -- A device is placed by four columns, from the coarsest to the finest: its
 -- site, the building it is in, the space it is in, the surface it is mounted
--- on. Each names a place of the one above. Where a device is behind a
--- meter, the grid module says so with a link.
+-- on. Each names a place of the one above. A device behind a connection
+-- point names that meter, of its own site; an instrument that measures
+-- nothing on the grid side (a weather station) has none. The column is the
+-- truth of today: the meter a device leaves is kept as a dated
+-- `behind_meter` link, as the place it leaves is kept as `placed_in`.
 
 set search_path = nexgen, public, extensions;
 
@@ -72,6 +75,8 @@ create table devices (
   building_id       uuid references buildings(id) on delete set null,
   space_id          uuid references spaces(id) on delete set null,
   surface_id        uuid references surfaces(id) on delete set null,
+  -- The connection point it is behind, on its site.
+  meter_id          uuid references meters(id) on delete set null,
   name              text not null,
   device_type       text not null references device_types(code),
   directory_id      uuid references device_directory(id) on delete set null,
@@ -114,12 +119,14 @@ create index devices_site_idx on devices (site_id);
 create index devices_building_idx on devices (building_id);
 create index devices_space_idx on devices (space_id);
 create index devices_surface_idx on devices (surface_id);
+create index devices_meter_idx on devices (meter_id);
 create index devices_type_idx on devices (device_type);
 create index devices_geometry_idx on devices using gist (geometry);
 
 -- The places a device names fit inside each other: the building is on its
 -- site, the space in that building, the surface on that building or on the
 -- site. A space or a surface given without its building gives the building.
+-- The meter it is behind is on its site.
 create or replace function devices_check()
 returns trigger
 language plpgsql
@@ -156,18 +163,21 @@ begin
   if new.building_id is not null and (select site_id from buildings where id = new.building_id) <> new.site_id then
     raise exception 'device_building_site_mismatch: the building is not on the device''s site' using errcode = 'check_violation';
   end if;
+  if new.meter_id is not null and (select site_id from meters where id = new.meter_id) <> new.site_id then
+    raise exception 'device_meter_site_mismatch: the meter is not on the device''s site' using errcode = 'check_violation';
+  end if;
   return new;
 end;
 $$;
 
 comment on function devices_check() is
-  'BEFORE INSERT / UPDATE on devices: building on the site, space in the building, surface on the building or the site; fills the building from the space or the surface.';
+  'BEFORE INSERT / UPDATE on devices: building on the site, space in the building, surface on the building or the site, meter on the site; fills the building from the space or the surface.';
 
 create trigger devices_normalize before insert or update of geometry on devices
   for each row execute function normalize_geometry('geometry');
-create trigger devices_check before insert or update of site_id, building_id, space_id, surface_id on devices
+create trigger devices_check before insert or update of site_id, building_id, space_id, surface_id, meter_id on devices
   for each row execute function devices_check();
-call declare_object('devices', 'device', '{space_id,surface_id,building_id,site_id}');
+call declare_object('devices', 'device', '{space_id,surface_id,building_id,site_id,meter_id}');
 
 -- A module table that derives devices of a type: same id, one row per
 -- device, only for devices of that type (or a refinement of it). Declared by
@@ -230,7 +240,8 @@ create or replace function install_device(
   p_scenario_id     uuid default null,
   p_nameplate       jsonb default '{}',
   p_metadata        jsonb default '{}',
-  p_status          text default null
+  p_status          text default null,
+  p_meter_id        uuid default null
 )
 returns uuid
 language plpgsql
@@ -255,11 +266,11 @@ begin
       raise exception 'product_not_found: %', p_directory_id using errcode = 'no_data_found';
     end if;
   end if;
-  insert into devices (id, organisation_id, site_id, building_id, space_id, surface_id, geometry, name, device_type,
+  insert into devices (id, organisation_id, site_id, building_id, space_id, surface_id, meter_id, geometry, name, device_type,
                        directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date, source_code,
                        status, metadata, scenario_id)
   values (v_id, s.organisation_id, p_site_id,
-          (p_placement->>'building_id')::uuid, (p_placement->>'space_id')::uuid, (p_placement->>'surface_id')::uuid,
+          (p_placement->>'building_id')::uuid, (p_placement->>'space_id')::uuid, (p_placement->>'surface_id')::uuid, p_meter_id,
           case when jsonb_typeof(p_placement->'geometry') = 'object' then ST_GeomFromGeoJSON(p_placement->'geometry') end,
           p_name, p_device_type, p_directory_id,
           coalesce(p.manufacturer, p_nameplate->>'manufacturer'), coalesce(p.model_ref, p_nameplate->>'model'), p_nameplate->>'serial_number',
@@ -270,8 +281,8 @@ begin
 end;
 $$;
 
-comment on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text) is
-  'Installs a device on a site, placed in a building, a space or on a surface, as an instance of a product when one is named (its manufacturer, model and power by default), else with the manufacturer, model and serial number of its nameplate; the metadata carry what the file it was read from says and no column holds. In the status given, else planned until its installation date. Refuses device_type_unknown and the device_*_mismatch of its placement. Returns its id.';
+comment on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text, uuid) is
+  'Installs a device on a site, placed in a building, a space or on a surface, behind a meter of the site when one is named, as an instance of a product when one is named (its manufacturer, model and power by default), else with the manufacturer, model and serial number of its nameplate; the metadata carry what the file it was read from says and no column holds. In the status given, else planned until its installation date. Refuses device_type_unknown and the device_*_mismatch of its placement and its meter. Returns its id.';
 
 -- The placement a device leaves is kept as a dated `placed_in` link to the
 -- finest place it had, so where it was stays readable.
@@ -307,6 +318,43 @@ $$;
 
 comment on function move_device(uuid, jsonb, timestamptz) is
   'Moves a device on its site to a new building, space or surface; the place it leaves is kept as a placed_in link ending at that moment. Refuses device_retired.';
+
+-- The meter a device leaves is kept as a dated `behind_meter` link, so the
+-- connection point it was behind stays readable; null disconnects it.
+create or replace function connect_device(p_device_id uuid, p_meter_id uuid, p_on date default current_date)
+returns void
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  d       devices%rowtype;
+  v_since date;
+begin
+  select * into d from devices where id = p_device_id;
+  if not found then
+    raise exception 'device_not_found: %', p_device_id using errcode = 'no_data_found';
+  end if;
+  if d.status = 'removed' then
+    raise exception 'device_retired: % was removed on %', d.name, d.removal_date using errcode = 'check_violation';
+  end if;
+  if d.meter_id is not distinct from p_meter_id then
+    return;
+  end if;
+  if d.meter_id is not null then
+    -- It has been behind that meter since it left the previous one, else
+    -- since it was installed.
+    select coalesce(max(l.valid_to)::date, d.installation_date) into v_since
+      from links l where l.subject_id = p_device_id and l.type_code = 'behind_meter';
+    insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
+    values (p_device_id, 'behind_meter', d.meter_id, case when v_since < p_on then v_since end, p_on, d.scenario_id);
+  end if;
+  update devices set meter_id = p_meter_id where id = p_device_id;
+end;
+$$;
+
+comment on function connect_device(uuid, uuid, date) is
+  'Puts a device behind a meter of its site from a day, or behind none (null); the meter it leaves is kept as a behind_meter link ending that day. Refuses device_retired, device_meter_site_mismatch.';
 
 create or replace function retire_device(p_device_id uuid, p_on date default current_date)
 returns void
@@ -360,10 +408,10 @@ begin
   if p_directory_id is not null then
     select * into p from device_directory where id = p_directory_id;
   end if;
-  insert into devices (id, organisation_id, site_id, building_id, space_id, surface_id, geometry, name, device_type,
+  insert into devices (id, organisation_id, site_id, building_id, space_id, surface_id, meter_id, geometry, name, device_type,
                        directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date,
                        status, source_code, tags, scenario_id)
-  values (v_id, d.organisation_id, d.site_id, d.building_id, d.space_id, d.surface_id, d.geometry, coalesce(p_name, d.name),
+  values (v_id, d.organisation_id, d.site_id, d.building_id, d.space_id, d.surface_id, d.meter_id, d.geometry, coalesce(p_name, d.name),
           d.device_type, coalesce(p_directory_id, d.directory_id), coalesce(p.manufacturer, d.manufacturer),
           coalesce(p.model_ref, d.model), p_serial_number,
           coalesce(p.unit_power_kw * d.unit_count, d.rated_power_kw), d.unit_count, p_on,
@@ -376,9 +424,9 @@ end;
 $$;
 
 comment on function replace_device(uuid, date, uuid, text, text) is
-  'Replaces a device on a day: a new device in the same place (of another product when one is named), a replaces link to the old one, which is retired. Refuses device_retired. Returns the new id.';
+  'Replaces a device on a day: a new device in the same place and behind the same meter (of another product when one is named), a replaces link to the old one, which is retired. Refuses device_retired. Returns the new id.';
 
 grant execute on function derived_device_check() to service_role;
-grant execute on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text),
-  move_device(uuid, jsonb, timestamptz), retire_device(uuid, date), replace_device(uuid, date, uuid, text, text)
+grant execute on function install_device(uuid, text, text, jsonb, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text, uuid),
+  move_device(uuid, jsonb, timestamptz), connect_device(uuid, uuid, date), retire_device(uuid, date), replace_device(uuid, date, uuid, text, text)
   to authenticated, service_role;

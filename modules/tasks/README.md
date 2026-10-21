@@ -8,9 +8,9 @@ accepted, the permit filed, the loan signed, the panels delivered, the
 array wired, the injection point energised, the system commissioned, the
 yearly inspection done. What has to be done depends on the country, on the
 kind of project and on who does it. This module holds the tasks, and the
-templates that say which tasks a project needs; the `community` module, on
-which it depends, keeps the project itself (`community.projects`: kind,
-status, country, dates) and its participants.
+templates that say which tasks a project needs; the core keeps the project
+itself (`projects`: kind, status, country, dates) and its participants, so
+the module needs no other module.
 
 ## What it adds to the core
 

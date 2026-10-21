@@ -31,6 +31,6 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind, descr
   ('shared_injection_energy', 'Energy given to a sharing',      'KiloW-HR', 'sum', 'Energy',
    'The part of a participant''s injection shared with the other participants of its project.', 'community');
 
-update modules set version = '0.2.0',
-       description = 'Projects — energy communities, portfolios, studies, district plans — the sites taking part in them with the contact who answers for each, and energy sharing among them through an engine, recorded as runs.'
+update modules set version = '0.3.0',
+       description = 'Energy sharing among the participants of a project of the core: the allocation key of the project and what it reads about each participant, as attributes, and the shares an engine computes, recorded as runs.'
  where code = 'community';

@@ -14,7 +14,7 @@ import { checkFloor, databaseVersion } from './version.js';
 
 /**
  * The record table, defined as the migration
- * `20261013000000_schema_version_0_2_0.sql` defines it. Created before the
+ * `20261013000000_schema_version_0_3_0.sql` defines it. Created before the
  * first migration so that the core migrations before that one are recorded
  * too; `if not exists` makes the two one definition.
  */
