@@ -4,11 +4,12 @@
 
 ## Context
 
-The core keeps the site: an address, a point or a parcel, a time zone,
-geolocated but not described ([0006](0006-named-objects.md)). What a place
-physically is — buildings with a footprint, an elevation and a height,
-floors, rooms, zones and units inside them, roof faces and facades with
-their azimuth and tilt, where a device sits among them — is the territory
+The core keeps the participant and its place: an address, a point, a time
+zone, geolocated but not described ([0006](0006-named-objects.md),
+[0045](0045-the-participant-is-the-node.md)). What a place physically is —
+its ground, buildings with a footprint, an elevation and a height, floors,
+rooms, zones and units inside them, roof faces and facades with their
+azimuth and tilt — is the territory
 of BIM and CityGML, and not every installation describes it. A building is
 often also known by a proper three-dimensional model: the IFC of the
 architect, the CityJSON tile of the city, the mesh of a survey, the glTF of
@@ -22,14 +23,14 @@ becoming a second description of it.
 **The physical description of a place is the `building` module's.** One
 word names it in its folder, its schema, its code and its documents: the
 thing it holds is the building, and 3D is one way a building is described.
-Its schema, `building`, holds the skeleton of what is built: `buildings`, `spaces` (one
-tree of floors, rooms, zones and units) and `surfaces` (roof faces,
-facades, ground areas, carports), each a kind of object the module
-publishes in `kinds`, and `devices`, the building side of a device of the core: where
-on its site it is
-([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md)). The
-module publishes the link types of that description (`placed_in`,
-`placed_on`, `occupies`) and the properties of a building and of its faces
+Its schema, `building`, holds the skeleton of what is built, under the
+participant whose place it describes: `sites` (the ground: a parcel, an
+area, a use), `buildings`, `spaces` (one tree of floors, rooms, zones and
+units) and `surfaces` (roof faces, facades, ground areas, carports), each a
+kind of object the module publishes in `kinds`. It says nothing about
+where a device sits ([0026](0026-a-device-is-not-placed-for-now.md)). The
+module publishes the link type of that description (`occupies`) and the
+properties of a building and of its faces
 (year of construction, floors, energy label, material, U-value). The
 importers of CityJSON, IFC and Home Assistant homes are the module's
 (`modules/building/src`). The core never names it.
@@ -44,7 +45,7 @@ scale, its up axis, its units and its vertical datum are values of the row,
 and the source's own georeferencing block is kept as it came, so that one
 function places any model in WGS 84, whatever its format.
 
-**A model enriches the place; it never changes its shape.** The site keeps
+**A model enriches the place; it never changes its shape.** The participant keeps
 its one shape ([0025](0025-a-place-has-one-shape.md)), the building its own
 numbers (floors, heights, areas) in the module's tables. A roof face
 measured on a model is written to `building.surfaces` with the model as its

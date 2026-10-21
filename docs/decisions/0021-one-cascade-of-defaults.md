@@ -16,9 +16,10 @@ none.
 ## Decision
 
 **A default is a value of a level, and one function resolves it, in one
-order**: the object itself, then its parents (a device's site, a site's
-project), then its organisation, then the region of its place, then its
-country. The first level that holds a value answers, and the answer says
+order**: the object itself, then its parents (a device's participant, a
+participant's group and project), then its organisation, then the region
+of its participant's place, then its country
+([0045](0045-the-participant-is-the-node.md)). The first level that holds a value answers, and the answer says
 which level it came from.
 
 **Below the country, a default is an attribute.** The object, its parents

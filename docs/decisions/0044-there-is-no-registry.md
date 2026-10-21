@@ -23,8 +23,8 @@ core comes from has none. **Few words**: an object had two homes, its table
 and its registry row, and the hierarchy two descriptions, the foreign keys
 and `object_kinds.parent_columns`. **Stay close to the platform**, which
 proved itself in the field: there, a project belongs to an organisation, a
-participant to a project, a meter to a participant, a device to a meter and
-a site, through foreign keys, and nothing else.
+participant to a project, a meter and a device to a participant, through
+foreign keys, and nothing else ([0045](0045-the-participant-is-the-node.md)).
 
 ## Decision
 
@@ -60,17 +60,18 @@ column references `kinds` that name the deleted row. `nexgen-os doctor`
 names, by kind, the attachments whose object no longer exists
 (`attachments_orphaned`).
 
-**Where an object is, through the foreign keys.** `site_of(kind, id)` is a
-`case` over the core's kinds (a site, a participant, a meter, a device by
-their `site_id`, a series or a run by its object); a module answers for its
-own kinds with `<schema>.site_of(kind, id)` — `building.site_of`,
-`solar.site_of` — and the core hands the question over without naming the
-module. `parameter_of(kind, id, …)` cascades through `parents_of()`, the
-core's foreign keys written out (a device's site, meter, participant and
-project), then the organisation, the region and the country; a module that
-places an object of the core among its own resolves through them first —
-`building.parameter_of()` reads the space, surface and building of a
-placed device before asking the core.
+**Whose an object is, through the foreign keys.** `participant_of(kind,
+id)` is a `case` over the core's kinds (a participant itself, a meter and a
+device by their `participant_id`, a series or a run by its object); a
+module answers for its own kinds with `<schema>.participant_of(kind, id)` —
+`building.participant_of`, `solar.participant_of` — and the core hands the
+question over without naming the module. `parameter_of(kind, id, …)`
+cascades through `parents_of()`, the core's foreign keys written out (a
+device's participant, its group and its project), then the organisation,
+and the region and the country of the participant's place; a module
+resolves its own kinds through what it describes first —
+`building.parameter_of()` reads the spaces, the building and the ground
+above an object before asking the core from its participant.
 
 ## What it forbids
 
@@ -88,7 +89,9 @@ placed device before asking the core.
 `declare_object()`, `object_parent_tables`, `declare_parents()`,
 `parents_of(uuid)`, `ancestor_of()` and `ancestors_of()` (0.1 to 0.3 before
 this record); `site_of(uuid)`, `country_of(uuid)` and `parameter_of(uuid, …)`
-and the gestures that took an object's id alone; the migration
+and the gestures that took an object's id alone; then `site_of(kind, id)`,
+which [0045](0045-the-participant-is-the-node.md) replaced by
+`participant_of(kind, id)`; the migration
 `20261012200900_core_object_kinds_rls.sql`, now `20261012200900_core_rls.sql`.
 
 ## See also

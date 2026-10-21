@@ -13,8 +13,8 @@ winter that came from nothing else than the clock.
 
 ## Decision
 
-**A series is one quantity over time, for one object**: a site, a building,
-a surface, a space, a device, or an object of a kind a module publishes (a
+**A series is one quantity over time, for one object**: a participant, a
+meter, a device, a building, a surface, a space, or an object of a kind a module publishes (a
 weather point, a bidding zone), named by its kind and its id. It says its quantity, its kind — measured,
 simulated, forecast or asked — its source, its step, and, when it is the
 output of a run, the run that wrote it.
@@ -29,10 +29,15 @@ which knows the source's convention.
 it was issued; a page reads the latest issue, an accuracy study reads what
 was known at a given time.
 
-**An external series needs an object to hang on.** When no site owns it — a
-weather grid point shared by many sites, a market zone — the module that
-knows it publishes its kind and holds the object, and sites are linked to
-it.
+**An external series needs an object to hang on.** When no participant
+owns it — a weather grid point shared by many participants, a market zone —
+the module that knows it publishes its kind and holds the object, and
+participants are linked to it.
+
+**Days are cut in the participant's time zone.** A series is read by the
+day, the month or the year in the time zone of the participant its object
+belongs to (`participant_of()`, [0045](0045-the-participant-is-the-node.md));
+a series of no participant has hours only.
 
 ## What it forbids
 

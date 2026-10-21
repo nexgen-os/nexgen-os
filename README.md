@@ -1,8 +1,7 @@
 # Nexgen OS
 
-An open foundation for describing the world — sites, buildings, rooms,
-roofs, devices and the series they produce — in 3D and over time, so that
-architecture, energy, operations and compliance tools share one model.
+Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model
+([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
 
 Nexgen OS is the open foundation and the reference language. **Nexgen**, the
 commercial platform of **WeSmart** (Newide, Belgium; AI4Energy, France), is
@@ -21,27 +20,21 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 ## The model in one screen
 
-Seven objects, in the order a page walks them — the organisation, the
-project it works on, the participants taking part in it, their places, the
-meters that connect those places to a network, the devices installed on
-them, the series they produce — and attachments to anything else, in the
-schema `nexgen`. In plain words:
+Six objects, in the order a page walks them — the organisation, the
+project it works on, the participants taking part in it, the meters they
+carry, the devices behind those meters, the series they produce — and
+attachments to anything else, in the schema `nexgen`. In plain words:
 
 - **the organisation** owns the data and has members;
-- **the project** is what a person works on when signed in — an energy
-  community, a portfolio, a study, a construction site, a district plan;
-- **the participant** is an actor of the project — a household, a company, a
-  tenant, a public body — that groups the devices behind the same meter:
-  seen from the grid, everything *behind the meter* is the participant's,
-  everything in front of it is the grid's, the market's or the community's.
-  Several participants may share one site, one per occupant or per meter;
-- **the site** is the place, geolocated with its address and point; what is
-  built on it is the `building` module's;
-- **the meter** is the connection point to a network, under the identifier
-  its operator knows — the frontier between the grid and the place;
-- **the device** is anything installed, from a PV system to a probe, behind a
-  meter when it is on the grid side;
-- **the series** is a quantity of any of them over time.
+- **the project** is what a person works on — a community, a portfolio, a study, a district plan;
+- **the participant** is the node: an actor with its address and its point on the map, every module links to it;
+- **the meter** is its connection point to a network, the frontier between the grid and the place;
+- **the device** is what it has behind the meter — a PV system, a battery, a charger, a heat pump, a probe;
+- **the series** is a quantity of any of them over time, as many per device as it measures.
+
+The physical description of a place — its ground, buildings, floors, rooms
+and roof faces — enriches the participant in the `building` module; a
+device is not placed ([0045](docs/decisions/0045-the-participant-is-the-node.md)).
 
 Three rules shaped this structure, and settle every new question about it:
 **keep it simple**; **few words** — one word per thing across schemas,
@@ -55,8 +48,8 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 
 ## Principles
 
-1. **Concrete objects, generic attachments.** A site is a row of `sites`, a
-   building a row of `building.buildings`, and the hierarchy is their foreign
+1. **Concrete objects, generic attachments.** A participant is a row of
+   `participants`, a building a row of `building.buildings`, and the hierarchy is their foreign
    keys. An attribute, an identifier, a link, a document or a series names
    its object by its kind and its id (`('building', id)`), with no registry
    of objects. A new kind of thing is a module table and a row of `kinds`; a
@@ -67,7 +60,7 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 3. **One way to read, one way to write.** `attributes_of()` for attributes,
    `resample()` for series (the amount of each bucket, a register's
    consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
-   beside it), `site_of(kind, id)` and `country_of(kind, id)` for where, `building.building_volume()`
+   beside it), `participant_of(kind, id)` and `country_of(kind, id)` for whose and where, `building.building_volume()`
    for a derived 3D block. Values are written by `store()` alone, which
    converts their unit, checks their quality and step, and keeps the
    aggregates and the latest value; clients never resample, convert or fill.
@@ -109,13 +102,13 @@ npm test        # PGlite + PostGIS in WebAssembly, no server needed
 npm run typecheck
 ```
 
-The tests describe real cases end to end: a house (site, building, roof
-face, PV system derived by a module, attributes over time, documents,
+The tests describe real cases end to end: a house (a participant with its
+place and its meter, a building, a roof face, a PV system derived by a module, attributes over time, documents,
 scenario), a school with the core alone (floors and rooms as one tree of
 spaces, a multisensor whose readings are series, setpoints, a heat pump
 serving the building), an energy community on the core's projects, participants and meters
-(participants behind their meters, contacts,
-groups, meter swap, cumulative register, a site in two projects), a district
+(participants carrying their place and their meter, contacts,
+groups, meter swap, cumulative register, a place in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries, shading,
 plot split as links), the cascade of defaults, security (row level security, viewers, run immutability,
 vocabulary hygiene), the series store across a clock change, the weather
@@ -141,7 +134,8 @@ is checked.
    ```sql
    set search_path = nexgen;
    select d.name, d.device_type, m.identifier meter
-   from devices d left join meters m on m.id = d.meter_id
+   from devices d left join meters m on m.participant_id = d.participant_id
+   where d.scenario_id is null
    order by d.name;
    ```
 
@@ -154,8 +148,7 @@ example in `examples/` is a complete, loadable dataset.
 From the house loaded above, in a clone of this repository (`npm ci` once):
 
 6. Describe its PV system in the `solar` module, with one array facing
-   south at 30°, its own azimuth and tilt (the `building` module can say which
-   roof face it sits on, `building.place_array()`):
+   south at 30°, its own azimuth and tilt:
 
    ```sql
    set search_path = nexgen;
