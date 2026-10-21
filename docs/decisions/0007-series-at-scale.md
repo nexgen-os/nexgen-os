@@ -36,9 +36,9 @@ and a quality code — no organisation, no unit, no text:
 - the instant is the start of the interval the value covers
   ([0029](0029-a-series-belongs-to-an-object.md)).
 
-**Time zones are the site's, never a constant.** A step shorter than a day
+**Time zones are the participant's, never a constant.** A step shorter than a day
 is binned in UTC, safe across daylight-saving changes; a step of a day or
-more is cut in the time zone of the object's site. A site without a time
+more is cut in the time zone of the object's participant. A participant without a time
 zone has no daily figures: `time_zone_required`, named, rather than a
 silent UTC.
 

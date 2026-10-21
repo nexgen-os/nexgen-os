@@ -46,7 +46,7 @@ third word.
    takes the word of the code because the row is that code, configured.
 
 Whatever a connector writes says where it came from: the source of a
-series, an attribute, a document, a site's position; the scheme of an
+series, an attribute, a document, a participant's position; the scheme of an
 external identifier. Licence, attribution and retention follow the data
 because the data names its source.
 
@@ -54,17 +54,18 @@ because the data names its source.
 
 | Data | Lands on | Note |
 |---|---|---|
-| weather forecast | a series of the site or of a weather point, `forecast`, every issue kept | pages read the latest issue; an accuracy study reads what was known at a given time |
+| weather forecast | a series of the participant or of a weather point, `forecast`, every issue kept | pages read the latest issue; an accuracy study reads what was known at a given time |
 | weather observed, reanalysis | a series, `measured` or `simulated` | a reanalysis is a model's view of the past: `simulated`, with its source |
 | meter readings | a series of the meter, `measured`, quality from the hub's codes | the mandate that allows the reading is the `grid` module's |
-| prices, imbalance, carbon intensity | a series of a zone a module declares as an object | a site is linked to its zone; one series serves every site in it |
+| prices, imbalance, carbon intensity | a series of a zone a module declares as an object | a participant is linked to its zone; one series serves every participant in it |
 | grid topology | objects of the `grid` module, links to what they serve | with the operator's identifiers |
 | registers, cadastre, building datasets, company data | places, buildings, identifiers, attributes, documents | each with its source; a licensed answer expires with its retention |
 | roof faces from a survey or a solar API | surfaces, with their source | a solar API's layers are a cache, never redistributed |
 
-An external series needs an object to hang on. When no site owns it — a
-weather point shared by many sites, a bidding zone, a substation — the
-module that knows it declares the object, and sites are linked to it.
+An external series needs an object to hang on. When no participant owns
+it — a weather point shared by many participants, a bidding zone, a
+substation — the module that knows it declares the object, and
+participants are linked to it.
 
 **Open connectors, private connectors.** The interfaces are the contract. A
 connector is open when its data is. A connector whose data or terms are not

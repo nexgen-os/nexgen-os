@@ -5,7 +5,7 @@
 ## Context
 
 A country decides many things a description of a place depends on: how its
-regions are named, which identifiers a site or a connection point carries,
+regions are named, which identifiers a participant or a connection point carries,
 which registers and operators exist, which default values a study starts
 from. The first packs held all of that and more: legal texts and rules that
 no function read, task templates repeated per country for steps that are the
@@ -21,7 +21,7 @@ or of a module reads.** Five sections, each read by something that exists:
 
 - **identity** — the country, its regions at the level the pack decides
   things, its languages and currency as data, the time zones of its places;
-- **identifiers** — the schemes a site, a building or a connection point is
+- **identifiers** — the schemes a participant, a building or a connection point is
   known by in that country, with their patterns;
 - **sources** — the registers, geocoders, operators' hubs and datasets of
   the country, as `sources` rows with their licence;

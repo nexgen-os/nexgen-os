@@ -16,7 +16,7 @@ section no function of the core read.
 ## Decision
 
 **Following work by tasks is a module, `tasks`.** A task is about any
-object (a project, a site, a building, a surface, a device), has a phase,
+object (a project, a participant, a building, a surface, a device), has a phase,
 a role, a status, planned and actual dates, a dependency and a source. An
 installation that maps a district or computes yields does without it.
 
