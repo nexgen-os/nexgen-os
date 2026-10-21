@@ -37,6 +37,8 @@ neighbours, shift a load when the grid is tight, prove a carbon figure, pass
 a renovation obligation, be understood by the people who live around them. A
 model built for one country, one product and one trade does not survive that.
 
+Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model.
+
 So Nexgen OS is five commitments.
 
 ## 1. One description of a place, for everyone who works on it.

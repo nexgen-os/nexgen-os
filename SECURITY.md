@@ -2,7 +2,7 @@
 
 Nexgen OS holds the description of places and the series that come from
 their meters and sensors. A flaw here is not a crash: it is an organisation
-reading another organisation's sites, or a series written without a trace.
+reading another organisation's participants, or a series written without a trace.
 Please report it, and please report it privately first.
 
 ## Reporting a vulnerability

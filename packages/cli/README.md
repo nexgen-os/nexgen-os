@@ -1,5 +1,7 @@
 # nexgen-os — the installer of Nexgen OS
 
+Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model.
+
 `nexgen-os` installs Nexgen OS on a Postgres database with PostGIS — an
 empty [Supabase](https://supabase.com) project is the usual one — brings an
 installation up to date, and says what is wrong with one. It applies the
@@ -52,7 +54,7 @@ anonymous role: everything is read signed in, under row level security.
 | `init [--modules a,b] [--packs xx] [--dry-run]` | Installs the core, the modules (default: every module shipped) and the packs (default: none). Idempotent: a recorded file is skipped, so `init --modules solar` on an installation adds the module. |
 | `migrate [--dry-run]` | Applies what this release adds to the core and to the modules and packs already installed. |
 | `doctor [--json]` | Schema version, files applied per scope, modules, packs, PostGIS, row level security on every table of `nexgen` and of the module schemas, vocabulary counts. Exits 1 with one named line per problem. |
-| `status [--json]` | Version, modules, packs, and the number of organisations, sites, devices and series. |
+| `status [--json]` | Version, modules, packs, and the number of organisations, participants, devices and series. |
 | `pack build <cc>\|--all [--root dir] [--json]` | In a clone of the repository, no database: validates `packs/<cc>/` against `packs/schema/pack.1.json`, compiles it into `core/seed/<n>_pack_<cc>.sql` and writes its checksum into `pack.json`. |
 | `pack check <cc>\|--all [--root dir] [--json]` | The same in memory: exits 1 with one named line per problem when a pack fails its checks or a committed seed is not its exact output. The CI runs `pack check --all`. What a pack holds and the checks: [`packs/README.md`](../../packs/README.md). |
 

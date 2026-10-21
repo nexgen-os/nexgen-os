@@ -22,9 +22,9 @@ through `record_run()`.
 | Table | What it is |
 |---|---|
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
-| `solar.pv_arrays` | a kind of object (`pv_array`), whose site `solar.site_of()` answers (its system's): one group of modules with one orientation, on a surface of the system's site (`array_outside_system_site` otherwise). Azimuth and tilt come from the surface unless given; `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
+| `solar.pv_arrays` | a kind of object (`pv_array`), whose participant `solar.participant_of()` answers (its system's): one group of modules with its own azimuth and tilt, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-is-not-placed-for-now.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
-| `solar.horizons` | the far horizon of a site or a surface, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
+| `solar.horizons` | the far horizon of a participant or a surface, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
 | `solar.yield_profiles` | named modelling choices: decomposition, transposition, incidence, temperature model and parameters, spectral, ordered losses, clipping. A vocabulary, read by everyone signed in |
 
 `solar.system_kwp(system, scenario?)` gives the DC power of a system: the sum
@@ -35,10 +35,10 @@ of its arrays, or its own `kwp_dc` when it has none.
 How much light dirt takes depends on the place — dust from a field or a
 road, birds, rain, a cleaning routine — rather than on a profile's modelling
 choices. `soiling_loss` (a fraction, `0.02` for 2 %) is an attribute of a
-PV array, of its PV system (a `device`) or of its site, attached like any
+PV array, of its PV system (a `device`) or of its participant, attached like any
 other with its source and its period. `solar.soiling_of(object, at?,
 scenario?)` reads the array's own, then what `parameter_of('device', …)`
-answers for its system: the system's, its site's, its organisation's, its
+answers for its system: the system's, its participant's, its organisation's, its
 pack's; null when nobody says it.
 
 A yield run reads it for each array at the start of the first year asked
@@ -49,7 +49,7 @@ profile that folds soiling into one aggregate loss (`system` of
 counted twice; the run records, per array, the soiling found, where it was
 found, and `applied: false` with the reason. An engine request carries one
 list of losses: arrays whose soiling differs throw a named error
-(`losses_differ_between_arrays`); say the soiling on the system or the site
+(`losses_differ_between_arrays`); say the soiling on the system or the participant
 for an engine run. A fraction outside [0, 1) throws `soiling_out_of_range`.
 
 ## The parameters of a study, and where they live here
@@ -64,7 +64,7 @@ losses, and where it is held in this module:
 | far horizon | `solar.horizons` | not yet in the hourly shape (PVGIS's own reaches the annual through anchoring) |
 | ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its run says the array's albedo is not applied |
 | bifacial modules | `solar.pv_arrays.bifacial` | recorded `not modelled` by every run: no rear-side gain is applied |
-| soiling | `soiling_loss` on the array, the system or the site | every run, in place of the profile's `soiling` loss |
+| soiling | `soiling_loss` on the array, the system or the participant | every run, in place of the profile's `soiling` loss |
 | mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every run |
 | temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
 | degradation | `solar.pv_systems.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to a run |
@@ -87,7 +87,7 @@ verified is null.
 `runYield(db, request, clients)` (`yield.ts`) runs two of the profiles. Both
 store the hourly energy as a `simulated` `production_energy` series on the
 PV system (kWh per hour, dated at the start of the hour, UTC), the air
-temperature on its site, and a run (`record_run('solar', …)`) whose inputs
+temperature at its participant's place, and a run (`record_run('solar', …)`) whose inputs
 say which weather, which period, which arrays, which models and losses, and
 which conventions it was computed with. Two runs on the same roof are
 compared by reading their `runs.inputs` side by side.
@@ -100,11 +100,11 @@ power when it has none; each needs an azimuth, a tilt and a power.
 | Profile | Computed by | Weather | What else the request may give |
 |---|---|---|---|
 | `pvgis_like` | PVGIS `seriescalc`, one call per array | PVGIS's radiation database for the place (SARAH3, or ERA5 outside its coverage), the years asked | `raddatabase` to force one |
-| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked in the site's local calendar | `gammaPdc`, `typicalYear`, `anchor` |
+| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked in the participant's local calendar | `gammaPdc`, `typicalYear`, `anchor` |
 
-`pvwatts` needs the site's time zone (`sites.time_zone`, IANA); without
+`pvwatts` needs the participant's time zone (`participants.time_zone`, IANA); without
 it, it throws a named error (`time_zone_required`). Days, months and years
-are cut in the site's local standard time (no daylight-saving shift, as in
+are cut in the participant's local standard time (no daylight-saving shift, as in
 TMY files), so that a sunlit day is never split by UTC midnight; every
 value stays dated at the start of its hour, in UTC. The years asked are
 read with one day more on each side, then cut at the local new year.
@@ -159,13 +159,13 @@ the models and the losses; the engine computes them. With `engine: { name:
 'pvlib', command? }` (decision [0013](../../docs/decisions/0013-external-engines.md),
 [`packages/connectors/pvlib`](../../packages/connectors/pvlib/README.md)), `runYield` runs any
 profile whose models the engine has, and needs `profileCode`
-(`profile_required` otherwise) and the site's time zone:
+(`profile_required` otherwise) and the participant's time zone:
 
 | Read from | Sent to the engine |
 |---|---|
 | the system, its arrays and their products (the same rows as the other runs) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several); an `ond` product as the Sandia model fitted on its efficiency curves as pvlib's `fit_sandia` does ([`inverter.ts`](src/inverter.ts)), recorded in the run's inputs with `fitted_from: 'ond'`; a Sandia, ADR or OND inverter needs module products whose model gives the DC voltage (`inverter_needs_voltage` on the PVWatts DC model) |
 | the profile | decomposition, transposition, incidence (`iam_model`, `no_loss` when null), spectral, temperature model and parameters, the ordered losses as fractions |
-| the weather connector (Open-Meteo's ERA5 archive), the years in the site's local calendar | a profile with a transposition: `ghi`, `dni`, `dhi` once for the site (`ghi` alone when it names a decomposition); without one: each array's `poa_irradiance`, as `pvwatts` reads it; temperature and wind speed |
+| the weather connector (Open-Meteo's ERA5 archive), the years in the participant's local calendar | a profile with a transposition: `ghi`, `dni`, `dhi` once for the participant (`ghi` alone when it names a decomposition); without one: each array's `poa_irradiance`, as `pvwatts` reads it; temperature and wind speed |
 
 What the engine answers is stored as it comes, in series named
 `<engine> <from>-<to>`: `production_energy` on the system,
@@ -185,7 +185,7 @@ an engine's run.
 engine run or `pvwatts` with `typicalYear: false` — and gives the energy a
 year exceeds with each probability asked (75, 90 and 99 % by default):
 
-- the yearly totals of the run's `production_energy`, in the site's local
+- the yearly totals of the run's `production_energy`, in the participant's local
   standard time, a year counting with 95 % of its hours (as the runs count
   them); their mean is the P50;
 - the interannual variability, their sample standard deviation relative to
@@ -211,7 +211,7 @@ Production power and energy and the generic `irradiance` are the core's.
 
 `performanceIndicators(db, { pvSystemId, from, to, yieldRunId? })`
 ([`performance.ts`](src/performance.ts)) gives the indicators of IEC 61724-1
-for whole days in the site's time zone, in total and by month:
+for whole days in the participant's time zone, in total and by month:
 
 | Indicator | |
 |---|---|

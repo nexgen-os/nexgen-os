@@ -3,7 +3,7 @@
 A Python package, `nexgen_os`, that reads the model of a Nexgen OS
 installation and attaches what you know to it, with its source. It reads
 the way the model is read (`attributes_of`, `resample` and the series
-reads, `site_of`, `country_of`), writes values the one way they are
+reads, `participant_of`, `country_of`), writes values the one way they are
 written (`store`), and computes nothing: a figure is a run of a module, and
 a program connector (`packages/connectors/`) is where a computation of your own goes. Requires
 Python 3.9 or later and [psycopg 3](https://www.psycopg.org/psycopg3/);
@@ -20,14 +20,14 @@ from datetime import datetime, timezone
 from nexgen_os import Nexgen, NexgenError
 
 with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.connect(url)
-    for site in nexgen.sites():
-        print(site["name"], site["country"], site["time_zone"])
+    for participant in nexgen.participants():
+        print(participant["name"], participant["country"], participant["time_zone"])
 
-    site = nexgen.sites()[0]["id"]
-    nexgen.attach("site", site, "annual_consumption", 41000, source="2025 invoices",
+    participant = nexgen.participants()[0]["id"]
+    nexgen.attach("participant", participant, "annual_consumption", 41000, source="2025 invoices",
                   valid_from=datetime(2025, 1, 1, tzinfo=timezone.utc),
                   valid_to=datetime(2026, 1, 1, tzinfo=timezone.utc))
-    print(nexgen.attributes_of(site, datetime(2025, 6, 1, tzinfo=timezone.utc)))
+    print(nexgen.attributes_of(participant, datetime(2025, 6, 1, tzinfo=timezone.utc)))
 
     try:
         days = nexgen.resample(series_id, datetime(2026, 6, 1, tzinfo=timezone.utc),
@@ -45,7 +45,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | Call | Reads or writes |
 |---|---|
 | `schema_version()` | `nexgen_schema_version()` |
-| `organisations()`, `sites(organisation_id=None)` | the organisations and sites the connection may read |
+| `organisations()`, `participants(organisation_id=None)` | the organisations and the participants, with their place, the connection may read |
 | `attributes_of(object_id, at=None, scenario_id=None)` | every attribute holding at a moment, in a scenario (`None` = reality) |
 | `resample(series_id, start, end, step, time_zone=None, issued_before=None)` | a series on a regular step over `[start, end)`, the amount of each bucket (a register's consumption), as `Bucket(start, value, samples, expected, quality)`; `step` is an interval (`"15 minutes"`, `"1 day"`) or a `timedelta` |
 | `window(series_id, start, end, limit=100000)`, `latest(series_ids)` | the stored values in time order (a register's index); the last value of each series |
@@ -53,7 +53,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | `forecast_at(series_id, start, end, as_of=None, horizon=None)`, `export_rows(series_ids, start, end)` | a forecast as it was known; the rows of a Parquet file |
 | `store(series, values, *, unit=None, issued_at=None)` | the one write path: a series id or its identity, `(at, value[, quality])` tuples in `unit`; returns `Stored(series_id, changed)` |
 | `convert_unit(value, from_unit, to_unit)` | a conversion of the core's `units` vocabulary |
-| `site_of(kind, object_id)`, `country_of(kind, object_id)` | the site an object is on, the country whose rules apply |
+| `participant_of(kind, object_id)`, `country_of(kind, object_id)` | the participant an object belongs to, the country of its place |
 | `attach(kind, object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None, scenario_id=None)` | one attribute, with its period and where it comes from; returns its id |
 
 Values are in the unit of the property's quantity (`quantities`), series
