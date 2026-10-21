@@ -56,6 +56,7 @@ measure.
 ## Objects
 
 - [0006](decisions/0006-named-objects.md) The core names seven objects (the organisation, the project, the participant, the place, the meter, the device, the series), and everything else is attached to them
+- [0044](decisions/0044-there-is-no-registry.md) There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind and id
 - [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
 - [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
 - [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
@@ -71,7 +72,7 @@ built on it is the `building` module's.
 - [0003](decisions/0003-geometry-wgs84-3d-utm.md) Geometry is stored in WGS 84 in 3D, and measured in UTM
 - [0025](decisions/0025-a-place-has-one-shape.md) A place has one shape: address, point, precision, source
 - [0009](decisions/0009-addresses-and-geocoding.md) What applies to a place follows its region, its municipality or its area
-- [0008](decisions/0008-building-module.md) The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it
+- [0008](decisions/0008-3d-module.md) The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it
 - [0026](decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md) A device is placed by the `building` module, on a surface or in a space, and a space is one notion with a kind
 
 ## Series

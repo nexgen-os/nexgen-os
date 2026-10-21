@@ -56,15 +56,18 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 ## Principles
 
 1. **Concrete objects, generic attachments.** A site is a row of `sites`, a
-   building a row of `building.buildings`. A new kind of thing is a module table with the same id; a new
-   property is a vocabulary row; a new API is a source row.
+   building a row of `building.buildings`, and the hierarchy is their foreign
+   keys. An attribute, an identifier, a link, a document or a series names
+   its object by its kind and its id (`('building', id)`), with no registry
+   of objects. A new kind of thing is a module table and a row of `kinds`; a
+   new property is a vocabulary row; a new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
    falls in, anywhere on earth.
 3. **One way to read, one way to write.** `attributes_of()` for attributes,
    `resample()` for series (the amount of each bucket, a register's
    consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
-   beside it), `site_of()` and `country_of()` for where, `building.building_volume()`
+   beside it), `site_of(kind, id)` and `country_of(kind, id)` for where, `building.building_volume()`
    for a derived 3D block. Values are written by `store()` alone, which
    converts their unit, checks their quality and step, and keeps the
    aggregates and the latest value; clients never resample, convert or fill.

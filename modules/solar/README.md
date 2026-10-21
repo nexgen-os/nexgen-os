@@ -22,7 +22,7 @@ through `record_run()`.
 | Table | What it is |
 |---|---|
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
-| `solar.pv_arrays` | an object (`pv_array`): one group of modules with one orientation, on a surface of the system's site (`array_outside_system_site` otherwise). Azimuth and tilt come from the surface unless given; `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
+| `solar.pv_arrays` | a kind of object (`pv_array`), whose site `solar.site_of()` answers (its system's): one group of modules with one orientation, on a surface of the system's site (`array_outside_system_site` otherwise). Azimuth and tilt come from the surface unless given; `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
 | `solar.horizons` | the far horizon of a site or a surface, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
 | `solar.yield_profiles` | named modelling choices: decomposition, transposition, incidence, temperature model and parameters, spectral, ordered losses, clipping. A vocabulary, read by everyone signed in |
@@ -37,8 +37,9 @@ road, birds, rain, a cleaning routine — rather than on a profile's modelling
 choices. `soiling_loss` (a fraction, `0.02` for 2 %) is an attribute of a
 PV array, of its PV system (a `device`) or of its site, attached like any
 other with its source and its period. `solar.soiling_of(object, at?,
-scenario?)` reads it through `parameter_of()`: the array's own, its
-system's, its site's, its organisation's; null when nobody says it.
+scenario?)` reads the array's own, then what `parameter_of('device', …)`
+answers for its system: the system's, its site's, its organisation's, its
+pack's; null when nobody says it.
 
 A yield run reads it for each array at the start of the first year asked
 and puts it in place of the profile's own `soiling` loss, at its rank: it
@@ -241,6 +242,3 @@ and a new reading a new one. Named errors: `pv_system_not_found`,
   `pvsyst_like` and
   `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
   PV\*SOL CSV).
-- `site_of()` does not know `pv_array` yet: modules extend it by replacing
-  the whole function, which would drop another module's kinds. An array's
-  site is its system's (`devices.site_id`).

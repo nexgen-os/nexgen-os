@@ -31,11 +31,13 @@ three forms and no other:
   grid sees it, `billing.contacts` the contact as the invoicing side sees it: one
   word per thing across schemas — and a derived table that holds a subtype
   carries the subtype's name (`solar.pv_systems`);
-- **a secondary table**, with a foreign key to a core object: `tasks.tasks`
-  is about one object of the registry, `solar.pv_arrays` belongs to a PV
-  system, `building.buildings` stands on a site — a kind of object of the
-  module, declared with `declare_object()`, which `site_of()` reaches like
-  any other;
+- **a secondary table**, with a foreign key to a core object:
+  `solar.pv_arrays` belongs to a PV system, `building.buildings` stands on
+  a site — a kind of object of the module, inserted in `kinds`, for which
+  the module answers `site_of()` — or, for a table about an object of any
+  kind, a kind column referencing `kinds` beside the object's id:
+  `tasks.tasks` is about a project, a site, a building or a device
+  ([0044](0044-there-is-no-registry.md));
 - **vocabulary rows** in the core's vocabularies, marked with the module in
   `published_by`: the `allocation_key` property of `community`, the
   quantities of `weather`, a module's device types.
@@ -89,4 +91,5 @@ and `solar.pv_arrays.surface_id` became a `placed_on` link.
 - [0032](0032-a-module-has-its-own-schema.md) — what a module is, in the
   database.
 - [0041](0041-a-module-names-one-thing.md) — what a module names.
+- [0044](0044-there-is-no-registry.md) — the hierarchy is the foreign keys.
 - `modules/README.md` — the rules in practice.

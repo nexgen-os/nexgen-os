@@ -5,7 +5,7 @@ organisation → project → participant → site → meter → device → serie
 ([0006](decisions/0006-named-objects.md)); and the engine that attaches
 everything else to any of them. The site is geolocated, not described: its
 buildings, floors, rooms and roof faces, and where a device sits among
-them, are the `building` module's ([0008](decisions/0008-building-module.md)). A trade that needs
+them, are the `building` module's ([0008](decisions/0008-3d-module.md)). A trade that needs
 more adds a module with its own schema, starting from one of these objects
 ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md)); a
 country adds a pack.
@@ -24,34 +24,38 @@ erDiagram
   meters ||--o{ devices : "behind"
   sites ||--o{ devices : installed
   device_directory ||--o{ devices : "instance of"
-  objects ||--o{ series : "observed"
+  kinds ||--o{ series : "observed (kind, id)"
   devices ||--o{ series : "measures, is set"
   runs ||--o{ series : owns
   series ||--o{ series_values : values
   series ||--o{ forecast_values : issues
-  objects ||--o{ attributes : has
-  objects ||--o{ external_ids : "known as"
-  objects ||--o{ links : "subject / object"
-  objects ||--o{ documents : files
-  objects ||--o{ runs : subject
-  scenarios ||--o{ objects : "only in"
+  kinds ||--o{ attributes : "has (kind, id)"
+  kinds ||--o{ external_ids : "known as (kind, id)"
+  kinds ||--o{ links : "subject / object (kind, id)"
+  kinds ||--o{ documents : "files (kind, id)"
+  kinds ||--o{ runs : "subject (kind, id)"
+  scenarios ||--o{ sites : "only in"
   modules ||--o{ runs : computed
   countries ||--o{ regions : "subdivided in"
   countries ||--o{ defaults : decides
   regions ||--o{ defaults : decides
 ```
 
-`objects` is the registry: one row per organisation, project, participant,
-site, meter or device (and per object a module declares: a building, a
-space, a surface, a PV array, a task), with its kind, its organisation and
-its scenario. The named tables keep it up to date by trigger;
-`declare_object()` registers a module's table as a kind, with the columns
-that lead to its parents, and `declare_parents()` a module table that gives
-an object of another kind parents of its own (where a device is placed).
-`site_of()`, `ancestor_of()` and `parameter_of()` walk both. Attachments
-point to the registry; pages read the named tables.
+The hierarchy is the foreign keys, and nothing mirrors it
+([0044](decisions/0044-there-is-no-registry.md)). An attachment — an
+attribute, an identifier, a link, a document, a series, a run — names its
+object by its kind and its id: `kinds` holds one row per kind with its table
+(`organisation`, `project`, `participant`, `site`, `meter`, `device`,
+`series`, `run`, and those modules publish: `building`, `space`,
+`surface`, `pv_array`, `task`, `weather_point`), written by plain inserts.
+`object_organisation(kind, id)` reads an object's organisation in its
+table; `drop_attachments()`, after delete on the table of each kind, takes
+away what was attached to the row. `site_of(kind, id)` and
+`parameter_of(kind, id, …)` follow the core's foreign keys; a module
+answers for its own kinds (`building.site_of`, `solar.site_of`). Pages read
+the named tables.
 
-The `building` module, on the same registry:
+The `building` module, beside the core:
 
 ```mermaid
 erDiagram
@@ -114,11 +118,11 @@ erDiagram
   takes the shape below and defaults the time zone to the region's, else the
   country's first, from the pack; `locate_site()` places it again from a
   geocoder's answer; `place_of(site)` gives it back. Everything on a site
-  inherits its country: `country_of()`, `site_of()`. A site is geolocated,
+  inherits its country: `country_of(kind, id)`, `site_of(kind, id)`. A site is geolocated,
   not described.
 
 What is built on a site is the `building` module's (`building`,
-[0008](decisions/0008-building-module.md)), when it is installed:
+[0008](decisions/0008-3d-module.md)), when it is installed:
 
 - **building.buildings** — footprint, elevation, height, profile, status, the
   source it was described from and, in `metadata`, what that source said
@@ -289,13 +293,22 @@ optional extras).
 
 ## Attached to any object
 
+Every attachment names its object by its kind and its id (`object_kind`,
+`object_id`; a link names its subject the same way), and every gesture
+takes both: `set_attribute('site', id, …)`, `link_objects('device', id,
+'serves', 'building', id)`. The organisation it is stored in is the
+object's; an object that is not found, of a kind nobody published, or of
+another organisation is refused by name (`object_not_found`,
+`kind_unknown`, `object_in_other_organisation`). Deleting an object
+deletes what was attached to it.
+
 - **attributes** — one row per property and validity period, typed by
   `property_defs` (datatype, quantity hence unit, range, allowed values,
   kinds it applies to), with its source. A column holds only what every row
   has and every query filters on
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md)); the rest
-  is an attribute. `set_attribute()` closes the period holding and opens the
-  next; `attributes_of(object, at, scenario)` reads them.
+  is an attribute. `set_attribute(kind, id, …)` closes the period holding
+  and opens the next; `attributes_of(object, at, scenario)` reads them.
 - **external_ids** — unique per scheme in an organisation, checked against
   the scheme's pattern, with validity (`add_identifier`).
 - **links** — typed and dated (`serves`, `shades`, `owns`, `behind_meter`,
@@ -307,7 +320,8 @@ optional extras).
 - **documents** — permit, datasheet, report, photo, video, plan: a URI, a
   media type, a source, a capture date (`attach_document`). Heavy files stay
   in object storage; georeferenced 3D models are the `building` module's.
-- **tags** — marker tags from `tags`, checked on write.
+- **tags** — marker tags from `tags`, a column of the tables that carry
+  them, checked on write.
 
 ## Countries and defaults
 
@@ -320,14 +334,18 @@ optional extras).
 - **defaults** — the values a country or one of its regions decides, by
   property, each with its period, source and reference; never edited, a new
   value is a new row and a `valid_to` on the old one.
-- **`parameter_of(object, property, at, scenario)`** — the one resolution of
+- **`parameter_of(kind, object, property, at, scenario)`** — the one resolution of
   a parameter ([0021](decisions/0021-one-cascade-of-defaults.md)): the
-  object's own attribute, its parents' nearest first, its organisation's
+  object's own attribute, its parents' nearest first along the core's
+  foreign keys (`parents_of()`: a device's site, meter, participant and
+  project), its organisation's
   attribute, its region's default, its country's — `{value, level,
   source_code, reference, valid_from}`. There is no global level: nothing
   found is `parameter_missing` naming the property and the level reached; a
   country that decides no single value answers `parameter_not_decided` with
-  its reference. A run records what it read.
+  its reference. A run records what it read. A module that places an object
+  among its own resolves through them first: `building.parameter_of()` reads
+  a placed device's space, surface and building, then asks the core.
 
 All three are written by the packs (`nexgen-os pack build`) and read by
 everyone signed in.
@@ -387,7 +405,7 @@ into the same shapes, and the library writes the file.
 ## Security
 
 Every table of an organisation's data carries `organisation_id`, copied by
-trigger from the object an attachment points to. Members read; owners and
+trigger from the object an attachment names. Members read; owners and
 editors write. Objects named by a foreign key are checked to be in the same
 organisation and a compatible scenario (`parent_check`). Every gesture is a
 `security invoker` function: it acts with the rights of the person calling

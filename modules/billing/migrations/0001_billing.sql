@@ -114,7 +114,7 @@ create index invoices_run_idx on billing.invoices (run_id) where run_id is not n
 create index invoices_organisation_idx on billing.invoices (organisation_id);
 
 -- The checks of parent_check() on the participant, the counterparty and the
--- run: an invoice row is not an object of the registry and has no scenario,
+-- run: an invoice row is not a kind of object and has no scenario,
 -- so it copies the organisation of the participant and refuses a parent of
 -- another organisation or one that exists only in a scenario.
 create or replace function billing.invoices_check()

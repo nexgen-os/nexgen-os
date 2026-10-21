@@ -283,17 +283,18 @@ the physical description of a place leaves the core for the `building` module:
   link types `placed_in` and `occupies` and the properties `floor_area`,
   `energy_label`, `year_built`, `floors_above_ground`,
   `floors_below_ground`, `roof_area`, `material`, `u_value` and
-  `is_external` are published by the module. A module code may start with
-  a digit.
+  `is_external` are published by the module. The module is `building` in
+  its folder, its schema, its code and its documents (decision 0008,
+  rewritten): 3D is how a building is described, not the name of the
+  thing; it was `3d` and `three_d` in the first drafts of this release.
 - `devices` loses `building_id`, `space_id` and `surface_id`;
   `install_device()` takes a GeoJSON geometry (`p_geometry`) in place of the
   placement object and refuses `invalid_geometry`; `move_device()` leaves the
   core. The placement is `building.devices`, one row per placed device,
   written by `building.place_device()` and `building.move_device()` (decision
-  0026, rewritten). `declare_parents()` and `object_parent_tables` let a
-  module give an object of the core parents of its own: `site_of()`,
-  `ancestor_of()` and `parameter_of()` go through a placed device's surface,
-  space and building.
+  0026, rewritten). `building.building_of()` and `building.parameter_of()`
+  go through a placed device's surface, space and building, then ask the
+  core.
 - `solar.pv_arrays` loses `surface_id` and keeps its own azimuth and tilt;
   `building.place_array()` puts an array on a surface as a dated `placed_on`
   link and fills its orientation from the face when it has none. A PV
@@ -315,6 +316,55 @@ the physical description of a place leaves the core for the `building` module:
   `core/migrations/20261012200800_core_connectors.sql`; `weather.source_for()`
   reads it. Two words remain, a source and a connector (decision 0011,
   rewritten).
+
+There is no registry: the hierarchy is the foreign keys, and an attachment
+names its object's kind (decision 0044; 0001, 0006, 0023, 0026, 0029 and
+0042 rewritten):
+
+- `objects`, `object_kinds`, `object_parent_tables`, `register_object()`,
+  `register_organisation()`, `declare_object()`, `declare_parents()`,
+  `parents_of(uuid)`, `ancestor_of()` and `ancestors_of()` are gone. The
+  core tables keep their own columns and foreign keys, and nothing mirrors
+  their rows.
+- `kinds` (`kind`, `table_name`, `published_by`) is a vocabulary filled by
+  plain inserts: the core's kinds (`organisation`, `project`,
+  `participant`, `site`, `meter`, `device`, `series`, `run`) in the core
+  seed, `building`, `space`, `surface`, `pv_array`, `weather_point` and
+  `task` in the first migration of their module.
+- `attributes`, `external_ids`, `documents` and `series` carry
+  `object_kind`; `links` carry `subject_kind` and `object_kind`; `runs`
+  carry `subject_kind`; so do `tasks.tasks` (`subject_kind`),
+  `solar.horizons` and `consumption.activity_hours` (`object_kind`). Each
+  kind column references `kinds`.
+- The gestures take the kind before the id: `set_attribute(kind, id, …)`,
+  `add_identifier(kind, id, …)`, `link_objects(subject_kind, subject_id,
+  type, object_kind, object_id, …)`, `attach_document(kind, id, …)`,
+  `series_ensure(kind, id, …)`, `start_run(module, engine, kind, id, …)`,
+  `record_run(module, engine, kind, id, …)` (each element of its series
+  names `object_kind` with `object_id`), `split_object(kind, id, parts)`,
+  `merge_objects(kind, objects, into)`; `store()` reads `object_kind` in a
+  series identity. `object_organisation(kind, id)` and
+  `object_scenario(kind, id)` read an object in its kind's table and refuse
+  `kind_unknown` and `object_not_found`; an attachment that says another
+  organisation than its object's is refused as
+  `object_in_other_organisation`. `object_kind_mismatch` is gone: one
+  gesture names one kind.
+- `drop_attachments()`, after delete on the table of each kind, deletes
+  what was attached to the row; `nexgen-os doctor` names
+  `attachments_orphaned` by kind. `parent_check` reads the parent in the
+  table its foreign key names.
+- `site_of(kind, id)` and `country_of(kind, id)` follow the core's foreign
+  keys and hand a module's kind to `<schema>.site_of(kind, id)`
+  (`building.site_of()`, `solar.site_of()`); `parameter_of(kind, id, …)`
+  cascades through `parents_of(kind, id)` — a device's site, meter,
+  participant and project — then the organisation, the region and the
+  country. `building.building_of(kind, id)`; `solar.soiling_of()` reads an
+  array's own value, then its system's cascade.
+- `20261012200900_core_object_kinds_rls.sql` is
+  `20261012200900_core_rls.sql`.
+- `SeriesIdentity.object_kind` and `SeriesTarget.objectKind` in
+  `@nexgen-os/core`; the Python client's `site_of()`, `country_of()` and
+  `attach()` take the kind.
 
 ### Changed — schema 0.2.0: the place, the device and the series
 

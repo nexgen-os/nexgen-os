@@ -13,7 +13,7 @@ any or not, and a device table whose columns named them. The core walks
 organisation → project → participant → site → meter → device → series;
 where a device sits inside a building is a fact of the physical
 description, the territory of BIM and CityGML
-([0008](0008-building-module.md)). And the inside of a building is one tree of
+([0008](0008-3d-module.md)). And the inside of a building is one tree of
 spaces, each of a kind, each inside another, in IFC, CityGML, Brick and
 Home Assistant alike.
 
@@ -31,11 +31,11 @@ of the space is the placement's building, and all of them are on the
 device's site. `building.move_device()` keeps the place a device leaves as a
 dated `placed_in` link.
 
-**A placed device keeps its parents.** The module declares its `devices` table
-as giving a device parents (`declare_parents()`), read before the device's
-own columns: `site_of()`, `building.building_of()` and the cascade of
-`parameter_of()` go through its surface, its space, its building, then its
-site, and the core names no module.
+**A placed device is resolved through its place by the module.** The
+core's `site_of()` and `parameter_of()` follow the device's own foreign
+keys; `building.building_of()` and `building.parameter_of()` go through its
+surface, its space and its building first, then ask the core
+([0044](0044-there-is-no-registry.md)), and the core names no module.
 
 **A space is one notion with a kind and a parent.** A floor, a room, a zone
 and a unit (a flat, an office lot) are spaces of the module: each belongs
@@ -64,12 +64,14 @@ project occupies a building, a floor or a unit through an `occupies` link.
 
 The 0.2 core's `devices.building_id`, `space_id` and `surface_id` and its
 `move_device()`; before them, floors and spaces as two tables of the
-`architecture` module, and a meter column on the device.
+`architecture` module, and a meter column on the device. Until 0.3 a
+placement gave the device parents in the core's registry
+(`declare_parents()`), which [0044](0044-there-is-no-registry.md) removed.
 
 ## See also
 
 - [0006](0006-named-objects.md) — the objects of the core.
-- [0008](0008-building-module.md) — the module that describes what is built.
+- [0008](0008-3d-module.md) — the module that describes what is built.
 - [0019](0019-a-column-only-for-what-every-row-has.md) — why the places are
   columns of the placement.
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) — what a

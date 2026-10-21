@@ -1,7 +1,7 @@
 # `building` — the shape of what is built
 
 Status: shipped, version 0.1.0, needs core 0.3.0 — decisions
-[0008](../../docs/decisions/0008-building-module.md) and
+[0008](../../docs/decisions/0008-3d-module.md) and
 [0026](../../docs/decisions/0026-a-device-is-placed-on-a-surface-or-in-a-space.md).
 Module code `building`, schema `building`: the thing it holds is the
 building, and 3D is how a building is described.
@@ -20,12 +20,13 @@ with `npx nexgen-os init --modules building`; examples 02, 05, 06 and 07 need it
 | `building.surfaces` | roof faces, facades, ground areas and carports, on a building or straight on a site, with azimuth (degrees clockwise from true north) and tilt (CityGML `RoofSurface`, `WallSurface`) |
 | `building.devices` | where on its site a device is: the building, the space, the surface, one row per placed device with the device's id |
 
-Buildings, spaces and surfaces are kinds of object declared with
-`declare_object()`: attributes, identifiers, links, documents and series
-attach to them, `site_of()` and `country_of()` find their site. A placement
-gives a device its place as first parents (`declare_parents()`), so that
-`site_of()`, `building.building_of()` and the cascade of `parameter_of()`
-go through its surface, its space and its building.
+Buildings, spaces and surfaces are kinds of object the module publishes in
+`kinds`: attributes, identifiers, links, documents and series name them by
+kind and id (`('surface', id)`) and go with them, and `site_of()` and
+`country_of()` of the core ask `building.site_of()` where they are. A
+device's placement is resolved by the module: `building.building_of(kind,
+id)` and `building.parameter_of(kind, id, …)` go through its surface, its
+space and its building, then ask the core.
 
 It publishes, with `published_by = 'building'`:
 
@@ -50,7 +51,8 @@ It publishes, with `published_by = 'building'`:
 - `building.place_array(array, surface, on)` — a `placed_on` link; the array
   keeps its own azimuth and tilt, filled from the face only when it has
   none; refuses `module_required: solar` without the `solar` module
-- `building.building_volume(building)`, `building.building_of(object)`
+- `building.building_volume(building)`, `building.site_of(kind, id)`,
+  `building.building_of(kind, id)`, `building.parameter_of(kind, id, property, at, scenario)`
 
 ## Importers
 

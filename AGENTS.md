@@ -62,10 +62,12 @@ Four things only you do here:
 - **read**: the tables of the core and the modules, through SQL or the REST
   API Supabase gives the schema (`nexgen`, and one schema per module), or
   from Python through the client in `packages/python`;
-  `attributes_of()`, `resample()`, `site_of()`, `country_of()` are the one
-  way to read attributes, series and places;
+  `attributes_of()`, `resample()`, `site_of(kind, id)`, `country_of(kind, id)`
+  are the one way to read attributes, series and places;
 - **attach**: an attribute with its period, a document, an identifier, a
-  link, a tag — always with its source, never a value you made up;
+  link, a tag — always naming its object by kind and id (`'site'`,
+  `'device'`, `'surface'`…, the rows of `kinds`), always with its source,
+  never a value you made up;
 - **import**: a file read by a format library (`packages/formats/`) and
   written by its importer (`@nexgen-os/core`), a place through a geocoder,
   weather or readings through a connector (`packages/connectors/`), each of

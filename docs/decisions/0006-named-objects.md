@@ -46,7 +46,7 @@ page walks them:
   described. What it physically is — its buildings, their floors, rooms
   and units, their roof faces and facades, where a device sits among them —
   is the description of a building, the `building` module's
-  ([0008](0008-building-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
+  ([0008](0008-3d-module.md), [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md));
 - **the meter**: the connection point of a site to a network, under the
   identifier its operator knows (an EAN, a PRM, a GSRN), carried by a
   participant of the site, the frontier between the grid and the place;
@@ -67,12 +67,12 @@ external data ([0011](0011-external-data.md)).
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
 `from sites`, never `from entities where class = 'site'`.
 
-**Everything else is attached, through one registry.** What every object
-shares (an id, an organisation, a scenario, a kind) is kept once in
-`objects`, maintained by the tables that name it. Attributes with their
-period and source, external identifiers, dated links, documents and tags
-attach to any object through it, whatever table or module the object lives
-in.
+**Everything else is attached, by kind and id.** Attributes with their
+period and source, external identifiers, dated links, documents, series
+and runs attach to any object, whatever table or module the object lives
+in, by naming its kind and its id; `kinds` says which table holds each
+kind. The hierarchy between objects is their foreign keys, and nothing
+mirrors it ([0044](0044-there-is-no-registry.md)).
 
 **Genericity lives in three places only**: the vocabularies (a new property,
 a new device type, a new kind of link is a row), the modules (a new kind of
@@ -87,8 +87,8 @@ modules beside `solar` and `building`; the objects themselves — the meter, the
 project, the participant — are the core's, and a module starts from them
 ([0042](0042-a-module-starts-from-an-object-of-the-core.md)). The physical
 description of a place is a trade too, the territory of BIM and CityGML:
-the `building` module holds the buildings, spaces and surfaces and declares them
-as kinds of object of its own.
+the `building` module holds the buildings, spaces and surfaces and publishes
+them as kinds of object of its own.
 The law is not held in the open repository.
 
 ## What it forbids
@@ -98,7 +98,8 @@ The law is not held in the open repository.
   vocabulary row.
 - A trade's own objects in the core because one installation needs them.
 - An attachment table per object (`building_documents`,
-  `device_identifiers`): attachments go through the registry.
+  `device_identifiers`): an attachment names the kind and the id of its
+  object.
 
 ## What it replaced
 
@@ -109,7 +110,9 @@ the place, the device, the series — and held the project, the participant
 and the connection point in the `community` and `grid` modules (21/10/2026);
 the same day, the buildings, spaces and surfaces of the 0.2 core left it
 for the `building` module, and the participant became an actor at any level of a
-building, carrying its meters.
+building, carrying its meters. Until 0.3 the attachments went through a
+registry of every object, `objects`, which 0.3 removed
+([0044](0044-there-is-no-registry.md)).
 
 ## See also
 

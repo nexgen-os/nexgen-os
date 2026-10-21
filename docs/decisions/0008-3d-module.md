@@ -24,8 +24,8 @@ word names it in its folder, its schema, its code and its documents: the
 thing it holds is the building, and 3D is one way a building is described.
 Its schema, `building`, holds the skeleton of what is built: `buildings`, `spaces` (one
 tree of floors, rooms, zones and units) and `surfaces` (roof faces,
-facades, ground areas, carports), each a kind of object declared with
-`declare_object()`, and `devices`, the building side of a device of the core: where
+facades, ground areas, carports), each a kind of object the module
+publishes in `kinds`, and `devices`, the building side of a device of the core: where
 on its site it is
 ([0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md)). The
 module publishes the link types of that description (`placed_in`,

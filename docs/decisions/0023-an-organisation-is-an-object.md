@@ -6,7 +6,7 @@
 
 Every row of the core carries the organisation that owns it, and row level
 security decides by organisation. The organisation itself was the one thing
-that could not be described: it was not in the registry of objects, so it
+that could not be described: no attachment could name it, so it
 could hold no attribute, no identifier, no link and no document. Its
 defaults (a loss it applies to every study, a reference price it negotiated)
 had nowhere to go but a column or a settings table of their own, and its
@@ -14,10 +14,10 @@ registration numbers and its contracts lived outside the model.
 
 ## Decision
 
-**An organisation is an object, like a site or a device.** It is in the
-registry of objects, and everything that attaches to an object attaches to
-it: attributes with their period and source, external identifiers, links,
-documents, tags.
+**An organisation is an object, like a site or a device.** It is a kind,
+`organisation`, and everything that attaches to an object attaches to it
+as `('organisation', id)`: attributes with their period and source,
+external identifiers, links, documents.
 
 **An organisation's defaults are its attributes.** They take their place in
 the cascade between the objects it owns and the region of their place
@@ -46,14 +46,16 @@ places needs.
 
 ## What it replaced
 
-Organisations outside the registry of objects, with defaults planned as
-rows of a separate table by organisation.
+Organisations no attachment could name, with defaults planned as rows of a
+separate table by organisation; until 0.3, an organisation entered the
+registry of objects that [0044](0044-there-is-no-registry.md) removed.
 
 ## See also
 
 - Inherits Ekwo OS 0041 (*A company has a profile*) and 0043 (*A company
   leaves with its books*): an organisation leaves with its places, devices,
   series and its own attributes.
-- [0006](0006-named-objects.md) — the registry of objects.
+- [0006](0006-named-objects.md) — the objects, and what is attached to them.
+- [0044](0044-there-is-no-registry.md) — an attachment names its object's kind.
 - [0037](0037-the-schema-grants-its-own-rights.md) — row level security by
   organisation.

@@ -15,8 +15,11 @@ core/seed/         the vocabularies, and the seeds compiled from the packs (pack
 The core names seven objects, in the order a page walks them — the
 organisation, the project it works on, the participants taking part in it,
 their sites, the meters that connect those sites to a network, the
-devices installed on them, the series they produce — and attaches
-everything else to any of them. A site is geolocated, not described: its
+devices installed on them, the series they produce — and everything else
+is attached to any of them by kind and id: an attribute, an identifier, a
+link, a document, a series or a run names its object as `('site', id)`,
+`('device', id)`, and the hierarchy is the foreign keys
+([0044](../docs/decisions/0044-there-is-no-registry.md)). A site is geolocated, not described: its
 buildings, floors, rooms and roof faces, and where a device sits among
 them, are the `building` module's ([`modules/building`](../modules/building/README.md)). Each
 named object is a table with the columns every row has; what a trade knows
@@ -41,9 +44,10 @@ and documents, and stay close to the platform that proved it
 | `sites` | the place, in one standard shape: address, WGS 84 point or parcel, precision, source, time zone, profile | schema.org `PostalAddress` |
 | `devices`, `device_directory` | what is installed, instruments included, on its site and behind a meter of it; the products it is an instance of | Brick equipment, Home Assistant devices |
 | `series`, `series_values`, `forecast_values`, `series_rollups`, `series_latest` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command; its hourly and daily aggregates and its latest value, derived | OGC SensorThings datastream, Brick and Haystack points |
-| `attributes`, `external_ids`, `links`, `documents` | what attaches to any object: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
-| `scenarios`, `runs`, `modules`, `connectors` | design variants, immutable computations and the series they own, the module registry and the kinds of object modules declare (`object_kinds`, `object_parent_tables`), an organisation's use of a source through a connector | — |
-| `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country, with no global fallback | ISO 3166, ISO 4217 |
+| `attributes`, `external_ids`, `links`, `documents` | what attaches to any object, named by its kind and its id: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
+| `kinds` | the kinds of object an attachment may name — the core's and those modules publish — with the table holding each | — |
+| `scenarios`, `runs`, `modules`, `connectors` | design variants, immutable computations and the series they own, the modules installed, an organisation's use of a source through a connector | — |
+| `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys, with no global fallback | ISO 3166, ISO 4217 |
 | `device_types`, `profiles`, `link_types`, `quantities`, `units`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
 
 Every act that writes several rows or carries a rule is one function named

@@ -132,7 +132,7 @@ used to carry are kept here, each under the record that holds its rule.
   storage (sorted, zstd), read back through the host's reader (an Iceberg
   wrapper, `pg_parquet`, `pg_duckdb`, DuckDB in a worker); TimescaleDB's
   columnstore as an accelerator when a self-hosted installation has it.
-- **The `building` module** ([0008](decisions/0008-building-module.md)): schema
+- **The `building` module** ([0008](decisions/0008-3d-module.md)): schema
   `building` with `models` (one georeferenced model of a building, a site or
   a device: format, file address and checksum, CRS, origin on the globe and
   in the native CRS, rotation, scale, up axis, units, vertical datum,
@@ -190,8 +190,9 @@ decisions of the audit of 19 October 2026.
   devices and series, one notion of space, devices placed by columns,
   splits and merges as links, columns that repeated a property removed,
   the bridge columns to the `billing` module, a run's own series, the
-  defaults and their one resolution, organisations in the registry of
-  objects. Records 0006, 0018, 0019, 0021, 0022, 0023, 0026, 0028.
+  defaults and their one resolution, organisations as objects, attachments
+  by kind and id with no registry. Records 0006, 0018, 0019, 0021, 0022,
+  0023, 0026, 0028, 0044.
 - [ ] **The packs** (27–35): five sections in JSON against a published
   schema, compiled and checked by the command line, versioned and
   upserted, `fr` and `be` redone, task templates generic. Records 0017,

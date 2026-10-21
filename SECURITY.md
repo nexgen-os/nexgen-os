@@ -20,8 +20,8 @@ will name you unless you ask otherwise.
 - row level security: any path by which a member of one organisation reads
   or writes another's rows, or by which a shared vocabulary row is written
   by an ordinary member;
-- the functions that run as their definer (`resample`, the registry
-  triggers): any way to make them act beyond the caller's rights;
+- the functions that run as their definer (`resample`, `store` and the
+  series reads): any way to make them act beyond the caller's rights;
 - the connectors and format readers: any input that makes them write where
   they should not, or leak a secret reference.
 

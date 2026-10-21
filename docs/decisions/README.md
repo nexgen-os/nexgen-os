@@ -26,6 +26,7 @@ describes; its record is written once the fix has shipped.
 ## Objects
 
 - [0006](0006-named-objects.md) · The core names a few objects, and everything else is attached to them · accepted
+- [0044](0044-there-is-no-registry.md) · There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind · accepted
 - [0023](0023-an-organisation-is-an-object.md) · An organisation is an object · accepted
 - [0019](0019-a-column-only-for-what-every-row-has.md) · A column only for what every row has and every query filters on · accepted
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) · The instrument is a device, the point is the series · accepted
@@ -39,7 +40,7 @@ describes; its record is written once the fix has shipped.
 - [0025](0025-a-place-has-one-shape.md) · A place has one shape · accepted
 - [0009](0009-addresses-and-geocoding.md) · What applies to a place follows its region, its municipality or its area · accepted
 - [0026](0026-a-device-is-placed-on-a-surface-or-in-a-space.md) · A device is placed by the `building` module, on a surface or in a space, and a space is one notion with a kind · accepted
-- [0008](0008-building-module.md) · The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
+- [0008](0008-3d-module.md) · The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
 
 ## Series
 

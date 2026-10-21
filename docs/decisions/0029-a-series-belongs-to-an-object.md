@@ -14,8 +14,8 @@ winter that came from nothing else than the clock.
 ## Decision
 
 **A series is one quantity over time, for one object**: a site, a building,
-a surface, a space, a device, or an object a module declares (a weather
-point, a bidding zone). It says its quantity, its kind — measured,
+a surface, a space, a device, or an object of a kind a module publishes (a
+weather point, a bidding zone), named by its kind and its id. It says its quantity, its kind — measured,
 simulated, forecast or asked — its source, its step, and, when it is the
 output of a run, the run that wrote it.
 
@@ -31,7 +31,8 @@ was known at a given time.
 
 **An external series needs an object to hang on.** When no site owns it — a
 weather grid point shared by many sites, a market zone — the module that
-knows it declares the object, and sites are linked to it.
+knows it publishes its kind and holds the object, and sites are linked to
+it.
 
 ## What it forbids
 
