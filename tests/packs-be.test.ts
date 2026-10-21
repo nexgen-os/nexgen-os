@@ -109,8 +109,8 @@ describe('the be pack', () => {
     await db.query(`select add_identifier($1, 'nis', '44021')`, [site]);
     await expect(db.query(`select add_identifier($1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
     expect((await one<{ place: { identifiers: unknown[] } }>(db, 'select place_of($1) place', [site])).place.identifiers).toEqual([{ scheme: 'nis', value: '44021' }]);
-    expect(await insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
-    await expect(insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
+    expect(await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
     const nis = await db.query<{ ok: boolean }>(
       `select v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );
@@ -149,7 +149,7 @@ describe('the be pack', () => {
 
   it('plans a Belgian roof installation from the generic templates of the tasks module', async () => {
     const org = await organisation(db, 'Een coöperatie', USER_A);
-    const roof = await insert(db, 'community.projects', { organisation_id: org, name: 'Dak van de loods', country: 'BE', kind: 'pv_roof', status: 'creation' });
+    const roof = await insert(db, 'projects', { organisation_id: org, name: 'Dak van de loods', country: 'BE', kind: 'pv_roof', status: 'creation' });
     const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
     expect(plan.p).toMatchObject({ created: 9, skipped: [] });
     const own = await one<{ n: number }>(db, `select count(*)::int n from tasks.templates where country is not null or published_by like 'pack:%'`);

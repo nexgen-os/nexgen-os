@@ -63,8 +63,8 @@ describe('the fr pack', () => {
     expect(schemes.rows.map((r) => r.code)).toEqual(['ban_address', 'insee', 'parcelle', 'prm', 'rnb_id', 'siren', 'siret']);
     const org = await organisation(db, 'Une régie', USER_A);
     const site = await insert(db, 'sites', { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
-    expect(await insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
-    await expect(insert(db, 'grid.meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
+    expect(await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
     const corsica = await one<{ ok: boolean }>(db, `select '2A004' ~ pattern ok from id_schemes where code = 'insee'`);
     expect(corsica.ok).toBe(true);
   });
@@ -115,7 +115,7 @@ describe('the fr pack', () => {
 
   it('plans a French roof installation from the generic templates of the tasks module', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
-    const roof = await insert(db, 'community.projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
+    const roof = await insert(db, 'projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
     const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
     expect(plan.p).toMatchObject({ created: 9, skipped: [] });
   });

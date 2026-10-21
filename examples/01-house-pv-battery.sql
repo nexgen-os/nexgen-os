@@ -1,4 +1,4 @@
--- Example 1 — a house with a PV system, in Seville. Needs the `grid` module.
+-- Example 1 — a house with a PV system, in Seville. Needs the core only.
 --
 -- A family's site, a house with two roof faces, a connection point, a PV
 -- system on the south face behind the meter, an inverter and a smart meter
@@ -23,7 +23,7 @@ insert into surfaces (id, organisation_id, building_id, name, kind, azimuth_deg,
   ('00000000-0000-4000-8000-000100000031', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'South roof face', 'roof', 180, 30),
   ('00000000-0000-4000-8000-000100000032', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000020', 'North roof face', 'roof', 0, 30);
 
-insert into grid.meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000100000040', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', 'Supply point', '843000000000000123', 'gs1_gsrn', 'electricity', 'both');
 
 insert into devices (id, organisation_id, site_id, building_id, surface_id, name, device_type, manufacturer, model, rated_power_kw, unit_count, installation_date, tags) values
@@ -38,10 +38,10 @@ insert into devices (id, organisation_id, site_id, building_id, surface_id, name
 -- three devices are behind it.
 insert into links (subject_id, type_code, object_id) values
   ('00000000-0000-4000-8000-000100000051', 'feeds', '00000000-0000-4000-8000-000100000052'),
-  ('00000000-0000-4000-8000-000100000052', 'feeds', '00000000-0000-4000-8000-000100000040'),
-  ('00000000-0000-4000-8000-000100000051', 'behind_meter', '00000000-0000-4000-8000-000100000040'),
-  ('00000000-0000-4000-8000-000100000052', 'behind_meter', '00000000-0000-4000-8000-000100000040'),
-  ('00000000-0000-4000-8000-000100000053', 'behind_meter', '00000000-0000-4000-8000-000100000040');
+  ('00000000-0000-4000-8000-000100000052', 'feeds', '00000000-0000-4000-8000-000100000040');
+select connect_device(d, '00000000-0000-4000-8000-000100000040')
+  from unnest(array['00000000-0000-4000-8000-000100000051', '00000000-0000-4000-8000-000100000052',
+                    '00000000-0000-4000-8000-000100000053']::uuid[]) d;
 
 -- The instruments are devices, the points they read are series: what is
 -- observed (the PV system, the connection point), by which device, and
@@ -92,8 +92,7 @@ insert into scenarios (id, organisation_id, name, description) values
 insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
   ('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000020',
    'Battery', 'battery', 'BYD', 'HVS 10.2', 5, 'planned', '00000000-0000-4000-8000-000100000080');
-select link_objects('00000000-0000-4000-8000-000100000054', 'behind_meter', '00000000-0000-4000-8000-000100000040', null,
-                    '00000000-0000-4000-8000-000100000080');
+select connect_device('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000040');
 
 insert into attributes (object_id, property_code, value, scenario_id, source) values
   ('00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', '00000000-0000-4000-8000-000100000080', 'datasheet');

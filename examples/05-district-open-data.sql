@@ -1,5 +1,5 @@
--- Example 5 — a district built from open data, in Dakar. Needs the
--- `community` module.
+-- Example 5 — a district built from open data, in Dakar. Needs the core
+-- only.
 --
 -- A city's district plan with its perimeter, six plots and their buildings
 -- whose footprints arrive in UTM zone 28N from OpenStreetMap, heights from
@@ -10,7 +10,7 @@
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000500000001', 'Ville de Dakar — urbanisme');
 
-insert into community.projects (id, organisation_id, name, kind, country, status, geometry) values
+insert into projects (id, organisation_id, name, kind, country, status, geometry) values
   ('00000000-0000-4000-8000-000500000020', '00000000-0000-4000-8000-000500000001', 'Plateau — solar rooftops plan', 'district_plan', 'SN', 'simulation',
    ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326));
 
@@ -53,7 +53,7 @@ insert into links (subject_id, type_code, object_id) values
   ('00000000-0000-4000-8000-000500000043', 'shades', '00000000-0000-4000-8000-000500000052');
 
 -- Every plot takes part in the plan.
-insert into community.participants (organisation_id, project_id, site_id, name, role, status)
+insert into participants (organisation_id, project_id, site_id, name, role, status)
 select '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000020', ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, 'Plot ' || i, 'prosumer', 'simulation'
   from generate_series(1, 6) i;
 
@@ -68,7 +68,7 @@ select split_object('00000000-0000-4000-8000-000500000036',
 -- Queries a page would run
 -- Buildings inside the perimeter, with their roof area:
 --   select b.name, b.height_m, area_m2(b.footprint) roof_m2
---     from buildings b, community.projects p
+--     from buildings b, projects p
 --    where p.id = '00000000-0000-4000-8000-000500000020' and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry)) order by b.name;
 -- Which roofs are shaded:
 --   select s.name, b.name shaded_by from links l join surfaces s on s.id = l.object_id join buildings b on b.id = l.subject_id where l.type_code = 'shades';

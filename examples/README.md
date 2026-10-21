@@ -4,8 +4,9 @@ Each file is a complete, self-contained dataset: an organisation, its places
 and the spaces inside its buildings, its devices and the series they read,
 attachments, and the queries a page would run on it. They load on a fresh
 database after the core migrations, the core vocabularies and the modules
-they name in their first line (`grid` for connection points, `community`
-for projects and participants, `accounting` for the accounting side), and the
+they name in their first line (`grid` for the operator of a connection
+point, `community` for energy sharing, `accounting` for the accounting side),
+and the
 test suite loads every one of them (`tests/examples.test.ts`).
 
 Identifiers are fixed (`00000000-0000-4000-8000-000N…`, N = the example),
@@ -31,7 +32,7 @@ Run one by hand with PGlite from the repo root:
 node --input-type=module -e "
 import { freshDatabase } from './tests/helpers/db.ts';
 import { readFile } from 'node:fs/promises';
-const db = await freshDatabase(['grid']);
+const db = await freshDatabase();
 await db.exec(await readFile('examples/01-house-pv-battery.sql', 'utf8'));
 console.log((await db.query('select kind, count(*)::int n from objects group by kind order by kind')).rows);
 "

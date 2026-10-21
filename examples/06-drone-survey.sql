@@ -1,4 +1,4 @@
--- Example 6 — a roof surveyed by drone, in Bologna. Needs the `community` module.
+-- Example 6 — a roof surveyed by drone, in Bologna. Needs the core only.
 --
 -- A surveyor's organisation, a client's site with a factory hall, a drone
 -- flight whose outputs are documents (orthophoto, photos, video), the roof
@@ -57,9 +57,9 @@ insert into attributes (object_id, property_code, value, source_code, source) va
   ('00000000-0000-4000-8000-000600000033', 'is_external', 'true', null, 'survey');
 
 -- The client answers for the site in the surveyor's solar study.
-insert into community.projects (id, organisation_id, name, kind, country, status) values
+insert into projects (id, organisation_id, name, kind, country, status) values
   ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Felsinea — rooftop solar study', 'study', 'IT', 'simulation');
-insert into community.participants (organisation_id, project_id, site_id, name, role, contact_id, status) values
+insert into participants (organisation_id, project_id, site_id, name, role, contact_id, status) values
   ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000010', 'Meccanica Felsinea', 'prosumer', '00000000-0000-4000-8000-000600000005', 'simulation');
 
 -- Queries a page would run

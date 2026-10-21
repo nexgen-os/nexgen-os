@@ -24,7 +24,7 @@ beforeAll(async () => {
     db,
     `select ST_AsGeoJSON(ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326)) g`,
   );
-  district = await insert(db, 'community.projects', {
+  district = await insert(db, 'projects', {
     organisation_id: org, name: 'Plateau', kind: 'district_plan', country: 'SN', geometry: JSON.parse(outline.g),
   });
   for (const [i, x] of [236100, 236300, 236500].entries()) {
@@ -33,7 +33,7 @@ beforeAll(async () => {
       organisation_id: org, site_id: site, name: `Building ${i + 1}`, footprint: utmFootprint(x, 1630400), height_m: 9 + 3 * i,
     });
     await db.query(`insert into external_ids (object_id, scheme, value) values ($1, 'osm', $2)`, [b, `way/${1000 + i}`]);
-    await insert(db, 'community.participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
+    await insert(db, 'participants', { organisation_id: org, project_id: district, site_id: site, name: `Plot ${i + 1}` });
   }
   // One building outside the district, to prove the spatial query.
   const outside = await insert(db, 'sites', { organisation_id: org, name: 'Far plot', country: 'SN' });
@@ -57,7 +57,7 @@ describe('a district from open data', () => {
 
   it('finds the buildings inside the district perimeter', async () => {
     const r = await db.query<{ name: string }>(
-      `select b.name from buildings b, community.projects p
+      `select b.name from buildings b, projects p
         where p.id = $1 and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry))
         order by b.name`,
       [district],
@@ -116,7 +116,7 @@ describe('a district from open data', () => {
   });
 
   it('counts the district by its participants', async () => {
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from community.participants where project_id = $1', [district]);
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from participants where project_id = $1', [district]);
     expect(r.n).toBe(3);
   });
 });

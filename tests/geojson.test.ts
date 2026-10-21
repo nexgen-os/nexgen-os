@@ -78,7 +78,7 @@ describe('the GeoJSON export of a site', () => {
       'site', 'building', 'building', 'building', 'surface', 'surface', 'surface', 'surface', 'surface',
       'device', 'device', 'device', 'device', 'device', 'device',
     ]);
-    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.2.0', scenario_id: null, at: null, open: false, withheld: 0 });
+    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.3.0', scenario_id: null, at: null, open: false, withheld: 0 });
   });
 
   it('writes WGS 84 positions with their height, outer rings counter-clockwise, and the box around them', () => {
@@ -203,11 +203,11 @@ describe('a scenario, a moment, a project', () => {
   });
 
   it('exports a project: its perimeter first, then every site taking part', async () => {
-    const project = await insert(db, 'community.projects', {
+    const project = await insert(db, 'projects', {
       organisation_id: ORG, name: 'Mont Noir solar plan', kind: 'study', country: 'FR', start_date: '2026-03-01',
       geometry: { type: 'Polygon', coordinates: [[[2.72, 50.77], [2.73, 50.77], [2.73, 50.775], [2.72, 50.775], [2.72, 50.77]]] },
     });
-    await insert(db, 'community.participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
+    await insert(db, 'participants', { organisation_id: ORG, project_id: project, site_id: SITE, name: 'The farm', role: 'prosumer' });
     const fc = await exportGeoJson(db, { projectId: project }, { open: true });
     expect(fc.features[0]).toMatchObject({ id: project, properties: { kind: 'project', project_kind: 'study', country: 'FR', start_date: '2026-03-01' } });
     expect(fc.features[1].id).toBe(SITE);

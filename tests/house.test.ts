@@ -16,7 +16,7 @@ let meter: string;
 let pv: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['grid']);
+  db = await freshDatabase();
   org = await organisation(db, 'A family');
   site = await insert(db, 'sites', { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'buildings', {
@@ -26,14 +26,14 @@ beforeAll(async () => {
   roof = await insert(db, 'surfaces', {
     organisation_id: org, building_id: house, name: 'South roof face', kind: 'roof', azimuth_deg: 180, tilt_deg: 30,
   });
-  meter = await insert(db, 'grid.meters', {
+  meter = await insert(db, 'meters', {
     organisation_id: org, site_id: site, identifier: '871000000000000001', scheme: 'gs1_gsrn',
   });
   pv = await insert(db, 'devices', {
     organisation_id: org, site_id: site, building_id: house, surface_id: roof,
     name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
   });
-  await db.query(`select link_objects($1, 'behind_meter', $2)`, [pv, meter]);
+  await db.query(`select connect_device($1, $2)`, [pv, meter]);
 });
 
 afterAll(async () => {

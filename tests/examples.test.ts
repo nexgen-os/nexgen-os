@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { freshDatabase, one, repoRoot } from './helpers/db.js';
 
 const EXPECTED: Record<string, { modules: string[]; kinds: Record<string, number>; series: number; runs: number }> = {
-  '01-house-pv-battery.sql':   { modules: ['grid'], kinds: { organisation: 1, site: 1, building: 1, surface: 2, meter: 1, device: 4 }, series: 3, runs: 1 },
+  '01-house-pv-battery.sql':   { modules: [], kinds: { organisation: 1, site: 1, building: 1, surface: 2, meter: 1, device: 4 }, series: 3, runs: 1 },
   '02-school-architecture.sql': { modules: [], kinds: { organisation: 1, site: 1, building: 1, space: 7, device: 5 }, series: 13, runs: 0 },
   '03-energy-community.sql':   { modules: ['accounting', 'community', 'grid'], kinds: { organisation: 1, project: 1, site: 4, meter: 4, participant: 5, device: 1 }, series: 4, runs: 1 },
-  '04-farm-solar.sql':         { modules: ['grid'], kinds: { organisation: 1, site: 1, building: 2, surface: 4, meter: 2, device: 5 }, series: 0, runs: 3 },
-  '05-district-open-data.sql': { modules: ['community'], kinds: { organisation: 1, project: 1, site: 8, building: 6, surface: 6, participant: 6 }, series: 0, runs: 0 },
-  '06-drone-survey.sql':       { modules: ['community'], kinds: { organisation: 1, project: 1, site: 1, building: 1, surface: 3, participant: 1 }, series: 0, runs: 0 },
-  '07-office-heating.sql':     { modules: ['grid'], kinds: { organisation: 1, site: 1, building: 1, surface: 5, meter: 2, device: 4 }, series: 3, runs: 2 },
+  '04-farm-solar.sql':         { modules: [], kinds: { organisation: 1, site: 1, building: 2, surface: 4, meter: 2, device: 5 }, series: 0, runs: 3 },
+  '05-district-open-data.sql': { modules: [], kinds: { organisation: 1, project: 1, site: 8, building: 6, surface: 6, participant: 6 }, series: 0, runs: 0 },
+  '06-drone-survey.sql':       { modules: [], kinds: { organisation: 1, project: 1, site: 1, building: 1, surface: 3, participant: 1 }, series: 0, runs: 0 },
+  '07-office-heating.sql':     { modules: [], kinds: { organisation: 1, site: 1, building: 1, surface: 5, meter: 2, device: 4 }, series: 3, runs: 2 },
 };
 
 const dir = join(repoRoot, 'examples');

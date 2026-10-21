@@ -1,5 +1,5 @@
 -- Example 7 — an office building and its heating, in Munich. Needs the
--- `grid` module.
+-- core only.
 --
 -- A property company's site, an office block with four facades and their
 -- U-values, a gas boiler and a heat pump in service, a gas meter and an
@@ -38,7 +38,7 @@ insert into attributes (object_id, property_code, value, source) values
   ('00000000-0000-4000-8000-000700000020', 'floor_area', '5400', 'as-built drawings'),
   ('00000000-0000-4000-8000-000700000020', 'energy_label', '"F"', 'energy certificate 2022');
 
-insert into grid.meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
   ('00000000-0000-4000-8000-000700000042', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Gas', '400000000000000312', 'gs1_gsrn', 'gas', 'offtake');
 
@@ -53,10 +53,10 @@ insert into devices (id, organisation_id, site_id, building_id, name, device_typ
 insert into links (subject_id, type_code, object_id) values
   ('00000000-0000-4000-8000-000700000051', 'serves', '00000000-0000-4000-8000-000700000020'),
   ('00000000-0000-4000-8000-000700000052', 'serves', '00000000-0000-4000-8000-000700000020'),
-  ('00000000-0000-4000-8000-000700000053', 'serves', '00000000-0000-4000-8000-000700000020'),
-  ('00000000-0000-4000-8000-000700000051', 'behind_meter', '00000000-0000-4000-8000-000700000042'),
-  ('00000000-0000-4000-8000-000700000052', 'behind_meter', '00000000-0000-4000-8000-000700000041'),
-  ('00000000-0000-4000-8000-000700000053', 'behind_meter', '00000000-0000-4000-8000-000700000041');
+  ('00000000-0000-4000-8000-000700000053', 'serves', '00000000-0000-4000-8000-000700000020');
+select connect_device('00000000-0000-4000-8000-000700000051', '00000000-0000-4000-8000-000700000042');
+select connect_device(d, '00000000-0000-4000-8000-000700000041')
+  from unnest(array['00000000-0000-4000-8000-000700000052', '00000000-0000-4000-8000-000700000053']::uuid[]) d;
 
 -- The points the building management system reads and writes, one series
 -- each: a winter week of hourly gas consumption at the gas meter, in m³;
@@ -90,8 +90,7 @@ select id, 'u_value', '0.24', '00000000-0000-4000-8000-000700000080', 'insulatio
 insert into devices (id, organisation_id, site_id, building_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
   ('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000020',
    'Heat pump 2', 'heat_pump', 'Viessmann', 'Vitocal 300-A Pro', 160, 'planned', '00000000-0000-4000-8000-000700000080');
-insert into links (subject_id, type_code, object_id, scenario_id) values
-  ('00000000-0000-4000-8000-000700000054', 'behind_meter', '00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000080');
+select connect_device('00000000-0000-4000-8000-000700000054', '00000000-0000-4000-8000-000700000041');
 
 insert into modules (code, name, version, schema_name, requires_core_min) values
   ('thermal', 'Thermal', '0.1.0', 'thermal', '0.1.0')

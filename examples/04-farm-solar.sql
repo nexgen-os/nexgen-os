@@ -1,5 +1,5 @@
 -- Example 4 — a farm with PV on the roof, on the ground and over the car park, in the Nord.
--- Needs the `grid` module.
+-- Needs the core only.
 --
 -- A farmer's site with a barn and a stable, a field and a car park, PV on
 -- the barn roof, a ground array on the field and a carport on the car park,
@@ -40,7 +40,7 @@ insert into attributes (object_id, property_code, value, source) values
 update surfaces set geometry = ST_GeomFromText('POLYGON((2.7232 50.7706, 2.7248 50.7706, 2.7248 50.7716, 2.7232 50.7716, 2.7232 50.7706))', 4326)
  where id = '00000000-0000-4000-8000-000400000033';
 
-insert into grid.meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
+insert into meters (id, organisation_id, site_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000400000041', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Farm supply', '301000000000000987', 'gs1_gsrn', 'electricity', 'both'),
   ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field injection point', '301000000000000988', 'gs1_gsrn', 'electricity', 'injection');
 
@@ -61,12 +61,12 @@ insert into devices (id, organisation_id, site_id, building_id, surface_id, name
    'Milking parlour cooling', 'hvac', null, 'Packo', 'ICE 5000', 22, 1, 'in_service', '2012-03-01', '{electric}');
 
 -- What is behind which connection point.
-insert into links (subject_id, type_code, object_id) values
-  ('00000000-0000-4000-8000-000400000051', 'behind_meter', '00000000-0000-4000-8000-000400000041'),
-  ('00000000-0000-4000-8000-000400000052', 'behind_meter', '00000000-0000-4000-8000-000400000042'),
-  ('00000000-0000-4000-8000-000400000053', 'behind_meter', '00000000-0000-4000-8000-000400000041'),
-  ('00000000-0000-4000-8000-000400000054', 'behind_meter', '00000000-0000-4000-8000-000400000041'),
-  ('00000000-0000-4000-8000-000400000055', 'behind_meter', '00000000-0000-4000-8000-000400000041');
+select connect_device(d, m)
+  from (values ('00000000-0000-4000-8000-000400000051'::uuid, '00000000-0000-4000-8000-000400000041'::uuid),
+               ('00000000-0000-4000-8000-000400000052', '00000000-0000-4000-8000-000400000042'),
+               ('00000000-0000-4000-8000-000400000053', '00000000-0000-4000-8000-000400000041'),
+               ('00000000-0000-4000-8000-000400000054', '00000000-0000-4000-8000-000400000041'),
+               ('00000000-0000-4000-8000-000400000055', '00000000-0000-4000-8000-000400000041')) v (d, m);
 
 update devices set geometry = ST_GeomFromText('POLYGON((2.7234 50.7707, 2.7246 50.7707, 2.7246 50.7715, 2.7234 50.7715, 2.7234 50.7707))', 4326)
  where id = '00000000-0000-4000-8000-000400000052';
@@ -106,8 +106,8 @@ select record_run('solar', 'pvgis-5.3+core-0.1.0', d.id, null,
 -- Area available on the field, in m², from its outline:
 --   select area_m2(geometry) from surfaces where id = '00000000-0000-4000-8000-000400000033';
 -- What is behind each meter:
---   select m.name, d.name device from grid.meters m join links l on l.object_id = m.id and l.type_code = 'behind_meter'
---     join devices d on d.id = l.subject_id where m.site_id = '00000000-0000-4000-8000-000400000010' order by 1, 2;
+--   select m.name, d.name device from meters m join devices d on d.meter_id = m.id
+--    where m.site_id = '00000000-0000-4000-8000-000400000010' order by 1, 2;
 
 -- Daily readings are cut in the site's time zone.
 update sites set time_zone = 'Europe/Paris' where organisation_id = '00000000-0000-4000-8000-000400000001';
