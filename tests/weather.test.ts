@@ -11,8 +11,8 @@ let org: string;
 let site: string;
 
 const point = (lon: number, lat: number) => ({ type: 'Point', coordinates: [lon, lat] });
-const sourceFor = async (siteId: string, purpose: string) =>
-  (await one<{ code: string }>(db, 'select weather.source_for($1, $2) code', [siteId, purpose])).code;
+const sourceFor = async (participantId: string, purpose: string) =>
+  (await one<{ code: string }>(db, 'select weather.source_for($1, $2) code', [participantId, purpose])).code;
 
 beforeAll(async () => {
   db = await freshDatabase(['weather']);
@@ -100,7 +100,7 @@ describe('point_for', () => {
     far = await participant(db, { organisation_id: org, name: 'Elsewhere', country: 'FR', geometry: point(4.9000, 45.7600) });
   });
 
-  it('shares one point between sites of the same cell and links them to it', async () => {
+  it('shares one point between participants of the same cell and links them to it', async () => {
     const a = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [site]);
     const b = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [near]);
     const c = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [far]);

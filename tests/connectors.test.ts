@@ -83,7 +83,7 @@ describe('a forecast on a site', () => {
 
 describe('a connectors row', () => {
   it('names the source and the credential, never the secret, and belongs to its organisation', async () => {
-    const id = await insert(db, 'connectors', { organisation_id: org, source_code: 'open_meteo', name: 'Weather for the hall', config: { sites: [site] }, secret_ref: null });
+    const id = await insert(db, 'connectors', { organisation_id: org, source_code: 'open_meteo', name: 'Weather for the hall', config: { participants: [site] }, secret_ref: null });
     const mine = await asUser(db, USER_A, () => one<{ n: number }>(db, 'select count(*)::int n from connectors where id = $1', [id]));
     const theirs = await asUser(db, USER_B, () => one<{ n: number }>(db, 'select count(*)::int n from connectors where id = $1', [id]));
     expect([mine.n, theirs.n]).toEqual([1, 0]);
