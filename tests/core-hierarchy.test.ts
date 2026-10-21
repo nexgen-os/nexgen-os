@@ -115,7 +115,7 @@ describe('the grid module on top of a meter of the core', () => {
     const r = await one<{ grid_operator: string; voltage_level: string; same_org: boolean }>(
       grid,
       `select c.grid_operator, c.voltage_level, c.organisation_id = m.organisation_id same_org
-         from grid.connections c join meters m on m.id = c.id where c.id = $1`,
+         from grid.meters c join meters m on m.id = c.id where c.id = $1`,
       [gridMeter],
     );
     expect(r).toEqual({ grid_operator: 'dso_x', voltage_level: 'lv', same_org: true });
@@ -124,7 +124,7 @@ describe('the grid module on top of a meter of the core', () => {
 
   it('goes with its meter', async () => {
     await grid.query('delete from meters where id = $1', [gridMeter]);
-    const r = await one<{ n: number }>(grid, 'select count(*)::int n from grid.connections');
+    const r = await one<{ n: number }>(grid, 'select count(*)::int n from grid.meters');
     expect(r.n).toBe(0);
   });
 });

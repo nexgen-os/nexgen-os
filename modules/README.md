@@ -10,7 +10,7 @@ is specific to a trade lives here, one folder and one schema per module.
 2. **Start from an object of the core, and enrich it** ([0042](../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
    A module that needs more about an object of the core adds a table with
    the same id (`call derive_devices('solar.pv_systems', 'solar')`;
-   `grid.connections`, keyed by the meter's id); one that adds a kind of
+   `grid.meters`, keyed by the meter's id); one that adds a kind of
    object of its own gives it a foreign key to the core object it belongs to
    and declares it (`call declare_object('solar.pv_arrays', 'pv_array',
    '{pv_system_id,surface_id}')`), so that attributes, identifiers, links,
@@ -44,7 +44,7 @@ and `tasks` carries what has to be done, with its legal reference and its condit
 
 | Module | Objects it adds | Computes |
 |---|---|---|
-| `grid` (shipped) | the grid side of a meter of the core: the operators of a country (`operators`, written by packs) and, for each meter, its operator and its voltage level (`connections`, the meter's id) | later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
+| `grid` (shipped) | the grid side of a meter of the core: the operators of a country (`operators`, written by packs) and, for each meter, its operator and its voltage level (`grid.meters`, the meter's id) | later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
 | `community` (shipped) | energy sharing on the projects and participants of the core: the allocation key of a project and what it reads of a participant, as their attributes; the volumes allocated to each participant as series of a run | who received how much: self-consumption on a site, energy sharing in a community, volumes per participant and interval, through a sharing engine; with `contracts` a settlement engine turns them into settlement lines, handed to the accounting side through `accounting` ([why](../README.md#invoicing-and-ekwo-os)) |
 | `accounting` (shipped, [0010](../docs/decisions/0010-ekwo-link.md)) | the accounting bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact; the line where Nexgen OS stops is in the [README](../README.md#invoicing-and-ekwo-os) | nothing: a settlement line is handed to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)), which keeps legal identity, invoices and the ledger; the two install side by side on one database ([with Ekwo OS](../docs/with-ekwo-os.md)) |
 | `3d` (proposed, [0008](../docs/decisions/0008-3d-module.md)) | georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |

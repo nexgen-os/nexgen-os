@@ -54,7 +54,7 @@ describe('doctor', () => {
     await db.exec(`begin;
       create table grid.detached (id uuid primary key, organisation_id uuid not null references nexgen.organisations(id));
       create table grid.attached (id uuid primary key, organisation_id uuid not null references nexgen.organisations(id),
-                                  connection_id uuid references grid.connections(id));`);
+                                  connection_id uuid references grid.meters(id));`);
     try {
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems.filter((p) => p.code !== 'rls_disabled')).toEqual([

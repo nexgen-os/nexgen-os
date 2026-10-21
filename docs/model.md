@@ -147,7 +147,7 @@ key is refused (`place_key_unknown`).
   `meter_already_open`; `close_meter` ends the period when the register
   retires the number. Its subscribed power is an attribute. The physical
   meter is a device of type `meter` and can be swapped; who operates the
-  point and how it is connected are the `grid` module's (`grid.connections`).
+  point and how it is connected are the `grid` module's (`grid.meters`).
 
 ## What
 
@@ -311,7 +311,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 
 | Module | Schema | Holds |
 |---|---|---|
-| `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `connections`, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
+| `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as runs |
 | `accounting` | `accounting` | the accounting bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar`, `weather`, `tasks` | their own | PV systems and yields, weather models and points, tasks as data |

@@ -23,9 +23,13 @@ three forms and no other:
 
 - **a derived table**, with the same id as the core object it enriches:
   `solar.pv_systems` derives devices of type `solar` through
-  `derive_devices()`, `grid.connections` adds the operator and the voltage
+  `derive_devices()`, `grid.meters` adds the operator and the voltage
   level of a meter, `accounting.companies` is keyed by the organisation's
-  own id;
+  own id. A derived table that is the module's side of a core object carries
+  that object's name in the module schema — `grid.meters` is the meter as the
+  grid sees it, `accounting.contacts` the contact as the accounts see it: one
+  word per thing across schemas — and a derived table that holds a subtype
+  carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object: `tasks.tasks`
   is about one object of the registry, `solar.pv_arrays` belongs to a PV
   system;
@@ -61,7 +65,8 @@ Schema 0.2, where `community.projects` and `community.participants` held the
 project and its participants and `grid.meters` held the connection point,
 with its operator as a column (rewritten in place for 0.3.0, 21/10/2026).
 The projects, the participants and the meters moved to the core; `grid`
-kept the operators and gained `grid.connections`; `community` kept energy
+kept the operators and now derives the core's meter in a `grid.meters` of its
+own, the grid side of it; `community` kept energy
 sharing; the `behind_meter` link became `devices.meter_id`, the link
 keeping the history.
 

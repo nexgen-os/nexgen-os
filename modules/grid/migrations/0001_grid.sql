@@ -51,7 +51,7 @@ grant select, insert, update, delete on grid.operators to service_role;
 -- connections — the grid details of a connection point.
 -- ---------------------------------------------------------------------------
 
-create table grid.connections (
+create table grid.meters (
   id                uuid primary key references meters(id) on delete cascade,
   -- Copied from the meter by trigger.
   organisation_id   uuid not null references organisations(id) on delete cascade,
@@ -61,15 +61,15 @@ create table grid.connections (
   voltage_level     text,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
-  constraint connections_voltage_level_format check (voltage_level is null or voltage_level ~ '^[a-z][a-z0-9_]*$')
+  constraint meters_voltage_level_format check (voltage_level is null or voltage_level ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table grid.connections is
+comment on table grid.meters is
   'The grid side of a connection point of the core, one row per meter that has one, with the meter''s id: the operator that runs it and the voltage level it is connected at. Subscribed power is an attribute of the meter.';
 
-create index connections_operator_idx on grid.connections (grid_operator);
+create index meters_operator_idx on grid.meters (grid_operator);
 
-create or replace function grid.connections_check()
+create or replace function grid.meters_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -83,14 +83,14 @@ begin
 end;
 $$;
 
-comment on function grid.connections_check() is
-  'BEFORE INSERT / UPDATE on grid.connections: copies the organisation of the meter (meter_not_found).';
+comment on function grid.meters_check() is
+  'BEFORE INSERT / UPDATE on grid.meters: copies the organisation of the meter (meter_not_found).';
 
-create trigger connections_check before insert or update of id, organisation_id on grid.connections
-  for each row execute function grid.connections_check();
-create trigger connections_set_updated_at before update on grid.connections
+create trigger meters_check before insert or update of id, organisation_id on grid.meters
+  for each row execute function grid.meters_check();
+create trigger meters_set_updated_at before update on grid.meters
   for each row execute function set_updated_at();
-call secure_table('grid.connections');
+call secure_table('grid.meters');
 
 -- ---------------------------------------------------------------------------
 -- Gestures
@@ -113,10 +113,10 @@ begin
   if p_operator_code is not null and not exists (select 1 from grid.operators where code = p_operator_code) then
     raise exception 'grid_operator_unknown: %', p_operator_code using errcode = 'foreign_key_violation';
   end if;
-  insert into grid.connections (id, grid_operator, voltage_level)
+  insert into grid.meters (id, grid_operator, voltage_level)
   values (p_meter_id, p_operator_code, p_voltage_level)
   on conflict (id) do update set grid_operator = excluded.grid_operator,
-                                 voltage_level = coalesce(excluded.voltage_level, grid.connections.voltage_level);
+                                 voltage_level = coalesce(excluded.voltage_level, grid.meters.voltage_level);
 end;
 $$;
 

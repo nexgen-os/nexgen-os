@@ -214,7 +214,7 @@ rewritten) — and a module starts from one of them and enriches it
   the one it leaves as a dated `behind_meter` link, now a link type of the
   core. A `behind_meter` link is no longer how a device says which meter it
   is behind today.
-- The `grid` module keeps `grid.operators` and adds `grid.connections`, one
+- The `grid` module keeps `grid.operators` and adds `grid.meters`, one
   row per meter with the meter's id: its operator and its voltage level,
   written by `grid.connect_to_operator()`. Version 0.2.0, needs core 0.3.0.
 - The `community` module keeps energy sharing (the allocation properties,
