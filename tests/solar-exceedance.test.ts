@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
 import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../modules/solar/src/exceedance.js';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 const HOUR = 3_600_000;
 /** Every hour of the local standard years of Brussels (UTC+1), one constant energy per year. */
@@ -23,8 +23,8 @@ let system: string;
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 1 });
+  const site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 1 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 1)', [system]);
 });
 

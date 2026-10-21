@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 // The caller gives the interpreter: the environment's, else the local virtual environment, else the Python on the path.
 const localVenv = join(repoRoot, '.venv-sdk', 'bin', 'python');
@@ -27,10 +27,10 @@ beforeAll(async () => {
   if (!installed) return;
   db = await freshDatabase();
   const org = await organisation(db, 'A utility', USER_A);
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  const elsewhere = await insert(db, 'sites', { organisation_id: org, name: 'Warehouse', country: 'BE' });
-  const meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
-  const other = await insert(db, 'devices', { organisation_id: org, site_id: elsewhere, name: 'Meter', device_type: 'meter' });
+  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  const elsewhere = await participant(db, { organisation_id: org, name: 'Warehouse', country: 'BE' });
+  const meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
+  const other = await insert(db, 'devices', { organisation_id: org, participant_id: elsewhere, name: 'Meter', device_type: 'meter' });
   const series = (object: string) =>
     insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: object, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   const energy = await series(meter);

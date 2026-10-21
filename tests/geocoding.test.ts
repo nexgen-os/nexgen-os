@@ -3,10 +3,10 @@
 // site accepts exactly what the library hands it.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { addressLines, siteFields, type Fetch, type Place } from '@nexgen-os/core';
+import { addressLines, placeFields, type Fetch, type Place } from '@nexgen-os/core';
 import { nominatim } from '@nexgen-os/nominatim';
 import { photon } from '@nexgen-os/photon';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, one, organisation, participant } from './helpers/db.js';
 
 /** A fetch that records what it was asked and answers from a table of URLs. */
 function fakeFetch(answers: Record<string, unknown>) {
@@ -115,16 +115,16 @@ describe('a place on a site', () => {
   });
 
   it('writes the address, the point, the precision and the source, and refuses a precision it does not know', async () => {
-    const id = await insert(db, 'sites', { organisation_id: org, name: 'Office', ...siteFields(place) });
+    const id = await participant(db, { organisation_id: org, name: 'Office', ...placeFields(place) });
     const row = await one<{ street: string; address_extra: string; region: string; how_precise: string; source: string; lon: number; lat: number; dims: number }>(
       db,
       `select street, address_extra, region, location_precision how_precise, location_source_code source,
               ST_X(geometry) lon, ST_Y(geometry) lat, ST_NDims(geometry) dims
-         from sites where id = $1`,
+         from participants where id = $1`,
       [id],
     );
     expect(row).toEqual({ street: 'Rue de la Loi 12', address_extra: 'Floor 3', region: 'BE-BRU', how_precise: 'rooftop', source: 'nominatim', lon: 4.35247, lat: 50.84673, dims: 3 });
-    await expect(insert(db, 'sites', { organisation_id: org, name: 'Vague', country: 'BE', location_precision: 'somewhere' })).rejects.toThrow(/sites_location_precision/);
+    await expect(participant(db, { organisation_id: org, name: 'Vague', country: 'BE', location_precision: 'somewhere' })).rejects.toThrow(/sites_location_precision/);
     expect(addressLines(place.address)).toEqual(['Rue de la Loi 12', 'Floor 3', '1000 Bruxelles', 'BE-BRU', 'BE']);
   });
 });

@@ -9,7 +9,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '@nexgen-os/core';
 import { ban } from '@nexgen-os/ban';
 import { checkPacks } from '../packages/cli/src/index.js';
-import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const OPERATORS = ['edf_sei', 'edm', 'enedis', 'es_reseaux', 'geg_reseaux', 'geredis', 'rte', 'srd', 'urm'];
 
@@ -54,7 +54,7 @@ describe('the fr pack', () => {
 
     const org = await organisation(db, 'Une commune', USER_A);
     const reunion = (await one<{ id: string }>(db, `select create_site($1, 'Mairie de Saint-Denis', '{"country": "FR", "region": "FR-974"}') id`, [org])).id;
-    expect((await one<{ time_zone: string }>(db, 'select time_zone from sites where id = $1', [reunion])).time_zone).toBe('Indian/Reunion');
+    expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [reunion])).time_zone).toBe('Indian/Reunion');
     await expect(db.query(`select create_site($1, 'Nowhere', '{"country": "FR", "region": "FR-99"}')`, [org])).rejects.toThrow(/region_unknown: FR-99/);
   });
 
@@ -62,9 +62,9 @@ describe('the fr pack', () => {
     const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:fr' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['ban_address', 'insee', 'parcelle', 'prm', 'rnb_id', 'siren', 'siret']);
     const org = await organisation(db, 'Une régie', USER_A);
-    const site = await insert(db, 'sites', { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
-    expect(await insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
-    await expect(insert(db, 'meters', { organisation_id: org, site_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
+    const site = await participant(db, { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
+    expect(await insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
     const corsica = await one<{ ok: boolean }>(db, `select '2A004' ~ pattern ok from id_schemes where code = 'insee'`);
     expect(corsica.ok).toBe(true);
   });
@@ -97,7 +97,7 @@ describe('the fr pack', () => {
     const brest = (await one<{ id: string }>(db, `select create_site($1, 'Port de Brest', '{"country": "FR", "region": "FR-29"}') id`, [org])).id;
     const ajaccio = (await one<{ id: string }>(db, `select create_site($1, 'Port d''Ajaccio', '{"country": "FR", "region": "FR-2A"}') id`, [org])).id;
     const p = async (site: string, property: string, at = '2026-10-20') =>
-      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('site', $1, $2, $3) p", [site, property, at])).p;
+      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT30M', level: 'country', source_code: 'fr_enedis_load_curve_collection' });
     expect(await p(brest, 'bidding_zone')).toMatchObject({ value: '10YFR-RTE------C', level: 'country' });
     await expect(p(ajaccio, 'bidding_zone')).rejects.toThrow(/parameter_not_decided: bidding_zone in FR-2A/);

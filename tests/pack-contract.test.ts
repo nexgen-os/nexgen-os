@@ -36,8 +36,8 @@ describe('a compiled pack on the core', () => {
     const org = await organisation(db, 'A cooperative');
     const south = (await one<{ id: string }>(db, `select create_site($1, 'South farm', '{"country": "XA", "region": "XA-S"}') id`, [org])).id;
     const north = (await one<{ id: string }>(db, `select create_site($1, 'North farm', '{"country": "XA", "region": "XA-N"}') id`, [org])).id;
-    expect((await one<{ time_zone: string }>(db, 'select time_zone from sites where id = $1', [south])).time_zone).toBe('Etc/GMT-1');
-    const p = async (site: string, property: string) => (await one<{ p: Record<string, unknown> }>(db, `select parameter_of('site', $1, $2, '2026-06-01') p`, [site, property])).p;
+    expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [south])).time_zone).toBe('Etc/GMT-1');
+    const p = async (site: string, property: string) => (await one<{ p: Record<string, unknown> }>(db, `select parameter_of('participant', $1, $2, '2026-06-01') p`, [site, property])).p;
     expect(await p(south, 'sharing_max_distance_m')).toMatchObject({ value: 2000, level: 'region', source_code: 'xa_grid_code', reference: 'Article 31' });
     expect(await p(north, 'metering_step')).toMatchObject({ value: 'PT15M', level: 'country' });
     await expect(p(north, 'sharing_max_distance_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_m .* reached country XA/);

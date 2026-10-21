@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
 import { PERFORMANCE_ENGINE_VERSION, performanceIndicators } from '../modules/solar/src/performance.js';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 const HOUR = 3_600_000;
 
@@ -24,8 +24,8 @@ let array: string;
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 10 });
+  site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 10 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 10)', [system]);
   array = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ($1, $2, 'South', 180, 30, 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
 });
@@ -94,8 +94,8 @@ describe('the IEC 61724-1 indicators', () => {
   });
 
   it('needs the site time zone', async () => {
-    const other = await insert(db, 'sites', { organisation_id: org, name: 'No zone', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    const device = await insert(db, 'devices', { organisation_id: org, site_id: other, name: 'PV', device_type: 'solar', rated_power_kw: 3 });
+    const other = await participant(db, { organisation_id: org, name: 'No zone', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    const device = await insert(db, 'devices', { organisation_id: org, participant_id: other, name: 'PV', device_type: 'solar', rated_power_kw: 3 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 3)', [device]);
     await expect(performanceIndicators(db, { pvSystemId: device, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^time_zone_required/);
   });

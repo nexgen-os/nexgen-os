@@ -8,7 +8,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { pvgis } from '@nexgen-os/pvgis';
 import type { Fetch } from '@nexgen-os/core';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -19,8 +19,8 @@ const asked: string[] = [];
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+  site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   // One statement each: arrays are read in the order they were created, and one statement gives both the same time.
   await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
@@ -75,8 +75,8 @@ describe('a pvgis_like yield run', () => {
 
   it('throws named errors for a profile PVGIS cannot run and a system whose site has no position', async () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_runnable_here/);
-    const nowhere = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'BE' });
-    const device = await insert(db, 'devices', { organisation_id: org, site_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
+    const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
+    const device = await insert(db, 'devices', { organisation_id: org, participant_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
     await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/site_without_position/);
   });

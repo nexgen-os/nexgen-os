@@ -3,7 +3,7 @@
 // the time zone is unknown, and access that goes through the series.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -14,8 +14,8 @@ beforeAll(async () => {
   db = await freshDatabase();
   org = await organisation(db, 'A utility', USER_A);
   await organisation(db, 'Another', USER_B);
-  const site = await insert(db, 'sites', { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  meter = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Meter', device_type: 'meter' });
+  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
   energy = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   // Two weeks around the spring change (29 March 2026, 02:00 → 03:00 in Brussels), 1 kWh per quarter-hour.
   await db.query(
@@ -65,8 +65,8 @@ describe('the series store', () => {
   });
 
   it('refuses a daily step for a site without a time zone, by name', async () => {
-    const site = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'BE' });
-    const s = await insert(db, 'series', { organisation_id: org, object_kind: 'site', object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
+    const site = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
+    const s = await insert(db, 'series', { organisation_id: org, object_kind: 'participant', object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
     await expect(db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day')`, [s])).rejects.toThrow(/time_zone_required/);
     const r = await db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day', 'Europe/Brussels')`, [s]);
     expect(r.rows).toEqual([]);

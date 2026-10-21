@@ -15,7 +15,7 @@ import { describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
 import { sandiaFromOnd } from '../modules/solar/src/inverter.js';
 import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '../modules/solar/src/pvwatts.js';
 import { runYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
 // The caller gives the command: the environment's, else the local virtual environment, else the Python on the path.
@@ -164,8 +164,8 @@ describe('a yield run computed by pvlib', () => {
     if (!installed) return;
     db = await freshDatabase(['solar']);
     const org = await organisation(db, 'A cooperative', USER_A);
-    const site = await insert(db, 'sites', { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    system = await insert(db, 'devices', { organisation_id: org, site_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 20 });
+    const site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 20 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 20)', [system]);
     await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
   });

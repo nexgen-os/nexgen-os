@@ -4,7 +4,7 @@
 // is linked to, shared by every site of the organisation in the same cell.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 
 let db: PGlite;
 let org: string;
@@ -17,7 +17,7 @@ const sourceFor = async (siteId: string, purpose: string) =>
 beforeAll(async () => {
   db = await freshDatabase(['weather']);
   org = await organisation(db, 'An installer', USER_A);
-  site = await insert(db, 'sites', {
+  site = await participant(db, {
     organisation_id: org, name: 'Farm', country: 'FR', region: 'FR-ARA', geometry: point(4.8262, 45.7578),
   });
   // Two models a pack or a private package would bring, to tell each level apart.
@@ -48,10 +48,10 @@ describe('the weather module', () => {
     ]);
     const link = await one<{ published_by: string; subject_kinds: string[]; object_kinds: string[] }>(
       db, `select published_by, subject_kinds, object_kinds from link_types where code = 'weather_from'`);
-    expect(link).toEqual({ published_by: 'weather', subject_kinds: ['site'], object_kinds: ['weather_point'] });
+    expect(link).toEqual({ published_by: 'weather', subject_kinds: ['participant'], object_kinds: ['weather_point'] });
     const prop = await one<{ published_by: string; datatype: string; applies_to: string[] }>(
       db, `select published_by, datatype, applies_to from property_defs where code = 'weather_source'`);
-    expect(prop).toEqual({ published_by: 'weather', datatype: 'text', applies_to: ['site', 'project'] });
+    expect(prop).toEqual({ published_by: 'weather', datatype: 'text', applies_to: ['participant', 'project'] });
   });
 });
 
@@ -68,7 +68,7 @@ describe('source_for', () => {
     await db.query(`insert into weather.rules (country, regions, purpose, source_code, published_by) values ('FR', '{FR-ARA}', 'irradiance', 'regional_office', 'pack:test')`);
     expect(await sourceFor(site, 'irradiance')).toBe('regional_office');
     // A site in another region keeps the country's rule.
-    const other = await insert(db, 'sites', { organisation_id: org, name: 'Barn', country: 'FR', region: 'FR-BRE' });
+    const other = await participant(db, { organisation_id: org, name: 'Barn', country: 'FR', region: 'FR-BRE' });
     expect(await sourceFor(other, 'irradiance')).toBe('open_meteo');
 
     // (b) An active connector of the organisation, for that purpose.
@@ -81,7 +81,7 @@ describe('source_for', () => {
     expect(await sourceFor(site, 'temperature')).toBe('open_meteo');
 
     // (a) The site's own choice.
-    await db.query(`select set_attribute('site', $1, 'weather_source', '"pvgis"')`, [site]);
+    await db.query(`select set_attribute('participant', $1, 'weather_source', '"pvgis"')`, [site]);
     expect(await sourceFor(site, 'irradiance')).toBe('pvgis');
   });
 
@@ -96,8 +96,8 @@ describe('point_for', () => {
 
   beforeAll(async () => {
     // About 300 m east of the farm, in the same 0.01° cell.
-    near = await insert(db, 'sites', { organisation_id: org, name: 'Neighbour', country: 'FR', geometry: point(4.8300, 45.7580) });
-    far = await insert(db, 'sites', { organisation_id: org, name: 'Elsewhere', country: 'FR', geometry: point(4.9000, 45.7600) });
+    near = await participant(db, { organisation_id: org, name: 'Neighbour', country: 'FR', geometry: point(4.8300, 45.7580) });
+    far = await participant(db, { organisation_id: org, name: 'Elsewhere', country: 'FR', geometry: point(4.9000, 45.7600) });
   });
 
   it('shares one point between sites of the same cell and links them to it', async () => {
@@ -128,7 +128,7 @@ describe('point_for', () => {
   });
 
   it('raises a named error for a site without a position', async () => {
-    const nowhere = await insert(db, 'sites', { organisation_id: org, name: 'Nowhere', country: 'FR' });
+    const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'FR' });
     await expect(db.query(`select weather.point_for($1, 'open_meteo')`, [nowhere])).rejects.toThrow(/site_without_position/);
   });
 

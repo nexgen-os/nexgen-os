@@ -7,7 +7,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { readCityJson, sridOf, writeCityJson, type CityJsonDocument } from '@nexgen-os/cityjson';
 import { orientation } from '@nexgen-os/core';
 import { exportCityJson, importCityJson as importModel, type CityJsonImportOptions, type CityJsonTarget } from '../modules/building/src/index.js';
-import { USER_A, freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { USER_A, freshDatabase, one, organisation, participant } from './helpers/db.js';
 
 // A gabled house, 10 m by 6 m, ground at 2 m, eaves at 8 m, ridge at 11.5 m,
 // in RD New (EPSG:28992), with the ridge along the x axis: the south pitch
@@ -65,13 +65,13 @@ const importCityJson = async (target: CityJsonTarget, doc: CityJsonDocument, opt
 
 let db: PGlite;
 let org: string;
-let site: string;
+let owner: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A city', USER_A);
   await db.query(`insert into sources (code, name, kind, license, attribution, countries) values ('city_model', 'City 3D model', 'file', 'CC-BY-4.0', '© The city', '{NL}')`);
-  site = await insert(db, 'sites', { organisation_id: org, name: 'Canal house', country: 'NL', time_zone: 'Europe/Amsterdam' });
+  owner = await participant(db, { organisation_id: org, name: 'Canal house', country: 'NL', time_zone: 'Europe/Amsterdam' });
 });
 
 afterAll(async () => {
@@ -95,7 +95,7 @@ describe('a CityJSON building', () => {
   let buildingId: string;
 
   it('lands as a building with its footprint, height, floors, year, identifier and the attributes the core has no column for', async () => {
-    const r = await importCityJson({ siteId: site }, house, { sourceCode: 'city_model', profile: 'residential' });
+    const r = await importCityJson({ participantId: owner }, house, { sourceCode: 'city_model', profile: 'residential' });
     expect(r.buildings).toHaveLength(1);
     expect(r.surfaces).toBe(8);
     expect(r.skipped).toEqual(['some-tree']);
@@ -138,7 +138,7 @@ describe('a CityJSON building', () => {
   });
 
   it('comes back out as CityJSON 2.0 with LoD 1 and LoD 2, and lands the same way when imported again', async () => {
-    const out = writeCityJson(await exportCityJson(db, { siteId: site }));
+    const out = writeCityJson(await exportCityJson(db, { participantId: owner }));
     expect(out.version).toBe('2.0');
     expect(out.metadata?.referenceSystem).toBe('https://www.opengis.net/def/crs/EPSG/0/32631');
     const object = out.CityObjects['NL.IMBAG.Pand.0363100012345678'];
@@ -149,10 +149,10 @@ describe('a CityJSON building', () => {
     expect(object.geometry?.[1].semantics?.surfaces.map((s) => s.type).sort()).toEqual(['GroundSurface', 'RoofSurface', 'RoofSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface', 'WallSurface']);
     expect(out.vertices.every((v) => v.every(Number.isInteger))).toBe(true);
 
-    await expect(importCityJson({ siteId: site }, out, { sourceCode: 'city_model' })).rejects.toThrow(/already_imported/);
+    await expect(importCityJson({ participantId: owner }, out, { sourceCode: 'city_model' })).rejects.toThrow(/already_imported/);
     const other = await organisation(db, 'Another city', USER_A);
-    const again = await insert(db, 'sites', { organisation_id: other, name: 'Canal house, again', country: 'NL', time_zone: 'Europe/Amsterdam' });
-    const r = await importCityJson({ siteId: again }, out, { sourceCode: 'city_model' });
+    const again = await participant(db, { organisation_id: other, name: 'Canal house, again', country: 'NL', time_zone: 'Europe/Amsterdam' });
+    const r = await importCityJson({ participantId: again }, out, { sourceCode: 'city_model' });
     expect(r.surfaces).toBe(8);
     const b = await one<{ height: number; area: number; ext: string; dak: string; roofs: string }>(
       db,
@@ -172,8 +172,8 @@ describe('a CityJSON building', () => {
 
   it('refuses a file without a reference system, and one the installation cannot transform, by name', async () => {
     const { metadata, ...withoutCrs } = house;
-    await expect(importCityJson({ siteId: site }, withoutCrs as CityJsonDocument, { sourceCode: 'city_model' })).rejects.toThrow(/crs_required/);
-    await expect(importCityJson({ siteId: site }, house, { sourceCode: 'city_model', srid: 999999 })).rejects.toThrow(/crs_unknown/);
+    await expect(importCityJson({ participantId: owner }, withoutCrs as CityJsonDocument, { sourceCode: 'city_model' })).rejects.toThrow(/crs_required/);
+    await expect(importCityJson({ participantId: owner }, house, { sourceCode: 'city_model', srid: 999999 })).rejects.toThrow(/crs_unknown/);
     expect(metadata?.referenceSystem).toBeDefined();
   });
 });
