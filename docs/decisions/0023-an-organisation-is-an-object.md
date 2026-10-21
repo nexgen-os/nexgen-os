@@ -14,7 +14,7 @@ registration numbers and its contracts lived outside the model.
 
 ## Decision
 
-**An organisation is an object, like a site or a device.** It is a kind,
+**An organisation is an object, like a participant or a device.** It is a kind,
 `organisation`, and everything that attaches to an object attaches to it
 as `('organisation', id)`: attributes with their period and source,
 external identifiers, links, documents.

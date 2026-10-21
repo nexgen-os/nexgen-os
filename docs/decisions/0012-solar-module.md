@@ -46,13 +46,13 @@ what that tool assumes ([0016](0016-naming-third-party-methods.md)).
 
 **Conventions are written once.** Azimuth in degrees clockwise from true
 north; every value dated at the start of its interval, in UTC, read in the
-site's time zone ([0029](0029-a-series-belongs-to-an-object.md)); a
+participant's time zone ([0029](0029-a-series-belongs-to-an-object.md)); a
 typical year is simulated, never a real year; every reader and connector
 converts from its source's own convention.
 
-**Weather belongs to the place.** It is a series of the site or of a
-weather point several sites share, with its source; which weather model a
-site reads is a default resolved through the one cascade
+**Weather belongs to the place.** It is a series of the participant or of a
+weather point several participants share, with its source; which weather
+model a participant reads is a default resolved through the one cascade
 ([0021](0021-one-cascade-of-defaults.md)), from the project's choice down to
 the pack's rule for the country or the region, within the coverage of the
 model.

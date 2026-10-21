@@ -45,8 +45,8 @@ publication is a frozen document and a schema of its own for the anonymous
 role ([0015](0015-publications.md)); it needs no module schema and no
 registry row.
 
-**A site is not always built.** A ground-mounted PV plant, a field, a car
-park or a pond is a site whose surfaces lie on the ground, with no building
+**A place is not always built.** A ground-mounted PV plant, a field, a car
+park or a pond is a ground (`building.sites`) whose surfaces lie on it, with no building
 at all ([0026](0026-a-device-is-not-placed-for-now.md)); a
 module's vocabulary and documentation never assume a roof.
 
