@@ -9,6 +9,8 @@
 --
 -- Every vocabulary row maps to the open standard it comes from:
 --
+--   kinds           the kinds of object an attachment may name (the core's,
+--                   and those modules publish), with the table holding each
 --   device_types    Brick Schema equipment classes, IFC distribution elements
 --   profiles        the use of a building or a site (Nexgen profiles)
 --   link_types      Brick relationships, IFC objectified relationships
@@ -22,6 +24,27 @@
 -- who published it: `core`, a module code or a pack code.
 
 set search_path = nexgen, public, extensions;
+
+-- ---------------------------------------------------------------------------
+-- kinds — what an attachment may hang on.
+-- ---------------------------------------------------------------------------
+
+-- An attribute, an identifier, a link, a document, a series or a run names
+-- its object by its kind and its id: `('site', <id>)`, `('surface', <id>)`.
+-- A kind is a row here with the table that holds its objects, written by a
+-- plain insert in the core's seed and in the first migration of the module
+-- that publishes it. The hierarchy between objects is their foreign keys;
+-- this table only says where an object of a kind is found.
+create table kinds (
+  kind          text primary key,
+  -- Schema-qualified for a module's table: `building.surfaces`.
+  table_name    text not null unique,
+  published_by  text not null default 'core',
+  constraint kinds_kind_format check (kind ~ '^[a-z][a-z0-9_]*$')
+);
+
+comment on table kinds is
+  'The kinds of object an attachment names with its id (organisation, project, participant, site, meter, device, series, run, and those modules publish: building, space, surface, pv_array…), each with the table holding it.';
 
 -- ---------------------------------------------------------------------------
 -- device_types — what a device can be.
@@ -94,7 +117,7 @@ create table link_types (
   -- Name read from the object's side: `feeds` / `is fed by`.
   inverse_name    text not null,
   description     text,
-  -- Optional kinds the subject and the object must be (see objects.kind).
+  -- Optional kinds the subject and the object must be (see kinds).
   subject_kinds   text[],
   object_kinds    text[],
   brick_relation  text,
@@ -145,7 +168,7 @@ create table property_defs (
   maximum         numeric,
   -- For a text: the closed list of values it may take, if any.
   allowed_values  text[],
-  -- Optional kinds of object the property applies to (see objects.kind).
+  -- Optional kinds of object the property applies to (see kinds).
   applies_to      text[],
   -- Correspondences: IFC property set and property name, bSDD URI.
   ifc_pset        text,
@@ -277,7 +300,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['device_types', 'profiles', 'link_types', 'quantities', 'property_defs', 'tags', 'sources', 'id_schemes'] loop
+  foreach t in array array['kinds', 'device_types', 'profiles', 'link_types', 'quantities', 'property_defs', 'tags', 'sources', 'id_schemes'] loop
     execute format('alter table %I enable row level security', t);
     execute format('create policy %I on %I for select to authenticated using (true)', t || '_read', t);
     execute format('grant select on %I to authenticated', t);

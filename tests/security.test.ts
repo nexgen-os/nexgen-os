@@ -57,7 +57,7 @@ describe('row level security', () => {
     expect(r.rows).toHaveLength(1);
     await expect(
       asUser(db, VIEWER, () =>
-        db.query(`insert into attributes (object_id, property_code, value) values ($1, 'annual_consumption', '12000')`, [siteA]),
+        db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('site', $1, 'annual_consumption', '12000')`, [siteA]),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -86,16 +86,16 @@ describe('computation runs', () => {
   it('returns the same run for the same inputs and engine version', async () => {
     const inputs = { horizon: '2027', weather: 'tmy' };
     const first = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.1.0', $1, null, $2, '{"kwh": 5400}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv', '0.1.0', 'site', $1, null, $2, '{"kwh": 5400}') id`, [siteA, inputs]),
     );
     const again = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.1.0', $1, null, $2, '{"kwh": 5400}') id`, [
+      one<{ id: string }>(db, `select record_run('pv', '0.1.0', 'site', $1, null, $2, '{"kwh": 5400}') id`, [
         siteA,
         { weather: 'tmy', horizon: '2027' },
       ]),
     );
     const newer = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.2.0', $1, null, $2, '{"kwh": 5410}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv', '0.2.0', 'site', $1, null, $2, '{"kwh": 5410}') id`, [siteA, inputs]),
     );
     expect(again.id).toBe(first.id);
     expect(newer.id).not.toBe(first.id);
@@ -107,9 +107,9 @@ describe('computation runs', () => {
 
   it('never changes the series a finished run computed', async () => {
     const run = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.3.0', $1, null, '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
+      one<{ id: string }>(db, `select record_run('pv', '0.3.0', 'site', $1, null, '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
         siteA,
-        JSON.stringify([{ key: 'production', object_id: siteA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
+        JSON.stringify([{ key: 'production', object_kind: 'site', object_id: siteA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
       ]),
     );
     const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
@@ -130,10 +130,10 @@ describe('organisations', () => {
   });
 
   it('are objects: an attribute attaches to one, readable by its members only', async () => {
-    await expect(db.query(`insert into attributes (object_id, property_code, value, source) values ($1, 'roof_area', '120', 'a guess')`, [orgA]))
+    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'roof_area', '120', 'a guess')`, [orgA]))
       .rejects.toThrow(/property_not_applicable/);
     await db.query(`insert into property_defs (code, name, datatype, published_by) values ('discount_rate', 'Discount rate', 'number', 'installation')`);
-    await asUser(db, USER_A, () => db.query(`select set_attribute($1, 'discount_rate', '0.04', null, null, 'board decision')`, [orgA]));
+    await asUser(db, USER_A, () => db.query(`select set_attribute('organisation', $1, 'discount_rate', '0.04', null, null, 'board decision')`, [orgA]));
     const mine = await asUser(db, USER_A, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
     const theirs = await asUser(db, USER_B, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
     expect(mine.rows).toEqual([{ value: 0.04 }]);
@@ -178,13 +178,22 @@ describe('what the core publishes', () => {
     expect(r.rows).toEqual([]);
   });
 
-  it('keeps the registry and the named tables in step', async () => {
-    const r = await one<{ registered: number; named: number }>(
-      db,
-      `select (select count(*)::int from objects) registered,
-              (select count(*) from organisations) + (select count(*) from sites) + (select count(*) from building.buildings)
-              + (select count(*) from building.spaces) + (select count(*) from building.surfaces) + (select count(*) from devices) as named`,
-    );
-    expect(Number(r.named)).toBe(r.registered);
+  it('keeps no registry: an attachment names its object by kind and id, and goes with it', async () => {
+    const r = await db.query(`select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                               where n.nspname = 'nexgen' and c.relname in ('objects', 'object_kinds', 'object_parent_tables')`);
+    expect(r.rows).toEqual([]);
+    const shed = await insert(db, 'sites', { organisation_id: orgA, name: 'Shed', country: 'BE' });
+    await db.query(`select set_attribute('site', $1, 'annual_consumption', '800')`, [shed]);
+    await db.query(`select add_identifier('site', $1, 'osm', 'way/1')`, [shed]);
+    await db.query('delete from sites where id = $1', [shed]);
+    const left = await one<{ n: number }>(db, `select (select count(*) from attributes where object_id = $1) + (select count(*) from external_ids where object_id = $1) n`, [shed]);
+    expect(Number(left.n)).toBe(0);
+  });
+
+  it('refuses by name an attachment to an object that is not found, of a kind nobody published, or of another organisation', async () => {
+    await expect(db.query(`select set_attribute('site', gen_random_uuid(), 'annual_consumption', '1')`)).rejects.toThrow(/object_not_found/);
+    await expect(db.query(`select set_attribute('spaceship', $1, 'annual_consumption', '1')`, [siteA])).rejects.toThrow(/kind_unknown/);
+    await expect(asUser(db, USER_B, () => db.query(`select set_attribute('site', $1, 'annual_consumption', '1')`, [siteA])))
+      .rejects.toThrow(/object_not_found/);
   });
 });

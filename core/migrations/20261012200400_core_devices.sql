@@ -65,7 +65,7 @@ grant select, insert, update, delete on device_directory to authenticated, servi
 -- ---------------------------------------------------------------------------
 
 create table devices (
-  id                uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id                uuid primary key default gen_random_uuid(),
   organisation_id   uuid not null references organisations(id) on delete cascade,
   -- The site it is on.
   site_id           uuid not null references sites(id) on delete cascade,
@@ -135,7 +135,16 @@ create trigger devices_normalize before insert or update of geometry on devices
   for each row execute function normalize_geometry('geometry');
 create trigger devices_check before insert or update of site_id, meter_id on devices
   for each row execute function devices_check();
-call declare_object('devices', 'device', '{site_id,meter_id}');
+create trigger devices_site_id_check before insert or update of site_id, scenario_id on devices
+  for each row execute function parent_check('site_id', 'sites');
+create trigger devices_meter_id_check before insert or update of meter_id, scenario_id on devices
+  for each row execute function parent_check('meter_id', 'meters');
+create trigger devices_set_updated_at before update on devices
+  for each row execute function set_updated_at();
+create index devices_organisation_idx on devices (organisation_id);
+create trigger devices_drop_attachments after delete on devices
+  for each row execute function drop_attachments('device');
+call secure_table('devices');
 
 -- A module table that derives devices of a type: same id, one row per
 -- device, only for devices of that type (or a refinement of it). Declared by
@@ -269,8 +278,8 @@ begin
     -- since it was installed.
     select coalesce(max(l.valid_to)::date, d.installation_date) into v_since
       from links l where l.subject_id = p_device_id and l.type_code = 'behind_meter';
-    insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
-    values (p_device_id, 'behind_meter', d.meter_id, case when v_since < p_on then v_since end, p_on, d.scenario_id);
+    insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, valid_to, scenario_id)
+    values ('device', p_device_id, 'behind_meter', 'meter', d.meter_id, case when v_since < p_on then v_since end, p_on, d.scenario_id);
   end if;
   update devices set meter_id = p_meter_id where id = p_device_id;
 end;
@@ -340,8 +349,8 @@ begin
           coalesce(p.unit_power_kw * d.unit_count, d.rated_power_kw), d.unit_count, p_on,
           case when p_on > current_date then 'planned' else 'in_service' end, d.source_code, d.tags, d.scenario_id);
   update devices set status = 'removed', removal_date = p_on where id = p_device_id;
-  insert into links (subject_id, type_code, object_id, valid_from, scenario_id)
-  values (v_id, 'replaces', p_device_id, p_on, d.scenario_id);
+  insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, scenario_id)
+  values ('device', v_id, 'replaces', 'device', p_device_id, p_on, d.scenario_id);
   return v_id;
 end;
 $$;

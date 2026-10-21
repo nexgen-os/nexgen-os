@@ -4,9 +4,9 @@
 -- firm, a municipality, a housing company, an installer, a family. Every row
 -- of the core carries the `organisation_id` it belongs to, and row level
 -- security is driven by `organisation_members`. One installation may hold
--- many organisations. An organisation is also an object of the registry
--- (`20261012200900_core_object_kinds_rls.sql`), so that attributes,
--- identifiers, links and documents attach to it as to anything else.
+-- many organisations. An organisation is also a kind of object
+-- (`organisation`), so that attributes, identifiers, links and documents
+-- attach to it as to anything else.
 --
 -- Who a company or a person legally is — legal form, registration number,
 -- tax number, postal and electronic addresses, bank details — is not

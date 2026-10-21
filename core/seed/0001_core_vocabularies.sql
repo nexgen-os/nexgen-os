@@ -7,6 +7,21 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
+-- Kinds of object of the core: what an attachment names with an id. Modules
+-- add theirs in their first migration.
+-- ---------------------------------------------------------------------------
+
+insert into kinds (kind, table_name) values
+  ('organisation', 'organisations'),
+  ('project',      'projects'),
+  ('participant',  'participants'),
+  ('site',         'sites'),
+  ('meter',        'meters'),
+  ('device',       'devices'),
+  ('series',       'series'),
+  ('run',          'runs');
+
+-- ---------------------------------------------------------------------------
 -- Device types. The codes of Nexgen, in a tree aligned on Brick Equipment and
 -- IFC. The module that derives a type into its own table is named when it
 -- ships; the instrument that measures (a meter, a sensor) is a device too,
@@ -53,7 +68,7 @@ insert into profiles (code, name, applies_to, ifc_occupancy, citygml_function, d
   ('land',        'Land',               'site',     null,           'agriculture', 'A field, a meadow, a wood.');
 
 -- ---------------------------------------------------------------------------
--- Link types. Kinds refer to objects.kind.
+-- Link types. Kinds refer to `kinds`.
 -- ---------------------------------------------------------------------------
 
 insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, brick_relation, ifc_relation, description) values
@@ -163,7 +178,7 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 
 -- ---------------------------------------------------------------------------
 -- Property definitions: attributes beyond the columns (bSDD / IFC property
--- sets where they exist). Kinds refer to objects.kind. A fact a column holds
+-- sets where they exist). Kinds refer to `kinds`. A fact a column holds
 -- is never repeated here: the use of a site is its `profile`, a device's
 -- power its `rated_power_kw`, its commissioning its `installation_date`.
 -- What describes a building or a roof face (its year, floors, label,

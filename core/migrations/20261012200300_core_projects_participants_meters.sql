@@ -34,7 +34,7 @@ set search_path = nexgen, public, extensions;
 -- ---------------------------------------------------------------------------
 
 create table projects (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   name             text not null,
   -- What the project is: an energy community, a portfolio, a study, a
@@ -65,14 +65,19 @@ comment on table projects is
 create index projects_geometry_idx on projects using gist (geometry);
 create trigger projects_normalize before insert or update of geometry on projects
   for each row execute function normalize_geometry('geometry');
-call declare_object('projects', 'project');
+create trigger projects_set_updated_at before update on projects
+  for each row execute function set_updated_at();
+create index projects_organisation_idx on projects (organisation_id);
+create trigger projects_drop_attachments after delete on projects
+  for each row execute function drop_attachments('project');
+call secure_table('projects');
 
 -- ---------------------------------------------------------------------------
 -- participants
 -- ---------------------------------------------------------------------------
 
 create table participants (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   project_id       uuid not null references projects(id) on delete cascade,
   -- The site it is on: the whole site, or the building, floor or unit of it
@@ -138,14 +143,25 @@ comment on function participants_check() is
 
 create trigger participants_check before insert or update of parent_id, project_id, site_id, contact_id, join_date, leave_date, scenario_id on participants
   for each row execute function participants_check();
-call declare_object('participants', 'participant', '{site_id,project_id,parent_id}');
+create trigger participants_site_id_check before insert or update of site_id, scenario_id on participants
+  for each row execute function parent_check('site_id', 'sites');
+create trigger participants_project_id_check before insert or update of project_id, scenario_id on participants
+  for each row execute function parent_check('project_id', 'projects');
+create trigger participants_parent_id_check before insert or update of parent_id, scenario_id on participants
+  for each row execute function parent_check('parent_id', 'participants');
+create trigger participants_set_updated_at before update on participants
+  for each row execute function set_updated_at();
+create index participants_organisation_idx on participants (organisation_id);
+create trigger participants_drop_attachments after delete on participants
+  for each row execute function drop_attachments('participant');
+call secure_table('participants');
 
 -- ---------------------------------------------------------------------------
 -- meters — connection points.
 -- ---------------------------------------------------------------------------
 
 create table meters (
-  id                uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id                uuid primary key default gen_random_uuid(),
   organisation_id   uuid not null references organisations(id) on delete cascade,
   site_id           uuid not null references sites(id) on delete cascade,
   -- The participant that carries it, on the same site: what is behind the
@@ -209,7 +225,14 @@ comment on function meters_check() is
 
 create trigger meters_check before insert or update of identifier, scheme, site_id, participant_id on meters
   for each row execute function meters_check();
-call declare_object('meters', 'meter', '{site_id}');
+create trigger meters_site_id_check before insert or update of site_id, scenario_id on meters
+  for each row execute function parent_check('site_id', 'sites');
+create trigger meters_set_updated_at before update on meters
+  for each row execute function set_updated_at();
+create index meters_organisation_idx on meters (organisation_id);
+create trigger meters_drop_attachments after delete on meters
+  for each row execute function drop_attachments('meter');
+call secure_table('meters');
 
 -- The connection points a participant carries, or the participants it
 -- groups carry.
@@ -346,8 +369,8 @@ begin
     select coalesce(max(l.valid_to)::date, (select join_date from participants where id = m.participant_id), m.valid_from)
       into v_since
       from links l where l.subject_id = p_meter_id and l.type_code = 'carried_by';
-    insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
-    values (p_meter_id, 'carried_by', m.participant_id, case when v_since < p_on then v_since end, p_on, m.scenario_id);
+    insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, valid_to, scenario_id)
+    values ('meter', p_meter_id, 'carried_by', 'participant', m.participant_id, case when v_since < p_on then v_since end, p_on, m.scenario_id);
   end if;
   update meters set participant_id = p_participant_id where id = p_meter_id;
 end;

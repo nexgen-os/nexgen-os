@@ -39,7 +39,7 @@ describe('the hierarchy of the core', () => {
     const r = await one<{ modules: number; kinds: string[] }>(
       db,
       `select (select count(*)::int from modules) modules,
-              (select array_agg(kind order by kind) from object_kinds where published_by = 'core' and kind in ('project', 'participant', 'meter')) kinds`,
+              (select array_agg(kind order by kind) from kinds where published_by = 'core' and kind in ('project', 'participant', 'meter')) kinds`,
     );
     expect(r).toEqual({ modules: 0, kinds: ['meter', 'participant', 'project'] });
   });
@@ -70,7 +70,7 @@ describe('the hierarchy of the core', () => {
     expect(today.meter_id).toBe(second);
     const history = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
       `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_id = $1 and type_code = 'behind_meter'`,
+         from links where subject_kind = 'device' and subject_id = $1 and type_code = 'behind_meter'`,
       [device],
     );
     expect(history.rows).toEqual([{ object_id: meter, valid_from: '2026-02-01', valid_to: '2026-06-01' }]);
@@ -78,7 +78,7 @@ describe('the hierarchy of the core', () => {
     await db.query(`select connect_device($1, $2, '2026-09-01')`, [device, meter]);
     const back = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
       `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_id = $1 and type_code = 'behind_meter' order by valid_to`,
+         from links where subject_kind = 'device' and subject_id = $1 and type_code = 'behind_meter' order by valid_to`,
       [device],
     );
     expect(back.rows).toEqual([
@@ -151,7 +151,7 @@ describe('a building with two flats', () => {
     expect(today.participant_id).toBe(tenant);
     const history = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
       `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_id = $1 and type_code = 'carried_by'`,
+         from links where subject_kind = 'meter' and subject_id = $1 and type_code = 'carried_by'`,
       [flats[0].meter],
     );
     expect(history.rows).toEqual([{ object_id: flats[0].participant, valid_from: '2026-01-01', valid_to: '2026-07-01' }]);

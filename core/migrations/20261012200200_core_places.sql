@@ -1,19 +1,21 @@
--- Nexgen OS — core: scenarios, the object registry, and the places.
+-- Nexgen OS — core: scenarios, what every kind of object shares, and the
+-- places.
 --
 -- The core names its objects: an organisation, a project, a participant, a
--- site, a meter, a device. Each is a table with the columns it always has. What every object
--- shares — an id, an organisation, a scenario — is kept once in `objects`,
--- the registry every attachment (attributes, identifiers, links, documents,
--- series, runs) points to. The registry is plumbing: a page reads
--- `from sites`, never `from objects`.
+-- site, a meter, a device. Each is a table with the columns it always has,
+-- and its hierarchy is its foreign keys: a participant belongs to a
+-- project, a meter to a site and a participant, a device to a site and a
+-- meter. An attachment (an attribute, an identifier, a link, a document, a
+-- series, a run) names its object by its kind and its id; `kinds` says
+-- which table holds a kind, and `object_organisation()` reads an object's
+-- organisation there. There is no registry (decision 0044).
 --
 -- The place of the core is the site: an address, a point or a parcel, a
 -- time zone, geolocated but not described. What a place physically is —
 -- its buildings, their floors, rooms and units, their roof faces and
 -- facades, where a device sits among them — is the description of a
--- building, the `building` module's (decision 0008), which declares its own kinds
--- of object with `declare_object()` and is found by `site_of()` like any
--- other.
+-- building, the `building` module's (decision 0008), which publishes its own
+-- kinds of object in `kinds` and answers `site_of()` for them.
 --
 -- Geometry is stored in WGS 84 (EPSG:4326), always three-dimensional, Z in
 -- metres above sea level. Any CRS is accepted on the way in. Metric
@@ -48,88 +50,69 @@ create trigger scenarios_set_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------------
--- objects — the registry.
+-- What every kind of object shares.
 -- ---------------------------------------------------------------------------
 
-create table objects (
-  id               uuid primary key,
-  -- organisation, project, participant, site, meter, device — and the
-  -- kinds modules register (building, space, surface, pv_array, task…).
-  kind             text not null,
-  organisation_id  uuid not null references organisations(id) on delete cascade,
-  scenario_id      uuid references scenarios(id) on delete cascade,
-  created_at       timestamptz not null default now()
-);
-
-comment on table objects is
-  'One row per object of any kind, with what every attachment needs: its organisation and its scenario. Maintained by the triggers of the named tables; never written by hand.';
-
-create index objects_organisation_idx on objects (organisation_id);
-
--- What every kind of object is: its table, and the columns that lead to its
--- parents, in order of preference. Written by `declare_object()` for the core
--- kinds and the modules' alike, so that `site_of()` finds its way from any
--- object to its site without a module ever rewriting it.
-create table object_kinds (
-  kind            text primary key,
-  table_name      text not null,
-  parent_columns  text[] not null default '{}',
-  published_by    text not null default 'core'
-);
-
-comment on table object_kinds is
-  'One row per kind of object: the table that holds it and the columns leading to its parents, in order of preference. Filled by declare_object().';
-
--- Parents a module gives to a kind it does not own, through a table of its
--- own keyed by the object's id: where on its site a device is placed, for
--- one. Read before the kind's own columns, the finest place first, so that
--- `site_of()`, `ancestor_of()` and the cascade of `parameter_of()` walk
--- through it without the core knowing the module.
-create table object_parent_tables (
-  kind            text not null references object_kinds(kind) on delete cascade,
-  table_name      text not null,
-  key_column      text not null,
-  parent_columns  text[] not null,
-  published_by    text not null,
-  primary key (kind, table_name)
-);
-
-comment on table object_parent_tables is
-  'Parents a module gives to a kind of object it does not own: the module table keyed by the object''s id and its columns leading to the parents, in order of preference, read before the kind''s own. Filled by declare_parents().';
-
--- BEFORE INSERT / UPDATE / AFTER DELETE on every named table. tg_argv[0] is
--- the kind. Registers the row, keeps organisation fixed and scenario in sync.
-create or replace function register_object()
-returns trigger
+-- The organisation of an object named by its kind and its id, read in the
+-- table `kinds` gives for the kind: one dynamic query. An organisation is
+-- its own. Under row level security an object of an organisation the caller
+-- does not read is not found.
+create or replace function object_organisation(p_kind text, p_id uuid)
+returns uuid
 language plpgsql
+stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
+declare
+  t    text;
+  org  uuid;
 begin
-  if tg_op = 'INSERT' then
-    insert into objects (id, kind, organisation_id, scenario_id)
-    values (new.id, tg_argv[0], new.organisation_id, new.scenario_id);
-    return new;
-  elsif tg_op = 'UPDATE' then
-    if new.organisation_id <> old.organisation_id then
-      raise exception 'object_organisation_is_final' using errcode = 'check_violation';
-    end if;
-    if new.scenario_id is distinct from old.scenario_id then
-      update objects set scenario_id = new.scenario_id where id = new.id;
-    end if;
-    return new;
-  else
-    delete from objects where id = old.id;
-    return old;
+  select k.table_name into t from kinds k where k.kind = p_kind;
+  if t is null then
+    raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
   end if;
+  execute format('select %I from %s where id = $1', case when p_kind = 'organisation' then 'id' else 'organisation_id' end, t)
+    into org using p_id;
+  if org is null then
+    raise exception 'object_not_found: % %', p_kind, p_id using errcode = 'no_data_found';
+  end if;
+  return org;
 end;
 $$;
 
-comment on function register_object() is
-  'Trigger of every named table: registers the row in objects, keeps its organisation final and its scenario in step.';
+comment on function object_organisation(text, uuid) is
+  'The organisation of an object named by its kind and its id, read in the table of its kind. Refuses kind_unknown, object_not_found.';
 
--- BEFORE INSERT / UPDATE: the parent named by tg_argv[0] (a column holding
--- an object id) is in the same organisation, and a parent that exists only
--- in a scenario only holds children of that scenario.
+-- The scenario an object exists only in; null for what exists (and for an
+-- organisation, which belongs to none).
+create or replace function object_scenario(p_kind text, p_id uuid)
+returns uuid
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  t    text;
+  scn  uuid;
+begin
+  if p_kind = 'organisation' then
+    return null;
+  end if;
+  select k.table_name into t from kinds k where k.kind = p_kind;
+  if t is null then
+    raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
+  end if;
+  execute format('select scenario_id from %s where id = $1', t) into scn using p_id;
+  return scn;
+end;
+$$;
+
+comment on function object_scenario(text, uuid) is
+  'The scenario an object named by its kind and its id exists only in; null when it exists in reality. Refuses kind_unknown.';
+
+-- BEFORE INSERT / UPDATE: the parent named by the foreign key tg_argv[0],
+-- a row of the table tg_argv[1], is in the same organisation, and a parent
+-- that exists only in a scenario only holds children of that scenario.
 create or replace function parent_check()
 returns trigger
 language plpgsql
@@ -138,20 +121,21 @@ as $$
 declare
   col  text := tg_argv[0];
   pid  uuid;
-  p    objects%rowtype;
+  org  uuid;
+  scn  uuid;
 begin
   execute format('select ($1).%I', col) into pid using new;
   if pid is null then
     return new;
   end if;
-  select * into p from objects where id = pid;
-  if not found then
+  execute format('select organisation_id, scenario_id from %s where id = $1', tg_argv[1]) into org, scn using pid;
+  if org is null then
     raise exception 'parent_not_found: %', pid using errcode = 'foreign_key_violation';
   end if;
-  if p.organisation_id <> new.organisation_id then
+  if org <> new.organisation_id then
     raise exception 'parent_in_other_organisation: %', col using errcode = 'check_violation';
   end if;
-  if p.scenario_id is not null and p.scenario_id is distinct from new.scenario_id then
+  if scn is not null and scn is distinct from new.scenario_id then
     raise exception 'parent_in_other_scenario: %', col using errcode = 'check_violation';
   end if;
   return new;
@@ -159,106 +143,37 @@ end;
 $$;
 
 comment on function parent_check() is
-  'Trigger of every parent column: the parent is in the same organisation, and in the same scenario when it exists only in one.';
+  'Trigger of a foreign key to a parent (its column, then the parent''s table): the parent is in the same organisation, and in the same scenario when it exists only in one.';
 
--- Declares a named table as a kind of object: registry, parent checks,
--- updated_at, row level security.
-create or replace procedure declare_object(p_table text, p_kind text, p_parents text[] default '{}')
+-- AFTER DELETE on the table of a kind, tg_argv[0] being the kind: what was
+-- attached to the row goes with it. An attachment is a table carrying an
+-- `object_kind` and `object_id` pair (or `subject_kind` and `subject_id`):
+-- the core's, and those of a module that attach to an object of any kind.
+create or replace function drop_attachments()
+returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  n   text := replace(p_table, '.', '_');
-  col text;
-  v_by text := 'core';
+  t record;
 begin
-  -- A kind of a module's schema is published by the module that owns it,
-  -- under its code, which may differ from the schema's name (`building` owns
-  -- `building`); `modules` is created after this function, hence the
-  -- dynamic query.
-  if position('.' in p_table) > 0 then
-    execute 'select code from modules where schema_name = $1' into v_by using split_part(p_table, '.', 1);
-    v_by := coalesce(v_by, split_part(p_table, '.', 1));
-  end if;
-  insert into object_kinds (kind, table_name, parent_columns, published_by)
-  values (p_kind, p_table, p_parents, v_by)
-  on conflict (kind) do update set table_name = excluded.table_name, parent_columns = excluded.parent_columns, published_by = excluded.published_by;
-  execute format('create trigger %I before insert or update on %s for each row execute function register_object(%L)',
-                 n || '_register', p_table, p_kind);
-  execute format('create trigger %I after delete on %s for each row execute function register_object(%L)',
-                 n || '_unregister', p_table, p_kind);
-  foreach col in array p_parents loop
-    execute format('create trigger %I before insert or update of %I, scenario_id on %s for each row execute function parent_check(%L)',
-                   n || '_' || col || '_check', col, p_table, col);
-  end loop;
-  execute format('create trigger %I before update on %s for each row execute function set_updated_at()',
-                 n || '_set_updated_at', p_table);
-  execute format('create index %I on %s (organisation_id)', n || '_organisation_idx', p_table);
-  call secure_table(p_table);
-end;
-$$;
-
-comment on procedure declare_object(text, text, text[]) is
-  'Declares a named table as a kind of object, with its parent columns in order of preference: `call declare_object(''solar.pv_arrays'', ''pv_array'', ''{pv_system_id}'')`. A kind declared by a module is published by the module that owns the schema.';
-
-create or replace procedure declare_parents(p_table text, p_kind text, p_key text, p_parents text[])
-language plpgsql
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  v_by text;
-begin
-  execute 'select code from modules where schema_name = $1' into v_by using split_part(p_table, '.', 1);
-  insert into object_parent_tables (kind, table_name, key_column, parent_columns, published_by)
-  values (p_kind, p_table, p_key, p_parents, coalesce(v_by, split_part(p_table, '.', 1)))
-  on conflict (kind, table_name) do update set key_column = excluded.key_column, parent_columns = excluded.parent_columns;
-end;
-$$;
-
-comment on procedure declare_parents(text, text, text, text[]) is
-  'Declares a module table, keyed by the id of an object of a kind the module does not own, as giving that object parents: `call declare_parents(''<schema>.placements'', ''device'', ''device_id'', ''{<finest>,<coarsest>}'')`, the parents in order of preference.';
-
--- The parents of an object, in order of preference: those the modules give
--- it, then its own columns.
-create or replace function parents_of(p_object_id uuid)
-returns table (parent_id uuid)
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  k    text;
-  r    record;
-  col  text;
-  p    uuid;
-begin
-  select o.kind into k from objects o where o.id = p_object_id;
-  for r in
-    select x.table_name, x.key_column, x.parent_columns from object_parent_tables x where x.kind = k
-     order by x.table_name
+  for t in
+    select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
+      from pg_attribute a
+      join pg_class c on c.oid = a.attrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where a.attname in ('object_kind', 'subject_kind') and a.attnum > 0 and not a.attisdropped
+       and c.relkind in ('r', 'p') and not c.relispartition
   loop
-    foreach col in array r.parent_columns loop
-      execute format('select %I from %s where %I = $1', col, r.table_name, r.key_column) into p using p_object_id;
-      if p is not null and p <> p_object_id then
-        parent_id := p;
-        return next;
-      end if;
-    end loop;
+    execute format('delete from %s where %I = $1 and %I = $2', t.table_name, t.side || '_kind', t.side || '_id')
+      using tg_argv[0], old.id;
   end loop;
-  for r in select ok.table_name, ok.parent_columns from object_kinds ok where ok.kind = k loop
-    foreach col in array r.parent_columns loop
-      execute format('select %I from %s where id = $1', col, r.table_name) into p using p_object_id;
-      if p is not null and p <> p_object_id then
-        parent_id := p;
-        return next;
-      end if;
-    end loop;
-  end loop;
+  return old;
 end;
 $$;
 
-comment on function parents_of(uuid) is
-  'The direct parents of an object, in order of preference: those module tables give it (object_parent_tables), then its own parent columns (object_kinds).';
+comment on function drop_attachments() is
+  'AFTER DELETE on the table of a kind: deletes what was attached to the row, in every table carrying an object_kind / object_id (or subject_kind / subject_id) pair.';
 
 -- ---------------------------------------------------------------------------
 -- Geometry helpers
@@ -356,7 +271,7 @@ comment on function normalize_geometry() is
 -- ---------------------------------------------------------------------------
 
 create table sites (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   name             text not null,
   -- The place, in its one standard shape (`place_of()`, docs/model.md
@@ -426,110 +341,74 @@ comment on function sites_check() is
 
 create trigger sites_check before insert or update of time_zone on sites
   for each row execute function sites_check();
-call declare_object('sites', 'site');
+create trigger sites_set_updated_at before update on sites
+  for each row execute function set_updated_at();
+create index sites_organisation_idx on sites (organisation_id);
+create trigger sites_drop_attachments after delete on sites
+  for each row execute function drop_attachments('site');
 
 -- ---------------------------------------------------------------------------
 -- Where an object is.
 -- ---------------------------------------------------------------------------
 
--- The nearest object of a kind above an object: from any object, follow the
--- parent columns `object_kinds` names for its kind, in order of preference,
--- and keep the first path that reaches that kind. A module never rewrites
--- this function: declaring its objects is enough.
-create or replace function ancestor_of(p_object_id uuid, p_kind text)
+-- The site of an object, through the foreign keys of the core's kinds: a
+-- site is its own, a participant, a meter and a device name theirs, a series
+-- and a run are where their object is. A kind a module publishes is the
+-- module's to answer, with `<schema>.site_of(kind, id)`: the core hands it
+-- over without knowing the module. Null for what is not somewhere (an
+-- organisation, a project, a weather point).
+create or replace function site_of(p_kind text, p_id uuid)
 returns uuid
 language plpgsql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  k       text;
-  parent  uuid;
-  found   uuid;
+  v_schema  text;
+  v_site    uuid;
 begin
-  if p_object_id is null then
+  if p_id is null then
     return null;
   end if;
-  select o.kind into k from objects o where o.id = p_object_id;
-  if k is null then
-    return null;
-  elsif k = p_kind then
-    return p_object_id;
-  end if;
-  for parent in select parent_id from parents_of(p_object_id) loop
-    found := ancestor_of(parent, p_kind);
-    if found is not null then
-      return found;
-    end if;
-  end loop;
-  return null;
+  case p_kind
+    when 'site' then
+      return (select id from sites where id = p_id);
+    when 'participant' then
+      return (select site_id from participants where id = p_id);
+    when 'meter' then
+      return (select site_id from meters where id = p_id);
+    when 'device' then
+      return (select site_id from devices where id = p_id);
+    when 'series' then
+      return (select site_of(object_kind, object_id) from series where id = p_id);
+    when 'run' then
+      return (select site_of(subject_kind, subject_id) from runs where id = p_id);
+    when 'organisation', 'project' then
+      return null;
+    else
+      select m.schema_name into v_schema from kinds k join modules m on m.code = k.published_by where k.kind = p_kind;
+      if v_schema is null or to_regprocedure(format('%I.site_of(text, uuid)', v_schema)) is null then
+        return null;
+      end if;
+      execute format('select %I.site_of($1, $2)', v_schema) into v_site using p_kind, p_id;
+      return v_site;
+  end case;
 end;
 $$;
 
-comment on function ancestor_of(uuid, text) is
-  'The object itself when it is of the kind asked, else the nearest object of that kind above it along its parents (parents_of); null when none.';
+comment on function site_of(text, uuid) is
+  'The site an object named by its kind and its id is on: its own foreign key for the core''s kinds, its object''s for a series or a run, the publishing module''s <schema>.site_of(kind, id) for a module''s kind. Null for an object that is not somewhere (an organisation, a project, a weather point).';
 
--- Every object above an object, nearest first: the parents named by its
--- parent columns, then theirs. `parameter_of()` walks it.
-create or replace function ancestors_of(p_object_id uuid)
-returns table (object_id uuid, kind text, depth integer)
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  frontier  uuid[] := array[p_object_id];
-  upcoming  uuid[];
-  seen      uuid[] := array[p_object_id];
-  d         integer := 0;
-  o         uuid;
-  parent    uuid;
-begin
-  while cardinality(frontier) > 0 loop
-    d := d + 1;
-    upcoming := '{}';
-    foreach o in array frontier loop
-      for parent in select parent_id from parents_of(o) loop
-        if not parent = any (seen) then
-          seen := seen || parent;
-          upcoming := upcoming || parent;
-          object_id := parent;
-          kind := (select ob.kind from objects ob where ob.id = parent);
-          depth := d;
-          return next;
-        end if;
-      end loop;
-    end loop;
-    frontier := upcoming;
-  end loop;
-end;
-$$;
-
-comment on function ancestors_of(uuid) is
-  'Every object above an object along its parents (parents_of), nearest first, each once, with its kind and its depth.';
-
-create or replace function site_of(p_object_id uuid)
-returns uuid
-language sql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-  select ancestor_of(p_object_id, 'site');
-$$;
-
-comment on function site_of(uuid) is
-  'The site an object is on, whatever its kind. Null for an object that is not somewhere (an organisation, a weather point).';
-
-create or replace function country_of(p_object_id uuid)
+create or replace function country_of(p_kind text, p_id uuid)
 returns char(2)
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select country from sites where id = site_of(p_object_id);
+  select country from sites where id = site_of(p_kind, p_id);
 $$;
 
-comment on function country_of(uuid) is
+comment on function country_of(text, uuid) is
   'The country of the site an object is on. Selects the country packs and the country level of parameter_of().';
 
 -- ---------------------------------------------------------------------------
@@ -591,7 +470,7 @@ begin
     'geometry', ST_AsGeoJSON(s.geometry)::jsonb,
     'location_precision', s.location_precision, 'location_source_code', s.location_source_code,
     'identifiers', coalesce((select jsonb_agg(jsonb_build_object('scheme', e.scheme, 'value', e.value) order by e.scheme, e.value)
-                               from external_ids e where e.object_id = s.id), '[]'::jsonb))
+                               from external_ids e where e.object_kind = 'site' and e.object_id = s.id), '[]'::jsonb))
     from sites s where s.id = p_site_id);
 end;
 $$;
@@ -665,7 +544,7 @@ begin
           case when jsonb_typeof(v_place->'geometry') = 'object' then ST_GeomFromGeoJSON(v_place->'geometry') end,
           v_place->>'location_precision', v_place->>'location_source_code', p_profile, p_scenario_id);
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_id, scheme, value, scenario_id) values (v_id, i->>'scheme', i->>'value', p_scenario_id);
+    insert into external_ids (object_kind, object_id, scheme, value, scenario_id) values ('site', v_id, i->>'scheme', i->>'value', p_scenario_id);
   end loop;
   return v_id;
 end;
@@ -707,7 +586,7 @@ begin
     location_source_code = case when v_place ? 'location_source_code' then v_place->>'location_source_code' else location_source_code end
    where id = p_site_id;
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_id, scheme, value, scenario_id) values (p_site_id, i->>'scheme', i->>'value', s.scenario_id)
+    insert into external_ids (object_kind, object_id, scheme, value, scenario_id) values ('site', p_site_id, i->>'scheme', i->>'value', s.scenario_id)
     on conflict do nothing;
   end loop;
 end;
@@ -717,22 +596,14 @@ comment on function locate_site(uuid, jsonb) is
   'Places a site again from a place in the standard shape: the keys given replace, the others are kept, identifiers are added. Refuses country_is_final, invalid_geometry.';
 
 -- ---------------------------------------------------------------------------
--- Row level security of what is not an object
+-- Row level security
 -- ---------------------------------------------------------------------------
 
 call secure_table('scenarios');
+call secure_table('sites');
 
-alter table objects enable row level security;
-create policy objects_select on objects
-  for select to authenticated using (can_read_organisation(organisation_id));
-create policy objects_write on objects
-  for all to authenticated
-  using (can_write_organisation(organisation_id))
-  with check (can_write_organisation(organisation_id));
-grant select, insert, update, delete on objects to authenticated, service_role;
-
-grant execute on function metric_srid(geometry), area_m2(geometry), to_core_geometry(geometry),
-  parents_of(uuid), ancestor_of(uuid, text), ancestors_of(uuid), site_of(uuid), country_of(uuid),
+grant execute on function object_organisation(text, uuid), object_scenario(text, uuid),
+  metric_srid(geometry), area_m2(geometry), to_core_geometry(geometry), site_of(text, uuid), country_of(text, uuid),
   place_check(jsonb), place_of(uuid),
   create_scenario(uuid, text, uuid, text), create_site(uuid, text, jsonb, text, text, uuid), locate_site(uuid, jsonb)
   to authenticated, service_role;

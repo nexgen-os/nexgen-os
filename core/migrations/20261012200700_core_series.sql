@@ -38,8 +38,10 @@ set search_path = nexgen, public, extensions;
 create table series (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- What is observed: a room, a building, a site, a device, a meter.
-  object_id        uuid not null references objects(id) on delete cascade,
+  -- What is observed, by its kind and its id: a room, a building, a site,
+  -- a device, a meter.
+  object_kind      text not null references kinds(kind),
+  object_id        uuid not null,
   quantity_code    text not null references quantities(code),
   -- The device that produces or receives the values: the thermometer, the
   -- inverter, the meter, the heat pump asked a setpoint. Null for a series
@@ -89,14 +91,14 @@ comment on table series is
 -- One series per identity: two imports of the same meter find the same
 -- series, two runs never share one.
 create unique index series_identity on series
-  (object_id, quantity_code, kind, source_code, scenario_id, name, run_id) nulls not distinct;
+  (object_kind, object_id, quantity_code, kind, source_code, scenario_id, name, run_id) nulls not distinct;
 create index series_quantity_idx on series (quantity_code);
 create index series_device_idx on series (device_id);
 create index series_run_idx on series (run_id);
 
 create trigger series_attach
   before insert or update on series
-  for each row execute function attach('object_id');
+  for each row execute function attach('object');
 
 -- The device of a series is of the series' organisation, and of its
 -- scenario when it exists only in one.
@@ -106,12 +108,12 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  d objects%rowtype;
+  d devices%rowtype;
 begin
   if new.device_id is null then
     return new;
   end if;
-  select * into d from objects where id = new.device_id;
+  select * into d from devices where id = new.device_id;
   if d.organisation_id <> new.organisation_id then
     raise exception 'device_in_other_organisation: %', new.device_id using errcode = 'check_violation';
   end if;
@@ -490,7 +492,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
   select s.time_zone
     from series se
-    join sites s on s.id = site_of(se.object_id)
+    join sites s on s.id = site_of(se.object_kind, se.object_id)
    where se.id = p_series_id;
 $$;
 
@@ -1004,6 +1006,7 @@ comment on function export_rows(uuid[], timestamptz, timestamptz) is
 -- finds the first one's series, never a twin; one that says another value
 -- kind or another step is refused.
 create or replace function series_ensure(
+  p_object_kind   text,
   p_object_id     uuid,
   p_quantity_code text,
   p_kind          text default 'measured',
@@ -1031,17 +1034,17 @@ begin
   if p_kind = 'simulated' and p_run_id is null and p_source_code is null then
     raise exception 'series_run_required: a simulated series is written by a run, or comes from a named source' using errcode = 'check_violation';
   end if;
-  insert into series (object_id, quantity_code, kind, value_kind, step, device_id, external_ref, source_code, name,
+  insert into series (object_kind, object_id, quantity_code, kind, value_kind, step, device_id, external_ref, source_code, name,
                       scenario_id, metadata, run_id)
-  values (p_object_id, p_quantity_code, p_kind, p_value_kind, p_step, p_device_id, p_external_ref, p_source_code, p_name,
+  values (p_object_kind, p_object_id, p_quantity_code, p_kind, p_value_kind, p_step, p_device_id, p_external_ref, p_source_code, p_name,
           p_scenario_id, coalesce(p_metadata, '{}'), p_run_id)
-  on conflict (object_id, quantity_code, kind, source_code, scenario_id, name, run_id) do nothing;
+  on conflict (object_kind, object_id, quantity_code, kind, source_code, scenario_id, name, run_id) do nothing;
   select * into s from series
-   where object_id = p_object_id and quantity_code = p_quantity_code and kind = p_kind
+   where object_kind = p_object_kind and object_id = p_object_id and quantity_code = p_quantity_code and kind = p_kind
      and source_code is not distinct from p_source_code and scenario_id is not distinct from p_scenario_id
      and name is not distinct from p_name and run_id is not distinct from p_run_id;
   if not found then
-    raise exception 'series_not_found: the series of object % and quantity % is not readable', p_object_id, p_quantity_code using errcode = 'no_data_found';
+    raise exception 'series_not_found: the series of % % and quantity % is not readable', p_object_kind, p_object_id, p_quantity_code using errcode = 'no_data_found';
   end if;
   if s.value_kind <> p_value_kind then
     raise exception 'series_value_kind_mismatch: the series % holds % values, not %', s.id, s.value_kind, p_value_kind
@@ -1055,13 +1058,13 @@ begin
 end;
 $$;
 
-comment on function series_ensure(uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid) is
-  'The series of an identity (object, quantity, kind, source, scenario, name, run), found or created once, with the device that produces it and where a connector finds it. Refuses quantity_unknown, series_run_required, series_value_kind_mismatch, series_step_mismatch. Returns its id.';
+comment on function series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid) is
+  'The series of an identity (object by its kind and id, quantity, kind, source, scenario, name, run), found or created once, with the device that produces it and where a connector finds it. Refuses quantity_unknown, series_run_required, series_value_kind_mismatch, series_step_mismatch. Returns its id.';
 
 -- The one way values are written (decision 0031). The series is named by
 -- its id, or by its identity in `p_series` — the keys of series_ensure():
 --
---   { "object_id": "…", "quantity_code": "offtake_energy", "kind": "measured",
+--   { "object_kind": "meter", "object_id": "…", "quantity_code": "offtake_energy", "kind": "measured",
 --     "source_code": "…", "value_kind": "interval", "step": "15 minutes",
 --     "name": null, "scenario_id": null, "run_id": null, "device_id": null,
 --     "external_ref": null, "metadata": {} }
@@ -1104,15 +1107,15 @@ declare
 begin
   -- The series: by id, or ensured from its identity.
   if p_series_id is null then
-    if p_series is null or p_series->>'object_id' is null or p_series->>'quantity_code' is null then
-      raise exception 'series_required: name a series by its id, or by its object and quantity' using errcode = 'invalid_parameter_value';
+    if p_series is null or p_series->>'object_kind' is null or p_series->>'object_id' is null or p_series->>'quantity_code' is null then
+      raise exception 'series_required: name a series by its id, or by its object (kind and id) and quantity' using errcode = 'invalid_parameter_value';
     end if;
-    select o.organisation_id into org from objects o where o.id = (p_series->>'object_id')::uuid;
-    if org is null or not (caller_bypasses_rls() or can_write_organisation(org)) then
+    org := object_organisation(p_series->>'object_kind', (p_series->>'object_id')::uuid);
+    if not (caller_bypasses_rls() or can_write_organisation(org)) then
       raise exception 'object_not_found: %', p_series->>'object_id' using errcode = 'no_data_found';
     end if;
     p_series_id := series_ensure(
-      (p_series->>'object_id')::uuid, p_series->>'quantity_code', coalesce(p_series->>'kind', 'measured'),
+      p_series->>'object_kind', (p_series->>'object_id')::uuid, p_series->>'quantity_code', coalesce(p_series->>'kind', 'measured'),
       coalesce(p_series->>'value_kind', 'interval'), (p_series->>'step')::interval, (p_series->>'device_id')::uuid,
       p_series->>'external_ref', p_series->>'source_code', p_series->>'name', (p_series->>'scenario_id')::uuid,
       coalesce(p_series->'metadata', '{}'::jsonb), (p_series->>'run_id')::uuid);
@@ -1321,6 +1324,8 @@ $$;
 -- ---------------------------------------------------------------------------
 
 call secure_table('series');
+create trigger series_drop_attachments after delete on series
+  for each row execute function drop_attachments('series');
 
 -- Values are read under the policy of their series and written by store()
 -- only: no insert, update or delete is granted to the API roles.
@@ -1377,7 +1382,7 @@ grant execute on function unit_code(text), convert_unit(double precision, text, 
   forecast_at(uuid, timestamptz, timestamptz, timestamptz, interval),
   export_rows(uuid[], timestamptz, timestamptz),
   series_values_partition(date),
-  series_ensure(uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid),
+  series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid),
   store(uuid, timestamptz[], float8[], smallint[], text, timestamptz, jsonb)
   to authenticated, service_role;
 grant execute on function series_rollup(integer) to service_role;

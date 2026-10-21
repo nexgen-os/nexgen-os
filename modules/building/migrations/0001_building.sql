@@ -14,12 +14,14 @@
 --   building.surfaces     roof faces, facades, ground areas, carports
 --   building.devices   the building, space and surface a device is in or on
 --
--- Buildings, spaces and surfaces are kinds of object declared with
--- `declare_object()`: `site_of()`, `country_of()`, `parameter_of()` and the
--- attachments reach them as they reach any object of the core. A placement
--- is one row per placed device, with the device's id (decision 0042): the
--- core's device knows its site and its meter, this module where on the site
--- it is (decision 0026). Geometry follows the core's frame (decision 0003):
+-- Buildings, spaces and surfaces are kinds of object, published in `kinds`:
+-- attributes, identifiers, links, documents and series name them by kind
+-- and id as they name any object of the core, and `site_of()` asks this
+-- module's `building.site_of()` where they are. A placement is one row per
+-- placed device, with the device's id (decision 0042): the core's device
+-- knows its site and its meter, this module where on the site it is
+-- (decision 0026), and `building.parameter_of()` resolves a parameter
+-- through that place before asking the core. Geometry follows the core's frame (decision 0003):
 -- WGS 84, three-dimensional, through `to_core_geometry()`.
 
 set search_path = nexgen, public, extensions;
@@ -27,10 +29,15 @@ set search_path = nexgen, public, extensions;
 create schema building;
 grant usage on schema building to authenticated, service_role;
 
--- Registered first: the kinds it declares are published under its code.
+-- Registered first: the kinds it publishes are published under its code.
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('building', 'Building', '0.1.0', 'building', '0.3.0',
         'The physical description of a place: buildings, their floors, rooms, zones and units, roof faces, facades and ground areas with their orientation, where a device is placed among them, and which of them a participant occupies.');
+
+insert into kinds (kind, table_name, published_by) values
+  ('building', 'building.buildings', 'building'),
+  ('space',    'building.spaces',    'building'),
+  ('surface',  'building.surfaces',  'building');
 
 -- Vertical faces of a footprint between two heights, plus floor and roof:
 -- the level-of-detail 1 block. Derived, never stored.
@@ -135,7 +142,7 @@ comment on function building.surface_orientation(geometry) is
 -- ---------------------------------------------------------------------------
 
 create table building.buildings (
-  id                   uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id                   uuid primary key default gen_random_uuid(),
   organisation_id      uuid not null references organisations(id) on delete cascade,
   site_id              uuid not null references sites(id) on delete cascade,
   name                 text not null,
@@ -170,7 +177,14 @@ create index buildings_site_idx on building.buildings (site_id);
 create index buildings_footprint_idx on building.buildings using gist (footprint);
 create trigger buildings_normalize before insert or update of footprint on building.buildings
   for each row execute function normalize_geometry('footprint');
-call declare_object('building.buildings', 'building', '{site_id}');
+create trigger buildings_site_id_check before insert or update of site_id, scenario_id on building.buildings
+  for each row execute function parent_check('site_id', 'sites');
+create trigger buildings_set_updated_at before update on building.buildings
+  for each row execute function set_updated_at();
+create index buildings_organisation_idx on building.buildings (organisation_id);
+create trigger buildings_drop_attachments after delete on building.buildings
+  for each row execute function drop_attachments('building');
+call secure_table('building.buildings');
 
 create or replace function building.building_volume(p_building_id uuid)
 returns geometry
@@ -190,7 +204,7 @@ comment on function building.building_volume(uuid) is
 -- ---------------------------------------------------------------------------
 
 create table building.spaces (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   building_id      uuid not null references building.buildings(id) on delete cascade,
   -- The space it is part of: a room on a floor, a room in a zone, a unit
@@ -270,14 +284,23 @@ comment on function building.spaces_check() is
 
 create trigger spaces_check before insert or update of parent_id, building_id on building.spaces
   for each row execute function building.spaces_check();
-call declare_object('building.spaces', 'space', '{parent_id,building_id}');
+create trigger spaces_parent_id_check before insert or update of parent_id, scenario_id on building.spaces
+  for each row execute function parent_check('parent_id', 'building.spaces');
+create trigger spaces_building_id_check before insert or update of building_id, scenario_id on building.spaces
+  for each row execute function parent_check('building_id', 'building.buildings');
+create trigger spaces_set_updated_at before update on building.spaces
+  for each row execute function set_updated_at();
+create index spaces_organisation_idx on building.spaces (organisation_id);
+create trigger spaces_drop_attachments after delete on building.spaces
+  for each row execute function drop_attachments('space');
+call secure_table('building.spaces');
 
 -- ---------------------------------------------------------------------------
 -- surfaces — the planar things something is mounted on.
 -- ---------------------------------------------------------------------------
 
 create table building.surfaces (
-  id               uuid primary key default gen_random_uuid() references objects(id) on delete cascade deferrable initially deferred,
+  id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- On a building (a roof face, a facade) or straight on a site (a ground
   -- area, a car park).
@@ -314,7 +337,16 @@ create index surfaces_site_idx on building.surfaces (site_id);
 create index surfaces_geometry_idx on building.surfaces using gist (geometry);
 create trigger surfaces_normalize before insert or update of geometry on building.surfaces
   for each row execute function normalize_geometry('geometry');
-call declare_object('building.surfaces', 'surface', '{building_id,site_id}');
+create trigger surfaces_building_id_check before insert or update of building_id, scenario_id on building.surfaces
+  for each row execute function parent_check('building_id', 'building.buildings');
+create trigger surfaces_site_id_check before insert or update of site_id, scenario_id on building.surfaces
+  for each row execute function parent_check('site_id', 'sites');
+create trigger surfaces_set_updated_at before update on building.surfaces
+  for each row execute function set_updated_at();
+create index surfaces_organisation_idx on building.surfaces (organisation_id);
+create trigger surfaces_drop_attachments after delete on building.surfaces
+  for each row execute function drop_attachments('surface');
+call secure_table('building.surfaces');
 
 create or replace function building.add_building(
   p_site_id      uuid,
@@ -405,12 +437,15 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   v_id    uuid := gen_random_uuid();
-  host    objects%rowtype;
+  host    record;
   g       geometry := to_core_geometry(p_geometry);
   derived record;
 begin
-  select * into host from objects where id = p_host_id;
-  if not found or host.kind not in ('building', 'site') then
+  select 'building' as kind, b.organisation_id, b.scenario_id into host from building.buildings b where b.id = p_host_id;
+  if not found then
+    select 'site' as kind, s.organisation_id, s.scenario_id into host from sites s where s.id = p_host_id;
+  end if;
+  if host.kind is null then
     raise exception 'surface_host_kind: a surface is on a building or a site' using errcode = 'check_violation';
   end if;
   if p_azimuth_deg is null and p_tilt_deg is null and p_kind in ('roof', 'facade') then
@@ -506,9 +541,11 @@ begin
   if new.building_id is not null and (select site_id from building.buildings where id = new.building_id) <> d.site_id then
     raise exception 'device_building_site_mismatch: the building is not on the device''s site' using errcode = 'check_violation';
   end if;
-  foreach v_place in array array[new.building_id, new.space_id, new.surface_id] loop
-    if v_place is not null and (select o.scenario_id from objects o where o.id = v_place) is not null
-       and (select o.scenario_id from objects o where o.id = v_place) is distinct from d.scenario_id then
+  foreach v_place in array array[
+    (select scenario_id from building.buildings where id = new.building_id),
+    (select scenario_id from building.spaces where id = new.space_id),
+    (select scenario_id from building.surfaces where id = new.surface_id)] loop
+    if v_place is not null and v_place is distinct from d.scenario_id then
       raise exception 'parent_in_other_scenario: the place exists only in another scenario than the device' using errcode = 'check_violation';
     end if;
   end loop;
@@ -524,30 +561,150 @@ create trigger devices_check before insert or update on building.devices
 create trigger devices_set_updated_at before update on building.devices
   for each row execute function set_updated_at();
 call secure_table('building.devices');
--- A placed device has the finest place it names as its first parents:
--- `site_of()`, `building.building_of()` and the cascade of `parameter_of()`
--- go through its surface, its space, its building, then its site.
-call declare_parents('building.devices', 'device', 'device_id', '{space_id,surface_id,building_id}');
 
--- The building an object is in or on: a space or a surface by its columns,
--- a device by its placement, an object of a device (a PV array of a system)
--- through the device; else, for an object placed on a surface, through its
--- open `placed_on` link.
-create or replace function building.building_of(p_object_id uuid)
+-- ---------------------------------------------------------------------------
+-- Where an object is, among what is built.
+-- ---------------------------------------------------------------------------
+
+-- The site of a building, a space or a surface, through their foreign keys.
+-- `site_of()` of the core hands this module its own kinds.
+create or replace function building.site_of(p_kind text, p_id uuid)
 returns uuid
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select coalesce(
-    ancestor_of(p_object_id, 'building'),
-    (select f.building_id from links l join building.surfaces f on f.id = l.object_id
-      where l.subject_id = p_object_id and l.type_code = 'placed_on' and l.valid_to is null and f.building_id is not null
-      order by l.valid_from desc nulls last limit 1));
+  select case p_kind
+    when 'building' then (select b.site_id from building.buildings b where b.id = p_id)
+    when 'space' then (select b.site_id from building.spaces sp join building.buildings b on b.id = sp.building_id where sp.id = p_id)
+    when 'surface' then (select coalesce(f.site_id, b.site_id) from building.surfaces f
+                           left join building.buildings b on b.id = f.building_id where f.id = p_id)
+  end;
 $$;
 
-comment on function building.building_of(uuid) is
-  'The building an object is in or on — a space, a surface, a device through its placement, a PV array through its system''s placement or the surface it is placed on — whatever its kind. Null when it is in none.';
+comment on function building.site_of(text, uuid) is
+  'The site a building, a space or a surface is on, through their foreign keys; what site_of() of the core answers for the kinds of this module.';
+
+-- What is built above an object, nearest first: for a placed device, the
+-- space it is in and the spaces holding it, the surface it is on, its
+-- building; for a space, the spaces holding it and its building; for a
+-- surface, its building.
+create or replace function building.places_of(p_kind text, p_id uuid)
+returns table (kind text, object_id uuid)
+language sql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+  with recursive start as (
+    select case p_kind when 'device' then (select space_id from building.devices where device_id = p_id)
+                       when 'space' then (select parent_id from building.spaces where id = p_id) end as space_id
+  ),
+  up as (
+    select sp.id, sp.parent_id, 1 as depth from building.spaces sp join start on sp.id = start.space_id
+    union all
+    select sp.id, sp.parent_id, up.depth + 1 from building.spaces sp join up on sp.id = up.parent_id
+  ),
+  places as (
+    select 'space'::text as kind, up.id as object_id, up.depth as n from up
+    union all
+    select 'surface', d.surface_id, 1000 from building.devices d where p_kind = 'device' and d.device_id = p_id
+    union all
+    select 'building', case p_kind
+                         when 'device' then (select building_id from building.devices where device_id = p_id)
+                         when 'space' then (select building_id from building.spaces where id = p_id)
+                         when 'surface' then (select building_id from building.surfaces where id = p_id)
+                       end, 2000
+  )
+  select kind, object_id from places where object_id is not null order by n;
+$$;
+
+comment on function building.places_of(text, uuid) is
+  'What is built above an object, nearest first: a placed device''s spaces, surface and building; a space''s spaces and building; a surface''s building.';
+
+-- The building an object is in or on: itself, a space or a surface by its
+-- columns, a device by its placement, a PV array of the `solar` module
+-- through its system's placement; else, for an object placed on a surface,
+-- through its open `placed_on` link.
+create or replace function building.building_of(p_kind text, p_id uuid)
+returns uuid
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_building  uuid;
+  v_system    uuid;
+begin
+  if p_kind = 'building' then
+    return (select id from building.buildings where id = p_id);
+  end if;
+  select object_id into v_building from building.places_of(p_kind, p_id) where kind = 'building';
+  if v_building is null and p_kind = 'pv_array' and to_regclass('solar.pv_arrays') is not null then
+    execute 'select pv_system_id from solar.pv_arrays where id = $1' into v_system using p_id;
+    select building_id into v_building from building.devices where device_id = v_system;
+  end if;
+  return coalesce(v_building,
+    (select f.building_id from links l join building.surfaces f on f.id = l.object_id
+      where l.subject_kind = p_kind and l.subject_id = p_id and l.type_code = 'placed_on' and l.object_kind = 'surface'
+        and l.valid_to is null and f.building_id is not null
+      order by l.valid_from desc nulls last limit 1));
+end;
+$$;
+
+comment on function building.building_of(text, uuid) is
+  'The building an object (its kind and id) is in or on — a space, a surface, a device through its placement, a PV array through its system''s placement or the surface it is placed on. Null when it is in none.';
+
+-- A parameter resolved through what is built: the object's own attribute,
+-- then the places above it nearest first (building.places_of), then what
+-- the core answers — for a device, the core's cascade from the device; for
+-- a building, a space or a surface, the core's from its site, where the
+-- site's own value is the site's level.
+create or replace function building.parameter_of(
+  p_kind          text,
+  p_id            uuid,
+  p_property_code text,
+  p_at            timestamptz default now(),
+  p_scenario_id   uuid default null
+)
+returns jsonb
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  a    attributes%rowtype;
+  anc  record;
+  r    jsonb;
+begin
+  if not exists (select 1 from property_defs where code = p_property_code) then
+    raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
+  end if;
+  perform object_organisation(p_kind, p_id);
+  a := attribute_at(p_id, p_property_code, p_at, p_scenario_id);
+  if a.id is not null then
+    return jsonb_build_object('value', a.value, 'level', 'object', 'object_id', p_id,
+                              'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
+  end if;
+  for anc in select * from building.places_of(p_kind, p_id) loop
+    a := attribute_at(anc.object_id, p_property_code, p_at, p_scenario_id);
+    if a.id is not null then
+      return jsonb_build_object('value', a.value, 'level', anc.kind, 'object_id', anc.object_id,
+                                'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
+    end if;
+  end loop;
+  if p_kind not in ('building', 'space', 'surface') then
+    return parameter_of(p_kind, p_id, p_property_code, p_at, p_scenario_id);
+  end if;
+  r := parameter_of('site', building.site_of(p_kind, p_id), p_property_code, p_at, p_scenario_id);
+  if r->>'level' = 'object' then
+    r := r || jsonb_build_object('level', 'site');
+  end if;
+  return r;
+end;
+$$;
+
+comment on function building.parameter_of(text, uuid, text, timestamptz, uuid) is
+  'The value of a parameter for an object, through what is built: its own attribute, the spaces, surface and building above it nearest first, then the core''s parameter_of() — from the device for a device, from the site for a building, a space or a surface.';
 
 -- ---------------------------------------------------------------------------
 -- Link types: where a device was, what an array sits on, who occupies what.
@@ -634,8 +791,11 @@ begin
     raise exception 'device_retired: % was removed on %', d.name, d.removal_date using errcode = 'check_violation';
   end if;
   select * into p from building.devices where device_id = p_device_id;
-  insert into links (subject_id, type_code, object_id, valid_from, valid_to, scenario_id)
-  values (p_device_id, 'placed_in', coalesce(p.space_id, p.surface_id, p.building_id, d.site_id), d.installation_date, p_at, d.scenario_id)
+  insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, valid_to, scenario_id)
+  values ('device', p_device_id, 'placed_in',
+          case when p.space_id is not null then 'space' when p.surface_id is not null then 'surface'
+               when p.building_id is not null then 'building' else 'site' end,
+          coalesce(p.space_id, p.surface_id, p.building_id, d.site_id), d.installation_date, p_at, d.scenario_id)
   on conflict do nothing;
   perform building.place_device(p_device_id, p_building_id, p_space_id, p_surface_id);
 end;
@@ -654,27 +814,30 @@ security invoker
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  f   building.surfaces%rowtype;
+  f    building.surfaces%rowtype;
+  scn  uuid;
 begin
   if to_regclass('solar.pv_arrays') is null then
     raise exception 'module_required: solar' using errcode = 'undefined_table';
   end if;
-  if (select kind from objects where id = p_array_id) is distinct from 'pv_array' then
+  execute 'select scenario_id from solar.pv_arrays where id = $1' into scn using p_array_id;
+  if not found then
     raise exception 'array_not_found: %', p_array_id using errcode = 'no_data_found';
   end if;
   select * into f from building.surfaces where id = p_surface_id;
   if not found then
     raise exception 'surface_not_found: %', p_surface_id using errcode = 'no_data_found';
   end if;
-  if site_of(p_surface_id) is distinct from site_of(p_array_id) then
+  if site_of('surface', p_surface_id) is distinct from site_of('pv_array', p_array_id) then
     raise exception 'array_outside_system_site' using errcode = 'check_violation';
   end if;
   -- The surface it sat on until now is left from that moment.
   update links set valid_to = p_on
-   where subject_id = p_array_id and type_code = 'placed_on' and valid_to is null and object_id <> p_surface_id;
-  if not exists (select 1 from links where subject_id = p_array_id and type_code = 'placed_on' and object_id = p_surface_id and valid_to is null) then
-    insert into links (subject_id, type_code, object_id, valid_from, scenario_id)
-    values (p_array_id, 'placed_on', p_surface_id, p_on, (select scenario_id from objects where id = p_array_id));
+   where subject_kind = 'pv_array' and subject_id = p_array_id and type_code = 'placed_on' and valid_to is null and object_id <> p_surface_id;
+  if not exists (select 1 from links where subject_kind = 'pv_array' and subject_id = p_array_id and type_code = 'placed_on'
+                    and object_kind = 'surface' and object_id = p_surface_id and valid_to is null) then
+    insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, scenario_id)
+    values ('pv_array', p_array_id, 'placed_on', 'surface', p_surface_id, p_on, scn);
   end if;
   execute 'update solar.pv_arrays set azimuth_deg = coalesce(azimuth_deg, $2), tilt_deg = coalesce(tilt_deg, $3) where id = $1'
     using p_array_id, f.azimuth_deg, f.tilt_deg;
@@ -685,7 +848,8 @@ comment on function building.place_array(uuid, uuid, timestamptz) is
   'Puts a PV array of the solar module on a roof face, facade or ground area of its site from a moment, as a placed_on link (the surface it leaves ends there), and fills its azimuth and tilt from the surface when it has none. Refuses module_required, array_not_found, surface_not_found, array_outside_system_site.';
 
 grant execute on function building.footprint_volume(geometry, numeric, numeric), building.surface_orientation(geometry),
-  building.building_volume(uuid), building.building_of(uuid),
+  building.building_volume(uuid), building.site_of(text, uuid), building.places_of(text, uuid),
+  building.building_of(text, uuid), building.parameter_of(text, uuid, text, timestamptz, uuid),
   building.add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid),
   building.add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb),
   building.add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb),

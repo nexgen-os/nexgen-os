@@ -88,7 +88,7 @@ describe('a building and its roof, by the gestures of the core', () => {
          'POLYGON Z((600000 5600000 10, 600010 5600000 10, 600010 5600008.66 15, 600000 5600008.66 15, 600000 5600000 10))'), 32631), 4326)) id`,
       [house],
     )).id;
-    const r = await one<{ azimuth: number; tilt: number; building: string }>(db, 'select azimuth_deg::float azimuth, tilt_deg::float tilt, building.building_of(id) building from building.surfaces where id = $1', [roof]);
+    const r = await one<{ azimuth: number; tilt: number; building: string }>(db, "select azimuth_deg::float azimuth, tilt_deg::float tilt, building.building_of('surface', id) building from building.surfaces where id = $1", [roof]);
     expect(r.tilt).toBeCloseTo(30, 0);
     expect(r.azimuth).toBeGreaterThan(178);
     expect(r.azimuth).toBeLessThan(182);

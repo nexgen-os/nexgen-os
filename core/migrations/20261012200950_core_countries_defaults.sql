@@ -12,8 +12,10 @@
 --
 -- `parameter_of()` is the one resolution of a parameter, in one order for
 -- every property: the object's own attribute, then its parents' nearest
--- first, then its organisation, then its region, then its country — and
--- nothing else. There is no global level: a value nobody decided is refused
+-- first along the foreign keys of the core (`parents_of()`), then its
+-- organisation, then its region, then its country — and nothing else. A
+-- module that places an object of the core among its own (a device on a
+-- roof face) resolves through them first, then asks the core. There is no global level: a value nobody decided is refused
 -- by name (`parameter_missing`), never guessed.
 
 set search_path = nexgen, public, extensions;
@@ -209,7 +211,60 @@ $$;
 comment on function attribute_at(uuid, text, timestamptz, uuid) is
   'The attribute row of one object and property holding at a moment, the scenario''s own before reality''s; null when none.';
 
+-- The parents of an object of the core, nearest first, through its foreign
+-- keys: a participant is on its site, in its group, in its project; a meter
+-- on its site and carried by its participant; a device on its site, behind
+-- its meter. A series and a run are their object's, then its parents. A
+-- module's kind has none here: the module resolves it.
+create or replace function parents_of(p_kind text, p_id uuid)
+returns table (kind text, object_id uuid)
+language plpgsql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  k   text;
+  id  uuid;
+begin
+  if p_kind in ('series', 'run') then
+    if p_kind = 'series' then
+      select se.object_kind, se.object_id into k, id from series se where se.id = p_id;
+    else
+      select r.subject_kind, r.subject_id into k, id from runs r where r.id = p_id;
+    end if;
+    if k is null then
+      return;
+    end if;
+    kind := k;
+    object_id := id;
+    return next;
+    return query select * from parents_of(k, id);
+    return;
+  end if;
+  return query
+    select x.kind, x.object_id from (
+      select 1 as n, 'site'::text as kind, p.site_id as object_id from participants p where p_kind = 'participant' and p.id = p_id
+      union all select 2, 'participant', p.parent_id from participants p where p_kind = 'participant' and p.id = p_id
+      union all select 3, 'project', p.project_id from participants p where p_kind = 'participant' and p.id = p_id
+      union all select 1, 'site', m.site_id from meters m where p_kind = 'meter' and m.id = p_id
+      union all select 2, 'participant', m.participant_id from meters m where p_kind = 'meter' and m.id = p_id
+      union all select 3, 'project', p.project_id from meters m join participants p on p.id = m.participant_id where p_kind = 'meter' and m.id = p_id
+      union all select 1, 'site', d.site_id from devices d where p_kind = 'device' and d.id = p_id
+      union all select 2, 'meter', d.meter_id from devices d where p_kind = 'device' and d.id = p_id
+      union all select 3, 'participant', m.participant_id from devices d join meters m on m.id = d.meter_id where p_kind = 'device' and d.id = p_id
+      union all select 4, 'project', p.project_id from devices d join meters m on m.id = d.meter_id join participants p on p.id = m.participant_id
+                 where p_kind = 'device' and d.id = p_id
+    ) x
+    where x.object_id is not null
+    order by x.n;
+end;
+$$;
+
+comment on function parents_of(text, uuid) is
+  'The parents of an object of the core along its foreign keys, nearest first: a participant''s site, group and project; a meter''s site, participant and project; a device''s site, meter, participant and project; a series'' or a run''s object, then its parents.';
+
 create or replace function parameter_of(
+  p_kind          text,
   p_object_id     uuid,
   p_property_code text,
   p_at            timestamptz default now(),
@@ -223,7 +278,7 @@ as $$
 declare
   a        attributes%rowtype;
   d        defaults%rowtype;
-  o        objects%rowtype;
+  v_org    uuid;
   anc      record;
   v_site   sites%rowtype;
   v_day    date := p_at::date;
@@ -232,10 +287,7 @@ begin
   if not exists (select 1 from property_defs where code = p_property_code) then
     raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
   end if;
-  select * into o from objects where id = p_object_id;
-  if not found then
-    raise exception 'object_not_found: %', p_object_id using errcode = 'no_data_found';
-  end if;
+  v_org := object_organisation(p_kind, p_object_id);
 
   -- 1. The object itself.
   a := attribute_at(p_object_id, p_property_code, p_at, p_scenario_id);
@@ -245,7 +297,7 @@ begin
   end if;
 
   -- 2. Its parents, nearest first.
-  for anc in select * from ancestors_of(p_object_id) order by depth loop
+  for anc in select * from parents_of(p_kind, p_object_id) loop
     reached := anc.kind;
     a := attribute_at(anc.object_id, p_property_code, p_at, p_scenario_id);
     if a.id is not null then
@@ -256,16 +308,16 @@ begin
 
   -- 3. Its organisation: an object like any other, whose defaults are its attributes.
   reached := 'organisation';
-  if o.kind <> 'organisation' then
-    a := attribute_at(o.organisation_id, p_property_code, p_at, p_scenario_id);
+  if p_kind <> 'organisation' then
+    a := attribute_at(v_org, p_property_code, p_at, p_scenario_id);
     if a.id is not null then
-      return jsonb_build_object('value', a.value, 'level', 'organisation', 'object_id', o.organisation_id,
+      return jsonb_build_object('value', a.value, 'level', 'organisation', 'object_id', v_org,
                                 'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
     end if;
   end if;
 
   -- 4. Its region, then its country: the pack's.
-  select * into v_site from sites where id = site_of(p_object_id);
+  select * into v_site from sites where id = site_of(p_kind, p_object_id);
   if v_site.id is not null then
     if v_site.region is not null then
       reached := 'region';
@@ -301,8 +353,8 @@ begin
 end;
 $$;
 
-comment on function parameter_of(uuid, text, timestamptz, uuid) is
-  'The value of a parameter for an object at a moment: its own attribute, its parents'' nearest first, its organisation''s, its region''s, its country''s — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
+comment on function parameter_of(text, uuid, text, timestamptz, uuid) is
+  'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, its region''s, its country''s — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
 
 -- ---------------------------------------------------------------------------
 -- Row level security: countries, regions and defaults are what packs
@@ -324,5 +376,5 @@ create policy defaults_read on defaults for select to authenticated using (true)
 grant select on defaults to authenticated;
 grant select, insert, update, delete on defaults to service_role;
 
-grant execute on function attribute_at(uuid, text, timestamptz, uuid), parameter_of(uuid, text, timestamptz, uuid)
+grant execute on function attribute_at(uuid, text, timestamptz, uuid), parents_of(text, uuid), parameter_of(text, uuid, text, timestamptz, uuid)
   to authenticated, service_role;
