@@ -129,7 +129,7 @@ describe('point_for', () => {
 
   it('raises a named error for a site without a position', async () => {
     const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'FR' });
-    await expect(db.query(`select weather.point_for($1, 'open_meteo')`, [nowhere])).rejects.toThrow(/site_without_position/);
+    await expect(db.query(`select weather.point_for($1, 'open_meteo')`, [nowhere])).rejects.toThrow(/participant_without_position/);
   });
 
   it('shows the points to the members of their organisation only', async () => {

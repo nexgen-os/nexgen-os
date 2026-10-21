@@ -7,7 +7,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { aspectOf, hourStart, pvgis } from '@nexgen-os/pvgis';
 import { storeSeries } from '@nexgen-os/core';
 import type { Fetch } from '@nexgen-os/core';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { USER_A, freshDatabase, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const recorded = async (name: string) => JSON.parse(await readFile(`${repoRoot}/tests/fixtures/${name}`, 'utf8')) as unknown;
 const fetchWith = (body: unknown) => {

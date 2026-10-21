@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readEpw, writeEpw, type WeatherFile } from '@nexgen-os/weather-files';
 import { exportWeatherYear, importWeatherFile } from '@nexgen-os/core';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { USER_A, freshDatabase, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 const fixture = (name: string) => readFile(`${repoRoot}/packages/formats/weather-files/tests/fixtures/${name}`, 'utf8');
 const valuesOf = (file: WeatherFile, quantity: string) => file.series.find((s) => s.quantity_code === quantity)!.values;

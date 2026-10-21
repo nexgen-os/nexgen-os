@@ -9,7 +9,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { geocoderFor, type Fetch, type Geocoder, type Place } from '@nexgen-os/core';
 import { ban } from '@nexgen-os/ban';
 import { checkPacks } from '../packages/cli/src/index.js';
-import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot, participant, joinWithPlace } from './helpers/db.js';
 
 const OPERATORS = ['edf_sei', 'edm', 'enedis', 'es_reseaux', 'geg_reseaux', 'geredis', 'rte', 'srd', 'urm'];
 
@@ -53,9 +53,9 @@ describe('the fr pack', () => {
     expect(finistere).toEqual({ name: 'Finistère', parent: 'Bretagne' });
 
     const org = await organisation(db, 'Une commune', USER_A);
-    const reunion = (await one<{ id: string }>(db, `select create_site($1, 'Mairie de Saint-Denis', '{"country": "FR", "region": "FR-974"}') id`, [org])).id;
+    const reunion = await joinWithPlace(db, org, 'Mairie de Saint-Denis', { country: 'FR', region: 'FR-974' });
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [reunion])).time_zone).toBe('Indian/Reunion');
-    await expect(db.query(`select create_site($1, 'Nowhere', '{"country": "FR", "region": "FR-99"}')`, [org])).rejects.toThrow(/region_unknown: FR-99/);
+    await expect(joinWithPlace(db, org, 'Nowhere', { country: 'FR', region: 'FR-99' })).rejects.toThrow(/region_unknown: FR-99/);
   });
 
   it('brings its identifier schemes, and a meter number checks its pattern', async () => {
@@ -92,10 +92,10 @@ describe('the fr pack', () => {
     expect(strasbourg).toEqual({ kind: 'dso', regions: ['FR-67'], identifier_scheme: 'prm' });
   });
 
-  it('answers parameter_of() for a site in France: the country\'s value with its source, a region that decides otherwise, a yearly value by its date', async () => {
+  it('answers parameter_of() for a participant in France: the country\'s value with its source, a region that decides otherwise, a yearly value by its date', async () => {
     const org = await organisation(db, 'Une SCIC', USER_A);
-    const brest = (await one<{ id: string }>(db, `select create_site($1, 'Port de Brest', '{"country": "FR", "region": "FR-29"}') id`, [org])).id;
-    const ajaccio = (await one<{ id: string }>(db, `select create_site($1, 'Port d''Ajaccio', '{"country": "FR", "region": "FR-2A"}') id`, [org])).id;
+    const brest = await joinWithPlace(db, org, 'Port de Brest', { country: 'FR', region: 'FR-29' });
+    const ajaccio = await joinWithPlace(db, org, 'Port d\'Ajaccio', { country: 'FR', region: 'FR-2A' });
     const p = async (site: string, property: string, at = '2026-10-20') =>
       (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT30M', level: 'country', source_code: 'fr_enedis_load_curve_collection' });

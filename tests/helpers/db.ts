@@ -91,6 +91,16 @@ export async function participant(db: PGlite, fields: Record<string, unknown>): 
   return insert(db, 'participants', { project_id: project, ...fields });
 }
 
+/**
+ * A participant that joins, with its place in the standard shape, a project
+ * of its own whose rules are those of the place's country: `join_project()`
+ * as a caller would use it. Returns its id.
+ */
+export async function joinWithPlace(db: PGlite, organisationId: string, name: string, place: Record<string, unknown>): Promise<string> {
+  const project = await insert(db, 'projects', { organisation_id: organisationId, name: `Project of ${name}`, country: place.country });
+  return (await one<{ id: string }>(db, 'select join_project($1, $2, $3) id', [project, name, JSON.stringify(place)])).id;
+}
+
 export const USER_A = '00000000-0000-4000-8000-00000000000a';
 export const USER_B = '00000000-0000-4000-8000-00000000000b';
 

@@ -15,7 +15,6 @@ let plot: string;
 let block: string;
 let ground: string;
 let flatA: string;
-let roof: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['building', 'solar']);
@@ -27,7 +26,7 @@ beforeAll(async () => {
     db, `select building.add_building($1, 'Block A', ST_GeomFromGeoJSON($2), 2, 9, p_site_id => $3) id`, [owner, JSON.stringify(square(4.9, 52.37, 20, 12)), plot])).id;
   ground = (await one<{ id: string }>(db, `select building.add_space($1, 'floor', 'Ground floor', null, 0) id`, [block])).id;
   flatA = (await one<{ id: string }>(db, `select building.add_space($1, 'unit', 'Flat A', $2) id`, [block, ground])).id;
-  roof = (await one<{ id: string }>(db, `select building.add_surface($1, 'roof', 'South roof', null, 180, 35) id`, [block])).id;
+  await db.query(`select building.add_surface($1, 'roof', 'South roof', null, 180, 35)`, [block]);
 });
 
 afterAll(async () => {

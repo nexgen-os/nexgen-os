@@ -27,9 +27,9 @@ beforeAll(async () => {
   if (!installed) return;
   db = await freshDatabase();
   const org = await organisation(db, 'A utility', USER_A);
-  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  const depot = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
   const elsewhere = await participant(db, { organisation_id: org, name: 'Warehouse', country: 'BE' });
-  const meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
+  const meter = await insert(db, 'devices', { organisation_id: org, participant_id: depot, name: 'Meter', device_type: 'meter' });
   const other = await insert(db, 'devices', { organisation_id: org, participant_id: elsewhere, name: 'Meter', device_type: 'meter' });
   const series = (object: string) =>
     insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: object, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
@@ -45,7 +45,7 @@ beforeAll(async () => {
   }
   const { version } = await one<{ version: string }>(db, 'select nexgen_schema_version() as version');
   Object.assign(fixture, {
-    organisation: org, site, site_without_time_zone: elsewhere, meter, country: 'BE',
+    organisation: org, participant: depot, participant_without_time_zone: elsewhere, meter, country: 'BE',
     series: energy, series_without_time_zone: unplaced, schema_version: version,
   });
   server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1' });

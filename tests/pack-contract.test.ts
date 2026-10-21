@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, one, organisation, repoRoot } from './helpers/db.js';
+import { freshDatabase, one, organisation, repoRoot, joinWithPlace } from './helpers/db.js';
 
 let db: PGlite;
 let seed: string;
@@ -32,10 +32,10 @@ describe('a compiled pack on the core', () => {
     }
   });
 
-  it('answers parameter_of() for a site of the country, region before country, with the source and the reference', async () => {
+  it('answers parameter_of() for a participant of the country, region before country, with the source and the reference', async () => {
     const org = await organisation(db, 'A cooperative');
-    const south = (await one<{ id: string }>(db, `select create_site($1, 'South farm', '{"country": "XA", "region": "XA-S"}') id`, [org])).id;
-    const north = (await one<{ id: string }>(db, `select create_site($1, 'North farm', '{"country": "XA", "region": "XA-N"}') id`, [org])).id;
+    const south = await joinWithPlace(db, org, 'South farm', { country: 'XA', region: 'XA-S' });
+    const north = await joinWithPlace(db, org, 'North farm', { country: 'XA', region: 'XA-N' });
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [south])).time_zone).toBe('Etc/GMT-1');
     const p = async (site: string, property: string) => (await one<{ p: Record<string, unknown> }>(db, `select parameter_of('participant', $1, $2, '2026-06-01') p`, [site, property])).p;
     expect(await p(south, 'sharing_max_distance_m')).toMatchObject({ value: 2000, level: 'region', source_code: 'xa_grid_code', reference: 'Article 31' });
