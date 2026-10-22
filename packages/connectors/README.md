@@ -92,8 +92,8 @@ Nexgen OS keeps its truth in Postgres and its logic in TypeScript, and calls
 such code without rewriting it: a program connector reads one request as
 JSON on stdin and writes one result as JSON on stdout. The database side
 stays language-agnostic; the program never touches the database. In the
-contract below the program is named by the word a calculation records it under, its
-**engine** (`inputs.engine`, `engine_version`): the envelope's `engine` field,
+contract below the program is named by the word an estimate or a settlement records it
+under, its **engine** (`inputs.engine`, and the row's `provenance`): the envelope's `engine` field,
 `runEngine()`, `NEXGEN_ENGINE_<NAME>` and the refusals `engine_*`.
 
 | Connector | Request kinds | Language | Licence |
@@ -103,7 +103,7 @@ contract below the program is named by the word a calculation records it under, 
 | [`sharing_example`](sharing-example/README.md) | `energy_sharing` | Python 3.9+, no dependency | MIT |
 
 Program connectors are optional. An installation without any runs everything
-else; a calculation that asks for one that is not installed is refused by name
+else; a computation that asks for one that is not installed is refused by name
 (`engine_not_found`) with the line that installs it.
 
 ### The contract (version 1)
@@ -123,8 +123,8 @@ never parses them.
 ```
 
 - `version` is what the program is, in one string: the computing library and
-  its version (`pvlib 0.16.1`). It is the string a calculation records as its
-  engine, so that the same inputs and the same engine give the same calculation.
+  its version (`pvlib 0.16.1`). It is the string an estimate or a settlement records as
+  its provenance, so that a figure says which program computed it.
 - `contract` is this page's version. The runner refuses an answer in
   another version (`engine_contract_mismatch`); a program refuses a request
   in a version it does not speak, with the same name.
@@ -144,7 +144,7 @@ the request kinds it accepts:
 ```
 
 `describeEngine()` sends it: to check that a program is installed and
-answers, and to know the engine string before a calculation.
+answers, and to know the engine string before a computation.
 
 **Time and series.** Every stamp is ISO 8601 with its offset and dates the
 **start** of its interval, as everywhere in the core. A series is the

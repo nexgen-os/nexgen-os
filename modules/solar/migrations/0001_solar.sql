@@ -24,7 +24,8 @@
 -- true north (180 = facing south), tilt in degrees from horizontal (0 =
 -- flat). Every reader converts from the convention of its tool on the way
 -- in. Engines (pvlib, PVGIS, SAM) run outside Postgres; their results come
--- back through `record_calculation('solar.estimates', …)`.
+-- back as rows of `solar.estimates`, each written by the module's function
+-- that computed it.
 
 set search_path = nexgen, public, extensions;
 
@@ -289,29 +290,23 @@ create table solar.estimates (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- The PV system the yield, the performance or the exceedance is of.
   device_id        uuid not null references devices(id) on delete cascade,
-  engine_version   text not null,
+  -- Where it comes from: the program and the version that computed it.
+  provenance       text not null,
   -- What it read: the weather, the period, the profile, the variant, the
   -- arrays, the parameters and the level each came from.
   inputs           jsonb not null,
-  -- sha256 of the table, engine version and inputs: the identity of a result.
-  inputs_hash      text not null,
-  results          jsonb,
-  status           text not null default 'started',
-  started_at       timestamptz not null default now(),
-  finished_at      timestamptz,
-  constraint estimates_status check (status in ('started', 'finished')),
-  constraint estimates_finished check ((status = 'started') = (finished_at is null))
+  results          jsonb not null,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
 
 comment on table solar.estimates is
-  'The yields, performance indicators and exceedances the module computed for a PV system: inputs, engine version, results; the series an estimate wrote name it in their source. Immutable once finished; same inputs + same engine = same estimate.';
+  'The yields, performance indicators and exceedances the module computed for a PV system: its inputs, its provenance (the program and version that computed it), its results; the series an estimate wrote name it in their source. A new computation adds an estimate or replaces one.';
 
-create unique index estimates_one_per_input on solar.estimates (organisation_id, inputs_hash) where status = 'finished';
 create index estimates_device_idx on solar.estimates (device_id);
-create trigger estimates_is_final before update on solar.estimates
-  for each row execute function calculation_is_final();
+create trigger estimates_set_updated_at before update on solar.estimates
+  for each row execute function set_updated_at();
 call secure_table('solar.estimates');
-
 -- ---------------------------------------------------------------------------
 -- pv_arrays — one group of modules with one orientation.
 -- ---------------------------------------------------------------------------

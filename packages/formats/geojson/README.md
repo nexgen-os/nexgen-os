@@ -51,8 +51,8 @@ Every feature also carries its `attributes` (read by `attributes_of()` at
 the moment asked) and its `external_ids` — an object of the core only has
 them — and the `calculations` every installed module computed on it (each
 module's table of them, `solar.estimates`, `community.settlements`…):
-module, table, engine version, inputs hash, finish time and results, exactly as
-the module kept them. The export computes nothing.
+module, table, provenance, last update and results, exactly as the module
+keeps them. The export computes nothing.
 
 - Coordinates: WGS 84 longitude, latitude and height in metres, seven
   decimals (about a centimetre); outer rings counter-clockwise, holes

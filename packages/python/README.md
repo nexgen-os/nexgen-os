@@ -4,8 +4,8 @@ A Python package, `nexgen_os`, that reads the model of a Nexgen OS
 installation and attaches what you know to it, with its source. It reads
 the way the model is read (`attributes_of`, `resample` and the series
 reads, `participant_of`, `country_of`), writes values the one way they are
-written (`store`), and computes nothing: a figure is a calculation of a module, and
-a program connector (`packages/connectors/`) is where a computation of your own goes. Requires
+written (`store`), and computes nothing: a figure is computed by a module and says where it
+comes from, and a program connector (`packages/connectors/`) is where a computation of your own goes. Requires
 Python 3.9 or later and [psycopg 3](https://www.psycopg.org/psycopg3/);
 Arrow, pandas and Polars are optional extras.
 

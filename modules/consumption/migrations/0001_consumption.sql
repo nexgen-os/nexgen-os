@@ -164,27 +164,21 @@ create table consumption.estimates (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- The participant whose consumption was reconstructed.
   participant_id   uuid not null references participants(id) on delete cascade,
-  engine_version   text not null,
+  -- Where it comes from: the program and the version that computed it.
+  provenance       text not null,
   inputs           jsonb not null,
-  -- sha256 of the table, engine version and inputs: the identity of a result.
-  inputs_hash      text not null,
-  results          jsonb,
-  status           text not null default 'started',
-  started_at       timestamptz not null default now(),
-  finished_at      timestamptz,
-  constraint estimates_status check (status in ('started', 'finished')),
-  constraint estimates_finished check ((status = 'started') = (finished_at is null))
+  results          jsonb not null,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
 
 comment on table consumption.estimates is
-  'The consumption curves the module reconstructed for a participant: inputs, engine version, results; the series an estimate wrote name it in their source. Immutable once finished; same inputs + same engine = same estimate.';
+  'The consumption curves the module reconstructed for a participant: its inputs, its provenance (the program and version that computed it), its results; the series an estimate wrote name it in their source. A new computation adds an estimate or replaces one.';
 
-create unique index estimates_one_per_input on consumption.estimates (organisation_id, inputs_hash) where status = 'finished';
 create index estimates_participant_id_idx on consumption.estimates (participant_id);
-create trigger estimates_is_final before update on consumption.estimates
-  for each row execute function calculation_is_final();
+create trigger estimates_set_updated_at before update on consumption.estimates
+  for each row execute function set_updated_at();
 call secure_table('consumption.estimates');
-
 
 -- ---------------------------------------------------------------------------
 -- curve — the consumption of a participant, whichever way it is known.
@@ -207,9 +201,9 @@ as $$
     left join consumption.estimates e on se.source = 'consumption.estimates:' || e.id
    where se.quantity_code = 'consumption_energy'
      and (se.object_id = p_participant_id or participant_of(se.object_kind, se.object_id) = p_participant_id)
-     and (se.kind = 'measured' or (se.kind = 'simulated' and e.status = 'finished'))
+     and (se.kind = 'measured' or (se.kind = 'simulated' and e.id is not null))
      and exists (select 1 from series_values v where v.series_id = se.id and v.at >= p_from and v.at < p_to and v.quality <> 3)
-   order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, e.finished_at desc nulls last, se.created_at desc
+   order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, e.updated_at desc nulls last, se.created_at desc
    limit 1;
 $$;
 

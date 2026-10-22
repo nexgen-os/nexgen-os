@@ -30,7 +30,7 @@ export interface EngineSpec {
 }
 
 export interface EngineAnswer<TResult> {
-  /** What the engine says it is, e.g. `pvlib 0.16.1`: the string a calculation records. */
+  /** What the engine says it is, e.g. `pvlib 0.16.1`: the provenance an estimate or a settlement records. */
   version: string;
   result: TResult;
   /** The engine's own log, then its stderr lines. */

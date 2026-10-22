@@ -24,7 +24,6 @@
 
 import type { Db } from '@nexgen-os/core';
 import type { CollectedSeries, SeriesPoint, WeatherProvider } from '@nexgen-os/core';
-import { store } from '@nexgen-os/core';
 import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis, type PvgisSystem } from '@nexgen-os/pvgis';
 import { ENGINE_CONTRACT, describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
@@ -49,6 +48,7 @@ import {
   withinLocalYears,
 } from './pvwatts.js';
 import { sandiaFromOnd } from './inverter.js';
+import { writeEstimate, type OwnedSeries } from './estimates.js';
 
 export const ENGINE_VERSION = 'pvgis-5.3+solar-0.3.0';
 export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.3.0';
@@ -75,6 +75,8 @@ export interface YieldRequest {
    * profile is then required; any profile whose models the engine has is computed.
    */
   engine?: Pick<EngineSpec, 'name' | 'command' | 'timeoutMs'>;
+  /** An estimate this computation replaces: it keeps its id and takes the new inputs, provenance, results and series. */
+  replaces?: string;
 }
 
 export interface YieldResult {
@@ -322,11 +324,10 @@ async function estimatePvgisLike(db: Db, request: YieldRequest, { system, where,
   const nYears = request.years.to - request.years.from + 1;
   const annualKwh = round(energy.values.reduce((s, v) => s + v.value, 0) / nYears);
   const radiationDb = perArray[0].answer.meta.radiation_db;
-  const { estimateId, results } = await recordEstimate(
-    db,
-    ENGINE_VERSION,
-    request.pvSystemId,
-    {
+  const { estimateId, results } = await writeEstimate(db, {
+    provenance: ENGINE_VERSION,
+    deviceId: request.pvSystemId,
+    inputs: {
       profile: 'pvgis_like',
       weather: { source: client.source_code, radiation_db: radiationDb, meteo_db: perArray[0].answer.meta.meteo_db, years: request.years, horizon: perArray[0].answer.meta.horizon },
       arrays: perArray.map((x) => ({
@@ -337,8 +338,9 @@ async function estimatePvgisLike(db: Db, request: YieldRequest, { system, where,
       conventions: CONVENTIONS,
     },
     owned,
-    (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp }),
-  );
+    results: (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp }),
+    replaces: request.replaces,
+  });
   return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
 }
 
@@ -416,11 +418,10 @@ async function estimatePvwatts(db: Db, request: YieldRequest, { system, where, p
   const annualKwh = round(annual);
   const modelledTotal = perArray.reduce((s, x) => s + x.modelled, 0);
   const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
-  const { estimateId, results } = await recordEstimate(
-    db,
-    PVWATTS_ENGINE_VERSION,
-    request.pvSystemId,
-    {
+  const { estimateId, results } = await writeEstimate(db, {
+    provenance: PVWATTS_ENGINE_VERSION,
+    deviceId: request.pvSystemId,
+    inputs: {
       profile: 'pvwatts',
       weather: {
         source: weather.source_code,
@@ -472,8 +473,9 @@ async function estimatePvwatts(db: Db, request: YieldRequest, { system, where, p
       },
     },
     owned,
-    (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered }),
-  );
+    results: (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered }),
+    replaces: request.replaces,
+  });
   return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }
 
@@ -594,11 +596,10 @@ async function estimateWithEngine(db: Db, request: YieldRequest, profileCode: st
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
   const annualKwh = round(covered.annual);
-  const { estimateId, results } = await recordEstimate(
-    db,
-    described.version,
-    request.pvSystemId,
-    {
+  const { estimateId, results } = await writeEstimate(db, {
+    provenance: described.version,
+    deviceId: request.pvSystemId,
+    inputs: {
       profile: profileCode,
       engine: { name: spec.name, version: described.version, contract: ENGINE_CONTRACT, dependencies: described.dependencies },
       weather: {
@@ -621,58 +622,14 @@ async function estimateWithEngine(db: Db, request: YieldRequest, profileCode: st
       conventions: { ...CONVENTIONS, losses: 'each applies to what the previous ones left', days: 'local standard time of the participant\'s time zone' },
     },
     owned,
-    (ids) => {
+    results: (ids) => {
       const perArray: Record<string, Record<string, string>> = {};
       for (const k of arrayKeys) (perArray[k.array] ??= {})[k.quantity] = ids[k.key];
       return { series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, years_covered: covered.yearsCovered, array_series: perArray };
     },
-  );
+    replaces: request.replaces,
+  });
   return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
-}
-
-/** A series an estimate computed, under the key its results name it by. */
-interface OwnedSeries {
-  key: string;
-  objectKind: string;
-  objectId: string;
-  sourceCode: string;
-  name?: string | null;
-  series: CollectedSeries;
-  /** The unit the values are in, a code or symbol of the `units` vocabulary; the quantity's own when absent. `store()` converts. */
-  unit?: string;
-}
-
-/**
- * Records an estimate with the series it owns: the estimate of the same identity when
- * it is already there, untouched; else a new one, whose series are written
- * with its id before it is final, so that no later estimate ever overwrites them.
- */
-async function recordEstimate(
-  db: Db,
-  engineVersion: string,
-  subjectId: string,
-  inputs: unknown,
-  owned: OwnedSeries[],
-  results: (seriesIds: Record<string, string>) => Record<string, unknown>,
-): Promise<{ estimateId: string; results: Record<string, unknown> }> {
-  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
-    `select calculation_id, finished from start_calculation('solar.estimates', 'device', $2, $1, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
-  if (started.finished) {
-    const done = await db.query<{ results: Record<string, unknown> }>('select results from solar.estimates where id = $1', [started.calculation_id]);
-    return { estimateId: started.calculation_id, results: done.rows[0].results };
-  }
-  const ids: Record<string, string> = {};
-  // An engine says the unit of its values; `store()` converts them to the quantity's.
-  for (const o of owned) {
-    const stored = await store(db, {
-      object_kind: o.objectKind, object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
-      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, source: `solar.estimates:${started.calculation_id}`,
-    }, o.series.values, { unit: o.unit ?? null });
-    ids[o.key] = stored.seriesId;
-  }
-  const final = results(ids);
-  await db.query(`select finish_calculation('solar.estimates', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(final)]);
-  return { estimateId: started.calculation_id, results: final };
 }
 
 /** Values of several series added up, instant by instant. */

@@ -17,6 +17,7 @@
 // reading gives a new one.
 
 import type { Db } from '@nexgen-os/core';
+import { writeEstimate } from './estimates.js';
 
 export const PERFORMANCE_ENGINE_VERSION = 'solar-iec61724-0.3.0';
 const G_REF_W_M2 = 1000;
@@ -28,6 +29,8 @@ export interface PerformanceRequest {
   to: string;
   /** The yield estimate the measurement is compared with: the energy performance index, and the irradiance when no sensor gives it. */
   yieldEstimateId?: string;
+  /** An estimate this computation replaces: it keeps its id and takes the new inputs, provenance and results. */
+  replaces?: string;
 }
 
 export interface PeriodIndicators {
@@ -184,11 +187,10 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
       months: "cut in the participant's time zone",
     },
   };
-  const recorded = await db.query<{ id: string }>(
-    `select record_calculation('solar.estimates', 'device', $2, $1, $3::jsonb, $4::jsonb) id`,
-    [PERFORMANCE_ENGINE_VERSION, request.pvSystemId, JSON.stringify(inputs), JSON.stringify({ irradiance: source, total, months })],
-  );
-  return { estimateId: recorded.rows[0].id, irradiance: source, total, months };
+  const { estimateId } = await writeEstimate(db, {
+    provenance: PERFORMANCE_ENGINE_VERSION, deviceId: request.pvSystemId, inputs, results: () => ({ irradiance: source, total, months }), replaces: request.replaces,
+  });
+  return { estimateId, irradiance: source, total, months };
 }
 
 /** A series read hour by hour through `resample()`, keyed by the hour's start in milliseconds. */

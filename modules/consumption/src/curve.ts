@@ -159,6 +159,8 @@ export interface ReconstructionRequest {
    * period must then be one year.
    */
   energy?: { kwh: number; sourceCode?: string | null; source?: string | null; documentId?: string | null };
+  /** An estimate this computation replaces: it keeps its id and takes the new inputs, provenance, results and series. */
+  replaces?: string;
 }
 
 export interface ReconstructionResult {
@@ -209,24 +211,26 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
     conventions: { time: 'interval start, UTC', energy: 'kWh per slot', days: 'local days of the participant, daylight-saving time included', holidays: 'not modelled' },
   };
 
-  // The estimate of these inputs: the finished one when it exists, else a new
-  // one whose series is written before it is final.
-  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
-    `select calculation_id, finished from start_calculation('consumption.estimates', 'participant', $2, $1, $3::jsonb)`,
-    [CONSUMPTION_ENGINE_VERSION, request.participantId, JSON.stringify(inputs)],
-  )).rows[0];
-  if (started.finished) {
-    const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from consumption.estimates where id = $1', [started.calculation_id])).rows[0];
-    return { estimateId: started.calculation_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
-  }
+  // A new estimate, or the one the request replaces with the new inputs, its
+  // series removed to be written again; its results follow the series.
+  const row = request.replaces
+    ? (await db.query<{ id: string }>(
+        'update consumption.estimates set participant_id = $2, provenance = $3, inputs = $4::jsonb where id = $1 returning id',
+        [request.replaces, request.participantId, CONSUMPTION_ENGINE_VERSION, JSON.stringify(inputs)])).rows[0]
+    : (await db.query<{ id: string }>(
+        `insert into consumption.estimates (organisation_id, participant_id, provenance, inputs, results)
+         values (object_organisation('participant', $1), $1, $2, $3::jsonb, '{}') returning id`,
+        [request.participantId, CONSUMPTION_ENGINE_VERSION, JSON.stringify(inputs)])).rows[0];
+  if (!row) throw new Error(`estimate_not_found: ${request.replaces}`);
+  if (request.replaces) await db.query('delete from series where source = $1', [`consumption.estimates:${row.id}`]);
   const { seriesId } = await store(db, {
     object_kind: 'participant', object_id: request.participantId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
-    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, source: `consumption.estimates:${started.calculation_id}`,
+    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, source: `consumption.estimates:${row.id}`,
   }, values);
   const kwh = round(values.reduce((sum, v) => sum + v.value, 0));
   const results = { series_id: seriesId, kwh, step, slots: values.length };
-  await db.query(`select finish_calculation('consumption.estimates', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(results)]);
-  return { estimateId: started.calculation_id, seriesId, kwh, step, slots: values.length };
+  await db.query('update consumption.estimates set results = $2::jsonb where id = $1', [row.id, JSON.stringify(results)]);
+  return { estimateId: row.id, seriesId, kwh, step, slots: values.length };
 }
 
 /** The participant's annual consumption at the start of the first local day, for a period of one year. */

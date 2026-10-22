@@ -18,6 +18,7 @@
 
 import type { Db } from '@nexgen-os/core';
 import { annualTotals } from './pvwatts.js';
+import { writeEstimate } from './estimates.js';
 
 export const EXCEEDANCE_ENGINE_VERSION = 'solar-exceedance-0.3.0';
 
@@ -30,6 +31,8 @@ export interface ExceedanceRequest {
   probabilities?: number[];
   /** The number of years the figure is for. Default 1. */
   horizonYears?: number;
+  /** An estimate this computation replaces: it keeps its id and takes the new inputs, provenance and results. */
+  replaces?: string;
 }
 
 export interface ExceedanceResult {
@@ -99,11 +102,10 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
     horizon_years: horizon,
     method: 'normal distribution of the annual energy; interannual variability from the years of the estimate (sample standard deviation), divided by the square root of the horizon; the named components added in quadrature',
   };
-  const recorded = await db.query<{ id: string }>(
-    `select record_calculation('solar.estimates', 'device', $2, $1, $3::jsonb, $4::jsonb) id`,
-    [EXCEEDANCE_ENGINE_VERSION, estimate.device_id, JSON.stringify(inputs), JSON.stringify(result)],
-  );
-  return { estimateId: recorded.rows[0].id, ...result };
+  const { estimateId } = await writeEstimate(db, {
+    provenance: EXCEEDANCE_ENGINE_VERSION, deviceId: estimate.device_id, inputs, results: () => ({ ...result }), replaces: request.replaces,
+  });
+  return { estimateId, ...result };
 }
 
 /**

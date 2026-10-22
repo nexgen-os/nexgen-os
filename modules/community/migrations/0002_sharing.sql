@@ -22,27 +22,21 @@ create table community.settlements (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- The project whose energy was shared.
   project_id       uuid not null references projects(id) on delete cascade,
-  engine_version   text not null,
+  -- Where it comes from: the program and the version that computed it.
+  provenance       text not null,
   inputs           jsonb not null,
-  -- sha256 of the table, engine version and inputs: the identity of a result.
-  inputs_hash      text not null,
-  results          jsonb,
-  status           text not null default 'started',
-  started_at       timestamptz not null default now(),
-  finished_at      timestamptz,
-  constraint settlements_status check (status in ('started', 'finished')),
-  constraint settlements_finished check ((status = 'started') = (finished_at is null))
+  results          jsonb not null,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
 
 comment on table community.settlements is
-  'The settlements of a project: the sharing of its energy over a period among all its participants, with inputs, engine version and results; the series a settlement wrote name it in their source. Immutable once finished; same inputs + same engine = same settlement.';
+  'The settlements of a project: the sharing of its energy over a period among all its participants, with its inputs, its provenance (the program and version that computed it) and its results; the series a settlement wrote name it in their source. A new computation adds a settlement or replaces one.';
 
-create unique index settlements_one_per_input on community.settlements (organisation_id, inputs_hash) where status = 'finished';
 create index settlements_project_id_idx on community.settlements (project_id);
-create trigger settlements_is_final before update on community.settlements
-  for each row execute function calculation_is_final();
+create trigger settlements_set_updated_at before update on community.settlements
+  for each row execute function set_updated_at();
 call secure_table('community.settlements');
-
 
 insert into property_defs (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
   ('allocation_key', 'Allocation key',

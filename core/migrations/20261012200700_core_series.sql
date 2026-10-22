@@ -13,8 +13,8 @@
 --
 -- Measured, simulated and forecast series share the same shape, so a page
 -- compares them with one query: a simulated hourly profile is a series of
--- kind `simulated`; a series a module computed names that calculation in its source
--- (`<module>.<table>:<id>`) and changes with nobody else's. There is one series store,
+-- kind `simulated`; a series a module computed names the row of what it computed
+-- in its source (`<module>.<table>:<id>`) and changes with nobody else's. There is one series store,
 -- built for a hundred thousand meters (decision 0007): partitioned by week,
 -- no per-row organisation, a two-byte quality.
 --
@@ -62,9 +62,9 @@ create table series (
   -- Regular step of the series, null when irregular.
   step             interval,
   -- Where the values come from: a source of the vocabulary (a grid
-  -- operator's hub, a device protocol, a model), and a free note. A calculation of
-  -- a module names itself here, `<module>.<table>:<id>`: its values are
-  -- its figures, written before it finishes and never changed after.
+  -- operator's hub, a device protocol, a model), and a free note. What a
+  -- module computed names itself here, `<module>.<table>:<id>`: its values
+  -- are its figures.
   source_code      text references sources(code),
   source           text,
   -- How a connector finds the point: a Modbus register, an MQTT topic, a
@@ -76,7 +76,7 @@ create table series (
   created_at       timestamptz not null default now(),
   constraint series_object_kind check (object_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
   constraint series_kind check (kind in ('measured', 'simulated', 'forecast', 'setpoint', 'command')),
-  -- A simulated series is a figure: the calculation that computed it, or the named
+  -- A simulated series is a figure: the computation that wrote it, or the named
   -- source that published it (a typical year of a weather service).
   constraint series_calculation_required check (kind <> 'simulated' or source is not null or source_code is not null),
   constraint series_value_kind check (value_kind in ('interval', 'instant', 'cumulative')),
@@ -84,10 +84,10 @@ create table series (
 );
 
 comment on table series is
-  'One quantity over time for one object of the core, by one device when there is one — measured, simulated, forecast, asked or ordered (OGC SensorThings Datastream, Brick and Haystack point, Home Assistant entity). The series a calculation wrote name it in their source.';
+  'One quantity over time for one object of the core, by one device when there is one — measured, simulated, forecast, asked or ordered (OGC SensorThings Datastream, Brick and Haystack point, Home Assistant entity). The series a module computed name the row of what it computed in their source.';
 
 -- One series per identity: two imports of the same meter find the same
--- series, two calculations never share one.
+-- series, two computations never share one.
 create unique index series_identity on series
   (object_kind, object_id, quantity_code, kind, source_code, source, name) nulls not distinct;
 create index series_quantity_idx on series (quantity_code);
@@ -288,9 +288,8 @@ create index forecast_values_at_brin on forecast_values using brin (at) with (pa
 create index forecast_values_issued_brin on forecast_values using brin (issued_at) with (pages_per_range = 32);
 
 -- Each kind of series has its one store: a forecast goes to forecast_values
--- with its issue time, everything else to series_values. The values of a
--- calculation's series are written before it finishes, and never after. store()
--- checks the same before it writes and says so in `nexgen.store_series`,
+-- with its issue time, everything else to series_values. store() checks the
+-- same before it writes and says so in `nexgen.store_series`,
 -- so that a bulk write pays no lookup per row.
 create or replace function series_store_check()
 returns trigger
@@ -300,18 +299,14 @@ as $$
 declare
   sid  uuid := case when tg_op = 'DELETE' then old.series_id else new.series_id end;
   k    text;
-  rs   text;
 begin
   if tg_op <> 'DELETE' and current_setting('nexgen.store_series', true) = sid::text then
     return new;
   end if;
-  select se.kind, calculation_status_of(se.source) into k, rs from series se where se.id = sid;
+  select se.kind into k from series se where se.id = sid;
   if not found then
     -- The series itself is being deleted: its values go with it.
     return case when tg_op = 'DELETE' then old else new end;
-  end if;
-  if rs is not null and rs <> 'started' then
-    raise exception 'calculation_is_final: series % belongs to a finished calculation', sid using errcode = 'check_violation';
   end if;
   if tg_op = 'DELETE' then
     return old;
@@ -326,7 +321,7 @@ end;
 $$;
 
 comment on function series_store_check() is
-  'Trigger of series_values and forecast_values: each kind of series in its one store (forecast_values_required, not_a_forecast), and the values of a finished calculation''s series never change (calculation_is_final).';
+  'Trigger of series_values and forecast_values: each kind of series in its one store (forecast_values_required, not_a_forecast).';
 
 create trigger series_values_store before insert or update or delete on series_values
   for each row execute function series_store_check();
@@ -966,7 +961,7 @@ begin
     raise exception 'quantity_unknown: %', p_quantity_code using errcode = 'foreign_key_violation';
   end if;
   if p_kind = 'simulated' and p_source is null and p_source_code is null then
-    raise exception 'series_calculation_required: a simulated series is written by a calculation, or comes from a named source' using errcode = 'check_violation';
+    raise exception 'series_calculation_required: a simulated series is written by a computation, or comes from a named source' using errcode = 'check_violation';
   end if;
   insert into series (object_kind, object_id, quantity_code, kind, value_kind, step, device_id, external_ref, source_code, name,
                       metadata, source)
@@ -1037,7 +1032,6 @@ declare
   anchor   timestamptz;
   removed  date;
   tz       text;
-  status   text;
 begin
   -- The series: by id, or ensured from its identity.
   if p_series_id is null then
@@ -1090,13 +1084,8 @@ begin
     raise exception 'value_required: a value is given, or its quality says missing (3)' using errcode = 'invalid_parameter_value';
   end if;
 
-  -- A calculation's series is written before the calculation finishes.
-  status := calculation_status_of(s.source);
-  if status is not null and status <> 'started' then
-    raise exception 'calculation_is_final: series % belongs to a finished calculation', s.id using errcode = 'check_violation';
-  end if;
   if s.kind = 'simulated' and s.source is null and s.source_code is null then
-    raise exception 'series_calculation_required: a simulated series is written by a calculation, or comes from a named source' using errcode = 'check_violation';
+    raise exception 'series_calculation_required: a simulated series is written by a computation, or comes from a named source' using errcode = 'check_violation';
   end if;
 
   -- The unit: converted on the way in, refused when it measures something else.
@@ -1165,7 +1154,7 @@ end;
 $$;
 
 comment on function store(uuid, timestamptz[], float8[], smallint[], text, timestamptz, jsonb) is
-  'The one way values are written: the series by id or by identity (series_ensure()), values converted from p_unit to the quantity''s unit, qualities checked, a forecast stored with its issue time, equal values left untouched, the rollups of the hours written refreshed. Refuses series_required, object_not_found, series_not_found, series_read_only, values_misaligned, instant_required, values_duplicated, quality_unknown, value_required, calculation_is_final, series_calculation_required, unit_unknown, series_unit_mismatch, series_step_mismatch, device_retired, issued_at_required, not_a_forecast. Returns the series and the rows changed.';
+  'The one way values are written: the series by id or by identity (series_ensure()), values converted from p_unit to the quantity''s unit, qualities checked, a forecast stored with its issue time, equal values left untouched, the rollups of the hours written refreshed. Refuses series_required, object_not_found, series_not_found, series_read_only, values_misaligned, instant_required, values_duplicated, quality_unknown, value_required, series_calculation_required, unit_unknown, series_unit_mismatch, series_step_mismatch, device_retired, issued_at_required, not_a_forecast. Returns the series and the rows changed.';
 
 -- ---------------------------------------------------------------------------
 -- The rollups, refreshed by every write.

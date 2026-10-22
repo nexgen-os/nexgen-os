@@ -41,6 +41,8 @@ export interface SettlementRequest {
   /** What a country's pack or the project sets, passed to the engine as it is. */
   rules?: Record<string, unknown>;
   engine: EngineSpec;
+  /** A settlement this computation replaces: it keeps its id and takes the new inputs, provenance, results and series. */
+  replaces?: string;
 }
 
 export interface SettlementResult {
@@ -163,16 +165,6 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
     conventions: { time: 'interval start, UTC', energy: 'kWh per step', missing_direction: 'zeros' },
   };
 
-  // The settlement of these inputs and this engine: the finished one when it exists, the engine is not started again.
-  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
-    `select calculation_id, finished from start_calculation('community.settlements', 'project', $2, $1, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
-  )).rows[0];
-  if (started.finished) {
-    const done = (await db.query<{ results: { totals: Record<string, number>; participants: { id: string; series: Record<string, string> }[] } }>(
-      'select results from community.settlements where id = $1', [started.calculation_id])).rows[0].results;
-    return { settlementId: started.calculation_id, engine: described.version, sharedKwh: Number(done.totals?.shared_energy ?? 0), series: Object.fromEntries(done.participants.map((p) => [p.id, p.series])) };
-  }
-
   const engineRequest: EnergySharingRequest = {
     kind: 'energy_sharing', from, to, step: request.step, participants: sent,
     key: { method: key.value.method, parameters }, rules: request.rules ?? {},
@@ -180,7 +172,9 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
   const answer = await runEngine<EnergySharingRequest, EnergySharingResult>(request.engine, engineRequest);
   if (answer.version !== described.version) throw new Error(`engine_contract_mismatch: ${request.engine.name} described itself as ${described.version} and answered as ${answer.version}`);
 
-  // The answer is stored as it comes, once checked against the request.
+  // The settlement is written, or the one it replaces takes the new inputs;
+  // the answer is stored as it comes, once checked against the request.
+  const settlementId = await writeSettlement(db, request, described.version, inputs);
   const stored: Record<string, Record<string, string>> = {};
   for (const p of participants) {
     const answered = answer.result.participants?.find((r) => r.id === p.id);
@@ -192,7 +186,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
         throw new Error(`engine_contract_mismatch: ${request.engine.name} answered no ${quantity} on the grid for participant ${p.name}`);
       }
       const { seriesId } = await store(db, {
-        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, source: `community.settlements:${started.calculation_id}`,
+        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, source: `community.settlements:${settlementId}`,
       }, s.values, { unit: s.unit ?? null });
       stored[p.id][quantity] = seriesId;
     }
@@ -203,6 +197,25 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
     meta: answer.result.meta,
     participants: participants.map((p) => ({ id: p.id, totals: answer.result.participants.find((r) => r.id === p.id)!.totals, series: stored[p.id] })),
   };
-  await db.query(`select finish_calculation('community.settlements', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(results)]);
-  return { settlementId: started.calculation_id, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
+  await db.query('update community.settlements set results = $2::jsonb where id = $1', [settlementId, JSON.stringify(results)]);
+  return { settlementId, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
+}
+
+/**
+ * A new row of `community.settlements` with its inputs and provenance, or the
+ * one the request replaces with the new ones, its series removed to be
+ * written again. Its results follow once the series are stored.
+ */
+async function writeSettlement(db: Db, request: SettlementRequest, provenance: string, inputs: unknown): Promise<string> {
+  const row = request.replaces
+    ? (await db.query<{ id: string }>(
+        'update community.settlements set project_id = $2, provenance = $3, inputs = $4::jsonb where id = $1 returning id',
+        [request.replaces, request.projectId, provenance, JSON.stringify(inputs)])).rows[0]
+    : (await db.query<{ id: string }>(
+        `insert into community.settlements (organisation_id, project_id, provenance, inputs, results)
+         values (object_organisation('project', $1), $1, $2, $3::jsonb, '{}') returning id`,
+        [request.projectId, provenance, JSON.stringify(inputs)])).rows[0];
+  if (!row) throw new Error(`settlement_not_found: ${request.replaces}`);
+  if (request.replaces) await db.query('delete from series where source = $1', [`community.settlements:${row.id}`]);
+  return row.id;
 }
