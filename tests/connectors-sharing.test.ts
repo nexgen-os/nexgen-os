@@ -92,7 +92,7 @@ describe('energy sharing in a project, as a settlement', () => {
 
   beforeAll(async () => {
     db = await freshDatabase(['billing', 'community', 'grid']);
-    await db.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
+    await db.exec(await readFile(join(repoRoot, 'docs', 'demo', '03-energy-community.sql'), 'utf8'));
     await db.query(
       `insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source)
        values ('project', $1, 'allocation_key', '{"method": "proportional", "parameters": {}}', '2026-01-01T00:00:00+01:00', '2027-01-01T00:00:00+01:00', 'general assembly 2025')`,

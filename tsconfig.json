@@ -64,7 +64,7 @@
   },
   "include": [
     "tests/**/*.ts",
-    "examples/**/*.ts",
+    "docs/demo/**/*.ts",
     "packs/**/*.ts",
     "modules/**/*.ts",
     "./packages/**/src/**/*.ts",

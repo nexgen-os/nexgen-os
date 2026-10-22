@@ -3,7 +3,7 @@
 // month through `resample()`, the one way to read a series.
 //
 //   export NEXGEN_DB_URL=…   # the connection string, never written to a file
-//   npx tsx examples/yield.ts <pv system id> [year]
+//   npx tsx docs/demo/yield.ts <pv system id> [year]
 //
 // The system is a row of `solar.pv_systems`, with its arrays, each with its
 // own azimuth and tilt. PVGIS computes the
@@ -12,8 +12,8 @@
 
 import { pathToFileURL } from 'node:url';
 import type { Db } from '@nexgen-os/core';
-import { estimateYield, type YieldClients, type YieldResult } from '../modules/solar/src/yield.js';
-import { connect } from '../packages/cli/src/sql.js';
+import { estimateYield, type YieldClients, type YieldResult } from '../../modules/solar/src/yield.js';
+import { connect } from '../../packages/cli/src/sql.js';
 
 export interface MonthOfYield {
   /** `YYYY-MM`, a month in UTC, as PVGIS's year is. */
@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   const [pvSystemId, yearArg] = process.argv.slice(2);
   const url = process.env.NEXGEN_DB_URL;
   if (!pvSystemId || !url) {
-    console.error('usage: NEXGEN_DB_URL=… npx tsx examples/yield.ts <pv system id> [year]');
+    console.error('usage: NEXGEN_DB_URL=… npx tsx docs/demo/yield.ts <pv system id> [year]');
     process.exit(2);
   }
   const year = yearArg ? Number(yearArg) : new Date().getUTCFullYear() - 3;

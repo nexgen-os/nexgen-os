@@ -32,7 +32,7 @@ const localHour = (at: string) => Number(new Intl.DateTimeFormat('en-GB', { time
 
 beforeAll(async () => {
   db = await freshDatabase(['building', 'grid', 'consumption']);
-  await db.exec(await readFile(join(repoRoot, 'examples', '07-office-heating.sql'), 'utf8'));
+  await db.exec(await readFile(join(repoRoot, 'docs', 'demo', '07-office-heating.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
   await organisation(db, 'Another company', USER_B);

@@ -27,7 +27,7 @@ let shedArray: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['building', 'community', 'grid', 'solar']);
-  await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
+  await db.exec(await readFile(join(repoRoot, 'docs', 'demo', '04-farm-solar.sql'), 'utf8'));
   await db.exec(await readFile(join(repoRoot, 'tests', 'fixtures', 'farm-building.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);

@@ -117,7 +117,7 @@ exact list of the tables of the core, the cascade of defaults, security (row lev
 vocabulary hygiene), the series store across a clock change, the weather
 and solar modules with a yield estimate on PVGIS, on `pvwatts.ts` and on the
 pvlib connector, the format libraries in and out without losing a field, the
-two country packs and the installer. Every example in `examples/` loads and
+two country packs and the installer. Every dataset in `docs/demo/` loads and
 is checked.
 
 ## Five minutes, from an empty project to a building
@@ -130,7 +130,7 @@ is checked.
    `npx nexgen-os init --packs <country code>` (`--dry-run` first shows what
    would be applied and rolls it back).
 4. Check it: `npx nexgen-os doctor` names every problem, or none.
-5. Load a dataset: `psql -v ON_ERROR_STOP=1 "$NEXGEN_DB_URL" -c 'set search_path = nexgen, extensions' -f examples/01-house-pv-battery.sql`
+5. Load a dataset: `psql -v ON_ERROR_STOP=1 "$NEXGEN_DB_URL" -c 'set search_path = nexgen, extensions' -f docs/demo/01-house-pv-battery.sql`
    (PostGIS lives in the schema `extensions` on Supabase),
    then ask it something:
 
@@ -144,7 +144,7 @@ is checked.
 
 The installer's page ([packages/cli/README.md](packages/cli/README.md))
 says what each command does and how to reach a remote host over TLS. Every
-example in `examples/` is a complete, loadable dataset.
+dataset in `docs/demo/` is a complete, loadable dataset.
 
 ## Twenty minutes, to the same house with its yield
 
@@ -165,7 +165,7 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
    `resample()`:
 
    ```bash
-   npx tsx examples/yield.ts 00000000-0000-4000-8000-000100000051 2023
+   npx tsx docs/demo/yield.ts 00000000-0000-4000-8000-000100000051 2023
    ```
 
 8. Read what the estimate says it was computed from: its provenance, the
@@ -191,8 +191,7 @@ packages/core/         `@nexgen-os/core`: the database seam, the standard place 
 packages/formats/      one MIT package per file format (homeassistant, cityjson, geojson, ifc, panond, parquet, weather-files)
 packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis) and geocoders (nominatim, photon, ban, geopunt, urbis, icar), and the programs in other languages, JSON in and out (pvlib, optional)
 packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
-examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
-docs/                  the model, the doctrine and its decisions, the road to 1.0, how a release is cut
+docs/                  the model, the doctrine and its decisions, the road to 1.0, how a release is cut, and in `demo/` one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 scripts/               hygiene, and what a release publishes
 tests/                 the tests of the core, the demo datasets, the packs, the packages and the connectors; a module's are in its folder
 ```

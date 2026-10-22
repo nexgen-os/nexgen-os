@@ -35,7 +35,7 @@ const rel = (f) => relative(root, f);
 // and `icar`) carries the country and the languages of its register: that is
 // its data, not a default; the open geocoders and the core are held to the rule.
 // A seed compiled from a pack (supabase/seed/<n>_pack_<cc>.sql) is the pack.
-const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^modules\/[^/]+\/tests\//.test(rel(f)) || /^supabase\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^packages\/connectors\/(ban|geopunt|urbis|icar)\//.test(rel(f));
+const isData = (f) => /^(docs\/demo|packs|tests)\//.test(rel(f)) || /^modules\/[^/]+\/tests\//.test(rel(f)) || /^supabase\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^packages\/connectors\/(ban|geopunt|urbis|icar)\//.test(rel(f));
 
 // 1. country, currency, language literals in code
 const literal = /'(BE|FR|NL|DE|ES|IT|LU|SN|US|GB)'|'EUR'|'USD'|'(fr|nl|de|es)'\s*(,|\))/;

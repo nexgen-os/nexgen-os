@@ -15,7 +15,7 @@ const EXPECTED: Record<string, { modules: string[]; kinds: Record<string, number
   '07-office-heating.sql':     { modules: ['building'], kinds: { organisation: 1, project: 1, participant: 1, building: 1, surface: 5, meter: 2, device: 4 }, series: 3, calculations: 0 },
 };
 
-const dir = join(repoRoot, 'examples');
+const dir = join(repoRoot, 'docs', 'demo');
 
 // Every object of the core, and of the `building` module where it is
 // installed: each table is read in turn.
@@ -48,7 +48,7 @@ const everyCalculation = async (db: Awaited<ReturnType<typeof freshDatabase>>): 
 };
 const files = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort();
 
-describe('the examples', () => {
+describe('the demo datasets', () => {
   it('are all listed here', () => {
     expect(files).toEqual(Object.keys(EXPECTED));
   });

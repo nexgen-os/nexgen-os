@@ -147,7 +147,7 @@ describe('the energy community of example 3', () => {
   it('records one bill between two participants, from the settlement', async () => {
     const community = await freshDatabase(['billing', 'community', 'grid']);
     try {
-      await community.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
+      await community.exec(await readFile(join(repoRoot, 'docs', 'demo', '03-energy-community.sql'), 'utf8'));
       const bills = await community.query(
         `select i.id, p.name participant, c.name counterparty, i.kind, i.period_from::text, i.period_to::text, r.project_id
            from billing.invoices_of('00000000-0000-4000-8000-000300000051') i

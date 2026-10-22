@@ -1,4 +1,4 @@
-# `examples/` — one story per domain, loadable as is
+# `docs/demo/` — one story per domain, loadable as is
 
 Each file is a complete, self-contained dataset: an organisation, a
 project, its participants with their place, their meters and the devices
@@ -9,7 +9,7 @@ core vocabularies and the modules they name in their first line (`building` for
 the ground, buildings, spaces and roof faces of a participant,
 `grid` for the operator of a connection point, `community` for energy
 sharing, `billing` for the invoicing side), and the
-test suite loads every one of them (`tests/examples.test.ts`).
+test suite loads every one of them (`tests/demo.test.ts`).
 
 Identifiers are fixed (`00000000-0000-4000-8000-000N…`, N = the example),
 so that the queries at the end of each file can be copied as they are.
@@ -26,7 +26,7 @@ so that the queries at the end of each file can be copied as they are.
 
 `yield.ts` is not a dataset: it computes the yield of a PV system as an estimate and
 reads it back by month, the twenty-minute path of the
-[README](../README.md#twenty-minutes-to-the-same-house-with-its-yield).
+[README](../../README.md#twenty-minutes-to-the-same-house-with-its-yield).
 
 Run one by hand with PGlite from the repo root:
 
@@ -35,7 +35,7 @@ node --input-type=module -e "
 import { freshDatabase } from './tests/helpers/db.ts';
 import { readFile } from 'node:fs/promises';
 const db = await freshDatabase();
-await db.exec(await readFile('examples/01-house-pv-battery.sql', 'utf8'));
+await db.exec(await readFile('docs/demo/01-house-pv-battery.sql', 'utf8'));
 console.log((await db.query('select name, city, country from participants order by name')).rows);
 "
 ```

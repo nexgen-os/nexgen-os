@@ -1,12 +1,12 @@
 // The twenty-minute path of the README, on PGlite: the house of example 01,
 // its PV system and its array described in the `solar` module, a yield estimate
-// through `examples/yield.ts` and its series read back by month.
+// through `docs/demo/yield.ts` and its series read back by month.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { pvgis } from '@nexgen-os/pvgis';
 import type { Fetch } from '@nexgen-os/core';
-import { yieldOfSystem } from '../examples/yield.js';
+import { yieldOfSystem } from '../docs/demo/yield.js';
 import { freshDatabase, one, repoRoot } from './helpers/db.js';
 
 const PV_SYSTEM = '00000000-0000-4000-8000-000100000051';
@@ -14,7 +14,7 @@ let db: PGlite;
 
 beforeAll(async () => {
   db = await freshDatabase(['grid', 'weather', 'solar']);
-  await db.exec(await readFile(`${repoRoot}/examples/01-house-pv-battery.sql`, 'utf8'));
+  await db.exec(await readFile(`${repoRoot}/docs/demo/01-house-pv-battery.sql`, 'utf8'));
   const readme = await readFile(`${repoRoot}/README.md`, 'utf8');
   const describeSystem = readme.match(/^\s*(insert into solar\.pv_systems .*;)$/m)?.[1];
   const describeArray = readme.match(/^\s*(insert into solar\.pv_arrays .*;)$/m)?.[1];

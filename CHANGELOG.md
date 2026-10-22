@@ -141,7 +141,7 @@ and defaults, each value with its source and reference
 **The examples**: seven loadable datasets — a house, a school, an energy
 community, a farm, a district from open data, a drone survey, an office —
 and the twenty-minute yield of the README
-([examples/README.md](examples/README.md)).
+([docs/demo/README.md](docs/demo/README.md)).
 
 **The doctrine**: the rules on one screen and forty-three decision records
 ([docs/doctrine.md](docs/doctrine.md),

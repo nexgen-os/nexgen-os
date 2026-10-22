@@ -7,8 +7,8 @@ by people who describe places for a living: architects, BIM modellers,
 engineers, surveyors, facility managers and public bodies.
 
 - Open an issue that says where you are from and what you describe.
-- Every change to the core comes with a test in `tests/`, a change to a module with one in `modules/<code>/tests/`; every example in
-  `examples/` keeps loading; every format library keeps its round trip.
+- Every change to the core comes with a test in `tests/`, a change to a module with one in `modules/<code>/tests/`; every dataset in
+  `docs/demo/` keeps loading; every format library keeps its round trip.
 - Everything is written in English. Vocabulary labels may carry translations.
 - No country, currency or language is ever a default in the core.
 - Names are the words the trades use, spelt the same on both sides of the

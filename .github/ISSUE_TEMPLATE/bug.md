@@ -19,4 +19,4 @@ labels: bug
 
 ## Smallest way to see it
 
-<!-- A few SQL statements on an empty installation, or a file in `examples/` plus one query. -->
+<!-- A few SQL statements on an empty installation, or a dataset of `docs/demo/` plus one query. -->
