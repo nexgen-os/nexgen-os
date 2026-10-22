@@ -22,7 +22,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A housing cooperative');
   owner = await participant(db, { organisation_id: org, name: 'Canal block', country: 'NL', time_zone: 'Europe/Amsterdam' });
   plot = (await one<{ id: string }>(
-    db, `select building.add_site($1, 'Canal plot', ST_GeomFromGeoJSON($2), p_profile => 'land') id`, [owner, JSON.stringify(square(4.8999, 52.3699, 30, 20))])).id;
+    db, `select building.add_site($1, 'Canal plot', ST_GeomFromGeoJSON($2), p_use => 'land') id`, [owner, JSON.stringify(square(4.8999, 52.3699, 30, 20))])).id;
   block = (await one<{ id: string }>(
     db, `select building.add_building($1, 'Block A', ST_GeomFromGeoJSON($2), 2, 9, p_site_id => $3) id`, [owner, JSON.stringify(square(4.9, 52.37, 20, 12)), plot])).id;
   ground = (await one<{ id: string }>(db, `select building.add_space($1, 'floor', 'Ground floor', null, 0) id`, [block])).id;
@@ -39,7 +39,7 @@ describe('the module', () => {
     const m = await one<{ code: string; schema_name: string; requires_core_min: string }>(
       db, `select code, schema_name, requires_core_min from modules where code = 'building'`);
     expect(m).toEqual({ code: 'building', schema_name: 'building', requires_core_min: '0.3.0' });
-    const uses = await one<{ n: number; land: string }>(db, `select count(*)::int n, max(applies_to) filter (where code = 'land') land from building.profiles`);
+    const uses = await one<{ n: number; land: string }>(db, `select count(*)::int n, max(applies_to) filter (where code = 'land') land from building.uses`);
     expect(uses).toEqual({ n: 14, land: 'place' });
     const props = await db.query<{ code: string; applies_to: string[] }>(`select code, applies_to from attribute_types where published_by = 'building'`);
     expect(props.rows).toEqual([{ code: 'file_record', applies_to: ['device'] }]);
@@ -87,11 +87,11 @@ describe('the module', () => {
 
 describe('the ground of a participant', () => {
   it('holds its parcel, its area and its use; its buildings and ground surfaces stand on it', async () => {
-    const r = await one<{ area: number; profile: string; buildings: number }>(
-      db, `select area_m2(geometry)::float area, profile, (select count(*)::int from building.buildings where site_id = s.id) buildings
+    const r = await one<{ area: number; use: string; buildings: number }>(
+      db, `select area_m2(geometry)::float area, use, (select count(*)::int from building.buildings where site_id = s.id) buildings
              from building.sites s where id = $1`, [plot]);
     expect(r.area).toBeCloseTo(600, -1);
-    expect(r).toMatchObject({ profile: 'land', buildings: 1 });
+    expect(r).toMatchObject({ use: 'land', buildings: 1 });
     const yard = (await one<{ id: string }>(db, `select building.add_surface($1, 'ground', 'Yard', null, 180, 0) id`, [plot])).id;
     expect((await one<{ p: string }>(db, `select building.participant_of('surface', $1) p`, [yard])).p).toBe(owner);
   });

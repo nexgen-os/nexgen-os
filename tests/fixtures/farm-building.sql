@@ -3,11 +3,11 @@
 -- the field and the car park, and what the cadastre and the farmer say
 -- about them. The devices of the example are the farm's, and are not placed.
 
-insert into building.sites (id, organisation_id, participant_id, name, profile, geometry) values
+insert into building.sites (id, organisation_id, participant_id, name, use, geometry) values
   ('00000000-0000-4000-8000-000400000015', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Farmland', 'land',
    ST_GeomFromText('POLYGON((2.7210 50.7705, 2.7250 50.7705, 2.7250 50.7730, 2.7210 50.7730, 2.7210 50.7705))', 4326));
 
-insert into building.buildings (id, organisation_id, participant_id, site_id, name, profile, footprint, elevation_m, height_m) values
+insert into building.buildings (id, organisation_id, participant_id, site_id, name, use, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000400000021', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000015', 'Barn', 'agricultural',
    ST_GeomFromText('POLYGON((2.7215 50.7710, 2.7222 50.7710, 2.7222 50.7714, 2.7215 50.7714, 2.7215 50.7710))', 4326), 64, 8),
   ('00000000-0000-4000-8000-000400000022', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000015', 'Stable', 'agricultural',

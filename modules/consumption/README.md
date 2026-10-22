@@ -8,7 +8,7 @@ energy of a bill spread over its period by a load profile and the participant's
 activity hours; **typical**, from an annual consumption and a load profile.
 This module holds what the last two need and reads the curve of a participant
 whichever way it is known. A load profile says which use it describes, by
-the code the `building` module gives that use (`building.profiles`) when it
+the code the `building` module gives that use (`building.uses`) when it
 is installed. A reconstruction is an estimate of this module, kept in
 `consumption.estimates`.
 

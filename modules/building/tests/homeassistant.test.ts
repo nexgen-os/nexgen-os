@@ -31,7 +31,7 @@ beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A home');
   const home = await participant(db, { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris' });
-  building = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
+  building = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'House', use: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
   imported = await importHomeAssistant(db, { participantId: home, buildingId: building }, readHomeAssistant(snapshot));
 });
 

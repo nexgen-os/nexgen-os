@@ -9,7 +9,7 @@
 -- building, floor or unit a participant occupies when it shares one. The
 -- territory of CityGML and of the spatial structure of IFC.
 --
---   building.profiles     what a building or a place is used for
+--   building.uses         what a building or a place is used for
 --   building.sites        the ground of a participant: a parcel, an area, a use
 --   building.buildings    a footprint, an elevation, a height, its year,
 --                         its floors, its energy label
@@ -39,10 +39,10 @@ values ('building', 'Building', '0.3.0', 'building', '0.3.0',
         'The physical description of the place of a participant: its ground, its buildings, their floors, rooms, zones and units, roof faces, facades and ground areas with their orientation, and which of them a participant occupies.');
 
 -- ---------------------------------------------------------------------------
--- profiles — what a building or a place is used for.
+-- uses — what a building or a place is used for.
 -- ---------------------------------------------------------------------------
 
-create table building.profiles (
+create table building.uses (
   code             text primary key,
   name             text not null,
   description      text,
@@ -52,19 +52,19 @@ create table building.profiles (
   ifc_occupancy    text,
   citygml_function text,
   published_by     text not null default 'building',
-  constraint profiles_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
-  constraint profiles_applies_to check (applies_to in ('building', 'place'))
+  constraint uses_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
+  constraint uses_applies_to check (applies_to in ('building', 'place'))
 );
 
-comment on table building.profiles is
+comment on table building.uses is
   'The use of a building or a place: residential, office, school, factory, farm, car park… A pack or a module adds its own rows.';
 
-alter table building.profiles enable row level security;
-create policy profiles_read on building.profiles for select to authenticated using (true);
-grant select on building.profiles to authenticated;
-grant select, insert, update, delete on building.profiles to service_role;
+alter table building.uses enable row level security;
+create policy uses_read on building.uses for select to authenticated using (true);
+grant select on building.uses to authenticated;
+grant select, insert, update, delete on building.uses to service_role;
 
-insert into building.profiles (code, name, applies_to, ifc_occupancy, citygml_function, description) values
+insert into building.uses (code, name, applies_to, ifc_occupancy, citygml_function, description) values
   ('residential', 'Residential',        'building', 'Residential',  'residential', 'Dwellings: a house, a flat, a block.'),
   ('office',      'Office',             'building', 'Office',       'office',      'Office space.'),
   ('school',      'School',             'building', 'Education',    'school',      'A school, a nursery, a training centre.'),
@@ -195,7 +195,7 @@ create table building.sites (
   -- (`area_m2(geometry)` measures the outline).
   area_m2          numeric(14, 2),
   -- What the ground is used for, when it is not a building's use.
-  profile          text references building.profiles(code),
+  use              text references building.uses(code),
   source_code      text references sources(code),
   -- The identifier its register gives it: a cadastral parcel.
   global_id        text,
@@ -235,7 +235,7 @@ create table building.buildings (
   participant_id       uuid not null references participants(id) on delete cascade,
   site_id              uuid references building.sites(id) on delete set null,
   name                 text not null,
-  profile              text references building.profiles(code),
+  use                  text references building.uses(code),
   -- The outline on the ground. With elevation and height it gives the
   -- level-of-detail 1 block (`building_volume`).
   footprint            geometry,
@@ -491,7 +491,7 @@ create or replace function building.add_site(
   p_name           text,
   p_geometry       geometry default null,
   p_area_m2        numeric default null,
-  p_profile        text default null,
+  p_use            text default null,
   p_source_code    text default null,
   p_metadata       jsonb default '{}'
 )
@@ -508,8 +508,8 @@ begin
   if not found then
     raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
-  insert into building.sites (id, organisation_id, participant_id, name, geometry, area_m2, profile, source_code, metadata)
-  values (v_id, p.organisation_id, p_participant_id, p_name, p_geometry, p_area_m2, p_profile, p_source_code,
+  insert into building.sites (id, organisation_id, participant_id, name, geometry, area_m2, use, source_code, metadata)
+  values (v_id, p.organisation_id, p_participant_id, p_name, p_geometry, p_area_m2, p_use, p_source_code,
           coalesce(p_metadata, '{}'));
   return v_id;
 end;
@@ -524,7 +524,7 @@ create or replace function building.add_building(
   p_footprint      geometry default null,
   p_elevation_m    numeric default null,
   p_height_m       numeric default null,
-  p_profile        text default null,
+  p_use            text default null,
   p_source_code    text default null,
   p_metadata       jsonb default '{}',
   p_site_id        uuid default null,
@@ -543,8 +543,8 @@ begin
   if not found then
     raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
-  insert into building.buildings (id, organisation_id, participant_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, metadata, global_id)
-  values (v_id, p.organisation_id, p_participant_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_profile, p_source_code,
+  insert into building.buildings (id, organisation_id, participant_id, site_id, name, footprint, elevation_m, height_m, use, source_code, metadata, global_id)
+  values (v_id, p.organisation_id, p_participant_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_use, p_source_code,
           coalesce(p_metadata, '{}'), p_global_id);
   return v_id;
 end;

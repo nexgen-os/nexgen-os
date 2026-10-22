@@ -42,8 +42,8 @@ const open = await exportGeoJson(db, { projectId }, { open: true });    // what 
 |---|---|---|
 | the project (`projectId`) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
 | each participant with a place | its point or outline | `project_id`, `role`, `status`, address fields, `time_zone`, `location_precision`, `location_source_code`; the municipality code among its identifiers |
-| its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `profile`, `area_m2`, `global_id`, `source_code` |
-| each building, with the `building` module | its footprint | `participant_id`, `site_id`, `profile`, `elevation_m`, `height_m`, `year_built`, `floors_above_ground`, `floors_below_ground`, `floor_area_m2`, `energy_label`, `status`, `global_id`, `source_code` |
+| its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `use`, `area_m2`, `global_id`, `source_code` |
+| each building, with the `building` module | its footprint | `participant_id`, `site_id`, `use`, `elevation_m`, `height_m`, `year_built`, `floors_above_ground`, `floors_below_ground`, `floor_area_m2`, `energy_label`, `status`, `global_id`, `source_code` |
 | each surface, with the `building` module | its face, or `null` | `surface_kind`, `participant_id`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `area_m2`, `material`, `u_value`, `is_external`, `global_id`, `source_code` |
 | each device | `null`: a device is not placed | `device_type`, `participant_id`, `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
 

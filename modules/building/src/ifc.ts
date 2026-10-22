@@ -39,8 +39,8 @@ export interface IfcTarget {
 export interface IfcImportOptions {
   /** The `sources.code` the file comes from (an architect's model, a survey). */
   sourceCode: string;
-  /** The profile every imported building gets. */
-  profile?: string | null;
+  /** The use every imported building gets, a code of `building.uses`. */
+  use?: string | null;
 }
 
 export interface IfcImport {
@@ -136,7 +136,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
                 $4, $7, $8, $9, $10, p_global_id => $12) id`,
       [
         target.participantId, b.name, b.footprint.pieces.map(planWkt), b.elevation, crs.srid, crs.proj,
-        b.height, options.profile ?? null, options.sourceCode, JSON.stringify(metadata), b.footprint.source === 'walls', b.globalId,
+        b.height, options.use ?? null, options.sourceCode, JSON.stringify(metadata), b.footprint.source === 'walls', b.globalId,
       ],
     );
     const id = row.rows[0].id;

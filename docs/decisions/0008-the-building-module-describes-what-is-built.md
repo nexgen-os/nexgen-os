@@ -32,7 +32,7 @@ area and energy label of a building, the material and U-value of a face,
 the identifier its file gives it — and the participant that occupies a
 unit (`spaces.occupant_id`). It says nothing about where a device sits
 ([0026](0026-a-device-belongs-to-its-participant.md)). The uses of a building
-or a place are its vocabulary (`building.profiles`). The
+or a place are its vocabulary (`building.uses`). The
 importers of CityJSON, IFC and Home Assistant homes are the module's
 (`modules/building/src`). The core never names it.
 

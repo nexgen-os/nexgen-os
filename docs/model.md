@@ -124,7 +124,7 @@ What the place physically is belongs to the `building` module (`building`,
   (`building.add_site`). A ground-mounted plant, a field or a car park is a
   ground with surfaces and no building.
 - **building.buildings** — a building of a participant, on its ground when
-  it is described: footprint, elevation, height, use (`building.profiles`),
+  it is described: footprint, elevation, height, use (`building.uses`),
   status, year of construction, floors above and below ground, gross floor
   area, energy label, the source it was described from, the identifier
   that source gives it (`global_id`) and, in `metadata`, what that source
@@ -361,7 +361,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as its `settlements` |
-| `building` | `building` | the physical description of the place of a participant: `profiles` (the uses of a building or a place), `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree, with the participant that occupies one) and `surfaces` (roof faces, facades, ground areas), each described in its columns, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
+| `building` | `building` | the physical description of the place of a participant: `uses` (the uses of a building or a place), `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree, with the participant that occupies one) and `surfaces` (roof faces, facades, ground areas), each described in its columns, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `estimates` of yields, performance and exceedance |
 | `consumption` | `consumption` | load profiles, activity hours and the `estimates` that reconstructed a curve |

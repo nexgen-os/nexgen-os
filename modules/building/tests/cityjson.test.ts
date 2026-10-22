@@ -95,7 +95,7 @@ describe('a CityJSON building', () => {
   let buildingId: string;
 
   it('lands as a building with its footprint, height, floors, year, identifier and the attributes the core has no column for', async () => {
-    const r = await importCityJson({ participantId: owner }, house, { sourceCode: 'city_model', profile: 'residential' });
+    const r = await importCityJson({ participantId: owner }, house, { sourceCode: 'city_model', use: 'residential' });
     expect(r.buildings).toHaveLength(1);
     expect(r.surfaces).toBe(8);
     expect(r.skipped).toEqual(['some-tree']);

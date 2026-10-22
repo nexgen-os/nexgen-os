@@ -28,7 +28,7 @@ select ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, '00000000-0000-
 
 -- Each building with its OpenStreetMap way and the number of floors it
 -- gives (building:levels), the source of the row.
-insert into building.buildings (id, organisation_id, participant_id, site_id, name, profile, footprint, height_m, floors_above_ground, source_code, global_id)
+insert into building.buildings (id, organisation_id, participant_id, site_id, name, use, footprint, height_m, floors_above_ground, source_code, global_id)
 select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-4000-8000-000500000001',
        ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid,
        'Building ' || i, case when i in (2, 5) then 'office' else 'mixed' end,

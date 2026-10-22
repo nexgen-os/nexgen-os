@@ -112,7 +112,7 @@ describe('an IFC4 model with an IfcMapConversion', () => {
 
   it('lands as a building near 4.89° E, 52.37° N at rooftop precision, with its footprint from the base slab', async () => {
     home = await newParticipant(org, 'Canal house');
-    const r = await importIfc({ participantId: home }, mapFile, { sourceCode: 'architect_model', profile: 'residential' });
+    const r = await importIfc({ participantId: home }, mapFile, { sourceCode: 'architect_model', use: 'residential' });
     expect(r.georeference).toBe('map_conversion');
     expect(r.crs).toBe('EPSG:28992');
     expect(r.locationPrecision).toBe('rooftop');

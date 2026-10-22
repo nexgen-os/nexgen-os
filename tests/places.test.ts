@@ -102,7 +102,7 @@ describe('a building and its roof, by the gestures of the building module', () =
     const home = (await one<{ id: string }>(db, `select join_project($1, 'Barn', '{"country": "ZZ"}') id`, [project])).id;
     const barn = (await one<{ id: string }>(db, `select building.add_building($1, 'Barn') id`, [home])).id;
     await expect(db.query(`select building.add_surface($1, 'roof', 'Somewhere up')`, [barn])).rejects.toThrow(/orientation_unknown/);
-    const ground = (await one<{ id: string }>(db, `select building.add_site($1, 'Farmyard', p_area_m2 => 1200, p_profile => 'land') id`, [home])).id;
+    const ground = (await one<{ id: string }>(db, `select building.add_site($1, 'Farmyard', p_area_m2 => 1200, p_use => 'land') id`, [home])).id;
     const flat = await one<{ id: string }>(db, `select building.add_surface($1, 'ground', 'Yard') id`, [ground]);
     expect(flat.id).toBeTruthy();
     const device = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Battery') id`, [home])).id;

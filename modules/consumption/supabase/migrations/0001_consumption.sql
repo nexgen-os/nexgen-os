@@ -14,7 +14,7 @@
 -- energy it was scaled to, and the estimate named in its source.
 --
 -- A load profile says which use it describes, by the code the `building`
--- module gives that use (`building.profiles`) when it is installed. The
+-- module gives that use (`building.uses`) when it is installed. The
 -- module ships `flat`; an installation adds its own, each with its source.
 
 set search_path = nexgen, public, extensions;
@@ -30,7 +30,7 @@ create table consumption.load_profiles (
   code             text primary key,
   name             text not null,
   -- The use it describes (an office, a school, a dwelling), by the code
-  -- of `building.profiles`; null for any.
+  -- of `building.uses`; null for any.
   use_code         text,
   -- day_shapes: the weight of each slot of the day, by day type, as given;
   -- activity_hours: a slot weighs 1 while the participant is open, `closed_ratio`

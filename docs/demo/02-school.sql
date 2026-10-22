@@ -25,7 +25,7 @@ insert into participants (id, organisation_id, project_id, name, role, contact_i
 
 -- The main building: its footprint and height, and what the archive, the
 -- drawings and the certificate say of it.
-insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m,
+insert into building.buildings (id, organisation_id, participant_id, name, use, footprint, elevation_m, height_m,
                                 year_built, floor_area_m2, energy_label) values
   ('00000000-0000-4000-8000-000200000020', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000010', 'Main building', 'school',
    ST_GeomFromText('POLYGON((4.4702 50.6802, 4.4708 50.6802, 4.4708 50.6805, 4.4702 50.6805, 4.4702 50.6802))', 4326), 112, 9.5,

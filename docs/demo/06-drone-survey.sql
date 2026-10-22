@@ -23,7 +23,7 @@ insert into participants (id, organisation_id, project_id, name, role, contact_i
 
 -- Hall A, known to OpenStreetMap by its way, one floor seen on the
 -- oblique photos.
-insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m, floors_above_ground, global_id) values
+insert into building.buildings (id, organisation_id, participant_id, name, use, footprint, elevation_m, height_m, floors_above_ground, global_id) values
   ('00000000-0000-4000-8000-000600000020', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000010', 'Hall A', 'industrial',
    ST_GeomFromText('POLYGON((11.3850 44.4805, 11.3862 44.4805, 11.3862 44.4811, 11.3850 44.4811, 11.3850 44.4805))', 4326), 52, 11, 1, 'way/112233445');
 

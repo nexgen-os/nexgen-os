@@ -18,7 +18,7 @@ device belongs to its participant, behind its meters. Install it with
 
 | Table | Holds |
 |---|---|
-| `building.profiles` | the uses of a building or a place (residential, office, school, a field, a car park…), with their IFC occupancy and CityGML function; a vocabulary, read by everyone signed in |
+| `building.uses` | the uses of a building or a place (residential, office, school, a field, a car park…), with their IFC occupancy and CityGML function; a vocabulary, read by everyone signed in |
 | `building.sites` | the ground of a participant: a parcel or a plot with its outline, the area a register gives, its use, the source it was described from and the identifier that source gives it |
 | `building.buildings` | a building of a participant, on its ground when that is described: footprint, elevation, height, use, status, year of construction, floors above and below ground, gross floor area, energy label, the source it was described from and the identifier that source gives it (CityGML `Building`, `IfcBuilding`, `Pset_BuildingCommon`) |
 | `building.spaces` | the inside of a building, one tree: floors (with their level), rooms, zones and units (a flat, an office lot), each with its parent space, its floor area and the participant that occupies it (`occupant_id`) (`IfcBuildingStorey`, `IfcSpace`, CityGML `Storey`, `BuildingRoom`) |
@@ -41,8 +41,8 @@ so that an export gives it back as it came.
 
 ## Gestures
 
-- `building.add_site(participant, name, geometry, area, profile, source, metadata)`
-- `building.add_building(participant, name, footprint, elevation, height, profile, source, metadata, site, global_id)` —
+- `building.add_site(participant, name, geometry, area, use, source, metadata)`
+- `building.add_building(participant, name, footprint, elevation, height, use, source, metadata, site, global_id)` —
   refuses `building_site_of_other_participant`
 - `building.add_space(building, kind, name, parent, level, geometry, elevation, height, source, metadata, global_id)`
 - `building.add_surface(host, kind, name, geometry, azimuth, tilt, source, metadata, global_id)` — on a

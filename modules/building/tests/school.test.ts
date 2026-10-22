@@ -24,7 +24,7 @@ beforeAll(async () => {
     organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Valbrisée',
   });
   school = await insert(db, 'building.buildings', {
-    organisation_id: org, participant_id: municipality, name: 'Main building', profile: 'school',
+    organisation_id: org, participant_id: municipality, name: 'Main building', use: 'school',
     footprint: square(4.4702, 50.6802, 40, 20), elevation_m: 112, height_m: 9.5,
   });
   ground = (await one<{ id: string }>(db, `select building.add_space($1, 'floor', 'Ground floor', null, 0, null, 112, 3.2) id`, [school])).id;

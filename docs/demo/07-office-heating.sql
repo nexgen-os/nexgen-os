@@ -21,7 +21,7 @@ insert into participants (id, organisation_id, project_id, name, role, country, 
   ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000005',
    'Beispielstraße 145', 'consumer', 'DE', 'Beispielstraße 145', '81671', 'München', 'DE-BY');
 
-insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m) values
+insert into building.buildings (id, organisation_id, participant_id, name, use, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Office block', 'office',
    ST_GeomFromText('POLYGON((11.6070 48.1240, 11.6076 48.1240, 11.6076 48.1243, 11.6070 48.1243, 11.6070 48.1240))', 4326), 520, 21);
 

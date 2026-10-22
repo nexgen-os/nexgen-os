@@ -32,8 +32,8 @@ export interface CityJsonTarget {
 export interface CityJsonImportOptions {
   /** The `sources.code` the file comes from (a city model, a national dataset). */
   sourceCode: string;
-  /** The profile every imported building gets. */
-  profile?: string | null;
+  /** The use every imported building gets, a code of `building.uses`. */
+  use?: string | null;
 }
 
 export interface CityJsonImport {
@@ -75,7 +75,7 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
                 $4, $6, $7, $8, $9, p_global_id => $10) id`,
       [
         target.participantId, b.name ?? b.id, b.footprint.map(planWkt), elevation, model.srid, height,
-        options.profile ?? null, options.sourceCode,
+        options.use ?? null, options.sourceCode,
         JSON.stringify({ cityjson: { id: b.id, parts: b.parts ?? [], lods: b.lods ?? [], attributes: b.attributes } }),
         b.id,
       ],

@@ -112,7 +112,7 @@ describe('the GeoJSON export of a participant', () => {
 
     const field = byId(fc, FIELD).properties;
     expect(field).toMatchObject({ surface_kind: 'ground', participant_id: FARM, site_id: GROUND, building_id: null, azimuth_deg: 180, tilt_deg: 0 });
-    expect(byId(fc, GROUND).properties).toMatchObject({ kind: 'site', participant_id: FARM, profile: 'land' });
+    expect(byId(fc, GROUND).properties).toMatchObject({ kind: 'site', participant_id: FARM, use: 'land' });
 
     const array = byId(fc, BARN_ARRAY).properties;
     expect(array).toMatchObject({ device_type: 'solar', participant_id: FARM, rated_power_kw: 99.19, unit_count: 182, installation_date: '2023-06-20' });

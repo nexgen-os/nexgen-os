@@ -178,7 +178,7 @@ describe('what the core publishes', () => {
     const r = await db.query(
       `select code from identifier_schemes where code ~ '_(be|fr|nl|es|de|lu|sn)$'
        union all select code from device_types where code ~ '_(be|fr|nl|es|de|lu|sn)$'
-       union all select code from building.profiles where code ~ '_(be|fr|nl|es|de|lu|sn)$'`,
+       union all select code from building.uses where code ~ '_(be|fr|nl|es|de|lu|sn)$'`,
     );
     expect(r.rows).toEqual([]);
   });

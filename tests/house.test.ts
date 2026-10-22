@@ -20,7 +20,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A family');
   home = await participant(db, { organisation_id: org, name: 'Garden plot', country: 'ES', city: 'Sevilla' });
   house = await insert(db, 'building.buildings', {
-    organisation_id: org, participant_id: home, name: 'House', profile: 'residential',
+    organisation_id: org, participant_id: home, name: 'House', use: 'residential',
     footprint: square(-5.98, 37.39, 10, 8), elevation_m: 12, height_m: 7.5,
   });
   roof = await insert(db, 'building.surfaces', {

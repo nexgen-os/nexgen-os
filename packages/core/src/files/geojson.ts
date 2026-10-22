@@ -148,7 +148,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const described = (await db.query<{ installed: boolean }>(`select to_regclass('building.buildings') is not null installed`)).rows[0].installed;
   const grounds = described
     ? (await db.query<Row>(
-        `select s.id, s.name, s.participant_id, s.profile, s.area_m2::float8 area_m2, s.global_id, s.source_code, s.metadata,
+        `select s.id, s.name, s.participant_id, s.use, s.area_m2::float8 area_m2, s.global_id, s.source_code, s.metadata,
                 ${geojson('s.geometry')} geometry
            from building.sites s where s.participant_id = any($1::uuid[])
           order by s.created_at, s.id`,
@@ -157,7 +157,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     : [];
   const buildings = described
     ? (await db.query<Row>(
-        `select b.id, b.name, b.participant_id, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
+        `select b.id, b.name, b.participant_id, b.site_id, b.use, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
                 b.year_built, b.floors_above_ground, b.floors_below_ground, b.floor_area_m2::float8 floor_area_m2, b.energy_label,
                 b.status, b.global_id, b.source_code, b.metadata,
                 ${geojson('b.footprint')} geometry
