@@ -38,7 +38,9 @@ that a lender, a reviewer or a client can check it.
 - **A yield with its provenance**: PVGIS (no key), PVWatts built in, or
   pvlib through its connector; P50 and the exceedance levels asked for,
   IEC 61724-1 indicators, an ordered loss chain, a far horizon and the
-  soiling of the place ([`modules/solar`](modules/solar/README.md)).
+  soiling of the place ([`modules/solar`](modules/solar/README.md)); a
+  point, a power, an azimuth and a tilt are enough to start, in one
+  command ([`solar estimate`](packages/cli/README.md#gestures-as-a-person)).
 - **Products from their files**: PAN and OND read into module and
   inverter products, with pvlib's parameter names
   ([`packages/formats/panond`](packages/formats/panond/README.md)).

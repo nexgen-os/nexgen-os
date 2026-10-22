@@ -62,7 +62,7 @@ describe('the server', () => {
     const names = tools.map((t) => t.name);
     for (const name of ['status', 'list_organisations', 'list_projects', 'list_participants', 'list_meters', 'list_devices', 'list_series',
       'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'store_series',
-      'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_estimate_yield', 'solar_estimates',
+      'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_describe_system', 'solar_estimate_yield', 'solar_estimates',
       'actions_of_project', 'actions_propose', 'actions_validate']) {
       expect(names).toContain(name);
     }
