@@ -30,7 +30,7 @@ let imported: HomeImport;
 beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A home');
-  const home = await participant(db, { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris', profile: 'residential' });
+  const home = await participant(db, { organisation_id: org, name: 'Home', country: 'FR', city: 'Lille', time_zone: 'Europe/Paris' });
   building = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'House', profile: 'residential', footprint: square(3.06, 50.63, 9, 11), height_m: 7 });
   imported = await importHomeAssistant(db, { participantId: home, buildingId: building }, readHomeAssistant(snapshot));
 });
@@ -40,7 +40,7 @@ afterAll(async () => {
 });
 
 describe('a Home Assistant home in Nexgen OS', () => {
-  it('lands floors and areas on one tree of spaces, devices under the participant with their room in their metadata, entities on series', async () => {
+  it('lands floors and areas on one tree of spaces, devices under the participant with their room in their file record, entities on series', async () => {
     const r = await db.query<{ kind: string; n: number }>(
       `select 'building' kind, count(*)::int n from building.buildings where organisation_id = $1
        union all select 'device', count(*)::int from devices where organisation_id = $1
@@ -61,7 +61,8 @@ describe('a Home Assistant home in Nexgen OS', () => {
     const devices = await db.query<{ name: string; room: string | null; participant: boolean }>(
       `select d.name, s.name room, d.participant_id = b.participant_id participant
          from devices d join building.buildings b on b.id = $1
-         left join building.spaces s on s.building_id = b.id and s.metadata->'ha'->>'key' = d.metadata->'ha'->>'space'
+         left join attributes a on a.object_kind = 'device' and a.object_id = d.id and a.property_code = 'file_record'
+         left join building.spaces s on s.building_id = b.id and s.metadata->'ha'->>'key' = a.value->'ha'->>'space'
         order by d.name`, [building]);
     expect(devices.rows).toEqual([
       { name: 'Inverter', room: 'Garage', participant: true },
@@ -70,20 +71,20 @@ describe('a Home Assistant home in Nexgen OS', () => {
     ]);
   });
 
-  it('opens one series per entity, on its device, else its area, else the building, with the right quantity and kind', async () => {
+  it('opens one series per entity, on its device, else on the participant, with the right quantity and kind', async () => {
     const r = await db.query<{ ref: string; observed: string; device: boolean; quantity: string; kind: string }>(
       `select s.external_ref ref, s.object_kind observed, s.device_id is not null device, s.quantity_code quantity, s.kind
          from series s order by s.external_ref`);
     expect(r.rows).toEqual([
-      { ref: 'homeassistant://binary_sensor.bedroom_motion', observed: 'space', device: false, quantity: 'occupancy', kind: 'measured' },
+      { ref: 'homeassistant://binary_sensor.bedroom_motion', observed: 'participant', device: false, quantity: 'occupancy', kind: 'measured' },
       { ref: 'homeassistant://climate.living_room', observed: 'device', device: true, quantity: 'ha_climate_c', kind: 'setpoint' },
       { ref: 'homeassistant://sensor.inverter_active_power', observed: 'device', device: true, quantity: 'power', kind: 'measured' },
       { ref: 'homeassistant://sensor.inverter_total_yield', observed: 'device', device: true, quantity: 'energy', kind: 'measured' },
-      { ref: 'homeassistant://sensor.kitchen_co2', observed: 'space', device: false, quantity: 'co2', kind: 'measured' },
+      { ref: 'homeassistant://sensor.kitchen_co2', observed: 'participant', device: false, quantity: 'co2', kind: 'measured' },
       { ref: 'homeassistant://sensor.living_room_temperature', observed: 'device', device: true, quantity: 'temperature', kind: 'measured' },
-      { ref: 'homeassistant://sensor.outdoor_noise', observed: 'building', device: false, quantity: 'ha_sound_pressure_db', kind: 'measured' },
+      { ref: 'homeassistant://sensor.outdoor_noise', observed: 'participant', device: false, quantity: 'ha_sound_pressure_db', kind: 'measured' },
       { ref: 'homeassistant://sensor.thermostat_battery', observed: 'device', device: true, quantity: 'charge_level', kind: 'measured' },
-      { ref: 'homeassistant://switch.garage_heater', observed: 'space', device: false, quantity: 'ha_switch_none', kind: 'command' },
+      { ref: 'homeassistant://switch.garage_heater', observed: 'participant', device: false, quantity: 'ha_switch_none', kind: 'command' },
     ]);
     const published = await db.query<{ code: string; unit: string; published_by: string }>(
       `select code, unit, published_by from quantities where published_by = 'homeassistant' order by code`);

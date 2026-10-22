@@ -1,8 +1,7 @@
-// A school, inside and out, with the core alone: two floors and their
-// classrooms as one tree of spaces, a multisensor in a classroom whose
-// readings are series, a heating setpoint asked of the heat pump, the heat
-// pump that serves the building, and everything findable from the
-// participant whose school it is.
+// A school, inside and out: two floors and their classrooms as one tree of
+// spaces of the `building` module, a multisensor whose readings are series
+// named after the room it measures, a heating setpoint asked of the heat
+// pump, and everything findable from the participant whose school it is.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
@@ -22,7 +21,7 @@ beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A municipality');
   municipality = await participant(db, {
-    organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Valbrisée', profile: 'school',
+    organisation_id: org, name: 'École du Centre', country: 'BE', street: "Rue de l'École 12", postal_code: '1380', city: 'Valbrisée',
   });
   school = await insert(db, 'building.buildings', {
     organisation_id: org, participant_id: municipality, name: 'Main building', profile: 'school',
@@ -35,14 +34,16 @@ beforeAll(async () => {
   classroom5 = (await one<{ id: string }>(db, `select building.add_space($1, 'room', 'Classroom 5', $2) id`, [school, first])).id;
   probe = (await one<{ id: string }>(db, `select install_device($1, 'sensor_box', 'Multisensor classroom 1') id`, [municipality])).id;
   heatPump = (await one<{ id: string }>(db, `select install_device($1, 'heat_pump', 'Air-to-water heat pump', null, 24, '2023-10-02') id`, [municipality])).id;
+  const thermometer = (await one<{ id: string }>(db, `select install_device($1, 'sensor', 'Thermometer classroom 5') id`, [municipality])).id;
+  // A point is a series of the device that reads or is asked it, named after the room.
   for (const [quantity, kind, device, ref] of [
     ['temperature', 'measured', probe, 'mqtt://school/c1/temp'],
     ['co2', 'measured', probe, 'mqtt://school/c1/co2'],
     ['temperature', 'setpoint', heatPump, 'modbus://10.0.0.5/4001'],
   ]) {
-    await db.query(`select series_ensure('space', $1, $2, $3, 'instant', null, $4, $5)`, [classroom1, quantity, kind, device, ref]);
+    await db.query(`select series_ensure('device', $1, $2, $3, 'instant', null, $1, $4, null, 'Classroom 1')`, [device, quantity, kind, ref]);
   }
-  await db.query(`select series_ensure('space', $1, 'temperature', 'measured', 'instant')`, [classroom5]);
+  await db.query(`select series_ensure('device', $1, 'temperature', 'measured', 'instant', null, $1, null, null, 'Classroom 5')`, [thermometer]);
 });
 
 afterAll(async () => {
@@ -53,7 +54,8 @@ describe('a school, inside', () => {
   it('finds the participant, the country and the building from a room', async () => {
     const r = await one<{ participant: string; country: string; building: string }>(
       db,
-      `select participant_of('space', $1) participant, country_of('space', $1) country, building.building_of('space', $1) building`,
+      `select building.participant_of('space', $1) participant, country_of('participant', building.participant_of('space', $1)) country,
+              building.building_of('space', $1) building`,
       [classroom5],
     );
     expect(r).toEqual({ participant: municipality, country: 'BE', building: school });
@@ -64,7 +66,7 @@ describe('a school, inside', () => {
       `select f.name floor, r.name room, count(se.id)::int points
          from building.spaces f
          join building.spaces r on r.parent_id = f.id
-         left join series se on se.object_id = r.id
+         left join series se on se.name = r.name
         where f.building_id = $1 and f.kind = 'floor'
         group by f.level, f.name, r.name
         order by f.level, r.name`,
@@ -79,8 +81,8 @@ describe('a school, inside', () => {
 
   it('knows the room a multisensor measures by its series, and the multisensor by its participant', async () => {
     const r = await one<{ rooms: string[]; participant: string }>(
-      db, `select array_agg(distinct object_id) rooms, participant_of('device', $1) participant from series where device_id = $1`, [probe]);
-    expect(r).toEqual({ rooms: [classroom1], participant: municipality });
+      db, `select array_agg(distinct name) rooms, participant_of('device', $1) participant from series where device_id = $1`, [probe]);
+    expect(r).toEqual({ rooms: ['Classroom 1'], participant: municipality });
   });
 
   it('refuses two floors at one level, a floor inside a room, a room of another building and a loop', async () => {
@@ -95,8 +97,8 @@ describe('a school, inside', () => {
   });
 
   it('records a measured temperature and its setpoint the same way, by their devices', async () => {
-    const measured = await one<{ id: string }>(db, `select id from series where object_id = $1 and quantity_code = 'temperature' and kind = 'measured'`, [classroom1]);
-    const asked = await one<{ id: string; device: string }>(db, `select id, device_id device from series where object_id = $1 and kind = 'setpoint'`, [classroom1]);
+    const measured = await one<{ id: string }>(db, `select id from series where name = 'Classroom 1' and quantity_code = 'temperature' and kind = 'measured'`);
+    const asked = await one<{ id: string; device: string }>(db, `select id, device_id device from series where name = 'Classroom 1' and kind = 'setpoint'`);
     expect(asked.device).toBe(heatPump);
     await db.query(`select store($1, array['2026-01-10 08:00+00', '2026-01-10 08:30+00']::timestamptz[], array[18.5, 19.5]::float8[])`, [measured.id]);
     await db.query(`select store($1, array['2026-01-10 08:00+00']::timestamptz[], array[20]::float8[])`, [asked.id]);
@@ -108,37 +110,21 @@ describe('a school, inside', () => {
     expect(r.value).toBe(19);
   });
 
-  it('serves the building with the heat pump, linked to it', async () => {
-    await db.query(`select link_objects('device', $1, 'serves', 'building', $2)`, [heatPump, school]);
-    const r = await one<{ name: string }>(
-      db,
-      `select d.name from links l join devices d on d.id = l.subject_id where l.type_code = 'serves' and l.object_id = $1`,
-      [school],
-    );
-    expect(r.name).toBe('Air-to-water heat pump');
+  it('says the floor area of a room in its column, and attaches nothing to a room', async () => {
+    await db.query(`update building.spaces set floor_area_m2 = 62 where id = $1`, [classroom1]);
+    expect((await one<{ a: string }>(db, 'select floor_area_m2::text a from building.spaces where id = $1', [classroom1])).a).toBe('62.00');
+    await expect(db.query(`select set_attribute('space', $1, 'annual_consumption', '120')`, [classroom1])).rejects.toThrow(/kind_unknown: space/);
   });
 
-  it('attaches an attribute to a room like to anything else', async () => {
-    await expect(db.query(`select set_attribute('space', $1, 'roof_area', '12')`, [classroom1])).rejects.toThrow(/property_not_applicable/);
-    await db.query(`select set_attribute('space', $1, 'floor_area', '62', null, null, 'as-built drawings')`, [classroom1]);
-    await db.query(
-      `insert into property_defs (code, name, datatype, applies_to, published_by) values ('acoustic_class', 'Acoustic class', 'text', '{space}', 'installation')`,
-    );
-    await db.query(`select set_attribute('space', $1, 'acoustic_class', '"B"')`, [classroom1]);
-    const p = await one<{ p: Record<string, unknown> }>(db, 'select attributes_of($1) p', [classroom1]);
-    expect(p.p).toEqual({ acoustic_class: 'B', floor_area: 62 });
-  });
-
-  it('removes the floors, rooms and their series when the building goes, and leaves the devices to their participant', async () => {
+  it('removes the floors and rooms when the building goes, and leaves the devices and their series to their participant', async () => {
     await db.query('delete from building.buildings where id = $1', [school]);
-    const r = await one<{ spaces: number; series: number; attributes: number; devices: number }>(
+    const r = await one<{ spaces: number; series: number; devices: number }>(
       db,
       `select (select count(*)::int from building.spaces where building_id = $1) spaces,
               (select count(*)::int from series) series,
-              (select count(*)::int from attributes where object_kind = 'space') attributes,
               (select count(*)::int from devices where participant_id = $2) devices`,
       [school, municipality],
     );
-    expect(r).toEqual({ spaces: 0, series: 0, attributes: 0, devices: 2 });
+    expect(r).toEqual({ spaces: 0, series: 4, devices: 3 });
   });
 });

@@ -69,9 +69,9 @@ const building = (id: string) =>
     `select b.name, b.elevation_m::float elevation, b.height_m::float height,
             (select count(*)::int from building.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level >= 0) above,
             (select count(*)::int from building.spaces f where f.building_id = b.id and f.kind = 'floor' and f.level < 0) below,
-            (attributes_of(b.id)->>'year_built')::int built, area_m2(b.footprint)::float area, b.source_code source,
+            b.year_built built, area_m2(b.footprint)::float area, b.source_code source,
             ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat,
-            (select value from external_ids where object_id = b.id and scheme = 'ifc_guid') guid,
+            b.global_id guid,
             (b.metadata->'ifc'->'psets'->'Pset_BuildingCommon'->>'IsLandmarked')::boolean landmarked,
             b.metadata->'ifc'->'header'->>'schema' schema, b.metadata->'ifc'->'header'->>'name' file,
             s.location_precision site_precision, ST_X(s.geometry) site_lon, ST_Y(s.geometry) site_lat
@@ -82,7 +82,7 @@ const building = (id: string) =>
 const floors = (buildingId: string) =>
   db.query<{ name: string; level: number; elevation: number; height: number | null; guid: string; above: boolean }>(
     `select f.name, f.level, f.elevation_m::float elevation, f.height_m::float height,
-            (select value from external_ids where object_id = f.id and scheme = 'ifc_guid') guid,
+            f.global_id guid,
             (f.metadata->'ifc'->'psets'->'Pset_BuildingStoreyCommon'->>'AboveGround')::boolean above
        from building.spaces f where f.building_id = $1 and f.kind = 'floor' order by f.level`,
     [buildingId],
@@ -90,8 +90,8 @@ const floors = (buildingId: string) =>
 
 const spaces = (buildingId: string) =>
   db.query<{ name: string; level: number; area: number; guid: string; finish: string | null; number: string }>(
-    `select s.name, f.level, (attributes_of(s.id)->>'floor_area')::float area,
-            (select value from external_ids where object_id = s.id and scheme = 'ifc_guid') guid,
+    `select s.name, f.level, s.floor_area_m2::float area,
+            s.global_id guid,
             s.metadata->'ifc'->'psets'->'Pset_SpaceCoveringRequirements'->>'FloorFinish' finish,
             s.metadata->'ifc'->'attributes'->>'Name' number
        from building.spaces s join building.spaces f on f.id = s.parent_id where f.building_id = $1 and s.kind = 'room' order by s.name`,
@@ -101,7 +101,7 @@ const spaces = (buildingId: string) =>
 const roofs = (buildingId: string) =>
   db.query<{ name: string; azimuth: number; tilt: number; zmin: number; zmax: number; area: number; guid: string; source: string }>(
     `select f.name, f.azimuth_deg::float azimuth, f.tilt_deg::float tilt, ST_ZMin(f.geometry)::float zmin, ST_ZMax(f.geometry)::float zmax,
-            area_m2(f.geometry)::float area, (select value from external_ids where object_id = f.id and scheme = 'ifc_guid') guid, f.source_code source
+            area_m2(f.geometry)::float area, f.global_id guid, f.source_code source
        from building.surfaces f where f.building_id = $1 and f.kind = 'roof'`,
     [buildingId],
   ).then((r) => r.rows);
@@ -207,11 +207,12 @@ describe('an IFC4 model with its equipment', () => {
       name: string; device_type: string; in_building: boolean; manufacturer: string | null; model: string | null; serial: string | null;
       guid: string; source: string; predefined: string; lon: number; lat: number;
     }>(
-      `select d.name, d.device_type, (d.metadata->'ifc'->'placement'->>'building')::uuid = $2 in_building, d.manufacturer, d.model, d.serial_number serial,
+      `select d.name, d.device_type, (f.value->'ifc'->'placement'->>'building')::uuid = $2 in_building, d.manufacturer, d.model, d.serial_number serial,
               (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
-              d.source_code source, d.metadata->'ifc'->'attributes'->>'PredefinedType' predefined,
-              (d.metadata->'ifc'->'placement'->'position'->>0)::float lon, (d.metadata->'ifc'->'placement'->'position'->>1)::float lat
-         from devices d where d.participant_id = $1 order by d.name`,
+              d.source_code source, f.value->'ifc'->'attributes'->>'PredefinedType' predefined,
+              (f.value->'ifc'->'placement'->'position'->>0)::float lon, (f.value->'ifc'->'placement'->'position'->>1)::float lat
+         from devices d join attributes f on f.object_kind = 'device' and f.object_id = d.id and f.property_code = 'file_record'
+        where d.participant_id = $1 order by d.name`,
       [site, r.buildings[0].id],
     );
     expect(devices.rows.map(({ lon, lat, predefined, ...d }) => d)).toEqual([
@@ -247,7 +248,7 @@ describe('an IFC4 model in millimetres placed by its site’s coordinates', () =
     id = r.buildings[0].id;
 
     const b = await building(id);
-    mapBuilding = await building((await one<{ id: string }>(db, `select object_id id from external_ids where scheme = 'ifc_guid' and value = '0K7w7JWBL5QOdBzu3Yz7Ts' and organisation_id = $1`, [org])).id);
+    mapBuilding = await building((await one<{ id: string }>(db, `select id from building.buildings where global_id = '0K7w7JWBL5QOdBzu3Yz7Ts' and organisation_id = $1`, [org])).id);
     expect(b.site_precision).toBe('parcel');
     expect(b.area).toBeCloseTo(60, 0);
     expect(b.height).toBeCloseTo(9.464, 3);

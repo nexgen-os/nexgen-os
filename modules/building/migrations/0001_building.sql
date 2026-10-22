@@ -219,6 +219,8 @@ create trigger sites_participant_id_check before insert or update of participant
 create trigger sites_set_updated_at before update on building.sites
   for each row execute function set_updated_at();
 create index sites_organisation_idx on building.sites (organisation_id);
+-- One identifier names one site of an organisation: a file is imported once.
+create unique index sites_one_global_id on building.sites (organisation_id, global_id);
 call secure_table('building.sites');
 
 -- ---------------------------------------------------------------------------
@@ -303,6 +305,8 @@ create trigger buildings_check before insert or update of site_id, participant_i
 create trigger buildings_set_updated_at before update on building.buildings
   for each row execute function set_updated_at();
 create index buildings_organisation_idx on building.buildings (organisation_id);
+-- One identifier names one building of an organisation: a file is imported once.
+create unique index buildings_one_global_id on building.buildings (organisation_id, global_id);
 call secure_table('building.buildings');
 
 create or replace function building.building_volume(p_building_id uuid)
@@ -416,6 +420,8 @@ create trigger spaces_occupant_id_check before insert or update of occupant_id o
 create trigger spaces_set_updated_at before update on building.spaces
   for each row execute function set_updated_at();
 create index spaces_organisation_idx on building.spaces (organisation_id);
+-- One identifier names one space of an organisation: a file is imported once.
+create unique index spaces_one_global_id on building.spaces (organisation_id, global_id);
 create index spaces_occupant_idx on building.spaces (occupant_id);
 call secure_table('building.spaces');
 
@@ -476,6 +482,8 @@ create trigger surfaces_site_id_check before insert or update of site_id on buil
 create trigger surfaces_set_updated_at before update on building.surfaces
   for each row execute function set_updated_at();
 create index surfaces_organisation_idx on building.surfaces (organisation_id);
+-- One identifier names one surface of an organisation: a file is imported once.
+create unique index surfaces_one_global_id on building.surfaces (organisation_id, global_id);
 call secure_table('building.surfaces');
 
 create or replace function building.add_site(

@@ -1,10 +1,10 @@
 // A participant goes out as GeoJSON any web map reads: the farm of example 4
 // and its arrays, with the ground, the buildings, roof faces and ground area
-// the `building` module describes (tests/fixtures/farm-building.sql), with their attributes,
-// identifiers and yield runs, and the sources it owes. The open export
-// leaves out the street, the serial numbers and whatever came from a source
-// that may not be passed on; a scenario shows what it adds; a project goes
-// out with its perimeter; row level security decides what is there at all.
+// the `building` module describes (tests/fixtures/farm-building.sql), with their columns,
+// attributes, identifiers and yield runs, and the sources it owes. The open
+// export leaves out the street, the serial numbers and whatever came from a
+// source that may not be passed on; a project goes out with its perimeter;
+// row level security decides what is there at all.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ let shedRoof: string;
 let shedArray: string;
 
 beforeAll(async () => {
-  db = await freshDatabase(['building', 'community', 'grid']);
+  db = await freshDatabase(['building', 'community', 'grid', 'solar']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
   await db.exec(await readFile(join(repoRoot, 'tests', 'fixtures', 'farm-building.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
@@ -39,11 +39,10 @@ beforeAll(async () => {
      values ('roof_layer', 'A commercial roof layer', 'api', 'Proprietary', '© Roof Layer Inc.', false)`,
   );
   await db.query(
-    `insert into attributes (object_kind, object_id, property_code, value, source_code) values
-       ('building', $1, 'floor_area', '280', 'openstreetmap'),
-       ('building', $1, 'energy_label', '"C"', 'roof_layer')`,
-    [BARN],
+    `insert into attributes (object_kind, object_id, property_code, value, source_code) values ('participant', $1, 'installed_power', '640', 'roof_layer')`,
+    [SITE],
   );
+  await db.query(`update building.buildings set floor_area_m2 = 280 where id = $1`, [BARN]);
   // A shed described from that layer, its roof and the array on it.
   shed = await insert(db, 'building.buildings', {
     organisation_id: ORG, participant_id: SITE, name: 'Shed', source_code: 'roof_layer', height_m: 4,
@@ -81,7 +80,7 @@ describe('the GeoJSON export of a participant', () => {
       'participant', 'site', 'building', 'building', 'building', 'surface', 'surface', 'surface', 'surface', 'surface',
       'device', 'device', 'device', 'device', 'device', 'device',
     ]);
-    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.3.0', scenario_id: null, at: null, open: false, withheld: 0 });
+    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.3.0', at: null, open: false, withheld: 0 });
   });
 
   it('writes WGS 84 positions with their height, outer rings counter-clockwise, and the box around them', () => {
@@ -101,13 +100,15 @@ describe('the GeoJSON export of a participant', () => {
 
   it('carries the columns, the attributes, the identifiers and the runs of every object', () => {
     const site = byId(fc, SITE).properties;
-    expect(site).toMatchObject({ name: 'Ferme du Mont Noir', country: 'FR', street: 'Route de Boeschepe 3', postal_code: '59270', time_zone: 'Europe/Paris', profile: 'agricultural' });
-    expect(site.attributes).toEqual({ annual_consumption: 186000 });
+    expect(site).toMatchObject({ name: 'Ferme du Mont Noir', country: 'FR', street: 'Route de Boeschepe 3', postal_code: '59270', time_zone: 'Europe/Paris' });
+    expect(site.attributes).toEqual({ annual_consumption: 186000, installed_power: 640 });
 
     const barn = byId(fc, BARN).properties;
-    expect(barn).toMatchObject({ participant_id: SITE, height_m: 8, elevation_m: 64 });
-    expect(barn.attributes).toEqual({ floor_area: 280, energy_label: 'C', floors_above_ground: 1, year_built: 2004 });
-    expect(barn.external_ids).toEqual([{ scheme: 'osm', value: 'way/445566778' }]);
+    expect(barn).toMatchObject({
+      participant_id: SITE, height_m: 8, elevation_m: 64, floor_area_m2: 280, floors_above_ground: 1, year_built: 2004, global_id: 'way/445566778',
+    });
+    expect(barn.attributes).toEqual({});
+    expect(barn.external_ids).toEqual([]);
 
     const field = byId(fc, FIELD).properties;
     expect(field).toMatchObject({ surface_kind: 'ground', participant_id: SITE, site_id: GROUND, building_id: null, azimuth_deg: 180, tilt_deg: 0 });
@@ -164,47 +165,28 @@ describe('the open export', () => {
   });
 
   it('drops the attributes of a closed source, serial numbers and metadata, and owes only the open sources', () => {
-    expect(byId(fc, BARN).properties.attributes).toEqual({ floor_area: 280, floors_above_ground: 1, year_built: 2004 });
+    expect(byId(fc, SITE).properties.attributes).toEqual({ annual_consumption: 186000 });
     expect(byId(fc, BARN).properties).not.toHaveProperty('metadata');
     expect(fc.features.some((f) => 'serial_number' in f.properties)).toBe(false);
     expect(fc.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap']);
     expect(fc.nexgen_os.open).toBe(true);
   });
 
-  it('keeps the runs: a scenario shared with the public is its figures beside its places', () => {
+  it('keeps the runs: a study shared with the public is its figures beside its places', () => {
     expect(byId(fc, BARN_ARRAY).properties.runs[0].results).toEqual({ annual_kwh: 99190 });
   });
 });
 
-describe('a scenario, a moment, a project', () => {
-  it('shows what a scenario adds and overrides, and reality without it', async () => {
-    const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'A battery') returning id`, [ORG]);
-    const battery = await insert(db, 'devices', { organisation_id: ORG, participant_id: SITE, name: 'Battery', device_type: 'battery', rated_power_kw: 50, scenario_id: scenario.id });
-    await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, scenario_id, source) values ('participant', $1, 'annual_consumption', '150000', $2, 'with the battery')`,
-      [SITE, scenario.id],
-    );
-    const variant = await exportGeoJson(db, { participantId: SITE }, { scenarioId: scenario.id });
-    expect(byId(variant, battery).properties.device_type).toBe('battery');
-    expect(byId(variant, SITE).properties.attributes).toEqual({ annual_consumption: 150000 });
-    expect(variant.nexgen_os.scenario_id).toBe(scenario.id);
-    // The yield runs were computed on reality, not on this variant.
-    expect(byId(variant, BARN_ARRAY).properties.runs).toEqual([]);
-
-    const reality = await exportGeoJson(db, { participantId: SITE });
-    expect(reality.features.map((f) => f.id)).not.toContain(battery);
-    expect(byId(reality, SITE).properties.attributes).toEqual({ annual_consumption: 186000 });
-  });
-
+describe('a moment, a project', () => {
   it('reads attributes at the moment asked', async () => {
     await db.query(
-      `update attributes set valid_from = '2026-01-01' where object_id = $1 and property_code = 'floor_area'`,
-      [BARN],
+      `update attributes set valid_from = '2026-01-01' where object_id = $1 and property_code = 'installed_power'`,
+      [SITE],
     );
     const before = await exportGeoJson(db, { participantId: SITE }, { at: '2025-06-01T00:00:00Z' });
-    expect(byId(before, BARN).properties.attributes).toEqual({ energy_label: 'C', floors_above_ground: 1, year_built: 2004 });
+    expect(byId(before, SITE).properties.attributes).toEqual({ annual_consumption: 186000 });
     expect(before.nexgen_os.at).toBe('2025-06-01T00:00:00.000Z');
-    // OpenStreetMap is owed for the identifier, not for an attribute that did not hold yet.
+    // The roof layer is owed for the shed it described, not for an attribute that did not hold yet.
     expect(before.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap', 'roof_layer']);
   });
 
@@ -229,10 +211,6 @@ describe('what it refuses', () => {
   it('asks for one target', async () => {
     await expect(exportGeoJson(db, {})).rejects.toThrow(/^target_required/);
     await expect(exportGeoJson(db, { participantId: SITE, projectId: SITE })).rejects.toThrow(/^target_required/);
-  });
-
-  it('names a scenario it cannot find', async () => {
-    await expect(exportGeoJson(db, { participantId: SITE }, { scenarioId: '00000000-0000-4000-8000-0000000000ff' })).rejects.toThrow(/^scenario_not_found/);
   });
 
   it('exports what row level security lets the user read, and nothing for anyone else', async () => {

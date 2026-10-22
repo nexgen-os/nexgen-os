@@ -1,7 +1,8 @@
 // The `building` module: the physical description of the place of a
 // participant, beside a core that keeps the participant and its place. The
-// ground of a block, the block on it, its floors and units, a roof face, a
-// tenant of a project occupying a unit; and what the module no longer does:
+// ground of a block, the block on it, its floors and units, a roof face,
+// what describes them in their columns, a tenant of a project occupying a
+// unit; and what the module no longer does:
 // place a device or a PV array, which belong to their participant.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -34,22 +35,14 @@ afterAll(async () => {
 });
 
 describe('the module', () => {
-  it('registers under its code, owns its schema and declares its kinds, link types and properties', async () => {
+  it('registers under its code, owns its schema, its vocabulary of uses and the one property it declares', async () => {
     const m = await one<{ code: string; schema_name: string; requires_core_min: string }>(
       db, `select code, schema_name, requires_core_min from modules where code = 'building'`);
     expect(m).toEqual({ code: 'building', schema_name: 'building', requires_core_min: '0.3.0' });
-    const kinds = await db.query<{ kind: string; table_name: string; published_by: string }>(
-      `select kind, table_name, published_by from kinds where published_by = 'building' order by kind`);
-    expect(kinds.rows).toEqual([
-      { kind: 'building', table_name: 'building.buildings', published_by: 'building' },
-      { kind: 'site', table_name: 'building.sites', published_by: 'building' },
-      { kind: 'space', table_name: 'building.spaces', published_by: 'building' },
-      { kind: 'surface', table_name: 'building.surfaces', published_by: 'building' },
-    ]);
-    const links = await db.query<{ code: string }>(`select code from link_types where published_by = 'building' order by code`);
-    expect(links.rows.map((r) => r.code)).toEqual(['occupies']);
-    const props = await one<{ n: number }>(db, `select count(*)::int n from property_defs where published_by = 'building'`);
-    expect(props.n).toBe(9);
+    const uses = await one<{ n: number; land: string }>(db, `select count(*)::int n, max(applies_to) filter (where code = 'land') land from building.profiles`);
+    expect(uses).toEqual({ n: 14, land: 'place' });
+    const props = await db.query<{ code: string; applies_to: string[] }>(`select code, applies_to from property_defs where published_by = 'building'`);
+    expect(props.rows).toEqual([{ code: 'file_record', applies_to: ['device'] }]);
   });
 
   it('leaves no site, building, space or surface in the core, and places no device', async () => {
@@ -79,11 +72,11 @@ describe('the module', () => {
     expect(await detachedModuleTables(sqlClient(db), ['building'])).toEqual([]);
   });
 
-  it('answers participant_of and country_of of the core for its kinds, and keeps the parent checks working', async () => {
-    const r = await one<{ space: string; ground: string; country: string; building: string }>(
-      db, `select participant_of('space', $1) space, participant_of('site', $2) ground, country_of('space', $1) country,
+  it('answers whose its objects are through their foreign keys, and keeps the parent checks working', async () => {
+    const r = await one<{ space: string; ground: string; building: string }>(
+      db, `select building.participant_of('space', $1) space, building.participant_of('site', $2) ground,
                   building.building_of('space', $1) building`, [flatA, plot]);
-    expect(r).toEqual({ space: owner, ground: owner, country: 'NL', building: block });
+    expect(r).toEqual({ space: owner, ground: owner, building: block });
     const other = await organisation(db, 'Someone else');
     await expect(insert(db, 'building.buildings', { organisation_id: other, participant_id: owner, name: 'Intruder' }))
       .rejects.toThrow(/parent_in_other_organisation/);
@@ -98,7 +91,7 @@ describe('the ground of a participant', () => {
     expect(r.area).toBeCloseTo(600, -1);
     expect(r).toMatchObject({ profile: 'land', buildings: 1 });
     const yard = (await one<{ id: string }>(db, `select building.add_surface($1, 'ground', 'Yard', null, 180, 0) id`, [plot])).id;
-    expect((await one<{ p: string }>(db, `select participant_of('surface', $1) p`, [yard])).p).toBe(owner);
+    expect((await one<{ p: string }>(db, `select building.participant_of('surface', $1) p`, [yard])).p).toBe(owner);
   });
 
   it('refuses a building on the ground of another participant', async () => {
@@ -107,34 +100,32 @@ describe('the ground of a participant', () => {
       .rejects.toThrow(/building_site_of_other_participant/);
   });
 
-  it('resolves a parameter through what is built, then asks the core from the participant', async () => {
-    await db.query(`select set_attribute('building', $1, 'annual_consumption', '3200', null, null, 'survey')`, [block]);
-    const fromSpace = await one<{ p: { value: number; level: string } }>(db, `select building.parameter_of('space', $1, 'annual_consumption') p`, [flatA]);
-    expect(fromSpace.p).toMatchObject({ value: 3200, level: 'building' });
-    await db.query(`select set_attribute('participant', $1, 'annual_consumption', '9000', null, null, 'survey')`, [owner]);
-    const fromGround = await one<{ p: { value: number; level: string } }>(db, `select building.parameter_of('site', $1, 'annual_consumption') p`, [plot]);
-    expect(fromGround.p).toMatchObject({ value: 9000, level: 'participant' });
-    const heatPump = (await one<{ id: string }>(db, `select install_device($1, 'heat_pump', 'Heat pump flat A') id`, [owner])).id;
-    const fromDevice = await one<{ p: { value: number; level: string } }>(db, `select building.parameter_of('device', $1, 'annual_consumption') p`, [heatPump]);
-    expect(fromDevice.p).toMatchObject({ value: 9000, level: 'participant' });
+  it('says what a register, a drawing or a survey gives of a building, a space and a surface in their columns', async () => {
+    await db.query(`update building.buildings set year_built = 1931, floors_above_ground = 4, floor_area_m2 = 960, energy_label = 'D' where id = $1`, [block]);
+    await db.query(`update building.spaces set floor_area_m2 = 64 where id = $1`, [flatA]);
+    await db.query(`update building.surfaces set material = 'slate', u_value = 0.3, is_external = true where building_id = $1`, [block]);
+    const r = await one<{ year_built: number; area: string; material: string }>(
+      db, `select b.year_built, s.floor_area_m2::text area, f.material from building.buildings b
+             join building.spaces s on s.building_id = b.id and s.id = $2 join building.surfaces f on f.building_id = b.id where b.id = $1`, [block, flatA]);
+    expect(r).toEqual({ year_built: 1931, area: '64.00', material: 'slate' });
+    await expect(db.query(`select set_attribute('building', $1, 'annual_consumption', '3200')`, [block])).rejects.toThrow(/kind_unknown: building/);
   });
 });
 
 describe('a participant occupies a unit', () => {
-  it('links a participant of a project to the unit it occupies, and refuses a ground as the object', async () => {
+  it('names the participant of a project that occupies a unit, of the same organisation', async () => {
     const project = await insert(db, 'projects', { organisation_id: org, name: 'Block community', kind: 'energy_community', country: 'NL' });
     const tenant = (await one<{ id: string }>(
       db, `select join_project($1, 'Flat A', '{"street": "Canal 1", "address_extra": "Flat A", "country": "NL"}', 'consumer', null, '2026-01-01') id`, [project])).id;
-    await db.query(`select link_objects('participant', $1, 'occupies', 'space', $2, '2026-01-01')`, [tenant, flatA]);
+    await db.query(`update building.spaces set occupant_id = $1 where id = $2`, [tenant, flatA]);
     const r = await one<{ unit: string; floor: string }>(
       db,
-      `select u.name unit, f.name floor from links l join building.spaces u on u.id = l.object_id join building.spaces f on f.id = u.parent_id
-        where l.subject_kind = 'participant' and l.subject_id = $1 and l.type_code = 'occupies'`,
+      `select u.name unit, f.name floor from building.spaces u join building.spaces f on f.id = u.parent_id where u.occupant_id = $1`,
       [tenant],
     );
     expect(r).toEqual({ unit: 'Flat A', floor: 'Ground floor' });
-    await expect(db.query(`select link_objects('participant', $1, 'occupies', 'site', $2)`, [tenant, plot]))
-      .rejects.toThrow(/link_object_kind/);
+    const stranger = await participant(db, { organisation_id: await organisation(db, 'Another landlord'), name: 'Stranger', country: 'NL' });
+    await expect(db.query(`update building.spaces set occupant_id = $1 where id = $2`, [stranger, flatA])).rejects.toThrow(/parent_in_other_organisation/);
   });
 });
 
@@ -144,8 +135,7 @@ describe('a PV array', () => {
     await db.query('insert into solar.pv_systems (id) values ($1)', [system]);
     const rack = await insert(db, 'solar.pv_arrays', { organisation_id: org, pv_system_id: system, name: 'Rack', azimuth_deg: 180, tilt_deg: 15, kwp_dc: 3 });
     const r = await one<{ participant: string; azimuth_deg: string; tilt_deg: string }>(
-      db, `select participant_of('pv_array', id) participant, azimuth_deg, tilt_deg from solar.pv_arrays where id = $1`, [rack]);
+      db, `select participant_of('device', pv_system_id) participant, azimuth_deg, tilt_deg from solar.pv_arrays where id = $1`, [rack]);
     expect(r).toEqual({ participant: owner, azimuth_deg: '180.00', tilt_deg: '15.00' });
-    expect((await one<{ b: string | null }>(db, `select building.building_of('pv_array', $1) b`, [rack])).b).toBeNull();
   });
 });

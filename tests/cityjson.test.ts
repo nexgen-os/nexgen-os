@@ -102,10 +102,10 @@ describe('a CityJSON building', () => {
     buildingId = r.buildings[0].id;
     const b = await one<{ name: string; elevation: number; height: number; floors: number; built: number; area: number; source: string; dak: string; ext: string; lon: number; lat: number }>(
       db,
-      `select b.name, b.elevation_m::float elevation, b.height_m::float height, (attributes_of(b.id)->>'floors_above_ground')::int floors,
-              (attributes_of(b.id)->>'year_built')::int built,
+      `select b.name, b.elevation_m::float elevation, b.height_m::float height, b.floors_above_ground floors,
+              b.year_built built,
               area_m2(b.footprint)::float area, b.source_code source, b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
-              (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
+              b.global_id ext,
               ST_X(ST_Centroid(b.footprint)) lon, ST_Y(ST_Centroid(b.footprint)) lat
          from building.buildings b where b.id = $1`,
       [buildingId],
@@ -157,7 +157,7 @@ describe('a CityJSON building', () => {
     const b = await one<{ height: number; area: number; ext: string; dak: string; roofs: string }>(
       db,
       `select b.height_m::float height, area_m2(b.footprint)::float area,
-              (select value from external_ids where object_id = b.id and scheme = 'cityjson') ext,
+              b.global_id ext,
               b.metadata->'cityjson'->'attributes'->>'b3_dak_type' dak,
               (select string_agg((round(azimuth_deg)::int % 360)::text || '/' || round(tilt_deg)::int::text, ',' order by round(azimuth_deg)::int % 360) from building.surfaces where building_id = b.id and kind = 'roof') roofs
          from building.buildings b where b.id = $1`,
