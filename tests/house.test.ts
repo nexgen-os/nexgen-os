@@ -2,7 +2,7 @@
 // would: a participant with its place and its meter, a building with its
 // footprint, a roof face, a PV system behind the meter, a module deriving that PV system into its own
 // table, attributes with their history, a drone video as a document, a
-// measured series and a simulated one in a scenario.
+// measured series and a simulated one.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
@@ -31,7 +31,7 @@ beforeAll(async () => {
   });
   pv = await insert(db, 'devices', {
     organisation_id: org, participant_id: home,
-    name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9, tags: ['solar', 'electric'],
+    name: 'PV system', device_type: 'solar', rated_power_kw: 3.6, unit_count: 9,
   });
 });
 
@@ -90,7 +90,7 @@ describe('a house', () => {
   });
 
   it('describes the roof face and says nothing of where a device sits on it', async () => {
-    expect((await one<{ participant: string }>(db, `select participant_of('surface', $1) participant`, [roof])).participant).toBe(home);
+    expect((await one<{ participant: string }>(db, `select building.participant_of('surface', $1) participant`, [roof])).participant).toBe(home);
     expect((await one<{ t: string | null }>(db, `select to_regclass('building.devices')::text t`)).t).toBeNull();
   });
 
@@ -117,20 +117,26 @@ describe('a house', () => {
     await db.query('delete from devices where id = $1', [battery]);
   });
 
+  it('describes the house in the columns of the building module', async () => {
+    await db.query(`update building.buildings set year_built = 1998, energy_label = 'C' where id = $1`, [house]);
+    await expect(db.query(`update building.buildings set energy_label = 'Z' where id = $1`, [house])).rejects.toThrow(/buildings_energy_label/);
+    await expect(db.query(`update building.buildings set year_built = 98 where id = $1`, [house])).rejects.toThrow(/buildings_year_built/);
+  });
+
   it('attaches typed attributes with their history and reads them at any date', async () => {
     await db.query(
       `insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source) values
-         ('building', $1, 'energy_label', '"E"', null, '2025-06-01', 'EPC 2019'),
-         ('building', $1, 'energy_label', '"C"', '2025-06-01', null, 'EPC 2025 after insulation')`,
-      [house],
+         ('participant', $1, 'annual_consumption', '5200', null, '2025-06-01', 'invoices 2024'),
+         ('participant', $1, 'annual_consumption', '3900', '2025-06-01', null, 'invoices 2025, after insulation')`,
+      [home],
     );
-    const before = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2024-01-01') p`, [house]);
-    const after = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-01-01') p`, [house]);
-    expect(before.p.energy_label).toBe('E');
-    expect(after.p.energy_label).toBe('C');
+    const before = await one<{ p: Record<string, number> }>(db, `select attributes_of($1, '2024-01-01') p`, [home]);
+    const after = await one<{ p: Record<string, number> }>(db, `select attributes_of($1, '2026-01-01') p`, [home]);
+    expect(before.p.annual_consumption).toBe(5200);
+    expect(after.p.annual_consumption).toBe(3900);
   });
 
-  it('refuses an attribute of the wrong type, out of range, outside its list, or on the wrong kind', async () => {
+  it('refuses an attribute of the wrong type, out of range, on the wrong kind, or on an object that is not of the core', async () => {
     await expect(
       db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('device', $1, 'efficiency', '"high"')`, [pv]),
     ).rejects.toThrow(/must be a number/);
@@ -138,39 +144,34 @@ describe('a house', () => {
       db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('device', $1, 'efficiency', '1.4')`, [pv]),
     ).rejects.toThrow(/at most 1/);
     await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('building', $1, 'energy_label', '"Z"')`, [house]),
-    ).rejects.toThrow(/must be one of/);
+      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'efficiency', '0.9')`, [home]),
+    ).rejects.toThrow(/property_not_applicable/);
     await expect(
       db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('surface', $1, 'efficiency', '0.9')`, [roof]),
-    ).rejects.toThrow(/property_not_applicable/);
+    ).rejects.toThrow(/attributes_object_kind|kind_unknown/);
   });
 
   it('refuses two attributes over overlapping periods', async () => {
     await expect(
       db.query(
-        `insert into attributes (object_kind, object_id, property_code, value, valid_from) values ('building', $1, 'energy_label', '"B"', '2026-01-01')`,
-        [house],
+        `insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values ('participant', $1, 'annual_consumption', '4000', '2026-01-01', 'a guess')`,
+        [home],
       ),
     ).rejects.toThrow(/overlapping_value/);
   });
 
-  it('keeps a drone video and a permit as documents of the building', async () => {
+  it('keeps a drone video and a permit as documents of the participant', async () => {
     await db.query(
       `insert into documents (object_kind, object_id, name, kind, uri, media_type, source, captured_at, metadata) values
-         ('building', $1, 'Orbit video', 'video', 's3://films/house-orbit.mp4', 'video/mp4', 'drone flight', '2026-09-30', '{"camera": "orbit"}'),
-         ('building', $1, 'Building permit', 'permit', 's3://docs/permit-1998.pdf', 'application/pdf', 'town hall', null, '{}')`,
-      [house],
+         ('participant', $1, 'Orbit video', 'video', 's3://films/house-orbit.mp4', 'video/mp4', 'drone flight', '2026-09-30', '{"camera": "orbit"}'),
+         ('participant', $1, 'Building permit', 'permit', 's3://docs/permit-1998.pdf', 'application/pdf', 'town hall', null, '{}')`,
+      [home],
     );
-    const r = await one<{ n: number }>(db, 'select count(*)::int n from documents where object_id = $1', [house]);
+    const r = await one<{ n: number }>(db, 'select count(*)::int n from documents where object_id = $1', [home]);
     expect(r.n).toBe(2);
   });
 
-  it('compares a measured series with a simulated one in a scenario, through one function', async () => {
-    const sc = await one<{ id: string }>(
-      db,
-      `insert into scenarios (organisation_id, name) values ($1, 'Add a battery') returning id`,
-      [org],
-    );
+  it('compares a measured series with a simulated one, through one function', async () => {
     const measured = await one<{ id: string }>(
       db,
       `insert into series (object_kind, object_id, quantity_code, kind, step) values ('device', $1, 'energy', 'measured', '15 minutes') returning id`,
@@ -178,8 +179,8 @@ describe('a house', () => {
     );
     const simulated = await one<{ id: string }>(
       db,
-      `insert into series (object_kind, object_id, quantity_code, kind, step, scenario_id, source_code) values ('device', $1, 'energy', 'simulated', '1 hour', $2, 'pvgis') returning id`,
-      [pv, sc.id],
+      `insert into series (object_kind, object_id, quantity_code, kind, step, source_code) values ('device', $1, 'energy', 'simulated', '1 hour', 'pvgis') returning id`,
+      [pv],
     );
     await db.query(
       `insert into series_values (series_id, at, value)
@@ -202,45 +203,19 @@ describe('a house', () => {
     expect(s.rows.map((r) => r.value)).toEqual([1.1, 0.9]);
   });
 
-  it('lets a scenario add a device and override an attribute without touching reality', async () => {
-    const sc = await one<{ id: string }>(db, `select id from scenarios where name = 'Add a battery'`);
-    const battery = await insert(db, 'devices', {
-      organisation_id: org, participant_id: home, name: 'Battery', device_type: 'battery',
-      rated_power_kw: 5, scenario_id: sc.id,
-    });
-    await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, scenario_id) values ('device', $1, 'efficiency', '0.92', $2)`,
-      [battery, sc.id],
-    );
-    await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, valid_from, scenario_id) values ('building', $1, 'energy_label', '"A"', '2025-06-01', $2)`,
-      [house, sc.id],
-    );
-    const real = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-07-01') p`, [house]);
-    const variant = await one<{ p: Record<string, string> }>(db, `select attributes_of($1, '2026-07-01', $2) p`, [house, sc.id]);
-    expect(real.p.energy_label).toBe('C');
-    expect(variant.p.energy_label).toBe('A');
-    const inReality = await one<{ n: number }>(
+  it('removes everything attached when a device goes', async () => {
+    const heater = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Water heater', device_type: 'boiler' });
+    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('device', $1, 'efficiency', '0.9', 'datasheet')`, [heater]);
+    await db.query(`insert into documents (object_kind, object_id, name, uri) values ('device', $1, 'Photo', 's3://photos/heater.jpg')`, [heater]);
+    await db.query(`select series_ensure('device', $1, 'temperature', 'measured', 'instant')`, [heater]);
+    await db.query('delete from devices where id = $1', [heater]);
+    const r = await one<{ attrs: number; docs: number; series: number }>(
       db,
-      `select count(*)::int n from devices where device_type = 'battery' and scenario_id is null`,
+      `select (select count(*)::int from attributes where object_kind = 'device' and object_id = $1) attrs,
+              (select count(*)::int from documents where object_kind = 'device' and object_id = $1) docs,
+              (select count(*)::int from series where object_kind = 'device' and object_id = $1) series`,
+      [heater],
     );
-    expect(inReality.n).toBe(0);
-    await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('device', $1, 'efficiency', '0.9')`, [battery]),
-    ).rejects.toThrow(/attachment_outside_object_scenario/);
-  });
-
-  it('removes everything attached when the building goes', async () => {
-    const shed = await insert(db, 'building.buildings', { organisation_id: org, participant_id: home, name: 'Shed', footprint: square(-5.9795, 37.39, 3, 3), height_m: 2.5 });
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('building', $1, 'floor_area', '9')`, [shed]);
-    await db.query(`insert into documents (object_kind, object_id, name, uri) values ('building', $1, 'Photo', 's3://photos/shed.jpg')`, [shed]);
-    await db.query('delete from building.buildings where id = $1', [shed]);
-    const r = await one<{ attrs: number; docs: number }>(
-      db,
-      `select (select count(*)::int from attributes where object_kind = 'building' and object_id = $1) attrs,
-              (select count(*)::int from documents where object_kind = 'building' and object_id = $1) docs`,
-      [shed],
-    );
-    expect(r).toEqual({ attrs: 0, docs: 0 });
+    expect(r).toEqual({ attrs: 0, docs: 0, series: 0 });
   });
 });

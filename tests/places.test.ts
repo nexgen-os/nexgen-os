@@ -108,12 +108,4 @@ describe('a building and its roof, by the gestures of the building module', () =
     const device = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Battery') id`, [site])).id;
     await expect(db.query(`select building.add_surface($1, 'roof', 'On a battery', null, 180, 30)`, [device])).rejects.toThrow(/surface_host_kind/);
   });
-
-  it('creates a variant on top of another, and refuses a parent of another organisation', async () => {
-    const a = (await one<{ id: string }>(db, `select create_scenario($1, 'Insulate') id`, [org])).id;
-    const b = (await one<{ id: string }>(db, `select create_scenario($1, 'Insulate and a heat pump', $2) id`, [org, a])).id;
-    expect((await one<{ parent: string }>(db, 'select parent_id parent from scenarios where id = $1', [b])).parent).toBe(a);
-    const other = await organisation(db, 'Another firm', USER_A);
-    await expect(db.query(`select create_scenario($1, 'Borrowed', $2)`, [other, a])).rejects.toThrow(/scenario_not_found/);
-  });
 });

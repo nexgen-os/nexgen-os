@@ -86,7 +86,6 @@ export async function insert(db: PGlite, table: string, fields: Record<string, u
 export async function participant(db: PGlite, fields: Record<string, unknown>): Promise<string> {
   const project = await insert(db, 'projects', {
     organisation_id: fields.organisation_id, name: `Project of ${String(fields.name)}`, country: fields.country,
-    ...(fields.scenario_id ? { scenario_id: fields.scenario_id } : {}),
   });
   return insert(db, 'participants', { project_id: project, ...fields });
 }

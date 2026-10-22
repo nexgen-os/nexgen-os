@@ -35,12 +35,11 @@ afterAll(async () => {
 
 describe('the hierarchy of the core', () => {
   it('needs no module: projects, participants, meters and devices are the core\'s, and sites are not', async () => {
-    const r = await one<{ modules: number; kinds: string[] }>(
+    const r = await one<{ modules: number; sites: boolean }>(
       db,
-      `select (select count(*)::int from modules) modules,
-              (select array_agg(kind order by kind) from kinds where published_by = 'core') kinds`,
+      `select (select count(*)::int from modules) modules, to_regclass('nexgen.sites') is not null sites`,
     );
-    expect(r).toEqual({ modules: 0, kinds: ['device', 'meter', 'organisation', 'participant', 'project', 'run', 'series'] });
+    expect(r).toEqual({ modules: 0, sites: false });
   });
 
   it('walks from the project to the meter and the device through the participant, which carries the place', async () => {
@@ -126,19 +125,14 @@ describe('two flats of one building', () => {
       .rejects.toThrow(/participant_group_carries|participants_group_has_no_place/);
   });
 
-  it('keeps the participant a meter leaves as a dated carried_by link', async () => {
+  it('gives a meter to the participant that carries it next', async () => {
     const tenant = (await one<{ id: string }>(
       db, `select join_project($1, 'Flat 1, new tenant', $2, 'consumer', null, '2026-07-01') id`, [project, place('Kade 2')])).id;
     await db.query(`select leave_project($1, '2026-06-30')`, [flats[0].participant]);
-    await db.query(`select assign_meter($1, $2, '2026-07-01')`, [flats[0].meter, tenant]);
+    await db.query(`select assign_meter($1, $2)`, [flats[0].meter, tenant]);
     const today = await one<{ participant_id: string }>(db, 'select participant_id from meters where id = $1', [flats[0].meter]);
     expect(today.participant_id).toBe(tenant);
-    const history = await db.query<{ object_id: string; valid_from: string; valid_to: string }>(
-      `select object_id, valid_from::date::text valid_from, valid_to::date::text valid_to
-         from links where subject_kind = 'meter' and subject_id = $1 and type_code = 'carried_by'`,
-      [flats[0].meter],
-    );
-    expect(history.rows).toEqual([{ object_id: flats[0].participant, valid_from: '2026-01-01', valid_to: '2026-07-01' }]);
+    await expect(db.query(`select assign_meter($1, $2)`, ['00000000-0000-4000-8000-0000000000ff', tenant])).rejects.toThrow(/meter_not_found/);
   });
 });
 
