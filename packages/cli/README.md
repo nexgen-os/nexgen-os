@@ -51,7 +51,7 @@ anonymous role: everything is read signed in, under row level security.
 
 | Command | What it does |
 |---|---|
-| `init [--modules a,b] [--packs xx] [--dry-run]` | Installs the core, the modules (default: every module shipped) and the packs (default: none). Idempotent: a recorded file is skipped, so `init --modules solar` on an installation adds the module. |
+| `init [--modules a,b] [--packs xx] [--dry-run]` | Installs the core, the modules (default: every module shipped: a folder of `modules/` with its `module.json`) and the packs (default: none). Idempotent: a recorded file is skipped, so `init --modules solar` on an installation adds the module. |
 | `migrate [--dry-run]` | Applies what this release adds to the core and to the modules and packs already installed. |
 | `doctor [--json]` | Schema version, files applied per scope, modules, packs, PostGIS, row level security on every table of `nexgen` and of the module schemas, vocabulary counts. Exits 1 with one named line per problem. |
 | `status [--json]` | Version, modules, packs, and the number of organisations, participants, devices and series. |
