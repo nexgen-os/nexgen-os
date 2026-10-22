@@ -5,8 +5,10 @@ Decision [0012](../../docs/decisions/0012-solar-module.md).
 A PV yield is comparable with a PVsyst, PV\*SOL or PVGIS result only when it
 says which weather, which period, which time convention, which models and
 which losses it was computed with. This module holds those inputs as data.
-Engines (pvlib, PVGIS, SAM) run outside Postgres and hand their results back
-through `record_run()`.
+Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is a
+run of this module, kept in `solar.runs` and written through the core's
+gesture, `record_run('solar.runs', …)`
+([0046](../../docs/decisions/0046-a-run-is-the-module-s.md)).
 
 ## Conventions
 
@@ -22,22 +24,25 @@ through `record_run()`.
 | Table | What it is |
 |---|---|
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
-| `solar.pv_arrays` | a kind of object (`pv_array`), whose participant `solar.participant_of()` answers (its system's): one group of modules with its own azimuth and tilt, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-is-not-placed-for-now.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
+| `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-is-not-placed-for-now.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
-| `solar.horizons` | the far horizon of a participant or a surface, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
+| `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
+| `solar.scenarios` | a design variant of a participant's PV, on top of another one when it has a parent (`solar.create_scenario()`): the arrays and horizons with a scenario exist only in it and the scenarios built on it |
+| `solar.runs` | what the module computed for a PV system — a yield, IEC 61724-1 indicators, an exceedance: inputs, engine version, results; the series a run wrote name it in their source (`solar.runs:<id>`) and hang on the system, an array's told apart by its name |
 | `solar.yield_profiles` | named modelling choices: decomposition, transposition, incidence, temperature model and parameters, spectral, ordered losses, clipping. A vocabulary, read by everyone signed in |
 
 `solar.system_kwp(system, scenario?)` gives the DC power of a system: the sum
-of its arrays, or its own `kwp_dc` when it has none.
+of its arrays (those of reality, and those of the scenario and the
+scenarios it builds on), or its own `kwp_dc` when it has none.
 
 ## Soiling of a place
 
 How much light dirt takes depends on the place — dust from a field or a
 road, birds, rain, a cleaning routine — rather than on a profile's modelling
-choices. `soiling_loss` (a fraction, `0.02` for 2 %) is an attribute of a
-PV array, of its PV system (a `device`) or of its participant, attached like any
-other with its source and its period. `solar.soiling_of(object, at?,
-scenario?)` reads the array's own, then what `parameter_of('device', …)`
+choices. `soiling_loss` (a fraction, `0.02` for 2 %) is the column of a PV
+array that says its own, or an attribute of its PV system (a `device`) or of
+its participant, attached like any other with its source and its period.
+`solar.soiling_of(object, at?)` reads the array's own, then what `parameter_of('device', …)`
 answers for its system: the system's, its participant's, its organisation's, its
 pack's; null when nobody says it.
 
@@ -59,7 +64,7 @@ losses, and where it is held in this module:
 
 | Parameter | Here | Read by |
 |---|---|---|
-| tilt, azimuth | `surfaces`, or `solar.pv_arrays` (degrees clockwise from north) | every run |
+| tilt, azimuth | `solar.pv_arrays` (degrees clockwise from north) | every run |
 | mounting | `solar.pv_arrays.mounting` | PVGIS (`building` / `free`), engines (temperature parameters) |
 | far horizon | `solar.horizons` | not yet in the hourly shape (PVGIS's own reaches the annual through anchoring) |
 | ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its run says the array's albedo is not applied |
@@ -87,15 +92,16 @@ verified is null.
 `runYield(db, request, clients)` (`yield.ts`) runs two of the profiles. Both
 store the hourly energy as a `simulated` `production_energy` series on the
 PV system (kWh per hour, dated at the start of the hour, UTC), the air
-temperature at its participant's place, and a run (`record_run('solar', …)`) whose inputs
+temperature at its participant's place, and a run (`solar.runs`) whose inputs
 say which weather, which period, which arrays, which models and losses, and
 which conventions it was computed with. Two runs on the same roof are
-compared by reading their `runs.inputs` side by side.
+compared by reading their `solar.runs.inputs` side by side.
 
 The request: `pvSystemId`, `years` (`from`, `to`, whole calendar years),
 `profileCode` (`pvgis_like` unless given). The arrays are the system's
-(`solar.pv_arrays`), or one array on the device's surface with the system's
-power when it has none; each needs an azimuth, a tilt and a power.
+(`solar.pv_arrays` of reality, by name), each with an azimuth, a tilt and a
+power; a system without arrays has no orientation and is refused
+(`array_without_orientation`).
 
 | Profile | Computed by | Weather | What else the request may give |
 |---|---|---|---|

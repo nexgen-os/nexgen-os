@@ -16,7 +16,7 @@ query paid a join.
 ## Decision
 
 **A column is for what every row of the table has and every query filters
-on**: the identity of the row, its organisation and scenario, its parent,
+on**: the identity of the row, its organisation, its parent,
 its geometry, the few numbers that define the object (the azimuth and tilt
 of a surface, the height of a building, the rated power of a device), its
 status.

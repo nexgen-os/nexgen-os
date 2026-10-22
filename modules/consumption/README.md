@@ -7,15 +7,17 @@ meter or a data hub, as a series of the core; **reconstructed**, from the
 energy of a bill spread over its period by a load profile and the participant's
 activity hours; **typical**, from an annual consumption and a load profile.
 This module holds what the last two need and reads the curve of a participant
-whichever way it is known. What a building or a place is used for is the
-core's vocabulary (`profiles`); a load profile says which use it describes.
+whichever way it is known. A load profile says which use it describes, by
+the code the `building` module gives that use (`building.profiles`) when it
+is installed. A reconstruction is a run of this module, kept in
+`consumption.runs`.
 
 ## What it adds to the core
 
 | Table | Holds |
 |---|---|
 | `consumption.load_profiles` | how energy spreads over the slots of a day (24, 48 or 96), the day types of a week (`weekday`, `saturday`, `sunday`) and the months of a year: by `day_shapes` given as weights, or by `activity_hours`, a slot weighing 1 while the participant is open and `closed_ratio` while it is closed. Optional `monthly_factors`, the use it describes, its source. A vocabulary: read by everyone signed in, written by migrations, modules and the installation (`service_role`). The module ships `flat`; a standard profile a grid operator publishes is added with its source. |
-| `consumption.activity_hours` | when a participant, a building or a space is open, day of the week by day of the week (ISO, 1 Monday), in the local wall-clock time of its participant (`24:00` closes at midnight; two rows for a break), over a period of dates, with its source; in a scenario if need be. Of the organisation of what is open, under row level security. |
+| `consumption.activity_hours` | when a participant or a project is open, day of the week by day of the week (ISO, 1 Monday), in the local wall-clock time of its participant (`24:00` closes at midnight; two rows for a break), over a period of dates, with its source. Of the organisation of what is open, under row level security. |
 
 ## A curve reconstructed, as a run
 
@@ -37,7 +39,7 @@ the participant's `annual_consumption` attribute is spread over a period that
 must then be one year (`energy_required` otherwise).
 
 The curve is a `simulated` `consumption_energy` series of the participant that
-belongs to the run (`series.run_id`), dated at the start of each slot in
+names the run in its source (`consumption.runs:<id>`), dated at the start of each slot in
 UTC, written through `store()` while the run runs and final once it is
 finished. The run keeps the profile as it was read, the activity hours,
 the energy and its source, the period and the time zone: the same inputs

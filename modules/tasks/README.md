@@ -19,11 +19,11 @@ the module needs no other module.
 | `tasks.phases` | the phases a project goes through, in their usual order: `study`, `design`, `permitting`, `financing`, `procurement`, `site_preparation`, `installation`, `grid_connection`, `commissioning`, `handover`, `operation`, `decommissioning`. A vocabulary: read by everyone signed in, written by migrations, modules and packs. |
 | `tasks.roles` | who carries a task: `owner`, `installer`, `grid_operator`, `municipality`, `regulator`, `financer`, `notary`, `community_manager`. Distinct from the roles of an organisation's members and from a participant's role in the energy flows. A vocabulary, extended by packs. |
 | `tasks.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the published text (the code of a `sources` row of kind `text`) and the reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. The module publishes fifteen generic ones for every country (`published_by = 'tasks'`, `country` null): nine steps of a roof installation, six of an energy community. A step one country adds is published by the installation or a private overlay under its own name; a country pack holds no task. |
-| `tasks.tasks` | an object (`task`): one thing to do about a project, a participant, a building, a surface or a device (`subject_id`), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos, reports and certificates attach to it as documents and attributes. |
+| `tasks.tasks` | one thing to do about an object of the core — a project, a participant, a meter, a device — named by its kind and id (`subject_kind`, `subject_id`, checked on the six words of the core), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos and certificates are documents of its subject. |
 
 A task in progress has its actual start; one done has its actual end, and
 only one done has it. Its subject, its contact and the task it waits for
-are of its organisation. It may exist only in a scenario, like any object.
+are of its organisation, and it goes with its subject.
 
 ## Planning a project
 
@@ -36,7 +36,7 @@ select tasks.plan(:project);
 `plan()` reads the project's country and kind, and the regions of the
 participants taking part in it, takes every template that matches them, checks each condition against the project's attributes and
 creates one task per template, once: calling it again creates nothing
-twice, and a scenario gets its own plan. A template whose condition names
+twice. A template whose condition names
 an attribute the project does not have is skipped and said so, rather than
 decided in the dark; so is a regional template on a project none of whose
 participants says its region (`region_missing`). Dependencies between templates become dependencies
@@ -55,8 +55,7 @@ The tasks of a participant are those on the participant or on anything of it; th
 project, the project's own and those of every participant taking part. The share
 done leaves the cancelled ones out; a task is late when it was planned to
 end before the day and is not done. The day is always given: the same call
-gives the same answer. It reads under the caller's row level security, and
-takes a scenario as its third argument.
+gives the same answer. It reads under the caller's row level security.
 
 ## What stays outside
 

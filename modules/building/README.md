@@ -18,39 +18,38 @@ device belongs to its participant, behind its meters. Install it with
 
 | Table | Holds |
 |---|---|
-| `building.sites` | the ground of a participant: a parcel or a plot with its outline, the area a register gives, its use, the source it was described from |
-| `building.buildings` | a building of a participant, on its ground when that is described: footprint, elevation, height, profile, status, the source it was described from (CityGML `Building`, `IfcBuilding`) |
-| `building.spaces` | the inside of a building, one tree: floors (with their level), rooms, zones and units (a flat, an office lot), each with its parent space (`IfcBuildingStorey`, `IfcSpace`, CityGML `Storey`, `BuildingRoom`) |
-| `building.surfaces` | roof faces, facades, ground areas and carports, on a building or straight on the ground, with azimuth (degrees clockwise from true north) and tilt (CityGML `RoofSurface`, `WallSurface`) |
+| `building.profiles` | the uses of a building or a place (residential, office, school, a field, a car park…), with their IFC occupancy and CityGML function; a vocabulary, read by everyone signed in |
+| `building.sites` | the ground of a participant: a parcel or a plot with its outline, the area a register gives, its use, the source it was described from and the identifier that source gives it |
+| `building.buildings` | a building of a participant, on its ground when that is described: footprint, elevation, height, use, status, year of construction, floors above and below ground, gross floor area, energy label, the source it was described from and the identifier that source gives it (CityGML `Building`, `IfcBuilding`, `Pset_BuildingCommon`) |
+| `building.spaces` | the inside of a building, one tree: floors (with their level), rooms, zones and units (a flat, an office lot), each with its parent space, its floor area and the participant that occupies it (`occupant_id`) (`IfcBuildingStorey`, `IfcSpace`, CityGML `Storey`, `BuildingRoom`) |
+| `building.surfaces` | roof faces, facades, ground areas and carports, on a building or straight on the ground, with azimuth (degrees clockwise from true north) and tilt, measured area, material, U-value and whether it faces outside (CityGML `RoofSurface`, `WallSurface`, `Pset_WallCommon`) |
 
-Sites, buildings, spaces and surfaces are kinds of object the module
-publishes in `kinds`: attributes, identifiers, links, documents and series
-name them by kind and id (`('surface', id)`) and go with them, and
-`participant_of()` and `country_of()` of the core ask
-`building.participant_of()` whose they are. `building.building_of(kind, id)`
-gives the building a space or a surface is in or on;
-`building.parameter_of(kind, id, …)` goes through the spaces, the building
-and the ground above an object, then asks the core from its participant.
+Sites, buildings, spaces and surfaces are the module's objects, each
+described in its own columns: the attachments of the core (attributes,
+identifiers, documents, series) name the six objects of the core only
+([0044](../../docs/decisions/0044-there-is-no-registry.md)). One identifier
+names one site, building, space or surface of an organisation
+(`global_id`), so that a file is imported once.
+`building.participant_of(kind, id)` follows their foreign keys to the
+participant; `building.building_of(kind, id)` gives the building a space
+or a surface is in or on.
 
-It publishes, with `published_by = 'building'`:
-
-- the link type `occupies` (the building, floor or unit a participant of a
-  project occupies, when it shares a building with others);
-- the properties of a building and of its faces: `floor_area`,
-  `energy_label`, `year_built`, `floors_above_ground`,
-  `floors_below_ground`, `roof_area`, `material`, `u_value`, `is_external`.
+It publishes, with `published_by = 'building'`, the property `file_record`
+of a device: what an IFC model or a Home Assistant home says of a device it
+describes that no column holds — its room, its position, its description —
+so that an export gives it back as it came.
 
 ## Gestures
 
 - `building.add_site(participant, name, geometry, area, profile, source, metadata)`
-- `building.add_building(participant, name, footprint, elevation, height, profile, source, metadata, scenario, site)` —
+- `building.add_building(participant, name, footprint, elevation, height, profile, source, metadata, site, global_id)` —
   refuses `building_site_of_other_participant`
-- `building.add_space(building, kind, name, parent, level, geometry, elevation, height, source, metadata)`
-- `building.add_surface(host, kind, name, geometry, azimuth, tilt, source, metadata)` — on a
+- `building.add_space(building, kind, name, parent, level, geometry, elevation, height, source, metadata, global_id)`
+- `building.add_surface(host, kind, name, geometry, azimuth, tilt, source, metadata, global_id)` — on a
   building or a ground; a roof or a facade without an orientation takes the
   one of its 3D polygon (`building.surface_orientation()`)
 - `building.building_volume(building)`, `building.participant_of(kind, id)`,
-  `building.building_of(kind, id)`, `building.parameter_of(kind, id, property, at, scenario)`
+  `building.building_of(kind, id)`
 
 A PV array of the `solar` module keeps its own azimuth and tilt; this module
 does not say which face it stands on.
@@ -64,7 +63,7 @@ under the participant the caller names:
 of a participant), `importIfc` (`@nexgen-os/ifc`: a building of a
 participant, which it places again when the model is georeferenced more
 precisely; the building, room and position a model gives a device stay in
-the device's metadata), `importHomeAssistant` and `exportHomeAssistant`
+the device's `file_record`), `importHomeAssistant` and `exportHomeAssistant`
 (`@nexgen-os/homeassistant`: floors and areas as spaces of a building, the
 devices under the participant). The GeoJSON export of `@nexgen-os/core` adds
 the ground, the buildings and the surfaces of a participant when this

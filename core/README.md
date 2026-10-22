@@ -15,10 +15,13 @@ core/seed/         the vocabularies, and the seeds compiled from the packs (pack
 The core names six objects, in the order a page walks them — the
 organisation, the project it works on, the participants taking part in it,
 the meters they carry, the devices behind those meters, the series they
-produce — and everything else is attached to any of them by kind and id:
-an attribute, an identifier, a link, a document, a series or a run names
-its object as `('participant', id)`, `('device', id)`, and the hierarchy is
-the foreign keys ([0044](../docs/decisions/0044-there-is-no-registry.md)).
+produce — and what describes them beyond their columns is attached to one
+of them by kind and id: an attribute, an identifier, a document or a series
+names its object as `('participant', id)`, `('device', id)`, the kind one of
+the six words, and the hierarchy is the foreign keys
+([0044](../docs/decisions/0044-there-is-no-registry.md)). The core is
+twenty-seven tables and one view; a run, a design variant, the use of a
+building or a link of a trade is the module's that needs it.
 The participant carries the place, geolocated but not described: its
 ground, its buildings, floors, rooms and roof faces are the `building`
 module's ([`modules/building`](../modules/building/README.md)), and a device
@@ -46,20 +49,19 @@ documents, and stay close to the platform that proved it
 | Table | Holds | Standard it follows |
 |---|---|---|
 | `organisations`, `organisation_members`, `contacts` | who owns the descriptions and who they deal with; an organisation is an object like the others | Ekwo companies and contacts |
-| `projects`, `participants` | what a person works on (an energy community, a portfolio, a study, a construction site, a district plan) with its country and lifecycle, and its actors as producer, consumer or prosumer, each carrying its place in one standard shape (address, WGS 84 point, precision, source, time zone, profile), grouped when they answer together | schema.org `PostalAddress` |
+| `projects`, `participants` | what a person works on (an energy community, a portfolio, a study, a construction site, a district plan) with its country and lifecycle, and its actors as producer, consumer or prosumer, each carrying its place in one standard shape (address, WGS 84 point, precision, source, time zone), grouped when they answer together | schema.org `PostalAddress` |
 | `meters` | the connection points of a participant to a network, under the identifier its operator knows, with their direction and the period that identifier names them | IEC CIM `UsagePoint`, GS1 GSRN |
 | `devices`, `device_directory` | what a participant has behind its meters, instruments included; the products it is an instance of | Brick equipment, Home Assistant devices |
-| `series`, `series_values`, `forecast_values`, `series_rollups`, `series_latest` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command; its hourly and daily aggregates and its latest value, derived | OGC SensorThings datastream, Brick and Haystack points |
-| `attributes`, `external_ids`, `links`, `documents` | what attaches to any object, named by its kind and its id: typed values with validity and source, identifiers, typed links (splits, merges and replacements included), files | IFC property sets, bSDD, Overture GERS |
-| `kinds` | the kinds of object an attachment may name — the core's and those modules publish — with the table holding each | — |
-| `scenarios`, `runs`, `modules`, `connectors` | design variants, immutable computations and the series they own, the modules installed, an organisation's use of a source through a connector | — |
+| `series`, `series_values`, `forecast_values`, `series_rollups`; the view `series_latest` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command; its values with their quality code; its hourly and daily aggregates, refreshed by every write; its latest value, a view | OGC SensorThings datastream, Brick and Haystack points |
+| `attributes`, `external_ids`, `documents` | what attaches to one of the six objects, named by its kind and its id: typed values with validity and source, identifiers, files | IFC property sets, bSDD |
+| `modules`, `connectors` | the modules installed, an organisation's use of a source through a connector; the gesture every module's runs share (`record_run('<module>.runs', …)`) | — |
 | `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys and a region's parents, with no global fallback | ISO 3166, ISO 4217 |
-| `device_types`, `profiles`, `link_types`, `quantities`, `units`, `property_defs`, `tags`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, CityGML, QUDT, Haystack |
+| `device_types`, `quantities`, `units`, `property_defs`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, QUDT |
 
 Every act that writes several rows or carries a rule is one function named
 after the gesture — `join_project`, `locate_participant`, `declare_meter`,
-`assign_meter`, `install_device`, `series_ensure`, `store`, `record_run`,
-`merge_objects`… — that refuses by name. The grid side of a connection
+`assign_meter`, `install_device`, `series_ensure`, `store`, `record_run`…
+— that refuses by name. The grid side of a connection
 point (`grid`), the physical description of a participant's place
 (`building`: its ground, buildings, spaces, surfaces), the energy sharing
 of a community (`community`) and the billing bridge (`billing`) are

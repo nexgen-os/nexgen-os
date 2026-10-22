@@ -35,8 +35,10 @@ measure.
   earned it in the field — organisation, project, participant, meter, device —
   and when two structures compete, the one the platform runs wins
   ([nexgen-os-and-nexgen.md](nexgen-os-and-nexgen.md), [0006](decisions/0006-named-objects.md)).
-- **Few tables, complete on the functions.** A column only for what every
-  row has, everything else attached; the actions of the trades are
+- **Few tables, complete on the functions.** The core is twenty-seven
+  tables and one view: the six objects and what they need, nothing a single
+  trade needs. A column only for what every
+  row has, everything else attached to one of the six; the actions of the trades are
   functions of the schema, many of them, each one gesture
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md),
   [0001](decisions/0001-one-entity-table-attached-values.md),
@@ -56,7 +58,7 @@ measure.
 
 - [0006](decisions/0006-named-objects.md) The core names six objects (the organisation, the project, the participant, the meter, the device, the series), and everything else is attached to them
 - [0045](decisions/0045-the-participant-is-the-node.md) The participant is the node: it carries the place, the meters and the devices, and every module starts from it
-- [0044](decisions/0044-there-is-no-registry.md) There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind and id
+- [0044](decisions/0044-there-is-no-registry.md) There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind, one of the six, and its id
 - [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
 - [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
 - [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
@@ -87,6 +89,7 @@ device is not placed.
 
 - [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
 - [0004](decisions/0004-deterministic-runs.md) A figure is a run, and a finished run never changes
+- [0046](decisions/0046-a-run-is-the-module-s.md) A run is the module's, and the core keeps the one gesture that writes it
 - [0013](decisions/0013-external-engines.md) A program connector reads one request and answers one result; "engine" names what computed a run
 - [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as a connector
 - [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is

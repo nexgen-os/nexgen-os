@@ -1,6 +1,6 @@
 # 0044 — There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind
 
-> Status: accepted · 21/10/2026
+> Status: accepted · 21/10/2026, rewritten 22/10/2026
 
 ## Context
 
@@ -26,52 +26,55 @@ proved itself in the field: there, a project belongs to an organisation, a
 participant to a project, a meter and a device to a participant, through
 foreign keys, and nothing else ([0045](0045-the-participant-is-the-node.md)).
 
+The table of kinds that replaced the registry kept the same door open: a
+module inserted kinds of its own, and any table of any module could carry
+attributes, identifiers, links, documents, series and runs. Ekwo OS, built
+on the same playbook, attaches its files with a plain kind column and a
+check on the few words it knows.
+
 ## Decision
 
 **The hierarchy is the foreign keys.** Each table keeps its own columns and
 its own foreign keys; nothing mirrors them. `parent_check` is a plain
 trigger per foreign key that reads the parent's row in the parent's table
-(same organisation, compatible scenario).
+and refuses a parent of another organisation.
 
-**An attachment names its object by its kind and its id.** `attributes`,
-`external_ids`, `documents`, `series` carry `object_kind` beside
-`object_id`; `links` carry `subject_kind` / `subject_id` and `object_kind` /
-`object_id`; `runs` carry `subject_kind` / `subject_id`. Every kind column
-references `kinds`, a small vocabulary — the kind, the table holding it,
-who published it — filled by plain inserts: the core's kinds in its seed,
-a module's in its first migration. A module table that attaches to an
-object of any kind (`tasks.tasks`, `solar.horizons`,
-`consumption.activity_hours`) does the same.
+**An attachment names its object by its kind and its id, and the kind is
+one of the six objects of the core.** `attributes`, `external_ids`,
+`documents` and `series` carry `object_kind` beside `object_id`, with
+`check (object_kind in ('organisation', 'project', 'participant', 'meter',
+'device', 'series'))`, as Ekwo OS attaches its files: no table of kinds, no
+foreign key to one. A module table about an object of the core
+(`tasks.tasks`, `solar.horizons`, `consumption.activity_hours`) does the
+same with the same check. A module's own objects — a site, a building, a
+space, a surface, a PV array, a weather point — are not kinds: what
+describes them is their columns, and a relation is a column pointing to
+an object of the core.
 
 **The gestures take the kind.** `set_attribute`, `add_identifier`,
-`link_objects`, `attach_document`, `series_ensure`, `start_run`,
-`record_run`, `split_object` and `merge_objects` name the object by its
-kind and its id; the organisation an attachment is stored in is the
-object's, read by `object_organisation(kind, id)` with one query on the
-kind's table, which refuses `kind_unknown` and `object_not_found` by name
-— an object of an organisation the caller does not read is not found — and
-an attachment that says another organisation is refused as
-`object_in_other_organisation`.
+`attach_document` and `series_ensure` name the object by its kind and its
+id; the organisation an attachment is stored in is the object's, read by
+`object_organisation(kind, id)` in the table of the kind, which refuses
+`kind_unknown` and `object_not_found` by name — an object of an
+organisation the caller does not read is not found — and an attachment
+that says another organisation is refused as `object_in_other_organisation`.
 
 **What is attached goes with its object.** `drop_attachments()`, after
-delete on the table of each kind (one `create trigger` line per table, in
-the core and in the modules), deletes the rows of every table whose kind
-column references `kinds` that name the deleted row. `nexgen-os doctor`
-names, by kind, the attachments whose object no longer exists
+delete on the table of each of the six objects, deletes the rows that name
+the deleted row in every table with an `object_kind` and an `object_id`
+(or `subject_kind` and `subject_id`) column. `nexgen-os doctor` names, by
+kind, the attachments whose object no longer exists
 (`attachments_orphaned`).
 
 **Whose an object is, through the foreign keys.** `participant_of(kind,
 id)` is a `case` over the core's kinds (a participant itself, a meter and a
-device by their `participant_id`, a series or a run by its object); a
-module answers for its own kinds with `<schema>.participant_of(kind, id)` —
-`building.participant_of`, `solar.participant_of` — and the core hands the
-question over without naming the module. `parameter_of(kind, id, …)`
-cascades through `parents_of()`, the core's foreign keys written out (a
-device's participant, its group and its project), then the organisation,
-and the region and the country of the participant's place; a module
-resolves its own kinds through what it describes first —
-`building.parameter_of()` reads the spaces, the building and the ground
-above an object before asking the core from its participant.
+device by their `participant_id`, a series by its object). A module that
+needs the same for its own objects follows its own foreign keys
+(`building.participant_of`), and the core does not hand anything over.
+`parameter_of(kind, id, …)` cascades through `parents_of()`, the core's
+foreign keys written out (a device's participant, its group and its
+project), then the organisation, and the region and the country of the
+participant's place.
 
 ## What it forbids
 
@@ -82,6 +85,8 @@ above an object before asking the core from its participant.
   creates the triggers of a module's table.
 - An attachment without the kind of its object, or a foreign key from an
   attachment to one table of every object.
+- A table of kinds, or a kind that is not one of the six objects of the
+  core.
 
 ## What it replaced
 
@@ -93,6 +98,9 @@ and the gestures that took an object's id alone; then `site_of(kind, id)`,
 which [0045](0045-the-participant-is-the-node.md) replaced by
 `participant_of(kind, id)`; the migration
 `20261012200900_core_object_kinds_rls.sql`, now `20261012200900_core_rls.sql`.
+Then the table `kinds`, where modules inserted kinds of their own, the
+`links` between objects of any kinds, and `participant_of()` handing a
+module's kind to `<schema>.participant_of()` (22/10/2026).
 
 ## See also
 

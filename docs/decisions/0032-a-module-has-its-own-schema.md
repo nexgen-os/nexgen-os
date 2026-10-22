@@ -26,7 +26,8 @@ series attach to it like to any object. No module adds a column to a core
 table.
 
 **A module reads the core freely and writes it through its functions.** A
-figure comes back as a run (`record_run()`); any other write goes through
+figure is a run of the module, written by the core's gesture
+(`record_run('<module>.runs', …)`, [0046](0046-a-run-is-the-module-s.md)); any other write goes through
 the gesture that carries its rule
 ([0018](0018-one-function-per-gesture.md)). A module may publish vocabulary
 rows, marked as published by it.

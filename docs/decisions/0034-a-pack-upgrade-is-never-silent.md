@@ -22,7 +22,8 @@ row, or holds a value without its source and its reference
 ([0020](0020-a-pack-holds-what-a-function-reads.md)).
 
 **The installation knows what it holds.** Each installed pack is recorded
-with its version, its checksum and its certification. `doctor` compares them
+with its version and its checksum; its certification is in its
+`pack.json`. `doctor` compares them
 with the files of the release.
 
 **An upgrade is computed by natural key, and nothing is lost on the way.** An

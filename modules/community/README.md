@@ -28,8 +28,8 @@ The module keeps the model and an engine shares:
   resampled on one grid of steps, and hands them with the key, the
   participants' attributes and the caller's `rules` to an engine of the
   `energy_sharing` kind ([packages/connectors/README.md](../../packages/connectors/README.md#programs-in-any-language));
-- the answer is a run of this module on the project, its engine and version
-  recorded: for each participant, `shared_offtake_energy`,
+- the answer is a run of this module on the project (`community.runs`),
+  its engine and version recorded: for each participant, `shared_offtake_energy`,
   `shared_injection_energy` and what is left of its `offtake_energy` and
   `injection_energy`, as `simulated` series of the run, final with it. The
   same inputs and the same engine give the same run, without starting the

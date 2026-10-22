@@ -31,9 +31,8 @@ a room is a series of that room, read by the device
 **The `building` module describes the place of a participant.** Its ground
 (`building.sites`), its buildings, their spaces and surfaces enrich the
 participant ([0042](0042-a-module-starts-from-an-object-of-the-core.md));
-`building.participant_of()` says whose each is, and
-`building.parameter_of()` resolves through what is built — a space, its
-building, its ground — before asking the core from the participant.
+`building.participant_of()` says whose each is, through their foreign
+keys.
 
 **A space is one notion with a kind and a parent.** A floor, a room, a zone
 and a unit (a flat, an office lot) are spaces of the module: each belongs
@@ -44,8 +43,8 @@ surfaces lie on it, with no building at all.
 
 **A PV array keeps its own azimuth and tilt, and nothing else.** A tilted
 frame on a flat roof differs from the roof; the array says its orientation
-itself. A participant of a project occupies a building, a floor or a unit
-it shares through an `occupies` link.
+itself. A participant of a project occupies a floor or a unit of a
+building it shares: the space names it (`occupant_id`).
 
 ## What it forbids
 

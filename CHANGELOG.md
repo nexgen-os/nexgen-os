@@ -8,6 +8,59 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Changed — the core keeps only what the six objects need
+
+The core schema is rewritten in place, before its first release: twenty-seven
+tables and one view, from thirty-seven tables
+([0006](docs/decisions/0006-named-objects.md),
+[0044](docs/decisions/0044-there-is-no-registry.md),
+[0046](docs/decisions/0046-a-run-is-the-module-s.md)).
+
+- `kinds` is gone: `attributes`, `external_ids`, `documents` and `series`
+  name their object by `object_kind`, checked on the six objects
+  (`organisation`, `project`, `participant`, `meter`, `device`, `series`).
+  A module's own objects (a site, a building, a space, a surface, a PV
+  array, a task, a weather point) are no longer kinds:
+  `participant_of('surface', …)` refuses `kind_unknown`, and
+  `building.participant_of()` answers for the building module.
+- `links` and `link_types` are gone, with `link_objects()`, `end_link()`,
+  `split_object()` and `merge_objects()`: `assign_meter(meter,
+  participant)` takes no date and keeps no `carried_by` link;
+  `replace_device()` retires the old device the day the new one is
+  installed; a participant occupying a unit is `building.spaces.occupant_id`;
+  a participant reading a weather point is a row of
+  `weather.participant_points`.
+- `tags` is gone, with every `tags` column; `projects`, `participants`,
+  `meters` and `devices` lose `scenario_id`, and `devices` its `metadata`
+  (`install_device()` takes no `p_metadata` and no `p_scenario_id`).
+- `profiles` moves to `building.profiles`; `participants.profile` and
+  `join_project(…, p_profile)` are gone.
+- `runs` and `scenarios` leave the core: `solar.runs`, `consumption.runs`,
+  `community.runs` and `solar.scenarios`. `record_run()`, `start_run()` and
+  `finish_run()` take the module's runs table first:
+  `record_run('solar.runs', 'device', id, engine_version, inputs, results,
+  series)`. A run's series names it in `series.source`
+  (`solar.runs:<id>`); `series.run_id` and `discard_superseded_series()`
+  are gone. `attributes_of(object, at)` and `parameter_of(kind, id,
+  property, at)` take no scenario; `tasks.plan(project)` and
+  `tasks.progress(object, on)` neither.
+- `series_dirty` and `series_rollup()` are gone: every write refreshes
+  `series_rollups`. `series_latest` is a view. `series_quality_codes` is a
+  check on `series_values.quality` (0 to 3, and 100 up for a pack).
+- `countries` loses `certification`, `certified_by` and `certified_on`; a
+  pack's certification stays in its `pack.json`.
+- The building module says what describes its objects in columns
+  (`year_built`, `floors_above_ground`, `floors_below_ground`,
+  `floor_area_m2`, `energy_label`, `material`, `u_value`, `is_external`,
+  `area_m2`, `global_id`); the properties `floor_area`, `energy_label`,
+  `year_built`, `floors_above_ground`, `floors_below_ground`, `roof_area`,
+  `material`, `u_value` and `is_external` are gone, with
+  `building.parameter_of()`. What an IFC model or a Home Assistant home says
+  of a device is its `file_record` attribute.
+- `property_defs` loses `ifc_pset`, `ifc_property` and `bsdd_uri`, and the
+  rows nobody read (`connection_max_power_mv`, `connection_study_power`).
+- The arrays of a PV system are read by name, then id.
+
 ### Moved
 
 The repository reads like the model; behaviour does not change. Old path →

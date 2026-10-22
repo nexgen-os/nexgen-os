@@ -1,6 +1,6 @@
 # 0004 — A figure is a run, and a finished run never changes
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026
+> Status: accepted · 12/10/2026, rewritten 19/10/2026 and 22/10/2026
 
 ## Context
 
@@ -13,15 +13,20 @@ under every document that quoted it.
 
 ## Decision
 
-**A figure is the result of a run.** A module or an engine hands its
-result back through one function, `record_run()`: the run records its
-inputs, the module, the engine and its version, and its results. Its
-identity is the hash of all of them; the same inputs give the same run, and
-recording it again returns it.
+**A figure is the result of a run, and a run is the module's that computes
+it.** A computed figure records its inputs in the module that computes it:
+its run is a row of that module's `runs` table (`solar.runs`,
+`consumption.runs`, `community.runs`), written through the one gesture the
+core keeps, `record_run('<module>.runs', …)` or `start_run()` then
+`finish_run()` ([0046](0046-a-run-is-the-module-s.md)). The run records its
+inputs, the engine and its version, and its results. Its identity is the
+hash of all of them; the same inputs give the same run, and recording it
+again returns it.
 
-**A run owns the series it writes.** The values a run produces are series of
-that run, never written into a series another run or a measurement already
-holds; two runs of the same study are two sets of series, side by side.
+**A run owns the series it writes.** The values a run produces are series
+that name it in their source (`<module>.runs:<run id>`), never written into
+a series another run or a measurement already holds; two runs of the same
+study are two sets of series, side by side.
 
 **A finished run never changes**, nor do the numbers of its series. A
 corrected figure is a new run, which says the one it supersedes; the old
@@ -43,7 +48,9 @@ its inputs, like any other engine.
 
 Simulated series identified by their object, quantity, kind, source and
 scenario, overwritten by the latest run: a past run's figures could change
-without anyone recording it.
+without anyone recording it. Then one `runs` table in the core for every
+module, which [0046](0046-a-run-is-the-module-s.md) moved to the modules
+that compute.
 
 ## See also
 
@@ -53,3 +60,4 @@ without anyone recording it.
 - [0013](0013-external-engines.md) — the engine a run records.
 - [0018](0018-one-function-per-gesture.md) — recording a run is a gesture.
 - [0029](0029-a-series-belongs-to-an-object.md) — the series a run writes.
+- [0046](0046-a-run-is-the-module-s.md) — a run is the module's.

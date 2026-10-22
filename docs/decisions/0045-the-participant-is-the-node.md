@@ -32,7 +32,7 @@ in 3D.
 **The participant is the node of a project, and carries the place.** The
 place columns `sites` carried move to `participants`, column for column:
 street, second line, postal code, city, region, country, geometry in
-WGS 84, precision and source of the location, time zone, profile
+WGS 84, precision and source of the location, time zone
 ([0025](0025-a-place-has-one-shape.md)). `join_project()` takes the place
 in its one shape, the time zone defaulting from the region, else the
 country, from the pack; `locate_participant()` places it again;
@@ -59,8 +59,9 @@ participant's place ([0021](0021-one-cascade-of-defaults.md)).
 **The physical description enriches the participant**, in the `building`
 module: its ground (`building.sites`: a parcel, an area, a use), its
 buildings (`building.buildings.participant_id`, and the ground they stand
-on when it is described), their spaces and surfaces, and the `occupies`
-link of a participant on a floor or a unit of a building it shares. It
+on when it is described), their spaces and surfaces, and the participant
+that occupies a floor or a unit of a building it shares
+(`building.spaces.occupant_id`). It
 says nothing about where a device sits ([0026](0026-a-device-is-not-placed-for-now.md)).
 A PV array of the `solar` module keeps its own azimuth and tilt, and
 nothing else of where it is.

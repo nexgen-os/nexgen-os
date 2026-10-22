@@ -1,6 +1,6 @@
 # 0042 — A module starts from an object of the core and enriches it
 
-> Status: accepted · 21/10/2026, completed the same day
+> Status: accepted · 21/10/2026, completed the same day, rewritten 22/10/2026
 
 ## Context
 
@@ -32,11 +32,11 @@ three forms and no other:
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object:
   `solar.pv_arrays` belongs to a PV system, `building.sites` and
-  `building.buildings` belong to a participant — kinds of object of the
-  module, inserted in `kinds`, for which the module answers
-  `participant_of()` — or, for a table about an object of any kind, a kind
-  column referencing `kinds` beside the object's id: `tasks.tasks` is about
-  a project, a participant, a building or a device
+  `building.buildings` belong to a participant, `solar.runs` to the PV
+  system it computed — objects of the module, described in their own
+  columns — or, for a table about an object of the core of any kind, a kind
+  column checked on the six words of the core beside the object's id:
+  `tasks.tasks` is about a project, a participant, a meter or a device
   ([0044](0044-there-is-no-registry.md));
 - **vocabulary rows** in the core's vocabularies, marked with the module in
   `published_by`: the `allocation_key` property of `community`, the
@@ -59,11 +59,11 @@ description of its place — its ground, its buildings, spaces and surfaces
 bills `billing`'s, its share of a community `community`'s, its tasks
 `tasks`', its weather `weather`'s.
 
-**The examples say which modules they need, and need no more.** Examples
-01 (a house) and 04 (a farm) need the core only; 03 (an energy community)
-needs `community`, `grid` and `billing`; 02 (a school), 05 (a district),
-06 (a drone survey) and 07 (an office) describe buildings and install `building`
-first.
+**The examples say which modules they need, and need no more.** Example
+01 (a house) needs the core only; 04 (a farm) records its estimates as runs
+of `solar`; 03 (an energy community) needs `community`, `grid` and
+`billing`; 02 (a school), 05 (a district), 06 (a drone survey) and 07 (an
+office) describe buildings and install `building` first.
 
 ## What it forbids
 

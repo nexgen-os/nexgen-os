@@ -65,9 +65,10 @@ Four things only you do here:
   from Python through the client in `packages/python`;
   `attributes_of()`, `resample()`, `participant_of(kind, id)`, `country_of(kind, id)`
   are the one way to read attributes, series and places;
-- **attach**: an attribute with its period, a document, an identifier, a
-  link, a tag — always naming its object by kind and id (`'participant'`,
-  `'device'`, `'surface'`…, the rows of `kinds`), always with its source,
+- **attach**: an attribute with its period, a document, an identifier —
+  always naming its object by kind and id, one of the six
+  objects of the core (`'organisation'`, `'project'`, `'participant'`,
+  `'meter'`, `'device'`, `'series'`), always with its source,
   never a value you made up;
 - **import**: a file read by a format library (`packages/formats/`) and
   written by its importer (`@nexgen-os/core`), a place through a geocoder,
@@ -101,11 +102,12 @@ Four things only you do here:
 3. **Describe, with a source**: the participants of a project with their
    place, the meters they carry and the devices behind them; with the
    `building` module, a building with its
-   footprint from a CityJSON file (`packages/formats/cityjson`), a roof face
-   with its azimuth and tilt; a PV system and its arrays, each with its own
+   footprint, its year and its floors from a CityJSON file
+   (`packages/formats/cityjson`), a roof face with its azimuth and tilt; a PV system and its arrays, each with its own
    orientation; the geocoder for an address.
 4. **Compute as a run**: a yield through `modules/solar/src/yield.ts` with a
-   named profile; read it back with `resample(series, from, to, step)`.
+   named profile, kept in `solar.runs`; read it back with
+   `resample(series, from, to, step)`.
 5. **Show, then let the person decide**: what you attached, what the run
    read, what it did not model (`DISCLAIMER.md`). Nothing you did needs
    their confirmation to exist; everything they rely on deserves it.

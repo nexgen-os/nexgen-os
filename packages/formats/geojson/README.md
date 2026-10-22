@@ -26,15 +26,14 @@ connection.
 
 `exportGeoJson()` of `@nexgen-os/core` writes a participant, or every
 participant taking part in a project, as one FeatureCollection through `writeGeoJson()`: the
-places and the figures computed on them travel together, so that a
-scenario can be shown to the people it concerns.
+places and the figures computed on them travel together, so that a study
+can be shown to the people it concerns.
 
 ```ts
 import { exportGeoJson } from '@nexgen-os/core';
 
 const fc = await exportGeoJson(db, { participantId });                  // everything the user may read
 const open = await exportGeoJson(db, { projectId }, { open: true });    // what may be published
-const variant = await exportGeoJson(db, { participantId }, { scenarioId }); // a design variant over reality
 ```
 
 ### What goes out
@@ -42,23 +41,24 @@ const variant = await exportGeoJson(db, { participantId }, { scenarioId }); // a
 | Nexgen OS | Feature | Properties |
 |---|---|---|
 | the project (`projectId`) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
-| each participant with a place | its point or outline | `project_id`, `role`, `status`, address fields, `time_zone`, `location_precision`, `location_source_code`, `profile`; the municipality code among its identifiers |
-| its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `profile`, `area_m2`, `source_code` |
-| each building, with the `building` module | its footprint | `participant_id`, `site_id`, `elevation_m`, `height_m`, `status`, `source_code`; floors and year among its attributes |
-| each surface, with the `building` module | its face, or `null` | `surface_kind`, `participant_id`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `source_code`; the material among its attributes |
+| each participant with a place | its point or outline | `project_id`, `role`, `status`, address fields, `time_zone`, `location_precision`, `location_source_code`; the municipality code among its identifiers |
+| its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `profile`, `area_m2`, `global_id`, `source_code` |
+| each building, with the `building` module | its footprint | `participant_id`, `site_id`, `profile`, `elevation_m`, `height_m`, `year_built`, `floors_above_ground`, `floors_below_ground`, `floor_area_m2`, `energy_label`, `status`, `global_id`, `source_code` |
+| each surface, with the `building` module | its face, or `null` | `surface_kind`, `participant_id`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `area_m2`, `material`, `u_value`, `is_external`, `global_id`, `source_code` |
 | each device | `null`: a device is not placed | `device_type`, `participant_id`, `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
 
 Every feature also carries its `attributes` (read by `attributes_of()` at
-the moment asked, in the scenario asked), its `external_ids` and the `runs`
-computed on it: module, engine version, inputs hash, finish time and
-results, exactly as `record_run()` kept them. The export computes nothing.
+the moment asked) and its `external_ids` — an object of the core only has
+them — and the `runs` every installed module computed on it (`<module>.runs`):
+module, engine version, inputs hash, finish time and results, exactly as
+the module kept them. The export computes nothing.
 
 - Coordinates: WGS 84 longitude, latitude and height in metres, seven
   decimals (about a centimetre); outer rings counter-clockwise, holes
   clockwise (RFC 7946 §3.1.6); a `bbox` around every position.
 - Feature `id`: the object's identifier in Nexgen OS.
 - A foreign member, `nexgen_os`, says what the document is: the schema
-  version, the scenario, the moment, whether it is open, every source drawn
+  version, the moment, whether it is open, every source drawn
   on with its licence and attribution, and how many objects were withheld.
 - The same database gives the same document: no export time inside it.
 
@@ -69,12 +69,12 @@ consultation, an open-data catalogue:
 
 - the street lines of an address go (`street`, `address_extra`); the postal
   code, the city and the municipality stay;
-- serial numbers and `metadata` go;
+- serial numbers and the `metadata` of a described object go;
 - an object described by a source whose licence forbids passing it on
   (`sources.redistributable = false`) is withheld, with everything on it;
   a participant placed by such a source keeps its address and loses its shape;
 - attributes and identifiers from such a source go;
-- the runs stay: a scenario shown to the public is its figures beside its
+- the runs stay: a study shown to the public is its figures beside its
   places.
 
 Whoever publishes still reads the document first: names of participants and
@@ -84,6 +84,6 @@ buildings are written by people and may name people.
 
 Every refusal starts with its name: `target_required` (a `participantId` or a
 `projectId`, not both), `participant_not_found`, `project_not_found` (absent, or
-not readable under row level security), `scenario_not_found`.
+not readable under row level security).
 
 Not yet: importing GeoJSON places into participants, meters, series.

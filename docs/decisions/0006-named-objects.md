@@ -1,6 +1,6 @@
 # 0006 — The core names a few objects, and everything else is attached to them
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026 and twice on 21/10/2026
+> Status: accepted · 12/10/2026, rewritten 19/10/2026, twice on 21/10/2026 and on 22/10/2026
 
 ## Context
 
@@ -57,24 +57,32 @@ page walks them ([0045](0045-the-participant-is-the-node.md)):
 - **the series**: a quantity over time, measured, simulated or forecast,
   belonging to one object ([0029](0029-a-series-belongs-to-an-object.md)).
 
-Around them, what every installation needs and no trade owns: the contacts
-an organisation deals with, the scenarios of a study, the runs that compute
-([0004](0004-deterministic-runs.md)), the sources and connectors of
-external data ([0011](0011-external-data.md)).
+Around them, what every installation needs and no trade owns: the members
+of an organisation and the contacts it deals with; the vocabularies
+(device types and the product catalogue, quantities and units, the
+properties an attribute may hold, identifier schemes, sources); the
+countries, their regions and the defaults the packs decide; the modules
+installed and an organisation's connectors to external data
+([0011](0011-external-data.md)). The core is twenty-seven tables and one
+view, the last value of each series. A run, a design variant, the use of a
+building, a link between two things of a trade are a module's
+([0046](0046-a-run-is-the-module-s.md)).
 
 **Every object is a table with the columns that object always has**
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
 `from participants`, never `from entities where class = 'participant'`.
 
-**Everything else is attached, by kind and id.** Attributes with their
-period and source, external identifiers, dated links, documents, series
-and runs attach to any object, whatever table or module the object lives
-in, by naming its kind and its id; `kinds` says which table holds each
-kind. The hierarchy between objects is their foreign keys, and nothing
-mirrors it ([0044](0044-there-is-no-registry.md)).
+**Everything else is attached to the six, by kind and id.** Attributes
+with their period and source, external identifiers, documents and series
+attach to an object of the core by naming its kind — one of the six words,
+checked by a plain constraint — and its id. A module's own object (a
+building, a PV array, a task) says what describes it in its own columns;
+a relation a module needs is a column of its table pointing to an object
+of the core. The hierarchy between objects is their foreign keys, and
+nothing mirrors it ([0044](0044-there-is-no-registry.md)).
 
 **Genericity lives in three places only**: the vocabularies (a new property,
-a new device type, a new kind of link is a row), the modules (a new kind of
+a new device type, a new quantity is a row), the modules (a new kind of
 object, or what a trade adds to one, is a module table with the same id,
 [0032](0032-a-module-has-its-own-schema.md)), and the packs (what a country
 decides, [0020](0020-a-pack-holds-what-a-function-reads.md)).
@@ -87,7 +95,7 @@ project, the participant — are the core's, and a module starts from them
 ([0042](0042-a-module-starts-from-an-object-of-the-core.md)). The physical
 description of a place is a trade too, the territory of BIM and CityGML:
 the `building` module holds the ground, the buildings, spaces and surfaces
-of a participant and publishes them as kinds of object of its own.
+of a participant, each described in its own columns.
 The law is not held in the open repository.
 
 ## What it forbids
@@ -99,6 +107,8 @@ The law is not held in the open repository.
 - An attachment table per object (`building_documents`,
   `device_identifiers`): an attachment names the kind and the id of its
   object.
+- A table of the core for what one trade needs: runs, scenarios, links,
+  tags, the uses of a building.
 
 ## What it replaced
 
@@ -113,7 +123,10 @@ participant and its ground for the `building` module, and the participant
 became the node that carries the place, the meters and the devices
 ([0045](0045-the-participant-is-the-node.md)). Until 0.3 the attachments went through a
 registry of every object, `objects`, which 0.3 removed
-([0044](0044-there-is-no-registry.md)).
+([0044](0044-there-is-no-registry.md)); then the core of thirty-seven
+tables kept a table of kinds, runs, scenarios, links and their types, tags,
+profiles, a queue of dirty hours, the last value of each series and the
+quality codes as tables, all gone on 22/10/2026.
 
 ## See also
 

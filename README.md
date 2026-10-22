@@ -48,12 +48,14 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
 
 ## Principles
 
-1. **Concrete objects, generic attachments.** A participant is a row of
-   `participants`, a building a row of `building.buildings`, and the hierarchy is their foreign
-   keys. An attribute, an identifier, a link, a document or a series names
-   its object by its kind and its id (`('building', id)`), with no registry
-   of objects. A new kind of thing is a module table and a row of `kinds`; a
-   new property is a vocabulary row; a new API is a source row.
+1. **Six concrete objects, few tables.** A participant is a row of
+   `participants`, a building a row of `building.buildings`, and the
+   hierarchy is their foreign keys. An attribute, an identifier, a document
+   or a series names one of the six objects of the core by its kind and its
+   id (`('participant', id)`), with no registry and no table of kinds; the
+   core is twenty-seven tables and one view. A new kind of thing is a
+   module table with its own columns; a new property is a vocabulary row; a
+   new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
    stored in EPSG:4326 with heights in metres, and measured in the UTM zone it
    falls in, anywhere on earth.
@@ -62,11 +64,11 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
    consumption included; `window()`, `latest()`, `fill()`, `forecast_at()`
    beside it), `participant_of(kind, id)` and `country_of(kind, id)` for whose and where, `building.building_volume()`
    for a derived 3D block. Values are written by `store()` alone, which
-   converts their unit, checks their quality and step, and keeps the
-   aggregates and the latest value; clients never resample, convert or fill.
+   converts their unit, checks their quality and step, and refreshes the
+   aggregates; clients never resample, convert or fill.
 4. **Deterministic core, operable by an agent.** Nothing in the core calls a
-   model; modules hand results back through `record_run()`: same inputs,
-   same engine, same run. On top of it, an AI agent works as a user of the
+   model; a module keeps what it computes as its runs, written through
+   `record_run('<module>.runs', …)`: same inputs, same engine, same run. On top of it, an AI agent works as a user of the
    model — the same tables, the same rights, the same refusals by name — so
    that describing and studying a place can be delegated without the data
    leaving its owner ([AGENTS.md](AGENTS.md)).
@@ -103,14 +105,13 @@ npm run typecheck
 ```
 
 The tests describe real cases end to end: a house (a participant with its
-place and its meter, a building, a roof face, a PV system derived by a module, attributes over time, documents,
-scenario), a school with the core alone (floors and rooms as one tree of
-spaces, a multisensor whose readings are series, setpoints, a heat pump
-serving the building), an energy community on the core's projects, participants and meters
+place and its meter, a building, a roof face, a PV system derived by a module, attributes over time, documents),
+a school (floors and rooms as one tree of spaces, a multisensor whose
+readings are series, setpoints asked of a heat pump), an energy community on the core's projects, participants and meters
 (participants carrying their place and their meter, contacts,
 groups, meter swap, cumulative register, a place in two projects), a district
-from open data (projected CRS, OSM identifiers, spatial queries, shading,
-plot split as links), the cascade of defaults, security (row level security, viewers, run immutability,
+from open data (projected CRS, OSM identifiers, spatial queries), the
+exact list of the tables of the core, the cascade of defaults, security (row level security, viewers, run immutability,
 vocabulary hygiene), the series store across a clock change, the weather
 and solar modules with a yield run on PVGIS, on `pvwatts.ts` and on the
 pvlib engine, the format libraries in and out without losing a field, the
@@ -135,7 +136,7 @@ is checked.
    set search_path = nexgen;
    select d.name, d.device_type, m.identifier meter
    from devices d left join meters m on m.participant_id = d.participant_id
-   where d.scenario_id is null
+   where d.status <> 'planned'
    order by d.name;
    ```
 
@@ -170,7 +171,7 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
 
    ```sql
    select engine_version, inputs->'weather', inputs->'arrays', results
-     from nexgen.runs where subject_id = '00000000-0000-4000-8000-000100000051'
+     from solar.runs where device_id = '00000000-0000-4000-8000-000100000051'
     order by started_at desc limit 1;
    ```
 

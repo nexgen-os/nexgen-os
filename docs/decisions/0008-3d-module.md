@@ -26,12 +26,13 @@ thing it holds is the building, and 3D is one way a building is described.
 Its schema, `building`, holds the skeleton of what is built, under the
 participant whose place it describes: `sites` (the ground: a parcel, an
 area, a use), `buildings`, `spaces` (one tree of floors, rooms, zones and
-units) and `surfaces` (roof faces, facades, ground areas, carports), each a
-kind of object the module publishes in `kinds`. It says nothing about
-where a device sits ([0026](0026-a-device-is-not-placed-for-now.md)). The
-module publishes the link type of that description (`occupies`) and the
-properties of a building and of its faces
-(year of construction, floors, energy label, material, U-value). The
+units) and `surfaces` (roof faces, facades, ground areas, carports), each
+described in its own columns — the year of construction, floors, floor
+area and energy label of a building, the material and U-value of a face,
+the identifier its file gives it — and the participant that occupies a
+unit (`spaces.occupant_id`). It says nothing about where a device sits
+([0026](0026-a-device-is-not-placed-for-now.md)). The uses of a building
+or a place are its vocabulary (`building.profiles`). The
 importers of CityJSON, IFC and Home Assistant homes are the module's
 (`modules/building/src`). The core never names it.
 

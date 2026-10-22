@@ -15,10 +15,10 @@ other module (`solar`, `heating`, `consumption`, `storage`) reads them here.
 |---|---|
 | `weather.models` | which `sources` are weather models: their purposes (`irradiance`, `temperature`, `wind`, `typical_year`, `history`, `forecast`), resolution in metres, the grid in degrees that identifies a cell (`grid_deg`, null for stations), a priority. Coverage, licence and retention stay on the source. Seeded for `pvgis` (0.05°) and `open_meteo` (0.01°). |
 | `weather.rules` | what a pack or an installation decides: for a country, or some of its regions (ISO 3166-2), the model to read for a purpose. The core seeds none. |
-| `weather.points` | an object (`weather_point`): the grid cell or the station a participant reads, with its model, position and resolution. One point per cell of a model in an organisation; weather series hang on it once. |
+| `weather.points` | the grid cell or the station a participant reads, with its model, position and resolution. One point per cell of a model in an organisation; its weather series are stored once, as series of the organisation named by the point (`name` the point's, `external_ref` its id, `source_code` its model). |
+| `weather.participant_points` | which point each participant reads, one row per participant and point. |
 
-It publishes the link type `weather_from` (a participant reads its weather from a
-point) and the property `weather_source` (a participant or a project pins a model).
+It publishes the property `weather_source` (a participant or a project pins a model).
 
 ## Functions
 
@@ -31,7 +31,8 @@ point) and the property `weather_source` (a participant or a project pins a mode
   `weather_source_unknown` when none.
 - `weather.point_for(participant, model)` — the organisation's point in the
   model's cell of the participant's position (the centroid of its geometry, rounded
-  with `grid_deg`), created when missing, with the `weather_from` link.
+  with `grid_deg`), created when missing, and records that the participant
+  reads it (`weather.participant_points`).
   Named error `participant_without_position` when the participant has no geometry.
 - `weather.cell_of(position, grid_deg)` — the cell a position falls in.
 
