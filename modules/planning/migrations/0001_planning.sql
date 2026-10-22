@@ -1,4 +1,4 @@
--- Nexgen OS — module `tasks`: what has to be done on a project, and where it stands.
+-- Nexgen OS — module `planning`: what has to be done on a project, and where it stands.
 --
 -- A project lives through phases, from the first study to the day its
 -- equipment is taken down, and each phase through tasks: the grid study
@@ -13,8 +13,8 @@
 -- What has to be done is data. A template says, for a country, a kind of
 -- project and a role, one task of one phase, with the reference it answers
 -- and the documents it expects; the module publishes the generic ones
--- (0003), the installation and private overlays add theirs. `tasks.plan()` reads the templates
--- that match a project and creates its tasks, once. `tasks.progress()` sums
+-- (0003), the installation and private overlays add theirs. `planning.plan()` reads the templates
+-- that match a project and creates its tasks, once. `planning.progress()` sums
 -- the tasks of a participant or a project up on a day.
 --
 -- Projects and their participants are the core's: a task is a secondary
@@ -22,27 +22,27 @@
 
 set search_path = nexgen, public, extensions;
 
-create schema tasks;
-grant usage on schema tasks to authenticated, service_role;
+create schema planning;
+grant usage on schema planning to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- phases — the life of a project, as data.
 -- ---------------------------------------------------------------------------
 
-create table tasks.phases (
+create table planning.phases (
   code          text primary key,
   name          text not null,
   -- The usual order of the phases; a project may overlap them.
   position      integer not null,
   description   text,
-  published_by  text not null default 'tasks',
+  published_by  text not null default 'planning',
   constraint phases_code_format check (code ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table tasks.phases is
+comment on table planning.phases is
   'The phases a project goes through, in their usual order, from study to decommissioning. Vocabulary: read by everyone signed in, written by migrations, modules and packs.';
 
-insert into tasks.phases (code, name, position, description) values
+insert into planning.phases (code, name, position, description) values
   ('study',             'Study',             10,  'Feasibility, measurements, the first figures and the decision to go on.'),
   ('design',            'Design',            20,  'Surveys, studies and the design of what will be built.'),
   ('permitting',        'Permitting',        30,  'Permits, declarations, notifications and the authorisations the project needs.'),
@@ -56,27 +56,27 @@ insert into tasks.phases (code, name, position, description) values
   ('operation',         'Operation',         110, 'Monitoring, maintenance, periodic inspections, reporting and the obligations that return every year.'),
   ('decommissioning',   'Decommissioning',   120, 'End of life: dismantling, recycling, the closing of contracts and registrations.');
 
-alter table tasks.phases enable row level security;
-create policy tasks_phases_read on tasks.phases for select to authenticated using (true);
-grant select on tasks.phases to authenticated;
-grant select, insert, update, delete on tasks.phases to service_role;
+alter table planning.phases enable row level security;
+create policy planning_phases_read on planning.phases for select to authenticated using (true);
+grant select on planning.phases to authenticated;
+grant select, insert, update, delete on planning.phases to service_role;
 
 -- ---------------------------------------------------------------------------
 -- roles — who carries a task in a project, as data.
 -- ---------------------------------------------------------------------------
 
-create table tasks.roles (
+create table planning.roles (
   code          text primary key,
   name          text not null,
   description   text,
-  published_by  text not null default 'tasks',
+  published_by  text not null default 'planning',
   constraint roles_code_format check (code ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table tasks.roles is
+comment on table planning.roles is
   'The roles that carry the tasks of a project: owner, installer, grid operator, municipality, regulator, financer, notary, community manager. Distinct from the roles of an organisation''s members and from a participant''s role in the energy flows. Vocabulary: written by migrations, modules and packs.';
 
-insert into tasks.roles (code, name, description) values
+insert into planning.roles (code, name, description) values
   ('owner',              'Owner',              'The owner of the place or of the project: decides, signs, pays.'),
   ('installer',          'Installer',          'The company that designs, supplies and installs the equipment.'),
   ('grid_operator',      'Grid operator',      'The distribution or transmission operator: connection, meter, data.'),
@@ -86,26 +86,26 @@ insert into tasks.roles (code, name, description) values
   ('notary',             'Notary',             'The notary: deeds, statutes, rights on the land and the roof.'),
   ('community_manager',  'Community manager',  'Who runs an energy community: members, keys, settlement, reporting.');
 
-alter table tasks.roles enable row level security;
-create policy tasks_roles_read on tasks.roles for select to authenticated using (true);
-grant select on tasks.roles to authenticated;
-grant select, insert, update, delete on tasks.roles to service_role;
+alter table planning.roles enable row level security;
+create policy planning_roles_read on planning.roles for select to authenticated using (true);
+grant select on planning.roles to authenticated;
+grant select, insert, update, delete on planning.roles to service_role;
 
 -- ---------------------------------------------------------------------------
 -- templates — what has to be done, for a country, a kind of project, a role.
 -- ---------------------------------------------------------------------------
 
-create table tasks.templates (
+create table planning.templates (
   id               uuid primary key default gen_random_uuid(),
   code             text not null,
-  -- Who published it: 'tasks' for the generic ones, or the installation's own name.
+  -- Who published it: 'planning' for the generic ones, or the installation's own name.
   published_by     text not null,
   -- The country whose rules ask for it (ISO 3166-1 alpha-2); null: every country.
   country          char(2),
   -- The kind of project it applies to (`projects.kind`); null: every kind.
   project_kind     text,
-  phase            text not null references tasks.phases(code),
-  role             text references tasks.roles(code),
+  phase            text not null references planning.phases(code),
+  role             text references planning.roles(code),
   name             text not null,
   description      text,
   -- The text the task answers, as its publisher cites it: a code, and the
@@ -132,21 +132,21 @@ create table tasks.templates (
         and jsonb_typeof(applies_when->'value') = 'number'))
 );
 
-comment on table tasks.templates is
+comment on table planning.templates is
   'What has to be done on a project, as data: for a country and a kind of project, one task of one phase carried by one role, with the legal reference it answers, the documents it expects, the condition under which it applies and the template it waits for. Published by the module (generic, for every country), by the installation and by private overlays; never by a country pack.';
 
-create index templates_country_kind_idx on tasks.templates (country, project_kind);
+create index templates_country_kind_idx on planning.templates (country, project_kind);
 
-alter table tasks.templates enable row level security;
-create policy tasks_templates_read on tasks.templates for select to authenticated using (true);
-grant select on tasks.templates to authenticated;
-grant select, insert, update, delete on tasks.templates to service_role;
+alter table planning.templates enable row level security;
+create policy planning_templates_read on planning.templates for select to authenticated using (true);
+grant select on planning.templates to authenticated;
+grant select, insert, update, delete on planning.templates to service_role;
 
 -- ---------------------------------------------------------------------------
 -- tasks
 -- ---------------------------------------------------------------------------
 
-create table tasks.tasks (
+create table planning.tasks (
   id                      uuid primary key default gen_random_uuid(),
   organisation_id         uuid not null references organisations(id) on delete cascade,
   -- What the task is about, by its kind and its id: a project, a
@@ -154,9 +154,9 @@ create table tasks.tasks (
   -- (`attach`), and it goes with its subject (`drop_attachments`).
   subject_kind            text not null,
   subject_id              uuid not null,
-  phase                   text not null references tasks.phases(code),
+  phase                   text not null references planning.phases(code),
   -- The role that carries it, and the contact who holds that role here.
-  role                    text references tasks.roles(code),
+  role                    text references planning.roles(code),
   responsible_contact_id  uuid references contacts(id) on delete set null,
   name                    text not null,
   -- planned, in_progress, done, blocked, cancelled.
@@ -166,12 +166,12 @@ create table tasks.tasks (
   actual_start            date,
   actual_end              date,
   -- The task this one waits for.
-  depends_on              uuid references tasks.tasks(id) on delete set null,
-  -- Where it comes from: a template `tasks.plan()` applied, a hand, or an
+  depends_on              uuid references planning.tasks(id) on delete set null,
+  -- Where it comes from: a template `planning.plan()` applied, a hand, or an
   -- action of the application that uses the foundation (`source_ref` names it).
   source                  text not null default 'manual',
   source_ref              text,
-  template_id             uuid references tasks.templates(id) on delete set null,
+  template_id             uuid references planning.templates(id) on delete set null,
   notes                   text,
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now(),
@@ -189,24 +189,24 @@ create table tasks.tasks (
   constraint tasks_not_own_dependency check (depends_on is distinct from id)
 );
 
-comment on table tasks.tasks is
+comment on table planning.tasks is
   'A task on a project, a participant, a meter or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action).';
 
-create index tasks_subject_idx on tasks.tasks (subject_kind, subject_id);
-create index tasks_phase_idx on tasks.tasks (phase);
-create index tasks_role_idx on tasks.tasks (role);
+create index tasks_subject_idx on planning.tasks (subject_kind, subject_id);
+create index tasks_phase_idx on planning.tasks (phase);
+create index tasks_role_idx on planning.tasks (role);
 -- A template is applied once to a subject.
-create unique index tasks_template_once on tasks.tasks (subject_kind, subject_id, template_id)
+create unique index tasks_template_once on planning.tasks (subject_kind, subject_id, template_id)
   where template_id is not null;
-create trigger tasks_attach before insert or update of subject_kind, subject_id on tasks.tasks
+create trigger tasks_attach before insert or update of subject_kind, subject_id on planning.tasks
   for each row execute function attach('subject');
-create trigger tasks_set_updated_at before update on tasks.tasks
+create trigger tasks_set_updated_at before update on planning.tasks
   for each row execute function set_updated_at();
-create index tasks_organisation_idx on tasks.tasks (organisation_id);
-call secure_table('tasks.tasks');
+create index tasks_organisation_idx on planning.tasks (organisation_id);
+call secure_table('planning.tasks');
 
 -- The contact who holds a task and the task it waits for are of its organisation.
-create or replace function tasks.tasks_check()
+create or replace function planning.tasks_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -217,7 +217,7 @@ begin
     raise exception 'contact_in_other_organisation: %', new.responsible_contact_id using errcode = 'check_violation';
   end if;
   if new.depends_on is not null
-     and not exists (select 1 from tasks.tasks t where t.id = new.depends_on and t.organisation_id = new.organisation_id) then
+     and not exists (select 1 from planning.tasks t where t.id = new.depends_on and t.organisation_id = new.organisation_id) then
     raise exception 'dependency_in_other_organisation: %', new.depends_on using errcode = 'check_violation';
   end if;
   return new;
@@ -225,8 +225,8 @@ end;
 $$;
 
 create trigger tasks_check
-  before insert or update of responsible_contact_id, depends_on, organisation_id on tasks.tasks
-  for each row execute function tasks.tasks_check();
+  before insert or update of responsible_contact_id, depends_on, organisation_id on planning.tasks
+  for each row execute function planning.tasks_check();
 
 -- ---------------------------------------------------------------------------
 -- plan — the tasks of a project, from the templates that match it.
@@ -240,7 +240,7 @@ create trigger tasks_check
 -- nothing is decided in the dark. Dependencies between templates become
 -- dependencies between the tasks created. Calling it again creates nothing
 -- twice. It writes under the caller's row level security.
-create or replace function tasks.plan(p_project_id uuid)
+create or replace function planning.plan(p_project_id uuid)
 returns jsonb
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -263,12 +263,12 @@ begin
   end if;
 
   for t in
-    select * from tasks.templates tp
+    select * from planning.templates tp
      where (tp.country is null or tp.country = v_country)
        and (tp.project_kind is null or tp.project_kind = v_kind)
      order by tp.position, tp.code
   loop
-    if exists (select 1 from tasks.tasks x
+    if exists (select 1 from planning.tasks x
                 where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id) then
       v_existing := v_existing + 1;
       continue;
@@ -300,17 +300,17 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
+    insert into planning.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
     values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id);
     v_created := v_created + 1;
   end loop;
 
   -- A task waits for the task its template waits for, when both exist here.
-  update tasks.tasks x
+  update planning.tasks x
      set depends_on = d.id
-    from tasks.templates tp
-    join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
-    join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
+    from planning.templates tp
+    join planning.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
+    join planning.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
    where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
      and x.depends_on is null;
 
@@ -318,10 +318,10 @@ begin
 end;
 $$;
 
-comment on function tasks.plan(uuid) is
+comment on function planning.plan(uuid) is
   'Creates the tasks of a project from the templates that match its country, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
 
-grant execute on function tasks.plan(uuid) to authenticated, service_role;
+grant execute on function planning.plan(uuid) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- progress — where a project stands on a day.
@@ -333,7 +333,7 @@ grant execute on function tasks.plan(uuid) to authenticated, service_role;
 -- done among those not cancelled, those late (planned to end before the
 -- day and not done), and the phase of the earliest task still open. The
 -- day is always given: the same call gives the same answer.
-create or replace function tasks.progress(p_object_id uuid, p_on date)
+create or replace function planning.progress(p_object_id uuid, p_on date)
 returns jsonb
 language sql
 stable
@@ -346,8 +346,8 @@ as $$
   ),
   m as (
     select m.*, ph.position
-      from tasks.tasks m
-      join tasks.phases ph on ph.code = m.phase
+      from planning.tasks m
+      join planning.phases ph on ph.code = m.phase
      where (m.subject_id = p_object_id or participant_of(m.subject_kind, m.subject_id) in (select id from nodes))
   )
   select jsonb_build_object(
@@ -363,11 +363,11 @@ as $$
   from m;
 $$;
 
-comment on function tasks.progress(uuid, date) is
+comment on function planning.progress(uuid, date) is
   'Where a participant or a project stands on a day: tasks by status, share done, the late ones, the current phase. Reads under the caller''s row level security.';
 
-grant execute on function tasks.progress(uuid, date) to authenticated, service_role;
+grant execute on function planning.progress(uuid, date) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('tasks', 'Tasks', '0.3.0', 'tasks', '0.3.0',
+values ('planning', 'Planning', '0.3.0', 'planning', '0.3.0',
         'What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a participant or a project on a day.');

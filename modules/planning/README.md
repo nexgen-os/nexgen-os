@@ -1,6 +1,6 @@
-# `tasks` — what has to be done on a project, and where it stands
+# `planning` — what has to be done on a project, and where it stands
 
-Status: shipped, decision [0017](../../docs/decisions/0017-tasks-as-data.md). Schema: `tasks`.
+Status: shipped, decision [0017](../../docs/decisions/0017-planning-as-data.md). Schema: `planning`.
 
 A project lives through phases, from the first study to the day its
 equipment is taken down, and each phase through tasks: the grid study
@@ -16,10 +16,10 @@ the module needs no other module.
 
 | Table | Holds |
 |---|---|
-| `tasks.phases` | the phases a project goes through, in their usual order: `study`, `design`, `permitting`, `financing`, `procurement`, `site_preparation`, `installation`, `grid_connection`, `commissioning`, `handover`, `operation`, `decommissioning`. A vocabulary: read by everyone signed in, written by migrations, modules and packs. |
-| `tasks.roles` | who carries a task: `owner`, `installer`, `grid_operator`, `municipality`, `regulator`, `financer`, `notary`, `community_manager`. Distinct from the roles of an organisation's members and from a participant's role in the energy flows. A vocabulary, extended by packs. |
-| `tasks.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the published text (the code of a `sources` row of kind `text`) and the reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. The module publishes fifteen generic ones for every country (`published_by = 'tasks'`, `country` null): nine steps of a roof installation, six of an energy community. A step one country adds is published by the installation or a private overlay under its own name; a country pack holds no task. |
-| `tasks.tasks` | one thing to do about an object of the core — a project, a participant, a meter, a device — named by its kind and id (`subject_kind`, `subject_id`, checked on the six words of the core), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos and certificates are documents of its subject. |
+| `planning.phases` | the phases a project goes through, in their usual order: `study`, `design`, `permitting`, `financing`, `procurement`, `site_preparation`, `installation`, `grid_connection`, `commissioning`, `handover`, `operation`, `decommissioning`. A vocabulary: read by everyone signed in, written by migrations, modules and packs. |
+| `planning.roles` | who carries a task: `owner`, `installer`, `grid_operator`, `municipality`, `regulator`, `financer`, `notary`, `community_manager`. Distinct from the roles of an organisation's members and from a participant's role in the energy flows. A vocabulary, extended by packs. |
+| `planning.templates` | what has to be done, as data: for a country (or every country), its regions (ISO 3166-2, or the whole country) and a kind of project (or every kind), one task of one phase carried by one role, with the published text (the code of a `sources` row of kind `text`) and the reference it answers, the documents it expects, the condition under which it applies (one attribute of the project compared to a number) and the template it waits for. The module publishes fifteen generic ones for every country (`published_by = 'planning'`, `country` null): nine steps of a roof installation, six of an energy community. A step one country adds is published by the installation or a private overlay under its own name; a country pack holds no task. |
+| `planning.tasks` | one thing to do about an object of the core — a project, a participant, a meter, a device — named by its kind and id (`subject_kind`, `subject_id`, checked on the six words of the core), its phase, the role that carries it and the contact who holds that role, status (`planned`, `in_progress`, `done`, `blocked`, `cancelled`), planned and actual start and end, the task it waits for, where it comes from (`template`, `manual`, `action`) and the template it was planned from. Photos and certificates are documents of its subject. |
 
 A task in progress has its actual start; one done has its actual end, and
 only one done has it. Its subject, its contact and the task it waits for
@@ -28,7 +28,7 @@ are of its organisation, and it goes with its subject.
 ## Planning a project
 
 ```sql
-select tasks.plan(:project);
+select planning.plan(:project);
 -- {"project_id": …, "created": 9, "existing": 0,
 --  "skipped": [{"code": "building_permit", "published_by": "acme", "reason": "attribute_missing", "property": "installed_power"}]}
 ```
@@ -45,7 +45,7 @@ between the tasks. It writes under the caller's row level security.
 ## Where a project stands
 
 ```sql
-select tasks.progress(:site_or_project, date '2026-06-15');
+select planning.progress(:site_or_project, date '2026-06-15');
 -- {"on": "2026-06-15", "total": 6, "by_status": {"done": 2, "in_progress": 1, "planned": 2, "cancelled": 1},
 --  "done_share": 0.4, "late": [{"id": …, "name": "Ground array mounted and wired", "phase": "installation", "planned_end": "2026-05-29"}],
 --  "current_phase": "installation"}

@@ -43,7 +43,7 @@ let icarElsewhere: unknown;
 let icarReverse: unknown;
 
 beforeAll(async () => {
-  db = await freshDatabase(['community', 'grid', 'tasks'], ['be']);
+  db = await freshDatabase(['community', 'grid', 'planning'], ['be']);
   geopuntKorenmarkt = await recorded('geopunt-location-korenmarkt-1-gent.json');
   urbisWetstraat = await recorded('urbis-getaddresses-nl-wetstraat-16.json');
   urbisElsewhere = await recorded('urbis-getaddresses-fr-korenmarkt-1-gent.json');
@@ -149,12 +149,12 @@ describe('the be pack', () => {
     expect(await p(wallonia, 'metering_step')).toMatchObject({ value: 'PT5M', level: 'organisation' });
   });
 
-  it('plans a Belgian roof installation from the generic templates of the tasks module', async () => {
+  it('plans a Belgian roof installation from the generic templates of the planning module', async () => {
     const org = await organisation(db, 'Een coöperatie', USER_A);
     const roof = await insert(db, 'projects', { organisation_id: org, name: 'Dak van de loods', country: 'BE', kind: 'pv_roof', status: 'creation' });
-    const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
+    const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select planning.plan($1) p', [roof]));
     expect(plan.p).toMatchObject({ created: 9, skipped: [] });
-    const own = await one<{ n: number }>(db, `select count(*)::int n from tasks.templates where country is not null or published_by like 'pack:%'`);
+    const own = await one<{ n: number }>(db, `select count(*)::int n from planning.templates where country is not null or published_by like 'pack:%'`);
     expect(own.n).toBe(0);
   });
 

@@ -54,7 +54,7 @@ a program in any language, JSON in and out, that never reads the database.
 What an owner publishes is the core's, not a module's: a frozen document and a schema of its own
 for the anonymous role ([0015](../docs/decisions/0015-publications.md)).
 What a country requires is never a module: what it decides is data of its pack,
-and `tasks` carries what has to be done, with its reference and its condition.
+and `planning` carries what has to be done, with its reference and its condition.
 A module with a folder here is shipped; a module marked *proposed* is one
 whose one thing is known ([0041](../docs/decisions/0041-a-module-names-one-thing.md)).
 
@@ -75,5 +75,5 @@ whose one thing is known ([0041](../docs/decisions/0041-a-module-names-one-thing
 | `heating` (proposed) | heat pumps, boilers, air handling units, thermal zones, domestic hot water | heating and cooling design, sizing, seasonal performance |
 | `thermal` (proposed) | envelope elements and their U-values, thermal bridges, glazing | thermal simulation of the envelope, heat losses, energy performance inputs |
 | `monitoring` (proposed) | collection schedules and their history, alarms (a connector is code, an organisation's use of it is a `connectors` row of the core: [0011](../docs/decisions/0011-external-data.md)) | live readings from equipment and hubs, control through existing systems (Home Assistant, OpenEMS), battery dispatch, demand response |
-| `tasks` ([0017](../docs/decisions/0017-tasks-as-data.md)) | phases of a project's life (study to decommissioning) and the roles that carry a task, as vocabularies; generic task templates per kind of project and role, the same in every country, with reference, documents and condition, and the regions a template holds in; tasks on a project, a participant, a meter or a device, with planned and actual dates, status, contact, dependency and source | `plan()`: the tasks of a project from the templates that match it, once; `progress()`: where a participant or a project stands on a day |
+| `planning` ([0017](../docs/decisions/0017-planning-as-data.md)) | phases of a project's life (study to decommissioning) and the roles that carry a task, as vocabularies; generic task templates per kind of project and role, the same in every country, with reference, documents and condition, and the regions a template holds in; tasks on a project, a participant, a meter or a device, with planned and actual dates, status, contact, dependency and source | `plan()`: the tasks of a project from the templates that match it, once; `progress()`: where a participant or a project stands on a day |
 | `kpis` (proposed) | indicators as data (a formula over series or rollups, a period, a unit), targets and trajectories | the indicators of a participant or a project, written back as series of the core through `store()` |

@@ -33,7 +33,7 @@ const somewhere = (code: string): Place => ({ address: { country: 'FR' }, lon: 0
 let db: PGlite;
 
 beforeAll(async () => {
-  db = await freshDatabase(['community', 'grid', 'tasks'], ['fr']);
+  db = await freshDatabase(['community', 'grid', 'planning'], ['fr']);
 });
 
 afterAll(async () => {
@@ -81,8 +81,8 @@ describe('the fr pack', () => {
     const gone = await one<Record<string, unknown>>(db,
       `select to_regclass('nexgen.legal_sources')::text legal, to_regclass('nexgen.rules')::text rules, to_regclass('nexgen.grid_operators')::text operators`);
     expect(gone).toEqual({ legal: null, rules: null, operators: null });
-    const tasks = await one<{ n: number }>(db, `select count(*)::int n from tasks.templates where country is not null or published_by like 'pack:%'`);
-    expect(tasks.n).toBe(0);
+    const own = await one<{ n: number }>(db, `select count(*)::int n from planning.templates where country is not null or published_by like 'pack:%'`);
+    expect(own.n).toBe(0);
   });
 
   it('names its grid operators in the grid module, with the departments they serve', async () => {
@@ -134,10 +134,10 @@ describe('the fr pack', () => {
     await db.query(`delete from sources where code = 'test_regional_text'`);
   });
 
-  it('plans a French roof installation from the generic templates of the tasks module', async () => {
+  it('plans a French roof installation from the generic templates of the planning module', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
     const roof = await insert(db, 'projects', { organisation_id: org, name: 'Toiture de la halle', country: 'FR', kind: 'pv_roof', status: 'creation' });
-    const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select tasks.plan($1) p', [roof]));
+    const plan = await asUser(db, USER_A, () => one<{ p: { created: number; skipped: unknown[] } }>(db, 'select planning.plan($1) p', [roof]));
     expect(plan.p).toMatchObject({ created: 9, skipped: [] });
   });
 

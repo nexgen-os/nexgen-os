@@ -64,6 +64,6 @@ in the repository refuses one.
 - [0021](0021-one-cascade-of-defaults.md) — how a default is resolved.
 - [0034](0034-a-pack-upgrade-is-never-silent.md) — how a pack is upgraded and
   proved.
-- [0017](0017-tasks-as-data.md) — tasks are generic, never per country in a
+- [0017](0017-planning-as-data.md) — tasks are generic, never per country in a
   pack.
 - `packs/README.md`, `scripts/hygiene.mjs`.

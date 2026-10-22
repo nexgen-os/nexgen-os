@@ -96,4 +96,4 @@ describes; its record is written once the fix has shipped.
 
 - [0010](0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) · The participant is billed, Ekwo OS keeps the invoice: one thin bridge module · accepted
 - [0012](0012-a-yield-says-what-it-was-computed-from.md) · A yield says what it was computed from · accepted
-- [0017](0017-tasks-as-data.md) · What has to be done is a template, the same in every country · accepted
+- [0017](0017-planning-as-data.md) · What has to be done is a template, the same in every country · accepted

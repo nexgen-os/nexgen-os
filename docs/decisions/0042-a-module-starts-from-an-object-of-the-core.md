@@ -34,7 +34,7 @@ three forms and no other:
   system it computed — objects of the module, described in their own
   columns — or, for a table about an object of the core of any kind, a kind
   column checked on the six words of the core beside the object's id:
-  `tasks.tasks` is about a project, a participant, a meter or a device
+  `planning.tasks` is about a project, a participant, a meter or a device
   ([0001](0001-the-hierarchy-is-the-foreign-keys.md));
 - **vocabulary rows** in the core's vocabularies, marked with the module in
   `published_by`: the `allocation_key` property of `community`, the
@@ -55,7 +55,7 @@ from** ([0043](0043-the-participant-is-the-node.md)): the physical
 description of its place — its ground, its buildings, spaces and surfaces
 — is the `building` module's, the grid side of its meters `grid`'s, its
 bills `billing`'s, its share of a community `community`'s, its tasks
-`tasks`', its weather `weather`'s.
+`planning`'s, its weather `weather`'s.
 
 **The examples say which modules they need, and need no more.** Example
 01 (a house) needs the core only; 04 (a farm) records its yield estimates

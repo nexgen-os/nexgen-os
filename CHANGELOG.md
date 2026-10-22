@@ -97,9 +97,9 @@ the core ([modules/README.md](modules/README.md),
   profiles, design variants, and yields computed by PVGIS, by
   `pvwatts.ts` or by pvlib, with the IEC 61724-1 indicators and the P50 and
   P90 of a yield ([0012](docs/decisions/0012-a-yield-says-what-it-was-computed-from.md)).
-- `tasks`: the phases and roles of a project, generic task templates and
+- `planning`: the phases and roles of a project, generic task templates and
   the planning of a project from them
-  ([0017](docs/decisions/0017-tasks-as-data.md)).
+  ([0017](docs/decisions/0017-planning-as-data.md)).
 
 **The packs**: `fr` and `be`, version `0.3.0`, certification `community`,
 written as JSON against `packs/schema/pack.1.json` and compiled into

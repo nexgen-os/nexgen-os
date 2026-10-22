@@ -1,4 +1,4 @@
-// The `tasks` module: the tasks of the works on the farm of example 4, from
+// The `planning` module: the tasks of the works on the farm of example 4, from
 // the permit to the commissioning of the ground array, who carries each,
 // what is late on a given day, where the farm and its project stand; and the
 // tasks a project gets from the templates of its country and kind.
@@ -34,15 +34,15 @@ interface Plan {
 }
 
 const progress = async (objectId: string, on: string): Promise<Progress> =>
-  (await one<{ p: Progress }>(db, 'select tasks.progress($1, $2) p', [objectId, on])).p;
+  (await one<{ p: Progress }>(db, 'select planning.progress($1, $2) p', [objectId, on])).p;
 
 const plan = async (projectId: string): Promise<Plan> =>
-  (await one<{ p: Plan }>(db, 'select tasks.plan($1) p', [projectId])).p;
+  (await one<{ p: Plan }>(db, 'select planning.plan($1) p', [projectId])).p;
 
-const task = (fields: Record<string, unknown>) => insert(db, 'tasks.tasks', { organisation_id: ORG, ...fields });
+const task = (fields: Record<string, unknown>) => insert(db, 'planning.tasks', { organisation_id: ORG, ...fields });
 
 beforeAll(async () => {
-  db = await freshDatabase(['tasks', 'solar']);
+  db = await freshDatabase(['planning', 'solar']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
@@ -64,15 +64,15 @@ afterAll(async () => {
   await db.close();
 });
 
-describe('tasks', () => {
+describe('planning', () => {
   it('are about an object of the core, of the participant of what they are about, and name no seventh kind', async () => {
-    const m = await one<{ participant: string }>(db, `select participant_of(t.subject_kind, t.subject_id) participant from tasks.tasks t where t.id = $1`, [installed]);
+    const m = await one<{ participant: string }>(db, `select participant_of(t.subject_kind, t.subject_id) participant from planning.tasks t where t.id = $1`, [installed]);
     expect(m).toEqual({ participant: FARM });
     await expect(task({ subject_kind: 'building', subject_id: FARM, phase: 'design', name: 'On a building' })).rejects.toThrow(/tasks_subject_kind|kind_unknown/);
   });
 
   it('come in phases read from a vocabulary that covers the life of a project', async () => {
-    const phases = await db.query<{ code: string }>('select code from tasks.phases order by position');
+    const phases = await db.query<{ code: string }>('select code from planning.phases order by position');
     expect(phases.rows.map((r) => r.code)).toEqual([
       'study', 'design', 'permitting', 'financing', 'procurement', 'site_preparation',
       'installation', 'grid_connection', 'commissioning', 'handover', 'operation', 'decommissioning',
@@ -81,7 +81,7 @@ describe('tasks', () => {
   });
 
   it('are carried by a role read from a vocabulary', async () => {
-    const roles = await db.query<{ code: string }>('select code from tasks.roles order by code');
+    const roles = await db.query<{ code: string }>('select code from planning.roles order by code');
     expect(roles.rows.map((r) => r.code)).toEqual(['community_manager', 'financer', 'grid_operator', 'installer', 'municipality', 'notary', 'owner', 'regulator']);
     await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', role: 'wizard', name: 'Unknown role' })).rejects.toThrow(/foreign key/);
   });
@@ -100,7 +100,7 @@ describe('tasks', () => {
     await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Unknown source', source: 'dream' }))
       .rejects.toThrow(/tasks_source/);
     const fromAction = await task({ subject_kind: 'participant', subject_id: FARM, phase: 'study', name: 'Battery sizing study', source: 'action', source_ref: 'storage_investment' });
-    expect((await one<{ source: string }>(db, 'select source from tasks.tasks where id = $1', [fromAction])).source).toBe('action');
+    expect((await one<{ source: string }>(db, 'select source from planning.tasks where id = $1', [fromAction])).source).toBe('action');
   });
 
   it('stay in their organisation: subject, contact and dependency', async () => {
@@ -110,7 +110,7 @@ describe('tasks', () => {
     const theirContact = (await one<{ id: string }>(db, `insert into contacts (organisation_id, name) values ($1, 'Their installer') returning id`, [other.id])).id;
     await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Their contact', responsible_contact_id: theirContact }))
       .rejects.toThrow(/^contact_in_other_organisation/);
-    const theirs = await insert(db, 'tasks.tasks', { organisation_id: other.id, subject_kind: 'participant', subject_id: theirField, phase: 'design', name: 'Their study' });
+    const theirs = await insert(db, 'planning.tasks', { organisation_id: other.id, subject_kind: 'participant', subject_id: theirField, phase: 'design', name: 'Their study' });
     await expect(task({ subject_kind: 'participant', subject_id: FARM, phase: 'design', name: 'Waits for theirs', depends_on: theirs }))
       .rejects.toThrow(/^dependency_in_other_organisation/);
   });
@@ -138,8 +138,8 @@ describe('where a project stands', () => {
   });
 
   it('moves when a task is done', async () => {
-    await db.query(`update tasks.tasks set status = 'done', actual_end = '2026-06-19' where id = $1`, [installed]);
-    await db.query(`update tasks.tasks set status = 'cancelled' where name = 'Battery sizing study'`);
+    await db.query(`update planning.tasks set status = 'done', actual_end = '2026-06-19' where id = $1`, [installed]);
+    await db.query(`update planning.tasks set status = 'cancelled' where name = 'Battery sizing study'`);
     const p = await progress(FARM, '2026-06-22');
     expect(p.done_share).toBe(0.6);
     expect(p.late).toEqual([]);
@@ -155,23 +155,23 @@ describe('where a project stands', () => {
   });
 
   it('reads under row level security: a stranger sees no task', async () => {
-    const mine = await asUser(db, USER_A, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [FARM]));
+    const mine = await asUser(db, USER_A, () => one<{ p: Progress }>(db, `select planning.progress($1, '2026-06-22') p`, [FARM]));
     expect(mine.p.total).toBe(7);
-    const theirs = await asUser(db, USER_B, () => one<{ p: Progress }>(db, `select tasks.progress($1, '2026-06-22') p`, [FARM]));
+    const theirs = await asUser(db, USER_B, () => one<{ p: Progress }>(db, `select planning.progress($1, '2026-06-22') p`, [FARM]));
     expect(theirs.p).toMatchObject({ total: 0, by_status: {}, done_share: null, late: [], current_phase: null });
-    await expect(asUser(db, USER_B, () => db.query(`update tasks.tasks set notes = 'x' where subject_id = $1 returning id`, [FARM])))
+    await expect(asUser(db, USER_B, () => db.query(`update planning.tasks set notes = 'x' where subject_id = $1 returning id`, [FARM])))
       .resolves.toMatchObject({ rows: [] });
   });
 });
 
 describe('the generic templates the module publishes, for every country', () => {
   it('plan a roof installation in any country, steps in order, each waiting for the one before', async () => {
-    const n = await one<{ n: number; countries: number }>(db, `select count(*)::int n, count(country)::int countries from tasks.templates where published_by = 'tasks'`);
+    const n = await one<{ n: number; countries: number }>(db, `select count(*)::int n, count(country)::int countries from planning.templates where published_by = 'planning'`);
     expect(n).toEqual({ n: 15, countries: 0 });
     const roof = await insert(db, 'projects', { organisation_id: ORG, name: 'Generic roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
     expect(await plan(roof)).toMatchObject({ created: 9, existing: 0, skipped: [] });
     const first = await one<{ name: string; depends: string | null }>(db,
-      `select t.name, d.name depends from tasks.tasks t left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 and t.phase = 'handover'`, [roof]);
+      `select t.name, d.name depends from planning.tasks t left join planning.tasks d on d.id = t.depends_on where t.subject_id = $1 and t.phase = 'handover'`, [roof]);
     expect(first).toEqual({ name: 'Installation handed over with its file', depends: 'Connection energised and meter set for injection' });
     const community = await insert(db, 'projects', { organisation_id: ORG, name: 'Generic community', country: 'FR', kind: 'energy_community', status: 'creation' });
     expect(await plan(community)).toMatchObject({ created: 6, skipped: [] });
@@ -179,7 +179,7 @@ describe('the generic templates the module publishes, for every country', () => 
 
   afterAll(async () => {
     // Set aside, so that the cases below count only the templates they write.
-    await db.query(`delete from tasks.templates where published_by = 'tasks'`);
+    await db.query(`delete from planning.templates where published_by = 'planning'`);
   });
 });
 
@@ -192,7 +192,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
     // Templates as an installation or a country overlay would publish them:
     // two countries, two kinds, one condition, one dependency.
     await db.query(`
-      insert into tasks.templates (code, published_by, country, project_kind, phase, role, name, legal_reference, documents, applies_when, depends_on_code, position) values
+      insert into planning.templates (code, published_by, country, project_kind, phase, role, name, legal_reference, documents, applies_when, depends_on_code, position) values
         ('prior_declaration',  'overlay:fr', 'FR', 'pv_roof',          'permitting',      'owner',        'Prior declaration of works filed with the municipality', 'Code de l''urbanisme, R. 421-17', '{"Cerfa 13703"}', null, null, 10),
         ('consuel',            'overlay:fr', 'FR', 'pv_roof',          'commissioning',   'installer',    'Electrical conformity certificate obtained',             'Décret 72-1120',                  '{"Attestation de conformité"}', null, 'prior_declaration', 20),
         ('building_permit',    'overlay:fr', 'FR', 'pv_roof',          'permitting',      'municipality', 'Building permit granted',                                 'Code de l''urbanisme, R. 421-1',  '{}', '{"property": "installed_power", "op": ">", "value": 250}', null, 15),
@@ -206,12 +206,12 @@ describe('what has to be done, from the templates of a country and a kind of pro
   });
 
   it('keep a template well-formed: a known phase and role, a condition with a property, an operator and a number', async () => {
-    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name) values ('x', 'farm', 'demolition', 'Unknown phase')`)).rejects.toThrow(/foreign key/);
-    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name, applies_when) values ('y', 'farm', 'design', 'Bad condition', '{"property": "installed_power", "op": "~", "value": 1}')`))
+    await expect(db.query(`insert into planning.templates (code, published_by, phase, name) values ('x', 'farm', 'demolition', 'Unknown phase')`)).rejects.toThrow(/foreign key/);
+    await expect(db.query(`insert into planning.templates (code, published_by, phase, name, applies_when) values ('y', 'farm', 'design', 'Bad condition', '{"property": "installed_power", "op": "~", "value": 1}')`))
       .rejects.toThrow(/templates_applies_when_shape/);
-    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name, applies_when) values ('z', 'farm', 'design', 'Bad condition', '{"property": "installed_power", "op": ">", "value": "ten"}')`))
+    await expect(db.query(`insert into planning.templates (code, published_by, phase, name, applies_when) values ('z', 'farm', 'design', 'Bad condition', '{"property": "installed_power", "op": ">", "value": "ten"}')`))
       .rejects.toThrow(/templates_applies_when_shape/);
-    await expect(db.query(`insert into tasks.templates (code, published_by, phase, name) values ('prior_declaration', 'overlay:fr', 'design', 'Twice')`)).rejects.toThrow(/templates_once_per_publisher/);
+    await expect(db.query(`insert into planning.templates (code, published_by, phase, name) values ('prior_declaration', 'overlay:fr', 'design', 'Twice')`)).rejects.toThrow(/templates_once_per_publisher/);
   });
 
   it('plan the tasks of a project from the templates of its country and kind, once', async () => {
@@ -223,7 +223,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
       skipped: [{ code: 'building_permit', published_by: 'overlay:fr', reason: 'attribute_missing', property: 'installed_power' }],
     });
     const rows = await db.query<{ name: string; phase: string; role: string; source: string; depends: string | null }>(
-      `select t.name, t.phase, t.role, t.source, d.name depends from tasks.tasks t left join tasks.tasks d on d.id = t.depends_on where t.subject_id = $1 order by t.phase, t.name`, [roofFr]);
+      `select t.name, t.phase, t.role, t.source, d.name depends from planning.tasks t left join planning.tasks d on d.id = t.depends_on where t.subject_id = $1 order by t.phase, t.name`, [roofFr]);
     expect(rows.rows).toEqual([
       { name: 'Electrical conformity certificate obtained', phase: 'commissioning', role: 'installer', source: 'template', depends: 'Prior declaration of works filed with the municipality' },
       { name: 'Yearly inspection of the arrays', phase: 'operation', role: 'installer', source: 'template', depends: null },
@@ -231,7 +231,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
     ]);
     const again = await plan(roofFr);
     expect(again).toMatchObject({ created: 0, existing: 3 });
-    expect((await one<{ n: number }>(db, 'select count(*)::int n from tasks.tasks where subject_id = $1', [roofFr])).n).toBe(3);
+    expect((await one<{ n: number }>(db, 'select count(*)::int n from planning.tasks where subject_id = $1', [roofFr])).n).toBe(3);
   });
 
   it('apply a condition once the project has the attribute it names', async () => {
@@ -240,16 +240,16 @@ describe('what has to be done, from the templates of a country and a kind of pro
     await db.query(`update attributes set value = '300'::jsonb where object_id = $1 and property_code = 'installed_power'`, [roofFr]);
     const bigger = await plan(roofFr);
     expect(bigger).toMatchObject({ created: 1, existing: 3, skipped: [] });
-    const permit = await one<{ role: string; phase: string }>(db, `select role, phase from tasks.tasks where subject_id = $1 and name = 'Building permit granted'`, [roofFr]);
+    const permit = await one<{ role: string; phase: string }>(db, `select role, phase from planning.tasks where subject_id = $1 and name = 'Building permit granted'`, [roofFr]);
     expect(permit).toEqual({ role: 'municipality', phase: 'permitting' });
   });
 
   it('give another country and another kind their own tasks, and nothing of the others', async () => {
     expect(await plan(roofBe)).toMatchObject({ created: 2, existing: 0, skipped: [] });
-    const be = await db.query<{ name: string }>('select name from tasks.tasks where subject_id = $1 order by name', [roofBe]);
+    const be = await db.query<{ name: string }>('select name from planning.tasks where subject_id = $1 order by name', [roofBe]);
     expect(be.rows.map((r) => r.name)).toEqual(['Installation notified to the grid operator', 'Yearly inspection of the arrays']);
     expect(await plan(community)).toMatchObject({ created: 2, existing: 0, skipped: [] });
-    const fr = await db.query<{ name: string }>('select name from tasks.tasks where subject_id = $1 order by name', [community]);
+    const fr = await db.query<{ name: string }>('select name from planning.tasks where subject_id = $1 order by name', [community]);
     expect(fr.rows.map((r) => r.name)).toEqual(['Statutes of the community signed', 'Yearly inspection of the arrays']);
   });
 
@@ -266,7 +266,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
 
 describe('the module itself', () => {
   it('installs on the core alone: projects and participants are the core\'s', async () => {
-    const alone = await freshDatabase(['tasks']);
+    const alone = await freshDatabase(['planning']);
     try {
       const r = await one<{ n: number }>(alone, `select count(*)::int n from modules`);
       expect(r.n).toBe(1);

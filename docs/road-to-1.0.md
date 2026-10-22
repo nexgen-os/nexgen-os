@@ -88,7 +88,7 @@ integration written against one release keeps working against every later
   published and withdrawn by owners, read by the anonymous role through one
   view; then series, documents, an embeddable map, and a check of a
   publication's licence against its sources'.
-- **Tasks** ([0017](decisions/0017-tasks-as-data.md)): a vocabulary of kinds
+- **Planning** ([0017](decisions/0017-planning-as-data.md)): a vocabulary of kinds
   of project in place of free text.
 - **An activity log**: who did what, and when, on the six objects of the
   core ([0006](decisions/0006-the-core-names-six-objects.md)) and on the

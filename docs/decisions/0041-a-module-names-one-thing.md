@@ -25,8 +25,8 @@ computation that no other module holds.
 **There is no catch-all.** No module is named after a category
 (`renewables`, `other_sources`), after a quality (`sustainability`) or
 after a view of the data (`reporting`). What a country requires is in its
-pack and in `tasks`, with its reference and its condition
-([0017](0017-tasks-as-data.md),
+pack and in `planning`, with its reference and its condition
+([0017](0017-planning-as-data.md),
 [0020](0020-a-pack-holds-what-a-function-reads.md)). What a place's ground
 is beyond its outline and its use is an attribute until a computation needs
 more. Indicators are data of a `kpis` module: a formula over series, a

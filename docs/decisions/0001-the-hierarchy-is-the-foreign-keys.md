@@ -37,7 +37,7 @@ one of the six objects of the core.** `attributes`, `external_ids`,
 `documents` and `series` carry `object_kind` beside `object_id`, with
 `check (object_kind in ('organisation', 'project', 'participant', 'meter',
 'device', 'series'))`. A module table about an object of the core
-(`tasks.tasks`, `solar.horizons`, `consumption.activity_hours`) does the
+(`planning.tasks`, `solar.horizons`, `consumption.activity_hours`) does the
 same with the same check. A module's own objects — a ground, a building, a
 space, a surface, a PV array, a weather point — are not kinds: what
 describes them is their columns, and a relation is a column pointing to an

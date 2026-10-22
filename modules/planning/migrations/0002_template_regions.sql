@@ -1,21 +1,21 @@
--- Nexgen OS — module `tasks`: a template says the regions it holds in.
+-- Nexgen OS — module `planning`: a template says the regions it holds in.
 --
 -- Some countries decide by region: in Belgium, Flanders, Brussels and
 -- Wallonia each set their own permits, regulator and rules on energy
 -- sharing. A template carries its regions (ISO 3166-2) as a rule does; no
--- region means the whole country. `tasks.plan()` reads the regions of the
+-- region means the whole country. `planning.plan()` reads the regions of the
 -- participants taking part in the project and keeps the templates of those
 -- regions; a regional template on a project none of whose participants
 -- says its region is skipped and said so (`region_missing`), never guessed.
 
 set search_path = nexgen, public, extensions;
 
-alter table tasks.templates add column regions text[] not null default '{}';
+alter table planning.templates add column regions text[] not null default '{}';
 
-comment on column tasks.templates.regions is
+comment on column planning.templates.regions is
   'The ISO 3166-2 regions of the country the template holds in; empty: the whole country.';
 
-create or replace function tasks.plan(p_project_id uuid)
+create or replace function planning.plan(p_project_id uuid)
 returns jsonb
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -44,12 +44,12 @@ begin
    where pa.project_id = p_project_id and pa.region is not null;
 
   for t in
-    select * from tasks.templates tp
+    select * from planning.templates tp
      where (tp.country is null or tp.country = v_country)
        and (tp.project_kind is null or tp.project_kind = v_kind)
      order by tp.position, tp.code
   loop
-    if exists (select 1 from tasks.tasks x
+    if exists (select 1 from planning.tasks x
                 where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id) then
       v_existing := v_existing + 1;
       continue;
@@ -92,17 +92,17 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
+    insert into planning.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
     values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id);
     v_created := v_created + 1;
   end loop;
 
   -- A task waits for the task its template waits for, when both exist here.
-  update tasks.tasks x
+  update planning.tasks x
      set depends_on = d.id
-    from tasks.templates tp
-    join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
-    join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
+    from planning.templates tp
+    join planning.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
+    join planning.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
    where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
      and x.depends_on is null;
 
@@ -110,7 +110,7 @@ begin
 end;
 $$;
 
-comment on function tasks.plan(uuid) is
+comment on function planning.plan(uuid) is
   'Creates the tasks of a project from the templates that match its country, the regions of its participants, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
 
-grant execute on function tasks.plan(uuid) to authenticated, service_role;
+grant execute on function planning.plan(uuid) to authenticated, service_role;

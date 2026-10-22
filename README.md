@@ -11,7 +11,7 @@ services around it begin: [docs/services.md](docs/services.md). What the
 figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 > Status: **0.3.0** — the core schema, the `building`, `grid`, `community`,
-> `billing`, `consumption`, `weather`, `solar` and `tasks` modules, the format
+> `billing`, `consumption`, `weather`, `solar` and `planning` modules, the format
 > libraries, the weather and geocoding connectors, program connectors in any
 > language with pvlib (Python) as the first, the `nexgen-os` installer, the
 > `fr` and `be` country packs and seven example datasets; each is described in
@@ -184,7 +184,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 
 ```
 core/                  the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies, the model in one screen
-modules/               one Postgres schema per module (billing, building, community, consumption, grid, solar, tasks, weather); a module's TypeScript is in its `src/`
+modules/               one Postgres schema per module (billing, building, community, consumption, grid, planning, solar, weather); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr, be: identity and regions, identifiers, sources, grid operators, defaults), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors

@@ -84,7 +84,7 @@ erDiagram
   the country whose rules apply, a perimeter on the map, a status from
   `simulation` to `archived` and its dates. The allocation key of a
   community, the installed power of a set of buildings are attributes; the tasks of
-  its works are the `tasks` module's.
+  its works are the `planning` module's.
 - **participants** — the node of a project
   ([0043](decisions/0043-the-participant-is-the-node.md)): an actor — a
   household, a company, a tenant, a PV plant — `producer`, `consumer` or
@@ -365,7 +365,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
 | `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `estimates` of yields, performance and exceedance |
 | `consumption` | `consumption` | load profiles, activity hours and the `estimates` that reconstructed a curve |
-| `weather`, `tasks` | their own | weather models, points and which participants read them; tasks as data |
+| `weather`, `planning` | their own | weather models, points and which participants read them; tasks as data |
 
 ## Geometry
 

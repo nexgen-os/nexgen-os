@@ -46,7 +46,7 @@ day it was read, 20 October 2026.
 
 The law is not part of the model: no legal text and no rule is in the
 pack, and the steps of a project, in any region, are the generic templates
-of the [`tasks`](../../modules/tasks/README.md) module. Regional steps
+of the [`planning`](../../modules/planning/README.md) module. Regional steps
 (a planning exemption, the authorisation of an energy community by a
 regional regulator) belong to an installation's own templates.
 

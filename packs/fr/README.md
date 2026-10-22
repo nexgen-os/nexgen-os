@@ -60,7 +60,7 @@ day it was read, 20 October 2026.
 The law is not part of the model: no legal text and no rule on the grid,
 energy sharing, planning, support schemes or meter data is in the pack,
 and the steps of a project are the generic templates of the
-[`tasks`](../../modules/tasks/README.md) module.
+[`planning`](../../modules/planning/README.md) module.
 
 ## What to check next
 

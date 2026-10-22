@@ -14,7 +14,7 @@ core reads.
 
 ## Decision
 
-**Following work by tasks is a module, `tasks`.** A task is about any
+**Following work by tasks is a module, `planning`.** A task is about any
 object (a project, a participant, a building, a surface, a device), has a phase,
 a role, a status, planned and actual dates, a dependency and a source. An
 installation that maps a district or computes yields does without it.
@@ -53,4 +53,4 @@ action as their source; the foundation does not know the action.
 - Inherits Ekwo OS 0038 (*A deadline is a rule of the country; null is an
   answer*), translated: a step a country requires is data, outside the
   generic templates.
-- [`modules/tasks/README.md`](../../modules/tasks/README.md).
+- [`modules/planning/README.md`](../../modules/planning/README.md).
