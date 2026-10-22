@@ -5,8 +5,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
-import { PERFORMANCE_ENGINE_VERSION, performanceIndicators } from '../modules/solar/src/performance.js';
-import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
+import { PERFORMANCE_ENGINE_VERSION, performanceIndicators } from '../src/performance.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 const HOUR = 3_600_000;
 

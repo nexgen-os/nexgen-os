@@ -7,7 +7,7 @@
 // register.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

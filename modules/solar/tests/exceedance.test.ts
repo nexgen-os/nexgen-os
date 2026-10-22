@@ -4,8 +4,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
-import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../modules/solar/src/exceedance.js';
-import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
+import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../src/exceedance.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 const HOUR = 3_600_000;
 /** Every hour of the local standard years of Brussels (UTC+1), one constant energy per year. */

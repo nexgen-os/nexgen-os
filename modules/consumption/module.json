@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "consumption",
+  "name": "Consumption",
+  "description": "The consumption curve of a participant: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as an estimate, and the curve read measured first.",
+  "version": "0.3.0",
+  "schema": "consumption",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

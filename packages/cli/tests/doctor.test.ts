@@ -95,10 +95,10 @@ describe('doctor', () => {
     } finally {
       await db.exec('rollback');
     }
-    await db.exec(`begin; delete from nexgen.schema_migrations where name = 'modules/solar/migrations/0002_wind_speed.sql';`);
+    await db.exec(`begin; delete from nexgen.schema_migrations where name = 'modules/solar/supabase/migrations/0002_wind_speed.sql';`);
     try {
       const problems = (await doctor(sqlClient(db), await readCatalogue(repoRoot))).problems;
-      expect(problems).toEqual([{ code: 'migrations_pending', detail: '1 to apply, run nexgen-os migrate: modules/solar/migrations/0002_wind_speed.sql' }]);
+      expect(problems).toEqual([{ code: 'migrations_pending', detail: '1 to apply, run nexgen-os migrate: modules/solar/supabase/migrations/0002_wind_speed.sql' }]);
     } finally {
       await db.exec('rollback');
     }

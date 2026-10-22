@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { pvgis } from '@nexgen-os/pvgis';
 import type { Fetch } from '@nexgen-os/core';
-import { estimateYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { estimateYield } from '../src/yield.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

@@ -3,6 +3,25 @@
 The core is the schema `nexgen`: the named objects and what is attached to them. What
 is specific to a trade lives here, one folder and one schema per module.
 
+## A module's folder
+
+```
+modules/<code>/
+  module.json            the manifest: code, name, version, description, schema, requires, licence
+  supabase/migrations/   the module's schema, applied in the order of the names
+  src/                   its TypeScript, where it computes or imports (building, community, consumption, solar)
+  tests/                 its tests, run by the suite with every other
+  README.md              what it holds and computes, for a reader who has never seen it
+```
+
+The manifest is written against [`schema/module.1.json`](schema/module.1.json).
+`npx nexgen-os init` finds a module by its manifest: every folder here with a
+`module.json` is shipped, applied when asked for (`--modules`, every module
+by default) after the core's migrations and seed, and recorded by the path
+of each file in `nexgen.schema_migrations`. The module's first migration
+writes its row into `nexgen.modules`, and a test pins that row to the
+manifest (`tests/module-manifests.test.ts`).
+
 ## The rules
 
 1. **One schema, and the core is not it.** A module depends on `nexgen` by

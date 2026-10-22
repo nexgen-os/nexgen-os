@@ -4,7 +4,7 @@
 //
 // 1. No country, currency or language literal in code: a migration, a
 //    library, a connector or a module never says 'BE', 'EUR' or 'fr' — what
-//    a country decides is a pack row (examples, packs and tests are data).
+//    a country decides is a pack row (examples, packs and tests, the modules' included, are data).
 // 2. No secret: nothing that looks like a key or a token in the tree.
 // 3. English only in code and documentation: no French diacritics in
 //    identifiers, comments or docs (examples may carry local names).
@@ -35,7 +35,7 @@ const rel = (f) => relative(root, f);
 // and `icar`) carries the country and the languages of its register: that is
 // its data, not a default; the open geocoders and the core are held to the rule.
 // A seed compiled from a pack (supabase/seed/<n>_pack_<cc>.sql) is the pack.
-const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^supabase\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^packages\/connectors\/(ban|geopunt|urbis|icar)\//.test(rel(f));
+const isData = (f) => /^(examples|packs|tests)\//.test(rel(f)) || /^modules\/[^/]+\/tests\//.test(rel(f)) || /^supabase\/seed\/\d+_pack_[a-z]{2}\.sql$/.test(rel(f)) || /research\//.test(rel(f)) || /^packages\/connectors\/(ban|geopunt|urbis|icar)\//.test(rel(f));
 
 // 1. country, currency, language literals in code
 const literal = /'(BE|FR|NL|DE|ES|IT|LU|SN|US|GB)'|'EUR'|'USD'|'(fr|nl|de|es)'\s*(,|\))/;

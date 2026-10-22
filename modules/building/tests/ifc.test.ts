@@ -29,8 +29,8 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readIfc, type ReadOptions } from '@nexgen-os/ifc';
-import { importIfc as importModel, type IfcImportOptions, type IfcTarget } from '../modules/building/src/index.js';
-import { USER_A, freshDatabase, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { importIfc as importModel, type IfcImportOptions, type IfcTarget } from '../src/index.js';
+import { USER_A, freshDatabase, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
 
 const fixture = (name: string) => readFile(join(repoRoot, 'packages', 'formats', 'ifc', 'tests', 'fixtures', name)).then((b) => new Uint8Array(b));
 

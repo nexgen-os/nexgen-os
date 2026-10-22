@@ -6,8 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readCityJson, sridOf, writeCityJson, type CityJsonDocument } from '@nexgen-os/cityjson';
 import { orientation } from '@nexgen-os/core';
-import { exportCityJson, importCityJson as importModel, type CityJsonImportOptions, type CityJsonTarget } from '../modules/building/src/index.js';
-import { USER_A, freshDatabase, one, organisation, participant } from './helpers/db.js';
+import { exportCityJson, importCityJson as importModel, type CityJsonImportOptions, type CityJsonTarget } from '../src/index.js';
+import { USER_A, freshDatabase, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 // A gabled house, 10 m by 6 m, ground at 2 m, eaves at 8 m, ridge at 11.5 m,
 // in RD New (EPSG:28992), with the ridge along the x axis: the south pitch

@@ -4,7 +4,7 @@
 // pump, and everything findable from the participant whose school it is.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, square, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

@@ -2,7 +2,7 @@
  * What a release ships, read from disk, and the order it is applied in.
  *
  * The core's migrations, then the core's seed, then each module asked for
- * (its migrations in order), then each pack asked for (its seed in order).
+ * (a folder of `modules/` with its `module.json`, its migrations in order), then each pack asked for (its seed in order).
  * A pack's seed is the file `nexgen-os pack build` compiles beside the
  * core's, `supabase/seed/<n>_pack_<cc>.sql`; a compiled seed is never part of
  * the core.
@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { NexgenError } from './errors.js';
 
 export interface Step {
-  /** The path of the file in the release, `modules/solar/migrations/0001_solar.sql`: the key of the record. */
+  /** The path of the file in the release, `modules/solar/supabase/migrations/0001_solar.sql`: the key of the record. */
   name: string;
   /** `core`, `module:<code>` or `pack:<country code>`. */
   scope: string;
@@ -68,7 +68,10 @@ export async function readCatalogue(root: string = defaultRoot()): Promise<Catal
   const core = [...(await sqlSteps(root, 'supabase/migrations', 'core')), ...seeds.filter((s) => packSeed(s) === undefined)];
   const modules = new Map<string, Step[]>();
   for (const code of await folders(root, 'modules')) {
-    const steps = await sqlSteps(root, `modules/${code}/migrations`, `module:${code}`);
+    // A module is a folder with a manifest, `modules/<code>/module.json`
+    // (modules/schema/module.1.json); `modules/schema/` is not one.
+    if (!existsSync(join(root, 'modules', code, 'module.json'))) continue;
+    const steps = await sqlSteps(root, `modules/${code}/supabase/migrations`, `module:${code}`);
     if (steps.length > 0) modules.set(code, steps);
   }
   const packs = new Map<string, Pack>();

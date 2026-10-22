@@ -27,7 +27,7 @@ const spec: EngineSpec = {
 const installed = await describeEngine(spec).catch(() => null);
 const skipped = installed ? '' : ` (skipped: the pvlib engine is not installed; ${PVLIB_ENGINE.install})`;
 
-// The system of tests/solar-pvwatts.test.ts: 1 kWp facing south on a ventilated roof, Faiman 25 / 6.84, γ −0.35 %/K, 14 % losses.
+// The system of modules/solar/tests/pvwatts.test.ts: 1 kWp facing south on a ventilated roof, Faiman 25 / 6.84, γ −0.35 %/K, 14 % losses.
 const KWP = 1;
 const GAMMA = -0.0035;
 const FAIMAN = { u0: 25, u1: 6.84 };

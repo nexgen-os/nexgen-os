@@ -31,10 +31,10 @@ import {
   total,
   typicalYear,
   withinLocalYears,
-} from '../modules/solar/src/pvwatts.js';
-import { estimateYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
-import { answering, fixture, syntheticArchive } from './helpers/weather.js';
+} from '../src/pvwatts.js';
+import { estimateYield } from '../src/yield.js';
+import { USER_A, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
+import { answering, fixture, syntheticArchive } from '../../../tests/helpers/weather.js';
 
 const FAIMAN = { u0: 25, u1: 6.84 };
 const HOUR = 3_600_000;

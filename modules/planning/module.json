@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "planning",
+  "name": "Planning",
+  "description": "What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a participant or a project on a day.",
+  "version": "0.3.0",
+  "schema": "planning",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

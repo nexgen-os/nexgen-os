@@ -7,10 +7,10 @@ import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { openMeteo } from '@nexgen-os/open-meteo';
-import { sandiaFromOnd } from '../modules/solar/src/inverter.js';
-import { estimateYield } from '../modules/solar/src/yield.js';
-import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
-import { syntheticArchive } from './helpers/weather.js';
+import { sandiaFromOnd } from '../src/inverter.js';
+import { estimateYield } from '../src/yield.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
+import { syntheticArchive } from '../../../tests/helpers/weather.js';
 
 const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixtures/connectors/fake.mjs`, 'pv_yield'] };
 

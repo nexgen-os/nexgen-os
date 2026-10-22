@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
 const FARM = '00000000-0000-4000-8000-000400000010';

@@ -6,8 +6,8 @@
 // which belong to their participant.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { detachedModuleTables } from '../packages/cli/src/doctor.js';
-import { freshDatabase, insert, one, organisation, sqlClient, square, participant } from './helpers/db.js';
+import { detachedModuleTables } from '../../../packages/cli/src/doctor.js';
+import { freshDatabase, insert, one, organisation, sqlClient, square, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

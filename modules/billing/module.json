@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "billing",
+  "name": "Billing",
+  "description": "The bridge to the invoicing side: the Ekwo company an organisation is, the Ekwo contact a contact is and how it is reached, and the Ekwo invoices issued for or to a participant.",
+  "version": "0.3.0",
+  "schema": "billing",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

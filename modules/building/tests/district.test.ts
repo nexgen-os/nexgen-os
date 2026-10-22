@@ -4,7 +4,7 @@
 // perimeter.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

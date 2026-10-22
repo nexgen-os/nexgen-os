@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "grid",
+  "name": "Grid",
+  "description": "The grid side of a connection point of the core: the operators who run the grid, written by the country packs, and for each meter the operator that runs it and the voltage level it is connected at.",
+  "version": "0.3.0",
+  "schema": "grid",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

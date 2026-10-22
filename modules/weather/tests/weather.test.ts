@@ -4,7 +4,7 @@
 // is linked to, shared by every participant of the organisation in the same cell.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

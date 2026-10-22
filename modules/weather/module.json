@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "weather",
+  "name": "Weather",
+  "description": "Weather points participants are linked to, weather models as sources, and the model each participant reads, resolved from its attribute, its organisation, the pack and the coverage.",
+  "version": "0.3.0",
+  "schema": "weather",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

@@ -6,9 +6,9 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from '../../../tests/helpers/db.js';
 import { store } from '@nexgen-os/core';
-import { reconstructConsumption, slotWeights, spreadEnergy, type LoadProfile } from '../modules/consumption/src/curve.js';
+import { reconstructConsumption, slotWeights, spreadEnergy, type LoadProfile } from '../src/curve.js';
 
 const ORG = '00000000-0000-4000-8000-000700000001';
 const BLOCK = '00000000-0000-4000-8000-000700000010';

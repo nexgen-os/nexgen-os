@@ -4,7 +4,7 @@
 // the four yield profiles, and who sees what.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { USER_B, asUser, freshDatabase, insert, one, organisation, square, participant } from './helpers/db.js';
+import { USER_B, asUser, freshDatabase, insert, one, organisation, square, participant } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

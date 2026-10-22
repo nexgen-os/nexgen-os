@@ -184,7 +184,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 
 ```
 supabase/              the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies and the country seeds, the model in one screen
-modules/               one Postgres schema per module (billing, building, community, consumption, grid, planning, solar, weather); a module's TypeScript is in its `src/`
+modules/               one Postgres schema per module (billing, building, community, consumption, grid, planning, solar, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
 packs/                 one folder per country, data only (fr, be: identity and regions, identifiers, sources, grid operators, defaults), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
@@ -194,7 +194,7 @@ packages/python/       the Python client: the readers of the model, attributes a
 examples/              one loadable dataset per domain (house, school, community, farm, district, drone survey, office)
 docs/                  the model, the doctrine and its decisions, the road to 1.0, how a release is cut
 scripts/               hygiene, and what a release publishes
-tests/                 the core's tests, the examples, the modules, the packages, the packs, the connectors
+tests/                 the tests of the core, the demo datasets, the packs, the packages and the connectors; a module's are in its folder
 ```
 
 ## Help

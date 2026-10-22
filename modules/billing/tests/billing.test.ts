@@ -9,8 +9,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { doctor } from '../packages/cli/src/index.js';
-import { USER_A, USER_B, asUser, freshDatabase, one, organisation, repoRoot, sqlClient } from './helpers/db.js';
+import { doctor } from '../../../packages/cli/src/index.js';
+import { USER_A, USER_B, asUser, freshDatabase, one, organisation, repoRoot, sqlClient } from '../../../tests/helpers/db.js';
 
 let db: PGlite;
 let org: string;

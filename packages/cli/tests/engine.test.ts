@@ -28,8 +28,8 @@ const synthetic: Catalogue = {
   root: '/nowhere',
   core: [step('supabase/migrations/1_a.sql', 'core'), step('supabase/seed/1_seed.sql', 'core')],
   modules: new Map([
-    ['alpha', [step('modules/alpha/migrations/0001_alpha.sql', 'module:alpha')]],
-    ['beta', [step('modules/beta/migrations/0001_beta.sql', 'module:beta'), step('modules/beta/migrations/0002_beta.sql', 'module:beta')]],
+    ['alpha', [step('modules/alpha/supabase/migrations/0001_alpha.sql', 'module:alpha')]],
+    ['beta', [step('modules/beta/supabase/migrations/0001_beta.sql', 'module:beta'), step('modules/beta/supabase/migrations/0002_beta.sql', 'module:beta')]],
   ]),
   packs: new Map([['xx', { code: 'xx', modules: ['beta'], steps: [step('supabase/seed/12_pack_xx.sql', 'pack:xx')] }]]),
 };
@@ -42,7 +42,7 @@ describe('plan', () => {
   });
 
   it('leaves out what is recorded', () => {
-    const recorded = new Set(['supabase/migrations/1_a.sql', 'supabase/seed/1_seed.sql', 'modules/alpha/migrations/0001_alpha.sql']);
+    const recorded = new Set(['supabase/migrations/1_a.sql', 'supabase/seed/1_seed.sql', 'modules/alpha/supabase/migrations/0001_alpha.sql']);
     const p = plan(synthetic, { modules: ['alpha'], packs: [] }, recorded);
     expect(p.steps).toHaveLength(3);
     expect(p.pending).toEqual([]);
@@ -50,7 +50,7 @@ describe('plan', () => {
 
   it('refuses a pack whose module is neither asked nor installed, by name', () => {
     expect(() => plan(synthetic, { modules: ['alpha'], packs: ['xx'] }, new Set())).toThrow(/^pack_requires_module: pack xx needs module beta/);
-    const installed = new Set(['modules/beta/migrations/0001_beta.sql']);
+    const installed = new Set(['modules/beta/supabase/migrations/0001_beta.sql']);
     expect(plan(synthetic, { modules: [], packs: ['xx'] }, installed).pending.map((s) => s.scope)).toEqual(['core', 'core', 'pack:xx']);
   });
 

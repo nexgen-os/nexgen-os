@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readOnd, readPan } from '@nexgen-os/panond';
-import { importProduct } from '../modules/solar/src/products.js';
-import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { importProduct } from '../src/products.js';
+import { USER_A, asUser, freshDatabase, insert, one, organisation, repoRoot } from '../../../tests/helpers/db.js';
 
 const fixture = (name: string) => readFile(`${repoRoot}/packages/formats/panond/tests/fixtures/${name}`, 'utf8');
 

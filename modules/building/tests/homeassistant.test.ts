@@ -6,9 +6,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { freshDatabase, insert, one, organisation, repoRoot, square, participant } from './helpers/db.js';
+import { freshDatabase, insert, one, organisation, repoRoot, square, participant } from '../../../tests/helpers/db.js';
 import { readHomeAssistant, writeHomeAssistant, type HaSnapshot } from '@nexgen-os/homeassistant';
-import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '../modules/building/src/index.js';
+import { exportHomeAssistant, importHomeAssistant, type HomeImport } from '../src/index.js';
 
 // The home of the format library's own tests: two floors, four areas,
 // three devices, nine entities and their recorder states.
