@@ -48,6 +48,20 @@ that a lender, a reviewer or a client can check it.
   and SGE, and the rules of France, Belgium and Spain as country packs
   with worked cases ([`packs/`](packs/)).
 
+Example projects with varied energy assets, each a SQL file that loads
+as is and ends with the queries a page would run, are in
+[`docs/demo/`](docs/demo/README.md):
+
+| Example | Assets |
+|---|---|
+| [`01-house-pv-battery.sql`](docs/demo/01-house-pv-battery.sql) | a house with PV behind its meter, an inverter, a smart meter, a planned battery |
+| [`02-school.sql`](docs/demo/02-school.sql) | a school with rooms, multisensors and a heat pump with its setpoints |
+| [`03-energy-community.sql`](docs/demo/03-energy-community.sql) | an energy community: four participants and their meters, a producer |
+| [`04-farm-solar.sql`](docs/demo/04-farm-solar.sql) | a farm with roof, ground and carport PV, offtake and injection meters, a PVGIS estimate |
+| [`05-district-open-data.sql`](docs/demo/05-district-open-data.sql) | a district from open data: plots and buildings |
+| [`06-drone-survey.sql`](docs/demo/06-drone-survey.sql) | roof faces measured by a drone survey |
+| [`07-office-heating.sql`](docs/demo/07-office-heating.sql) | an office with a boiler, a heat pump and a planned replacement |
+
 The path from an empty database to a house with its yearly yield is
 [below](#twenty-minutes-to-the-same-house-with-its-yield). Connectors and
 format libraries are MIT and can live inside any product; the
