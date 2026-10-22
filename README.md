@@ -50,6 +50,17 @@ that a lender, a reviewer or a client can check it.
   and SGE, and the rules of France, Belgium and Spain as country packs
   with worked cases ([`packs/`](packs/)).
 
+Try it first without a database or an account: in a clone of this
+repository (`npm ci` once), one command installs the core and the
+`solar` module in a Postgres in memory, loads the house of example 01,
+computes its yield for a year through PVGIS (no key, an Internet
+connection) and prints it by month with what the estimate was computed
+from; nothing is kept.
+
+```bash
+npx tsx modules/cli.ts try --year 2023
+```
+
 Example projects with varied energy assets, each a SQL file that loads
 as is and ends with the queries a page would run, are in
 [`docs/demo/`](docs/demo/README.md):
@@ -261,7 +272,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 supabase/              the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies and the country seeds, the model in one screen
 modules/               one Postgres schema per module (actions, billing, building, charging, community, consumption, grid, kpis, solar, storage, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
 packs/                 one folder per country, data only (fr, be, es: identity and regions, identifiers, sources, frames of projects, municipalities, grid operators, defaults, golden cases), and the schema they are written against
-packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, and the gestures of the model as a person
+packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
 packages/formats/      one MIT package per file format (cityjson, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, weather-files)

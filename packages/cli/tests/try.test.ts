@@ -44,7 +44,8 @@ describe('nexgen-os try', () => {
     expect(asked).toHaveLength(1);
     expect([params.peakpower, params.aspect, params.angle, params.startyear, params.endyear]).toEqual(['3.825', '0', '30', '2023', '2023']);
 
-    expect(report.participant).toEqual({ name: 'Calle del Ejemplo 14', city: 'Sevilla', country: 'ES' });
+    const example01 = { name: 'Calle del Ejemplo 14', city: 'Sevilla', country: 'ES' };
+    expect(report.participant).toEqual(example01);
     expect(report.system).toEqual({
       deviceId: '00000000-0000-4000-8000-000100000051', kwp: 3.825,
       arrays: [{ name: 'South roof', azimuthDeg: 180, tiltDeg: 30 }],
