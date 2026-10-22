@@ -4,7 +4,7 @@
 -- The core names no country. What a country decides that a function of the
 -- model reads is published by its pack (packs/<cc>): who the country is
 -- (`countries`: currency, languages, time zones, the level its regions are
--- listed at, the pack's version, checksum and certification), its regions
+-- listed at, the pack's version and checksum), its regions
 -- (`regions`, ISO 3166-2, each with its time zone), and the values a study
 -- starts from (`defaults`), each with its period and the source it was
 -- read from, in the unit of its property's quantity. An organisation is an
@@ -50,20 +50,15 @@ create table countries (
   -- reviewed by a named professional on a day.
   pack_version         text,
   pack_checksum        text,
-  certification        text,
-  certified_by         text,
-  certified_on         date,
   published_by         text not null,
   constraint countries_code_format check (code ~ '^[A-Z]{2}$'),
   constraint countries_currency_format check (currency ~ '^[A-Z]{3}$'),
   constraint countries_pack_version_format check (pack_version is null or pack_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$'),
-  constraint countries_checksum_format check (pack_checksum is null or pack_checksum ~ '^sha256:[0-9a-f]{64}$'),
-  constraint countries_certification check (certification is null or certification in ('community', 'maintained', 'reviewed')),
-  constraint countries_reviewed check (certification is distinct from 'reviewed' or (certified_by is not null and certified_on is not null))
+  constraint countries_checksum_format check (pack_checksum is null or pack_checksum ~ '^sha256:[0-9a-f]{64}$')
 );
 
 comment on table countries is
-  'What a country pack says a country is — currency, languages, time zones, region level, postal code pattern, municipality scheme — and which version of the pack, with its checksum and certification, the installation holds. Written by packs.';
+  'What a country pack says a country is — currency, languages, time zones, region level, postal code pattern, municipality scheme — and which version of the pack, with its checksum, the installation holds. Written by packs.';
 
 -- ---------------------------------------------------------------------------
 -- regions — the subdivisions of a country, at the level its pack lists.
@@ -188,38 +183,28 @@ create trigger defaults_check
 -- parameter_of — the one resolution of a parameter.
 -- ---------------------------------------------------------------------------
 
--- The attribute of one object holding at a moment, in a scenario or the
--- scenarios it builds on, else in reality.
-create or replace function attribute_at(p_object_id uuid, p_property_code text, p_at timestamptz, p_scenario_id uuid)
+-- The attribute of one object holding at a moment.
+create or replace function attribute_at(p_object_id uuid, p_property_code text, p_at timestamptz)
 returns attributes
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  with recursive chain as (
-    select s.id, s.parent_id, 1 as rank from scenarios s where s.id = p_scenario_id
-    union all
-    select s.id, s.parent_id, chain.rank + 1 from scenarios s join chain on s.id = chain.parent_id
-  )
   select a.*
     from attributes a
-    left join chain on chain.id = a.scenario_id
    where a.object_id = p_object_id and a.property_code = p_property_code
      and (a.valid_from is null or a.valid_from <= p_at)
      and (a.valid_to is null or a.valid_to > p_at)
-     and (a.scenario_id is null or chain.id is not null)
-   order by coalesce(chain.rank, 1000000)
    limit 1;
 $$;
 
-comment on function attribute_at(uuid, text, timestamptz, uuid) is
-  'The attribute row of one object and property holding at a moment, the scenario''s own before reality''s; null when none.';
+comment on function attribute_at(uuid, text, timestamptz) is
+  'The attribute row of one object and property holding at a moment; null when none.';
 
 -- The parents of an object of the core, nearest first, through its foreign
 -- keys: a participant is in its group, then in its project; a meter and a
--- device are their participant's, then its parents. A series and a run are
--- their object's, then its parents. A module's kind has none here: the
--- module resolves it.
+-- device are their participant's, then its parents. A series is its
+-- object's, then its parents.
 create or replace function parents_of(p_kind text, p_id uuid)
 returns table (kind text, object_id uuid)
 language plpgsql
@@ -232,8 +217,6 @@ declare
 begin
   if p_kind = 'series' then
     select se.object_kind, se.object_id into k, id from series se where se.id = p_id;
-  elsif p_kind = 'run' then
-    select r.subject_kind, r.subject_id into k, id from runs r where r.id = p_id;
   elsif p_kind = 'meter' then
     select 'participant', m.participant_id into k, id from meters m where m.id = p_id;
   elsif p_kind = 'device' then
@@ -259,14 +242,13 @@ end;
 $$;
 
 comment on function parents_of(text, uuid) is
-  'The parents of an object of the core along its foreign keys, nearest first: a participant''s group and project; a meter''s or a device''s participant, then its parents; a series'' or a run''s object, then its parents.';
+  'The parents of an object of the core along its foreign keys, nearest first: a participant''s group and project; a meter''s or a device''s participant, then its parents; a series'' object, then its parents.';
 
 create or replace function parameter_of(
   p_kind          text,
   p_object_id     uuid,
   p_property_code text,
-  p_at            timestamptz default now(),
-  p_scenario_id   uuid default null
+  p_at            timestamptz default now()
 )
 returns jsonb
 language plpgsql
@@ -290,7 +272,7 @@ begin
   v_org := object_organisation(p_kind, p_object_id);
 
   -- 1. The object itself.
-  a := attribute_at(p_object_id, p_property_code, p_at, p_scenario_id);
+  a := attribute_at(p_object_id, p_property_code, p_at);
   if a.id is not null then
     return jsonb_build_object('value', a.value, 'level', 'object', 'object_id', p_object_id,
                               'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -299,7 +281,7 @@ begin
   -- 2. Its parents, nearest first.
   for anc in select * from parents_of(p_kind, p_object_id) loop
     reached := anc.kind;
-    a := attribute_at(anc.object_id, p_property_code, p_at, p_scenario_id);
+    a := attribute_at(anc.object_id, p_property_code, p_at);
     if a.id is not null then
       return jsonb_build_object('value', a.value, 'level', anc.kind, 'object_id', anc.object_id,
                                 'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -309,7 +291,7 @@ begin
   -- 3. Its organisation: an object like any other, whose defaults are its attributes.
   reached := 'organisation';
   if p_kind <> 'organisation' then
-    a := attribute_at(v_org, p_property_code, p_at, p_scenario_id);
+    a := attribute_at(v_org, p_property_code, p_at);
     if a.id is not null then
       return jsonb_build_object('value', a.value, 'level', 'organisation', 'object_id', v_org,
                                 'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -358,7 +340,7 @@ begin
 end;
 $$;
 
-comment on function parameter_of(text, uuid, text, timestamptz, uuid) is
+comment on function parameter_of(text, uuid, text, timestamptz) is
   'The value of a parameter for an object (its kind and id) at a moment: its own attribute, its parents'' nearest first along the foreign keys (parents_of), its organisation''s, then the region''s of its participant''s place, its parent regions'' nearest first, and the country''s — {value, level, source_code, reference, valid_from}. No global level: parameter_missing names the property and the level reached; parameter_not_decided gives the reference of a country that decides no single value.';
 
 -- ---------------------------------------------------------------------------
@@ -381,5 +363,5 @@ create policy defaults_read on defaults for select to authenticated using (true)
 grant select on defaults to authenticated;
 grant select, insert, update, delete on defaults to service_role;
 
-grant execute on function attribute_at(uuid, text, timestamptz, uuid), parents_of(text, uuid), parameter_of(text, uuid, text, timestamptz, uuid)
+grant execute on function attribute_at(uuid, text, timestamptz), parents_of(text, uuid), parameter_of(text, uuid, text, timestamptz)
   to authenticated, service_role;

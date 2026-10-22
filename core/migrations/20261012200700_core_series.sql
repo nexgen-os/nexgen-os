@@ -13,34 +13,34 @@
 --
 -- Measured, simulated and forecast series share the same shape, so a page
 -- compares them with one query: a simulated hourly profile is a series of
--- kind `simulated`, usually in a scenario; a series a run computed belongs
--- to that run and changes with nobody else's. There is one series store,
+-- kind `simulated`; a series a run computed names that run in its source
+-- (`<module>.runs:<id>`) and changes with nobody else's. There is one series store,
 -- built for a hundred thousand meters (decision 0007): partitioned by week,
 -- no per-row organisation, a two-byte quality.
 --
 -- The package, in the order of this file:
 --
---   series, series_quality_codes, units      what a series is, and its words
---   series_values, forecast_values           the values, in the quantity's unit
---   series_dirty, series_rollups,            what the write path keeps beside
---   series_latest                            the values: hours to roll up,
---                                            hourly and daily aggregates, the
---                                            last value of each series
+--   series, units                            what a series is, and its units
+--   series_values, forecast_values           the values, in the quantity's
+--                                            unit, with their quality code
+--   series_rollups, series_latest            what the write path keeps beside
+--                                            the values: hourly and daily
+--                                            aggregates, refreshed by every
+--                                            write, and the last value of
+--                                            each series, a view
 --   series_ensure(), store()                 the one way to write (0031)
 --   resample(), window(), latest(), fill(),  the one family of reads, every
 --   coverage(), forecast_at(), export_rows() one security definer with one
 --                                            access check per series
---   series_rollup()                          the maintenance, from pg_cron
---                                            when present, else by hand
 
 set search_path = nexgen, public, extensions;
 
 create table series (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- What is observed, by its kind and its id: a room, a building, a participant,
-  -- a device, a meter.
-  object_kind      text not null references kinds(kind),
+  -- What is observed, by its kind and its id: a participant, a meter, a
+  -- device, a project, an organisation.
+  object_kind      text not null,
   object_id        uuid not null,
   quantity_code    text not null references quantities(code),
   -- The device that produces or receives the values: the thermometer, the
@@ -61,9 +61,10 @@ create table series (
   value_kind       text not null default 'interval',
   -- Regular step of the series, null when irregular.
   step             interval,
-  scenario_id      uuid references scenarios(id) on delete cascade,
   -- Where the values come from: a source of the vocabulary (a grid
-  -- operator's hub, a device protocol, a model), and a free note.
+  -- operator's hub, a device protocol, a model), and a free note. A run of
+  -- a module names itself here, `<module>.runs:<run id>`: its values are
+  -- the run's figures, written while it runs and never changed after.
   source_code      text references sources(code),
   source           text,
   -- How a connector finds the point: a Modbus register, an MQTT topic, a
@@ -72,36 +73,31 @@ create table series (
   -- What the source knows about the point beyond these columns (a Home
   -- Assistant entity's class, icon, original unit). Extensions only.
   metadata         jsonb not null default '{}',
-  -- The run that computed it. Its values are the run's figures: written
-  -- inside record_run() and never changed after.
-  run_id           uuid references runs(id) on delete cascade,
   created_at       timestamptz not null default now(),
+  constraint series_object_kind check (object_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
   constraint series_kind check (kind in ('measured', 'simulated', 'forecast', 'setpoint', 'command')),
-  constraint series_run_computed check (run_id is null or kind in ('simulated', 'forecast')),
   -- A simulated series is a figure: the run that computed it, or the named
   -- source that published it (a typical year of a weather service).
-  constraint series_run_required check (kind <> 'simulated' or run_id is not null or source_code is not null),
+  constraint series_run_required check (kind <> 'simulated' or source is not null or source_code is not null),
   constraint series_value_kind check (value_kind in ('interval', 'instant', 'cumulative')),
   constraint series_step_positive check (step is null or step > interval '0')
 );
 
 comment on table series is
-  'One quantity over time for one object, by one device when there is one — measured, simulated, forecast, asked or ordered (OGC SensorThings Datastream, Brick and Haystack point, Home Assistant entity). A run''s series belong to it.';
+  'One quantity over time for one object of the core, by one device when there is one — measured, simulated, forecast, asked or ordered (OGC SensorThings Datastream, Brick and Haystack point, Home Assistant entity). A run''s series name it in their source.';
 
 -- One series per identity: two imports of the same meter find the same
 -- series, two runs never share one.
 create unique index series_identity on series
-  (object_kind, object_id, quantity_code, kind, source_code, scenario_id, name, run_id) nulls not distinct;
+  (object_kind, object_id, quantity_code, kind, source_code, source, name) nulls not distinct;
 create index series_quantity_idx on series (quantity_code);
 create index series_device_idx on series (device_id);
-create index series_run_idx on series (run_id);
 
 create trigger series_attach
   before insert or update on series
   for each row execute function attach('object');
 
--- The device of a series is of the series' organisation, and of its
--- scenario when it exists only in one.
+-- The device of a series is of the series' organisation.
 create or replace function series_check()
 returns trigger
 language plpgsql
@@ -117,43 +113,20 @@ begin
   if d.organisation_id <> new.organisation_id then
     raise exception 'device_in_other_organisation: %', new.device_id using errcode = 'check_violation';
   end if;
-  if d.scenario_id is not null and d.scenario_id is distinct from new.scenario_id then
-    raise exception 'attachment_outside_object_scenario' using errcode = 'check_violation';
-  end if;
   return new;
 end;
 $$;
 
 comment on function series_check() is
-  'BEFORE INSERT / UPDATE on series: the device is of the series'' organisation and scenario.';
+  'BEFORE INSERT / UPDATE on series: the device is of the series'' organisation.';
 
 create trigger series_check
-  before insert or update of device_id, organisation_id, scenario_id on series
+  before insert or update of device_id, organisation_id on series
   for each row execute function series_check();
 
 -- ---------------------------------------------------------------------------
--- The words of values: quality codes and units.
+-- Units.
 -- ---------------------------------------------------------------------------
-
--- One word per code, the same everywhere (decision 0007 and the files door
--- of 0014 use these words). Codes from 100 up are left to a pack that maps
--- the flags of a national data hub; the core never reads them as more than
--- "not missing".
-create table series_quality_codes (
-  code         smallint primary key,
-  name         text not null unique,
-  description  text not null,
-  constraint series_quality_codes_range check (code >= 0)
-);
-
-comment on table series_quality_codes is
-  'The quality of a stored value: 0 measured, 1 estimated, 2 substituted, 3 missing; codes from 100 up are a pack''s mapping of a data hub''s flags.';
-
-insert into series_quality_codes (code, name, description) values
-  (0, 'measured',    'Read from a device or a data hub as it was measured.'),
-  (1, 'estimated',   'Estimated by the source, or filled on read by fill() (never written by the core).'),
-  (2, 'substituted', 'Replaced after validation by a substitute value, written by a run of a module.'),
-  (3, 'missing',     'No value: kept so that a gap is known; left out of every aggregate.');
 
 -- Units: how a value given in another unit reaches the unit of its quantity
 -- (decision 0030). Each unit names its QUDT quantity kind and, as QUDT does,
@@ -237,8 +210,17 @@ create table series_values (
   at         timestamptz not null,
   -- In the unit of the series' quantity, always. A missing value is NaN.
   value      double precision not null,
-  quality    smallint not null default 0 references series_quality_codes(code),
-  primary key (series_id, at)
+  -- One word per code, the same everywhere (decision 0007 and the files
+  -- door of 0014 use these words): 0 measured, read as it was measured;
+  -- 1 estimated, by the source or filled on read by fill(), never written
+  -- by the core; 2 substituted after validation, by a run of a module;
+  -- 3 missing, kept so that a gap is known and left out of every
+  -- aggregate. Codes from 100 up are a pack's mapping of the flags of a
+  -- national data hub; the core never reads them as more than "not
+  -- missing".
+  quality    smallint not null default 0,
+  primary key (series_id, at),
+  constraint series_values_quality check (quality in (0, 1, 2, 3) or quality >= 100)
 ) partition by range (at);
 
 comment on table series_values is
@@ -323,7 +305,7 @@ begin
   if tg_op <> 'DELETE' and current_setting('nexgen.store_series', true) = sid::text then
     return new;
   end if;
-  select se.kind, r.status into k, rs from series se left join runs r on r.id = se.run_id where se.id = sid;
+  select se.kind, run_status_of(se.source) into k, rs from series se where se.id = sid;
   if not found then
     -- The series itself is being deleted: its values go with it.
     return case when tg_op = 'DELETE' then old else new end;
@@ -355,56 +337,8 @@ create trigger forecast_values_store before insert or update or delete on foreca
 -- What the write path keeps beside the values.
 -- ---------------------------------------------------------------------------
 
--- The hours whose values changed since their aggregates were computed,
--- marked by every statement that writes or deletes values (whoever runs it)
--- and drained by series_rollup(). A cumulative register also marks the
--- hour of the reading before the first one written: its consumption is
--- read up to the next reading.
-create table series_dirty (
-  series_id  uuid not null references series(id) on delete cascade,
-  hour       timestamptz not null,
-  primary key (series_id, hour)
-);
-
-comment on table series_dirty is
-  'Hours (UTC starts) of a series whose values changed since series_rollup() last computed their aggregates. A rollup in a dirty hour is never read.';
-
-create or replace function series_values_mark_dirty()
-returns trigger
-language plpgsql
-security definer
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-begin
-  insert into series_dirty (series_id, hour)
-  select c.series_id, date_bin('1 hour', c.at, timestamptz '2000-01-01 00:00:00+00')
-    from changed c join series s on s.id = c.series_id
-  union
-  select f.series_id, date_bin('1 hour', p.at, timestamptz '2000-01-01 00:00:00+00')
-    from (select c.series_id, min(c.at) first_at
-            from changed c join series s on s.id = c.series_id
-           where s.value_kind = 'cumulative'
-           group by c.series_id) f
-    cross join lateral (select v.at from series_values v
-                         where v.series_id = f.series_id and v.at < f.first_at
-                         order by v.at desc limit 1) p
-  on conflict do nothing;
-  return null;
-end;
-$$;
-
-comment on function series_values_mark_dirty() is
-  'AFTER statement on series_values: marks the hours the statement touched (and, for a cumulative register, the hour of the reading before) as dirty for series_rollup().';
-
-create trigger series_values_dirty_insert after insert on series_values
-  referencing new table as changed for each statement execute function series_values_mark_dirty();
-create trigger series_values_dirty_update after update on series_values
-  referencing new table as changed for each statement execute function series_values_mark_dirty();
-create trigger series_values_dirty_delete after delete on series_values
-  referencing old table as changed for each statement execute function series_values_mark_dirty();
-
 -- Hourly and daily aggregates of a series, derived from its values and
--- rebuilt from them (decision 0031): the hour in UTC, the day in the time
+-- rebuilt from them by every write (decision 0031): the hour in UTC, the day in the time
 -- zone of its participant (a series with none has hours only). Months and years are
 -- summed from days. The columns are what every read needs: the count of
 -- readings, their sum, extremes and last value, and for a cumulative
@@ -426,19 +360,20 @@ create table series_rollups (
 );
 
 comment on table series_rollups is
-  'Hourly (UTC) and daily (participant time zone) aggregates of a series, kept fresh by series_rollup() from the dirty hours; read by resample() when the step allows. Derived, never edited.';
+  'Hourly (UTC) and daily (participant time zone) aggregates of a series, refreshed by every write of its values; read by resample() when the step allows. Derived, never edited.';
 
--- The last stored value of each series, kept by store() and repaired by
--- series_rollup(): a live tile reads one row.
-create table series_latest (
-  series_id  uuid primary key references series(id) on delete cascade,
-  at         timestamptz not null,
-  value      double precision not null,
-  quality    smallint not null
-);
+-- The last stored value of each series that is not missing: a live tile
+-- reads one row, found at the end of the series' primary key.
+create view series_latest with (security_invoker = true) as
+  select s.id as series_id, l.at, l.value, l.quality
+    from series s
+    cross join lateral (
+      select v.at, v.value, v.quality from series_values v
+       where v.series_id = s.id and v.quality <> 3
+       order by v.at desc limit 1) l;
 
-comment on table series_latest is
-  'The latest value that is not missing, one row per series; maintained by store(), repaired by series_rollup().';
+comment on view series_latest is
+  'The latest value that is not missing, one row per series that has one; read under the policies of series and series_values.';
 
 -- ---------------------------------------------------------------------------
 -- Access and buckets: the helpers every read shares.
@@ -628,7 +563,7 @@ comment on function series_points(series, timestamptz, timestamptz, timestamptz)
 -- next in the bucket of the earlier one — the consumption over that
 -- interval — reading one value past `p_to` to close the last bucket; an
 -- index that falls back is a reset, and the increment is the new index.
--- The one computation behind resample() and series_rollup().
+-- The one computation behind resample() and series_rollup_hours().
 create or replace function series_buckets(
   p_series        series,
   p_from          timestamptz,
@@ -683,8 +618,8 @@ comment on function series_buckets(series, timestamptz, timestamptz, interval, t
 -- more is cut in the participant's time zone (or the one given), counted from the
 -- local day or month of `p_from`. A forecast gives its latest issue, or the
 -- latest issued before `p_issued_before`. Hourly and daily rollups are read
--- instead of the values when the bucket is made of whole rollups and none
--- of them is dirty; the figures are the same either way. `expected` is the
+-- instead of the values when the bucket is made of whole rollups; the
+-- figures are the same either way. `expected` is the
 -- count of values a regular series should have in the bucket, `quality`
 -- the worst code among those it has.
 create or replace function resample(
@@ -730,9 +665,8 @@ begin
        and p_from = date_trunc('day', p_from, tz) and p_to = date_trunc('day', p_to, tz) then
       rollup := 'day';
     end if;
-    if rollup is not null and (
-         exists (select 1 from series_dirty d where d.series_id = s.id and d.hour >= p_from - interval '1 hour' and d.hour < p_to)
-         or not exists (select 1 from series_rollups r where r.series_id = s.id and r.step = rollup and r.bucket >= p_from and r.bucket < p_to)) then
+    if rollup is not null
+       and not exists (select 1 from series_rollups r where r.series_id = s.id and r.step = rollup and r.bucket >= p_from and r.bucket < p_to) then
       rollup := null;
     end if;
   end if;
@@ -778,7 +712,7 @@ end;
 $$;
 
 comment on function resample(uuid, timestamptz, timestamptz, interval, text, timestamptz) is
-  'A series on a regular step, the amount of each bucket: combined by its quantity''s aggregation, the consumption of the bucket for a cumulative register (resets handled). Durations bin from local midnight; days and months cut in the participant''s time zone. Reads hourly and daily rollups when they cover the buckets and are fresh. Returns samples, expected (regular series) and the worst quality. Refuses series_not_found, time_zone_required, step_unsupported.';
+  'A series on a regular step, the amount of each bucket: combined by its quantity''s aggregation, the consumption of the bucket for a cumulative register (resets handled). Durations bin from local midnight; days and months cut in the participant''s time zone. Reads hourly and daily rollups when they cover the buckets. Returns samples, expected (regular series) and the worst quality. Refuses series_not_found, time_zone_required, step_unsupported.';
 
 -- The values themselves, in time order: the only read without aggregation,
 -- and the way an index of a cumulative register is read.
@@ -813,7 +747,7 @@ end;
 $$;
 
 comment on function latest(uuid[]) is
-  'The latest value that is not missing of each series, from series_latest: one row per series that has one. Refuses series_not_found.';
+  'The latest value that is not missing of each series, from the view series_latest: one row per series that has one. Refuses series_not_found.';
 
 -- The gaps of a regular series: the instants its step expects and that
 -- hold no value, or a missing one, grouped in runs.
@@ -1002,8 +936,8 @@ comment on function export_rows(uuid[], timestamptz, timestamptz) is
 -- Writing series: one way to open a series, one way to write its values.
 -- ---------------------------------------------------------------------------
 
--- The series of an identity — object, quantity, kind, source, scenario,
--- name, run — found or created once. A second writer with the same identity
+-- The series of an identity — object, quantity, kind, source, name —
+-- found or created once. A second writer with the same identity
 -- finds the first one's series, never a twin; one that says another value
 -- kind or another step is refused.
 create or replace function series_ensure(
@@ -1017,9 +951,8 @@ create or replace function series_ensure(
   p_external_ref  text default null,
   p_source_code   text default null,
   p_name          text default null,
-  p_scenario_id   uuid default null,
   p_metadata      jsonb default '{}',
-  p_run_id        uuid default null
+  p_source        text default null
 )
 returns uuid
 language plpgsql
@@ -1032,18 +965,18 @@ begin
   if not exists (select 1 from quantities where code = p_quantity_code) then
     raise exception 'quantity_unknown: %', p_quantity_code using errcode = 'foreign_key_violation';
   end if;
-  if p_kind = 'simulated' and p_run_id is null and p_source_code is null then
+  if p_kind = 'simulated' and p_source is null and p_source_code is null then
     raise exception 'series_run_required: a simulated series is written by a run, or comes from a named source' using errcode = 'check_violation';
   end if;
   insert into series (object_kind, object_id, quantity_code, kind, value_kind, step, device_id, external_ref, source_code, name,
-                      scenario_id, metadata, run_id)
+                      metadata, source)
   values (p_object_kind, p_object_id, p_quantity_code, p_kind, p_value_kind, p_step, p_device_id, p_external_ref, p_source_code, p_name,
-          p_scenario_id, coalesce(p_metadata, '{}'), p_run_id)
-  on conflict (object_kind, object_id, quantity_code, kind, source_code, scenario_id, name, run_id) do nothing;
+          coalesce(p_metadata, '{}'), p_source)
+  on conflict (object_kind, object_id, quantity_code, kind, source_code, source, name) do nothing;
   select * into s from series
    where object_kind = p_object_kind and object_id = p_object_id and quantity_code = p_quantity_code and kind = p_kind
-     and source_code is not distinct from p_source_code and scenario_id is not distinct from p_scenario_id
-     and name is not distinct from p_name and run_id is not distinct from p_run_id;
+     and source_code is not distinct from p_source_code and source is not distinct from p_source
+     and name is not distinct from p_name;
   if not found then
     raise exception 'series_not_found: the series of % % and quantity % is not readable', p_object_kind, p_object_id, p_quantity_code using errcode = 'no_data_found';
   end if;
@@ -1059,25 +992,25 @@ begin
 end;
 $$;
 
-comment on function series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid) is
-  'The series of an identity (object by its kind and id, quantity, kind, source, scenario, name, run), found or created once, with the device that produces it and where a connector finds it. Refuses quantity_unknown, series_run_required, series_value_kind_mismatch, series_step_mismatch. Returns its id.';
+comment on function series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, jsonb, text) is
+  'The series of an identity (object by its kind and id, quantity, kind, source code, source, name), found or created once, with the device that produces it and where a connector finds it. Refuses quantity_unknown, series_run_required, series_value_kind_mismatch, series_step_mismatch. Returns its id.';
 
 -- The one way values are written (decision 0031). The series is named by
 -- its id, or by its identity in `p_series` — the keys of series_ensure():
 --
 --   { "object_kind": "meter", "object_id": "…", "quantity_code": "offtake_energy", "kind": "measured",
 --     "source_code": "…", "value_kind": "interval", "step": "15 minutes",
---     "name": null, "scenario_id": null, "run_id": null, "device_id": null,
+--     "name": null, "source": null, "device_id": null,
 --     "external_ref": null, "metadata": {} }
 --
 -- Values come in the unit `p_unit` names (the quantity's when null) and are
 -- converted to the quantity's unit; a null value is stored missing; a
--- quality is a code of series_quality_codes (0 measured when none). A value
+-- quality is a code of series_values.quality (0 measured when none). A value
 -- equal to the one stored is not rewritten, so that importing the same file
 -- twice changes nothing. A regular series refuses an instant off its step.
 -- A forecast's values are stored with their issue time, and an issue
--- already stored is kept. The hours written are marked dirty (by the
--- trigger of series_values) and the latest value is kept.
+-- already stored is kept. The hourly and daily rollups of the hours written
+-- are computed again by the trigger of series_values.
 create or replace function store(
   p_series_id uuid,
   p_at        timestamptz[],
@@ -1118,8 +1051,8 @@ begin
     p_series_id := series_ensure(
       p_series->>'object_kind', (p_series->>'object_id')::uuid, p_series->>'quantity_code', coalesce(p_series->>'kind', 'measured'),
       coalesce(p_series->>'value_kind', 'interval'), (p_series->>'step')::interval, (p_series->>'device_id')::uuid,
-      p_series->>'external_ref', p_series->>'source_code', p_series->>'name', (p_series->>'scenario_id')::uuid,
-      coalesce(p_series->'metadata', '{}'::jsonb), (p_series->>'run_id')::uuid);
+      p_series->>'external_ref', p_series->>'source_code', p_series->>'name',
+      coalesce(p_series->'metadata', '{}'::jsonb), p_series->>'source');
   end if;
   select * into s from series se where se.id = p_series_id;
   if not found or not (caller_bypasses_rls() or can_read_organisation(s.organisation_id)) then
@@ -1149,8 +1082,8 @@ begin
     raise exception 'values_duplicated: an instant is given twice in one write' using errcode = 'invalid_parameter_value';
   end if;
   if p_quality is not null and exists (
-       select 1 from unnest(p_quality) c where c is not null and not exists (select 1 from series_quality_codes k where k.code = c)) then
-    raise exception 'quality_unknown: a quality is a code of series_quality_codes' using errcode = 'invalid_parameter_value';
+       select 1 from unnest(p_quality) c where c is not null and not (c in (0, 1, 2, 3) or c >= 100)) then
+    raise exception 'quality_unknown: a quality is 0 measured, 1 estimated, 2 substituted, 3 missing, or a pack''s code from 100 up' using errcode = 'invalid_parameter_value';
   end if;
   if exists (select 1 from unnest(p_value, coalesce(p_quality, array_fill(null::smallint, array[cardinality(p_at)]))) v(value, quality)
               where v.value is null and coalesce(v.quality, 0) <> 3) then
@@ -1158,13 +1091,11 @@ begin
   end if;
 
   -- The run: a run's series is written while the run runs.
-  if s.run_id is not null then
-    select r.status into status from runs r where r.id = s.run_id;
-    if status <> 'running' then
-      raise exception 'run_is_final: series % belongs to a finished run', s.id using errcode = 'check_violation';
-    end if;
+  status := run_status_of(s.source);
+  if status is not null and status <> 'running' then
+    raise exception 'run_is_final: series % belongs to a finished run', s.id using errcode = 'check_violation';
   end if;
-  if s.kind = 'simulated' and s.run_id is null and s.source_code is null then
+  if s.kind = 'simulated' and s.source is null and s.source_code is null then
     raise exception 'series_run_required: a simulated series is written by a run, or comes from a named source' using errcode = 'check_violation';
   end if;
 
@@ -1229,96 +1160,102 @@ begin
    where (sv.value, sv.quality) is distinct from (excluded.value, excluded.quality);
   get diagnostics changed = row_count;
 
-  insert into series_latest as l (series_id, at, value, quality)
-  select v.series_id, v.at, v.value, v.quality from series_values v
-   where v.series_id = s.id and v.at = (select max(a) from unnest(p_at, p_value) x(a, val) where x.val is not null) and v.quality <> 3
-  on conflict on constraint series_latest_pkey do update set at = excluded.at, value = excluded.value, quality = excluded.quality
-   where excluded.at >= l.at;
-
   perform set_config('nexgen.store_series', '', true);
 end;
 $$;
 
 comment on function store(uuid, timestamptz[], float8[], smallint[], text, timestamptz, jsonb) is
-  'The one way values are written: the series by id or by identity (series_ensure()), values converted from p_unit to the quantity''s unit, qualities checked, a forecast stored with its issue time, equal values left untouched, dirty hours marked, the latest value kept. Refuses series_required, object_not_found, series_not_found, series_read_only, values_misaligned, instant_required, values_duplicated, quality_unknown, value_required, run_is_final, series_run_required, unit_unknown, series_unit_mismatch, series_step_mismatch, device_retired, issued_at_required, not_a_forecast. Returns the series and the rows changed.';
+  'The one way values are written: the series by id or by identity (series_ensure()), values converted from p_unit to the quantity''s unit, qualities checked, a forecast stored with its issue time, equal values left untouched, the rollups of the hours written refreshed. Refuses series_required, object_not_found, series_not_found, series_read_only, values_misaligned, instant_required, values_duplicated, quality_unknown, value_required, run_is_final, series_run_required, unit_unknown, series_unit_mismatch, series_step_mismatch, device_retired, issued_at_required, not_a_forecast. Returns the series and the rows changed.';
 
 -- ---------------------------------------------------------------------------
--- Maintenance: the rollups.
+-- The rollups, refreshed by every write.
 -- ---------------------------------------------------------------------------
 
--- Drains up to `p_max_hours` dirty hours, oldest first: their hourly
--- rollups, the daily rollups of the local days they fall in, and the latest
--- value of their series, are computed again from the values. Concurrent
--- calls take different hours. pg_cron calls it every minute where it is
--- installed; elsewhere, whoever maintains the installation calls it.
-create or replace function series_rollup(p_max_hours integer default 10000)
-returns integer
+-- The hourly rollups of the hours given, and the daily rollups of the
+-- local days they fall in, computed again from the values.
+create or replace function series_rollup_hours(p_series_id uuid, p_hours timestamptz[])
+returns void
 language plpgsql
 security definer
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  r      record;
-  s      series%rowtype;
-  tz     text;
-  days   timestamptz[];
-  span_from  timestamptz;
-  span_to    timestamptz;
-  n      integer := 0;
-  utc0   constant timestamptz := timestamptz '2000-01-01 00:00:00+00';
+  s          series%rowtype;
+  tz         text;
+  days       timestamptz[];
+  utc0       constant timestamptz := timestamptz '2000-01-01 00:00:00+00';
 begin
-  for r in
-    with taken as (
-      delete from series_dirty d
-       where (d.series_id, d.hour) in (select x.series_id, x.hour from series_dirty x order by x.hour limit p_max_hours for update skip locked)
-      returning d.series_id, d.hour
-    )
-    select t.series_id, array_agg(t.hour order by t.hour) hours from taken t group by t.series_id
-  loop
-    select * into s from series where id = r.series_id;
-    continue when not found;
-    span_from := r.hours[1];
-    span_to := r.hours[cardinality(r.hours)] + interval '1 hour';
+  select * into s from series where id = p_series_id;
+  if not found or coalesce(cardinality(p_hours), 0) = 0 then
+    return;
+  end if;
+  delete from series_rollups x where x.series_id = s.id and x.step = 'hour' and x.bucket = any (p_hours);
+  insert into series_rollups (series_id, step, bucket, samples, total, minimum, maximum, last_value, delta, increments, quality)
+  select s.id, 'hour', b.bucket, b.samples, b.total, b.minimum, b.maximum, b.last_value, b.delta, b.increments, b.quality
+    from series_buckets(s, p_hours[1], p_hours[cardinality(p_hours)] + interval '1 hour', interval '1 hour', 'UTC', utc0) b
+   where b.bucket = any (p_hours);
 
-    delete from series_rollups x where x.series_id = s.id and x.step = 'hour' and x.bucket = any (r.hours);
+  tz := series_time_zone(s.id);
+  if tz is not null then
+    days := array(select distinct date_trunc('day', h, tz) from unnest(p_hours) h order by 1);
+    delete from series_rollups x where x.series_id = s.id and x.step = 'day' and x.bucket = any (days);
     insert into series_rollups (series_id, step, bucket, samples, total, minimum, maximum, last_value, delta, increments, quality)
-    select s.id, 'hour', b.bucket, b.samples, b.total, b.minimum, b.maximum, b.last_value, b.delta, b.increments, b.quality
-      from series_buckets(s, span_from, span_to, interval '1 hour', 'UTC', utc0) b
-     where b.bucket = any (r.hours);
-
-    tz := series_time_zone(s.id);
-    if tz is not null then
-      days := array(select distinct date_trunc('day', h, tz) from unnest(r.hours) h order by 1);
-      delete from series_rollups x where x.series_id = s.id and x.step = 'day' and x.bucket = any (days);
-      insert into series_rollups (series_id, step, bucket, samples, total, minimum, maximum, last_value, delta, increments, quality)
-      select s.id, 'day', b.bucket, b.samples, b.total, b.minimum, b.maximum, b.last_value, b.delta, b.increments, b.quality
-        from series_buckets(s, days[1], ((days[cardinality(days)] at time zone tz) + interval '1 day') at time zone tz,
-                            interval '1 day', tz, days[1]) b
-       where b.bucket = any (days);
-    end if;
-
-    delete from series_latest l where l.series_id = s.id;
-    insert into series_latest (series_id, at, value, quality)
-    select s.id, v.at, v.value, v.quality from series_values v
-     where v.series_id = s.id and v.quality <> 3 order by v.at desc limit 1;
-
-    n := n + cardinality(r.hours);
-  end loop;
-  return n;
-end;
-$$;
-
-comment on function series_rollup(integer) is
-  'Drains up to p_max_hours dirty hours: hourly rollups, daily rollups in the participant''s time zone and the latest value of their series, computed again from the values. Called by pg_cron every minute when installed, else by hand. Returns the hours drained.';
-
--- Every minute where pg_cron is installed; nothing to do where it is not.
-do $$
-begin
-  if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.schedule('nexgen_series_rollup', '* * * * *', 'select nexgen.series_rollup()');
+    select s.id, 'day', b.bucket, b.samples, b.total, b.minimum, b.maximum, b.last_value, b.delta, b.increments, b.quality
+      from series_buckets(s, days[1], ((days[cardinality(days)] at time zone tz) + interval '1 day') at time zone tz,
+                          interval '1 day', tz, days[1]) b
+     where b.bucket = any (days);
   end if;
 end;
 $$;
+
+comment on function series_rollup_hours(uuid, timestamptz[]) is
+  'Computes again from the values the hourly rollups of the hours given (UTC starts, in order) and the daily rollups of the local days they fall in.';
+
+-- AFTER each statement that writes or deletes values, whoever runs it: the
+-- rollups of the hours it touched are computed again, so that they are
+-- always fresh. A cumulative register also refreshes the hour of the
+-- reading before the first one written: its consumption is read up to the
+-- next reading.
+create or replace function series_values_refresh_rollups()
+returns trigger
+language plpgsql
+security definer
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  r record;
+begin
+  for r in
+    with touched as (
+      select c.series_id, date_bin('1 hour', c.at, timestamptz '2000-01-01 00:00:00+00') as hour
+        from changed c join series s on s.id = c.series_id
+      union
+      select f.series_id, date_bin('1 hour', p.at, timestamptz '2000-01-01 00:00:00+00')
+        from (select c.series_id, min(c.at) first_at
+                from changed c join series s on s.id = c.series_id
+               where s.value_kind = 'cumulative'
+               group by c.series_id) f
+        cross join lateral (select v.at from series_values v
+                             where v.series_id = f.series_id and v.at < f.first_at
+                             order by v.at desc limit 1) p
+    )
+    select t.series_id, array_agg(t.hour order by t.hour) hours from touched t group by t.series_id
+  loop
+    perform series_rollup_hours(r.series_id, r.hours);
+  end loop;
+  return null;
+end;
+$$;
+
+comment on function series_values_refresh_rollups() is
+  'AFTER statement on series_values: computes again the rollups of the hours the statement touched (and, for a cumulative register, of the hour of the reading before).';
+
+create trigger series_values_rollups_insert after insert on series_values
+  referencing new table as changed for each statement execute function series_values_refresh_rollups();
+create trigger series_values_rollups_update after update on series_values
+  referencing new table as changed for each statement execute function series_values_refresh_rollups();
+create trigger series_values_rollups_delete after delete on series_values
+  referencing old table as changed for each statement execute function series_values_refresh_rollups();
 
 -- ---------------------------------------------------------------------------
 -- Row level security and rights
@@ -1344,10 +1281,6 @@ create policy forecast_values_select on forecast_values
 grant select on forecast_values to authenticated;
 grant select, insert, update, delete on forecast_values to service_role;
 
-alter table series_latest enable row level security;
-create policy series_latest_select on series_latest
-  for select to authenticated
-  using (series_id in (select id from series where can_read_organisation(organisation_id)));
 grant select on series_latest to authenticated, service_role;
 
 alter table series_rollups enable row level security;
@@ -1355,13 +1288,6 @@ create policy series_rollups_select on series_rollups
   for select to authenticated
   using (series_id in (select id from series where can_read_organisation(organisation_id)));
 grant select on series_rollups to authenticated, service_role;
-
-alter table series_dirty enable row level security;
-grant select on series_dirty to service_role;
-
-alter table series_quality_codes enable row level security;
-create policy series_quality_codes_read on series_quality_codes for select to authenticated using (true);
-grant select on series_quality_codes to authenticated, service_role;
 
 alter table units enable row level security;
 create policy units_read on units for select to authenticated using (true);
@@ -1371,7 +1297,7 @@ grant select, insert, update, delete on units to service_role;
 -- The helpers run inside the read and write functions, as their owner.
 revoke execute on function series_points(series, timestamptz, timestamptz, timestamptz),
   series_buckets(series, timestamptz, timestamptz, interval, text, timestamptz, timestamptz),
-  series_values_mark_dirty(), series_rollup(integer) from public;
+  series_rollup_hours(uuid, timestamptz[]), series_values_refresh_rollups() from public;
 
 grant execute on function unit_code(text), convert_unit(double precision, text, text),
   caller_bypasses_rls(), series_for_read(uuid), series_time_zone(uuid), series_step_shape(interval),
@@ -1383,7 +1309,6 @@ grant execute on function unit_code(text), convert_unit(double precision, text, 
   forecast_at(uuid, timestamptz, timestamptz, timestamptz, interval),
   export_rows(uuid[], timestamptz, timestamptz),
   series_values_partition(date),
-  series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, uuid, jsonb, uuid),
+  series_ensure(text, uuid, text, text, text, interval, uuid, text, text, text, jsonb, text),
   store(uuid, timestamptz[], float8[], smallint[], text, timestamptz, jsonb)
   to authenticated, service_role;
-grant execute on function series_rollup(integer) to service_role;

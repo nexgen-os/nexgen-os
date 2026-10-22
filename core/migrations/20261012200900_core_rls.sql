@@ -1,7 +1,7 @@
 -- Nexgen OS — core: row level security everywhere.
 --
--- An organisation is an object like any other (decision 36): attributes,
--- identifiers, links and documents attach to it as `('organisation', id)` —
+-- An organisation is an object like any other (decision 0023): attributes,
+-- identifiers, documents and series attach to it as `('organisation', id)` —
 -- a default an organisation decides for all its participants is an attribute of
 -- the organisation, read by `parameter_of()` — and go with it when it is
 -- deleted. The last statement checks that every table of the schema has row

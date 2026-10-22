@@ -69,8 +69,8 @@ on conflict (code) do update set
 where id_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
-insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, certification, certified_by, certified_on, published_by) values
-  ('BE', 'Belgium', 'EUR', array['nl', 'fr', 'de']::text[], array['Europe/Brussels']::text[], 'region', '^[1-9][0-9]{3}$', 'nis', '0.2.0', 'sha256:c86f4bc7f284633d3757d4693d5d6d5031a8f0cf8cc486ee2df9dfe59c95a21c', 'community', null, null::date, 'pack:be')
+insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values
+  ('BE', 'Belgium', 'EUR', array['nl', 'fr', 'de']::text[], array['Europe/Brussels']::text[], 'region', '^[1-9][0-9]{3}$', 'nis', '0.2.0', 'sha256:c86f4bc7f284633d3757d4693d5d6d5031a8f0cf8cc486ee2df9dfe59c95a21c', 'pack:be')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
@@ -80,10 +80,7 @@ on conflict (code) do update set
   postal_code_pattern = excluded.postal_code_pattern,
   municipality_scheme = excluded.municipality_scheme,
   pack_version        = excluded.pack_version,
-  pack_checksum       = excluded.pack_checksum,
-  certification       = excluded.certification,
-  certified_by        = excluded.certified_by,
-  certified_on        = excluded.certified_on;
+  pack_checksum       = excluded.pack_checksum;
 
 -- regions: 3 at the level region and above, parents first.
 insert into regions (code, country, name, parent, time_zone, published_by) values

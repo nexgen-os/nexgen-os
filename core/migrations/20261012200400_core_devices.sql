@@ -86,11 +86,6 @@ create table devices (
   removal_date      date,
   -- Where the description comes from (a model file, a survey, a register).
   source_code       text references sources(code),
-  tags              text[] not null default '{}',
-  -- What a source knows about it beyond these columns (a Home Assistant
-  -- device's identifiers, a connector's handle). Extensions only.
-  metadata          jsonb not null default '{}',
-  scenario_id       uuid references scenarios(id) on delete cascade,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   constraint devices_name_not_blank check (btrim(name) <> ''),
@@ -98,8 +93,7 @@ create table devices (
   constraint devices_unit_count_positive check (unit_count > 0),
   constraint devices_status check (status in ('planned', 'installed', 'in_service', 'out_of_service', 'removed')),
   constraint devices_removed_dated check ((status = 'removed') = (removal_date is not null)),
-  constraint devices_dates check (removal_date is null or installation_date is null or removal_date >= installation_date),
-  constraint devices_tags_known check (tags_known(tags))
+  constraint devices_dates check (removal_date is null or installation_date is null or removal_date >= installation_date)
 );
 
 comment on table devices is
@@ -127,7 +121,7 @@ comment on function devices_check() is
 
 create trigger devices_check before insert or update of participant_id on devices
   for each row execute function devices_check();
-create trigger devices_participant_id_check before insert or update of participant_id, scenario_id on devices
+create trigger devices_participant_id_check before insert or update of participant_id on devices
   for each row execute function parent_check('participant_id', 'participants');
 create trigger devices_set_updated_at before update on devices
   for each row execute function set_updated_at();
@@ -190,9 +184,7 @@ create or replace function install_device(
   p_installed_on    date default null,
   p_source_code     text default null,
   p_unit_count      integer default 1,
-  p_scenario_id     uuid default null,
   p_nameplate       jsonb default '{}',
-  p_metadata        jsonb default '{}',
   p_status          text default null
 )
 returns uuid
@@ -220,19 +212,18 @@ begin
   end if;
   insert into devices (id, organisation_id, participant_id, name, device_type,
                        directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date, source_code,
-                       status, metadata, scenario_id)
+                       status)
   values (v_id, s.organisation_id, p_participant_id,
           p_name, p_device_type, p_directory_id,
           coalesce(p.manufacturer, p_nameplate->>'manufacturer'), coalesce(p.model_ref, p_nameplate->>'model'), p_nameplate->>'serial_number',
           coalesce(p_rated_power_kw, p.unit_power_kw * p_unit_count), p_unit_count, p_installed_on, p_source_code,
-          coalesce(p_status, case when p_installed_on is null or p_installed_on > current_date then 'planned' else 'in_service' end),
-          coalesce(p_metadata, '{}'), coalesce(p_scenario_id, s.scenario_id));
+          coalesce(p_status, case when p_installed_on is null or p_installed_on > current_date then 'planned' else 'in_service' end));
   return v_id;
 end;
 $$;
 
-comment on function install_device(uuid, text, text, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text) is
-  'Installs a device behind the meters of a participant, as an instance of a product when one is named (its manufacturer, model and power by default), else with the manufacturer, model and serial number of its nameplate; the metadata carry what the file it was read from says and no column holds. In the status given, else planned until its installation date. Refuses participant_not_found, device_type_unknown, product_not_found, participant_group_carries. Returns its id.';
+comment on function install_device(uuid, text, text, uuid, numeric, date, text, integer, jsonb, text) is
+  'Installs a device behind the meters of a participant, as an instance of a product when one is named (its manufacturer, model and power by default), else with the manufacturer, model and serial number of its nameplate. In the status given, else planned until its installation date. Refuses participant_not_found, device_type_unknown, product_not_found, participant_group_carries. Returns its id.';
 
 create or replace function retire_device(p_device_id uuid, p_on date default current_date)
 returns void
@@ -258,7 +249,7 @@ comment on function retire_device(uuid, date) is
   'Takes a device out on a day: status removed, removal date set; its series take no value after it. Refuses device_retired.';
 
 -- A meter swapped, an inverter changed: a new device of the same participant,
--- linked to the one it replaces, which is retired the same day.
+-- installed the day the one it replaces is retired.
 create or replace function replace_device(
   p_device_id      uuid,
   p_on             date default current_date,
@@ -288,23 +279,21 @@ begin
   end if;
   insert into devices (id, organisation_id, participant_id, name, device_type,
                        directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date,
-                       status, source_code, tags, scenario_id)
+                       status, source_code)
   values (v_id, d.organisation_id, d.participant_id, coalesce(p_name, d.name),
           d.device_type, coalesce(p_directory_id, d.directory_id), coalesce(p.manufacturer, d.manufacturer),
           coalesce(p.model_ref, d.model), p_serial_number,
           coalesce(p.unit_power_kw * d.unit_count, d.rated_power_kw), d.unit_count, p_on,
-          case when p_on > current_date then 'planned' else 'in_service' end, d.source_code, d.tags, d.scenario_id);
+          case when p_on > current_date then 'planned' else 'in_service' end, d.source_code);
   update devices set status = 'removed', removal_date = p_on where id = p_device_id;
-  insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, scenario_id)
-  values ('device', v_id, 'replaces', 'device', p_device_id, p_on, d.scenario_id);
   return v_id;
 end;
 $$;
 
 comment on function replace_device(uuid, date, uuid, text, text) is
-  'Replaces a device on a day: a new device of the same participant (of another product when one is named), a replaces link to the old one, which is retired. Refuses device_retired. Returns the new id.';
+  'Replaces a device on a day: a new device of the same participant (of another product when one is named), installed the day the old one is retired. Refuses device_retired. Returns the new id.';
 
 grant execute on function derived_device_check() to service_role;
-grant execute on function install_device(uuid, text, text, uuid, numeric, date, text, integer, uuid, jsonb, jsonb, text),
+grant execute on function install_device(uuid, text, text, uuid, numeric, date, text, integer, jsonb, text),
   retire_device(uuid, date), replace_device(uuid, date, uuid, text, text)
   to authenticated, service_role;

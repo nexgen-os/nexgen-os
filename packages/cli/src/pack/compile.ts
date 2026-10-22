@@ -62,17 +62,16 @@ export function compilePack(pack: Pack): string {
   }
 
   const identity = manifest.identity;
-  const cert = manifest.certification;
   out.push(
     '-- countries: who the country is, and which version of its pack this installation holds.',
     ...upsert(
       'countries',
       ['code', 'name', 'currency', 'languages', 'time_zones', 'region_level', 'postal_code_pattern', 'municipality_scheme',
-        'pack_version', 'pack_checksum', 'certification', 'certified_by', 'certified_on', 'published_by'],
+        'pack_version', 'pack_checksum', 'published_by'],
       [[
         text(cc), text(manifest.name), text(identity.currency), array(identity.languages), array(identity.time_zones), text(identity.region_level),
         text(identity.postal_code_pattern), text(identity.municipality_scheme),
-        text(manifest.version), text(pack.checksum), text(cert.status), text(cert.reviewer), date(cert.date), text(by),
+        text(manifest.version), text(pack.checksum), text(by),
       ]],
       ['code'],
       null,

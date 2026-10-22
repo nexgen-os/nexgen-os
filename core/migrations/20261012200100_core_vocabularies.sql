@@ -2,21 +2,16 @@
 --
 -- The objects of the core are named tables: a participant, a meter, a device.
 -- What varies inside them is held as data, never as an enum: which kinds of
--- devices exist, what a building is used for, how two objects may be linked,
--- which values can be attached and in which unit, which tags and which
--- identifier systems are known. A new kind of thing is a row a module or a
--- country pack publishes, with no migration of the core.
+-- devices exist, which values can be attached and in which unit, which
+-- sources and which identifier systems are known. A new kind of thing is a
+-- row a module or a country pack publishes, with no migration of the core.
 --
 -- Every vocabulary row maps to the open standard it comes from:
 --
---   kinds           the kinds of object an attachment may name (the core's,
---                   and those modules publish), with the table holding each
 --   device_types    Brick Schema equipment classes, IFC distribution elements
---   profiles        the use of a building or a place (Nexgen profiles)
---   link_types      Brick relationships, IFC objectified relationships
 --   property_defs   buildingSMART Data Dictionary (bSDD), IFC property sets
 --   quantities      QUDT quantity kinds and units
---   tags            Project Haystack marker tags
+--   sources         the external systems data comes from, with their licence
 --   id_schemes      IFC GlobalId, OpenStreetMap, Overture GERS, national registers
 --
 -- Vocabularies are shared by every organisation of an installation, read by
@@ -24,27 +19,6 @@
 -- who published it: `core`, a module code or a pack code.
 
 set search_path = nexgen, public, extensions;
-
--- ---------------------------------------------------------------------------
--- kinds — what an attachment may hang on.
--- ---------------------------------------------------------------------------
-
--- An attribute, an identifier, a link, a document, a series or a run names
--- its object by its kind and its id: `('participant', <id>)`, `('surface', <id>)`.
--- A kind is a row here with the table that holds its objects, written by a
--- plain insert in the core's seed and in the first migration of the module
--- that publishes it. The hierarchy between objects is their foreign keys;
--- this table only says where an object of a kind is found.
-create table kinds (
-  kind          text primary key,
-  -- Schema-qualified for a module's table: `building.surfaces`.
-  table_name    text not null unique,
-  published_by  text not null default 'core',
-  constraint kinds_kind_format check (kind ~ '^[a-z][a-z0-9_]*$')
-);
-
-comment on table kinds is
-  'The kinds of object an attachment names with its id (organisation, project, participant, meter, device, series, run, and those modules publish: site, building, space, surface, pv_array…), each with the table holding it.';
 
 -- ---------------------------------------------------------------------------
 -- device_types — what a device can be.
@@ -87,49 +61,6 @@ comment on function device_type_is_a(text, text) is
   'True when the type is the ancestor or one of its refinements.';
 
 -- ---------------------------------------------------------------------------
--- profiles — what a building or a place is used for.
--- ---------------------------------------------------------------------------
-
-create table profiles (
-  code            text primary key,
-  name            text not null,
-  description     text,
-  -- building: a use of a building (office, school, dwelling); place: a use of
-  -- a place without a building to speak of (a field, a car park, a plant).
-  applies_to          text not null default 'building',
-  ifc_occupancy   text,
-  citygml_function text,
-  published_by    text not null default 'core',
-  constraint profiles_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
-  constraint profiles_applies_to check (applies_to in ('building', 'place'))
-);
-
-comment on table profiles is
-  'The use of a building or a place: residential, office, school, factory, farm, car park… Modules add their own (a load profile is an energy profile of a use).';
-
--- ---------------------------------------------------------------------------
--- link_types — how two objects may be linked (besides their own columns).
--- ---------------------------------------------------------------------------
-
-create table link_types (
-  code            text primary key,
-  name            text not null,
-  -- Name read from the object's side: `feeds` / `is fed by`.
-  inverse_name    text not null,
-  description     text,
-  -- Optional kinds the subject and the object must be (see kinds).
-  subject_kinds   text[],
-  object_kinds    text[],
-  brick_relation  text,
-  ifc_relation    text,
-  published_by    text not null default 'core',
-  constraint link_types_code_format check (code ~ '^[a-z][a-z0-9_]*$')
-);
-
-comment on table link_types is
-  'Typed links between two objects that are not a column of either: feeds, serves, shades, owns, occupies, operates…';
-
--- ---------------------------------------------------------------------------
 -- quantities — what can be measured, and the one unit it is stored in.
 -- ---------------------------------------------------------------------------
 
@@ -168,48 +99,18 @@ create table property_defs (
   maximum         numeric,
   -- For a text: the closed list of values it may take, if any.
   allowed_values  text[],
-  -- Optional kinds of object the property applies to (see kinds).
+  -- Optional kinds of object the property applies to: organisation,
+  -- project, participant, meter, device, series.
   applies_to      text[],
-  -- Correspondences: IFC property set and property name, bSDD URI.
-  ifc_pset        text,
-  ifc_property    text,
-  bsdd_uri        text,
   published_by    text not null default 'core',
   constraint property_defs_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
   constraint property_defs_datatype check (datatype in ('number', 'integer', 'text', 'boolean', 'date', 'json')),
-  constraint property_defs_quantity_only_numbers check (quantity_code is null or datatype in ('number', 'integer'))
+  constraint property_defs_quantity_only_numbers check (quantity_code is null or datatype in ('number', 'integer')),
+  constraint property_defs_applies_to check (applies_to <@ array['organisation', 'project', 'participant', 'meter', 'device', 'series'])
 );
 
 comment on table property_defs is
-  'Attributes a trade can attach to an object: gross floor area, year of construction, U-value, energy label, efficiency… Aligned on bSDD and IFC property sets.';
-
--- ---------------------------------------------------------------------------
--- tags — marker tags an object may carry.
--- ---------------------------------------------------------------------------
-
-create table tags (
-  code            text primary key,
-  name            text not null,
-  description     text,
-  haystack_tag    text,
-  published_by    text not null default 'core',
-  constraint tags_code_format check (code ~ '^[a-z][a-zA-Z0-9_]*$')
-);
-
-comment on table tags is
-  'Marker tags (Project Haystack): heritage, critical, public, green roof… Free to add, checked on use.';
-
-create or replace function tags_known(p_tags text[])
-returns boolean
-language sql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-  select not exists (select 1 from unnest(p_tags) t where not exists (select 1 from tags where code = t));
-$$;
-
-comment on function tags_known(text[]) is
-  'True when every tag is in the vocabulary.';
+  'Attributes a trade can attach to an object of the core: an annual consumption, an efficiency, a degradation rate, the parameters parameter_of() resolves… Aligned on bSDD and IFC property sets.';
 
 -- ---------------------------------------------------------------------------
 -- sources — the external systems data comes from.
@@ -300,7 +201,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['kinds', 'device_types', 'profiles', 'link_types', 'quantities', 'property_defs', 'tags', 'sources', 'id_schemes'] loop
+  foreach t in array array['device_types', 'quantities', 'property_defs', 'sources', 'id_schemes'] loop
     execute format('alter table %I enable row level security', t);
     execute format('create policy %I on %I for select to authenticated using (true)', t || '_read', t);
     execute format('grant select on %I to authenticated', t);
@@ -309,4 +210,4 @@ begin
 end
 $$;
 
-grant execute on function device_type_is_a(text, text), tags_known(text[]), identifier_valid(text, text) to authenticated, service_role;
+grant execute on function device_type_is_a(text, text), identifier_valid(text, text) to authenticated, service_role;

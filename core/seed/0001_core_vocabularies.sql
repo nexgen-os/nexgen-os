@@ -7,20 +7,6 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- Kinds of object of the core: what an attachment names with an id. Modules
--- add theirs in their first migration.
--- ---------------------------------------------------------------------------
-
-insert into kinds (kind, table_name) values
-  ('organisation', 'organisations'),
-  ('project',      'projects'),
-  ('participant',  'participants'),
-  ('meter',        'meters'),
-  ('device',       'devices'),
-  ('series',       'series'),
-  ('run',          'runs');
-
--- ---------------------------------------------------------------------------
 -- Device types. The codes of Nexgen, in a tree aligned on Brick Equipment and
 -- IFC. The module that derives a type into its own table is named when it
 -- ships; the instrument that measures (a meter, a sensor) is a device too,
@@ -45,44 +31,6 @@ insert into device_types (code, name, parent_code, module_code, brick_class, ifc
   ('sensor',     'Sensor',             null,        null,     null,                  'IfcSensor',               'An instrument that measures one or more quantities: a thermometer, a CO2 probe, a presence detector.'),
   ('sensor_box', 'Sensor box',         'sensor',    null,     null,                  'IfcSensor',               'A device carrying several sensors, read as one (a multisensor, a smart plug).'),
   ('controller', 'Controller',         null,        null,     'Controller',          'IfcController',           'A gateway or controller that drives other devices.');
-
--- ---------------------------------------------------------------------------
--- Profiles: what a building or a place is used for.
--- ---------------------------------------------------------------------------
-
-insert into profiles (code, name, applies_to, ifc_occupancy, citygml_function, description) values
-  ('residential', 'Residential',        'building', 'Residential',  'residential', 'Dwellings: a house, a flat, a block.'),
-  ('office',      'Office',             'building', 'Office',       'office',      'Office space.'),
-  ('school',      'School',             'building', 'Education',    'school',      'A school, a nursery, a training centre.'),
-  ('retail',      'Retail',             'building', 'Retail',       'retail',      'A shop, a supermarket.'),
-  ('industrial',  'Industrial',         'building', 'Industrial',   'industry',    'A factory, a workshop.'),
-  ('warehouse',   'Warehouse',          'building', 'Storage',      'warehouse',   'A storage or logistics hall.'),
-  ('agricultural','Agricultural',       'building', 'Agricultural', 'agriculture', 'A barn, a stable, a greenhouse.'),
-  ('public',      'Public building',    'building', 'Public',       'public',      'A town hall, a library, a sports hall.'),
-  ('healthcare',  'Healthcare',         'building', 'Healthcare',   'hospital',    'A hospital, a care home.'),
-  ('hospitality', 'Hospitality',        'building', 'Hotel',        'hotel',       'A hotel, a restaurant.'),
-  ('mixed',       'Mixed use',          'building', 'Mixed',        'mixed',       'Several uses in one building.'),
-  ('plant',       'Production site',    'place',    null,           'industry',    'A place whose purpose is a plant: a PV field, a wind farm.'),
-  ('car_park',    'Car park',           'place',     null,           'parking',     'An open car park.'),
-  ('land',        'Land',               'place',     null,           'agriculture', 'A field, a meadow, a wood.');
-
--- ---------------------------------------------------------------------------
--- Link types. Kinds refer to `kinds`.
--- ---------------------------------------------------------------------------
-
-insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, brick_relation, ifc_relation, description) values
-  ('feeds',     'feeds',          'is fed by',       '{device}',       null,                 'feeds',       'IfcRelConnectsPorts',     'Energy or a medium flows from the subject to the object.'),
-  ('serves',    'serves',         'is served by',    '{device}',       null,                 'feeds',       'IfcRelServicesBuildings', 'The device serves the place (a heat pump serves a building).'),
-  ('shades',    'shades',         'is shaded by',    null,             null,                 null,          null,                      'The subject casts shade on the object.'),
-  ('adjacent_to','is adjacent to','is adjacent to',  null,             null,                 null,          'IfcRelSpaceBoundary',     'The two objects share a boundary.'),
-  ('owns',      'owns',           'is owned by',     '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Ownership: an organisation, or a participant whose contact owns the object.'),
-  ('operates',  'operates',       'is operated by',  '{organisation,participant}', null,     null,          'IfcRelAssignsToActor',    'Operation and maintenance responsibility.'),
-  -- What became of an object. Identifiers never encode anything and are
-  -- never reused: a split, a merge, a replacement is a dated link.
-  ('split_into', 'was split into', 'was split from', null,            null,                 null,          null,                      'The subject was divided into the object (a parcel split by the cadastre); one link per part.'),
-  ('merged_into','was merged into','was merged from', null,           null,                 null,          null,                      'The subject became part of the object (two buildings joined); one link per former object.'),
-  ('replaces',  'replaces',       'is replaced by',  null,             null,                 null,          null,                      'The subject took the place of the object (a meter swapped, an inverter changed).'),
-  ('carried_by', 'was carried by', 'carried',        '{meter}',        '{participant}',      null,          null,                      'The participant that carried a connection point before another one did, over the period it did (meters.participant_id holds today''s).');
 
 -- ---------------------------------------------------------------------------
 -- Quantities, each with the one unit it is stored in (QUDT unit codes).
@@ -175,21 +123,18 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
   ('KiloW-HR-PER-KiloW',  'Kilowatt hour per kilowatt',    'kWh/kW',   'Time',                 3600, 0);
 
 -- ---------------------------------------------------------------------------
--- Property definitions: attributes beyond the columns (bSDD / IFC property
--- sets where they exist). Kinds refer to `kinds`. A fact a column holds
--- is never repeated here: the use of a place is its participant's `profile`, a device's
--- power its `rated_power_kw`, its commissioning its `installation_date`.
--- What describes a building or a roof face (its year, floors, label,
--- material) is published by the `building` module with its kinds.
+-- Property definitions: attributes of the objects of the core beyond their
+-- columns. A fact a column holds is never repeated here: a device's power
+-- is its `rated_power_kw`, its commissioning its `installation_date`.
 -- ---------------------------------------------------------------------------
 
-insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property) values
-  ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}',            null,                         null),
-  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{participant,building}', null,              null),
+insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to) values
+  ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}'),
+  ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{participant}'),
   -- The sum over a participant or a project; a device's own is its rated power.
-  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,participant}', null,                         null),
+  ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,participant}'),
   -- What the contract of a connection point allows it to take.
-  ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}',             null,                         null);
+  ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}');
 
 -- The values a country or a region decides, published as `defaults` rows by
 -- its pack and read through parameter_of(); an organisation or an object
@@ -210,24 +155,7 @@ insert into property_defs (code, name, datatype, quantity_code, minimum, maximum
   ('sharing_max_power_kw',        'Energy sharing, maximum power',          'number', 'power',           0,    null, 'The greatest installed power of an energy sharing operation.'),
   ('sharing_settlement_period',   'Energy sharing, settlement period',      'text',   null,              null, null, 'The period energy is shared over, as an ISO 8601 duration.'),
   ('voltage_levels',              'Voltage levels',                         'json',   null,              null, null, 'The voltage levels of the grid, a list of {code, name, min_kv, max_kv} in kilovolts, a level holding the voltages above min_kv up to max_kv.'),
-  ('connection_max_power_lv',     'Maximum power of a low voltage connection',    'number', 'power', 0, null, 'Above it, a connection is made at medium voltage.'),
-  ('connection_max_power_mv',     'Maximum power of a medium voltage connection', 'number', 'power', 0, null, 'Above it, a connection is made at high voltage.'),
-  ('connection_study_power',      'Power above which a connection is studied',    'number', 'power', 0, null, 'The power from which the grid operator studies a connection request before answering.');
-
--- ---------------------------------------------------------------------------
--- Tags (Project Haystack markers where one exists).
--- ---------------------------------------------------------------------------
-
-insert into tags (code, name, haystack_tag, description) values
-  ('heritage',        'Heritage',            null,     'Protected for its heritage value; changes need a specific authorisation.'),
-  ('publicAccess',    'Public access',       null,     'Open to the public.'),
-  ('critical',        'Critical',            null,     'Its failure has serious consequences (a hospital wing, a cold room).'),
-  ('greenRoof',       'Green roof',          null,     'A vegetated roof.'),
-  ('asbestosSuspected','Asbestos suspected', null,     'May contain asbestos; survey before works.'),
-  ('electric',        'Electrical',          'elec',   'Concerns electricity.'),
-  ('solar',           'Solar',               'solar',  'Concerns solar energy.'),
-  ('logged',          'Logged',              'his',    'Its values are kept as a history.'),
-  ('writable',        'Writable',            'writable','Accepts values sent to it (setpoints, commands).');
+  ('connection_max_power_lv',     'Maximum power of a low voltage connection',    'number', 'power', 0, null, 'Above it, a connection is made at medium voltage.');
 
 -- ---------------------------------------------------------------------------
 -- Sources that are worldwide and open. National ones (cadastres, LiDAR,

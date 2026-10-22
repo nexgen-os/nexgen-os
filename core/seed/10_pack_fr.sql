@@ -74,8 +74,8 @@ on conflict (code) do update set
 where id_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
-insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, certification, certified_by, certified_on, published_by) values
-  ('FR', 'France', 'EUR', array['fr']::text[], array['Europe/Paris', 'America/Guadeloupe', 'America/Martinique', 'America/Cayenne', 'Indian/Reunion', 'Indian/Mayotte']::text[], 'department', '^[0-9]{5}$', 'insee', '0.2.0', 'sha256:1d1b6e23b245ab04081c02508aa1927f991ba283518012804fcae713e0c9505d', 'community', null, null::date, 'pack:fr')
+insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values
+  ('FR', 'France', 'EUR', array['fr']::text[], array['Europe/Paris', 'America/Guadeloupe', 'America/Martinique', 'America/Cayenne', 'Indian/Reunion', 'Indian/Mayotte']::text[], 'department', '^[0-9]{5}$', 'insee', '0.2.0', 'sha256:1d1b6e23b245ab04081c02508aa1927f991ba283518012804fcae713e0c9505d', 'pack:fr')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
@@ -85,10 +85,7 @@ on conflict (code) do update set
   postal_code_pattern = excluded.postal_code_pattern,
   municipality_scheme = excluded.municipality_scheme,
   pack_version        = excluded.pack_version,
-  pack_checksum       = excluded.pack_checksum,
-  certification       = excluded.certification,
-  certified_by        = excluded.certified_by,
-  certified_on        = excluded.certified_on;
+  pack_checksum       = excluded.pack_checksum;
 
 -- regions: 116 at the level department and above, parents first.
 insert into regions (code, country, name, parent, time_zone, published_by) values

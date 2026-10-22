@@ -23,8 +23,7 @@
 -- point (IEC CIM UsagePoint). It is the frontier between the grid and the
 -- place: what is in front of it belongs to the project (the grid, the
 -- market, the sharing of a community), what is behind it to the participant
--- that carries it (`meters.participant_id`, the participant it leaves kept
--- as a dated `carried_by` link). The physical meter is a device of type
+-- that carries it (`meters.participant_id`). The physical meter is a device of type
 -- `meter` and can be swapped. Who runs the grid and how the point is
 -- connected are the `grid` module's (decision 0042).
 --
@@ -51,16 +50,13 @@ create table projects (
   status           text not null default 'simulation',
   start_date       date,
   end_date         date,
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint projects_name_not_blank check (btrim(name) <> ''),
   constraint projects_country_format check (country ~ '^[A-Z]{2}$'),
   constraint projects_status check (status in ('simulation', 'creation', 'active', 'inactive', 'archived')),
   constraint projects_dates check (end_date is null or start_date is null or end_date >= start_date),
-  constraint projects_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint projects_tags_known check (tags_known(tags))
+  constraint projects_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3))
 );
 
 comment on table projects is
@@ -118,10 +114,6 @@ create table participants (
   -- area, the city, the region. Null when nobody said.
   location_precision   text,
   location_source_code text references sources(code),
-  -- What the place is used for.
-  profile          text references profiles(code),
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint participants_name_not_blank check (btrim(name) <> ''),
@@ -132,10 +124,9 @@ create table participants (
   constraint participants_country_format check (country ~ '^[A-Z]{2}$'),
   constraint participants_region_format check (region is null or region ~ ('^' || country || '-[A-Z0-9]{1,3}$')),
   constraint participants_group_has_no_place check (country is not null or num_nonnulls(street, address_extra, postal_code, city, region,
-    time_zone, geometry, location_precision, location_source_code, profile) = 0),
+    time_zone, geometry, location_precision, location_source_code) = 0),
   constraint participants_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint participants_location_precision check (location_precision is null or location_precision in ('rooftop', 'parcel', 'street', 'postal_code', 'city', 'region')),
-  constraint participants_tags_known check (tags_known(tags))
+  constraint participants_location_precision check (location_precision is null or location_precision in ('rooftop', 'parcel', 'street', 'postal_code', 'city', 'region'))
 );
 
 comment on table participants is
@@ -191,11 +182,11 @@ $$;
 comment on function participants_check() is
   'BEFORE INSERT / UPDATE on participants: a parent is a group of the same project (participant_parent_not_a_group, participant_parent_in_other_project), the contact is of the organisation (participant_contact_in_other_organisation), the time zone is an IANA zone Postgres knows (time_zone_unknown), a group carries no meter and no device (participant_group_carries).';
 
-create trigger participants_check before insert or update of parent_id, project_id, contact_id, join_date, leave_date, scenario_id, time_zone, country on participants
+create trigger participants_check before insert or update of parent_id, project_id, contact_id, join_date, leave_date, time_zone, country on participants
   for each row execute function participants_check();
-create trigger participants_project_id_check before insert or update of project_id, scenario_id on participants
+create trigger participants_project_id_check before insert or update of project_id on participants
   for each row execute function parent_check('project_id', 'projects');
-create trigger participants_parent_id_check before insert or update of parent_id, scenario_id on participants
+create trigger participants_parent_id_check before insert or update of parent_id on participants
   for each row execute function parent_check('parent_id', 'participants');
 create trigger participants_set_updated_at before update on participants
   for each row execute function set_updated_at();
@@ -225,20 +216,17 @@ create table meters (
   -- When this identifier names this point: registers retire and reissue.
   valid_from        date,
   valid_to          date,
-  tags              text[] not null default '{}',
-  scenario_id       uuid references scenarios(id) on delete cascade,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   constraint meters_resource check (resource in ('electricity', 'gas', 'heat', 'water')),
   constraint meters_direction check (direction in ('offtake', 'injection', 'both')),
-  constraint meters_period check (valid_to is null or valid_from is null or valid_to > valid_from),
-  constraint meters_tags_known check (tags_known(tags))
+  constraint meters_period check (valid_to is null or valid_from is null or valid_to > valid_from)
 );
 
 comment on table meters is
   'A connection point to a network, with the identifier its operator knows (IEC CIM UsagePoint), carried by a participant: the frontier between the grid and the place. The devices of that participant are behind it. The physical meter is a device of type meter, and can be swapped. The grid module adds who runs it and how it is connected.';
 
-create unique index meters_one_identifier on meters (organisation_id, scheme, identifier, scenario_id, valid_from) nulls not distinct;
+create unique index meters_one_identifier on meters (organisation_id, scheme, identifier, valid_from) nulls not distinct;
 create index meters_participant_idx on meters (participant_id);
 
 create or replace function meters_check()
@@ -263,7 +251,7 @@ comment on function meters_check() is
 
 create trigger meters_check before insert or update of identifier, scheme, participant_id on meters
   for each row execute function meters_check();
-create trigger meters_participant_id_check before insert or update of participant_id, scenario_id on meters
+create trigger meters_participant_id_check before insert or update of participant_id on meters
   for each row execute function parent_check('participant_id', 'participants');
 create trigger meters_set_updated_at before update on meters
   for each row execute function set_updated_at();
@@ -295,21 +283,16 @@ comment on function participant_meters(uuid) is
 -- Where an object is.
 -- ---------------------------------------------------------------------------
 
--- The participant of an object, through the foreign keys of the core's
--- kinds: a participant is its own, a meter and a device name theirs, a
--- series and a run are their object's. A kind a module publishes is the
--- module's to answer, with `<schema>.participant_of(kind, id)`: the core
--- hands it over without knowing the module. Null for what belongs to no
--- participant (an organisation, a project, a weather point).
+-- The participant of an object, through the foreign keys of the core: a
+-- participant is its own, a meter and a device name theirs, a series is its
+-- object's. Null for what belongs to no participant (an organisation, a
+-- project).
 create or replace function participant_of(p_kind text, p_id uuid)
 returns uuid
 language plpgsql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-declare
-  v_schema       text;
-  v_participant  uuid;
 begin
   if p_id is null then
     return null;
@@ -323,23 +306,16 @@ begin
       return (select participant_id from devices where id = p_id);
     when 'series' then
       return (select participant_of(object_kind, object_id) from series where id = p_id);
-    when 'run' then
-      return (select participant_of(subject_kind, subject_id) from runs where id = p_id);
     when 'organisation', 'project' then
       return null;
     else
-      select m.schema_name into v_schema from kinds k join modules m on m.code = k.published_by where k.kind = p_kind;
-      if v_schema is null or to_regprocedure(format('%I.participant_of(text, uuid)', v_schema)) is null then
-        return null;
-      end if;
-      execute format('select %I.participant_of($1, $2)', v_schema) into v_participant using p_kind, p_id;
-      return v_participant;
+      raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
   end case;
 end;
 $$;
 
 comment on function participant_of(text, uuid) is
-  'The participant an object named by its kind and its id belongs to: itself, its own foreign key for a meter or a device, its object''s for a series or a run, the publishing module''s <schema>.participant_of(kind, id) for a module''s kind. Null for an object of no participant (an organisation, a project, a weather point).';
+  'The participant an object named by its kind and its id belongs to: itself, its own foreign key for a meter or a device, its object''s for a series. Null for an organisation or a project. Refuses kind_unknown.';
 
 create or replace function country_of(p_kind text, p_id uuid)
 returns char(2)
@@ -392,7 +368,6 @@ create or replace function join_project(
   p_join_date   date default null,
   p_status      text default 'simulation',
   p_time_zone   text default null,
-  p_profile     text default null,
   p_parent_id   uuid default null
 )
 returns uuid
@@ -425,19 +400,19 @@ begin
   end if;
   insert into participants (id, organisation_id, project_id, parent_id, name, role, contact_id, join_date, status,
                             country, street, address_extra, postal_code, city, region, time_zone,
-                            geometry, location_precision, location_source_code, profile, scenario_id)
+                            geometry, location_precision, location_source_code)
   values (v_id, p.organisation_id, p_project_id, p_parent_id, p_name, p_role, p_contact_id, p_join_date, p_status,
           v_country, v_place->>'street', v_place->>'address_extra', v_place->>'postal_code', v_place->>'city', v_region, v_zone,
           case when jsonb_typeof(v_place->'geometry') = 'object' then ST_GeomFromGeoJSON(v_place->'geometry') end,
-          v_place->>'location_precision', v_place->>'location_source_code', p_profile, p.scenario_id);
+          v_place->>'location_precision', v_place->>'location_source_code');
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_kind, object_id, scheme, value, scenario_id) values ('participant', v_id, i->>'scheme', i->>'value', p.scenario_id);
+    insert into external_ids (object_kind, object_id, scheme, value) values ('participant', v_id, i->>'scheme', i->>'value');
   end loop;
   return v_id;
 end;
 $$;
 
-comment on function join_project(uuid, text, jsonb, text, uuid, date, text, text, text, uuid) is
+comment on function join_project(uuid, text, jsonb, text, uuid, date, text, text, uuid) is
   'An actor joins a project as producer, consumer or prosumer from a day, with its place in the standard shape, or none for a group; the time zone defaults to the region''s, else the country''s first, from the country pack. Refuses project_not_found, country_required, country_invalid, time_zone_unknown, region_unknown, invalid_geometry, place_key_unknown, participant_parent_not_a_group, participant_contact_in_other_organisation. Returns the participant.';
 
 -- A participant placed again: by a geocoder, a GPS reading, a person on a
@@ -477,7 +452,7 @@ begin
     location_source_code = case when v_place ? 'location_source_code' then v_place->>'location_source_code' else location_source_code end
    where id = p_participant_id;
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_kind, object_id, scheme, value, scenario_id) values ('participant', p_participant_id, i->>'scheme', i->>'value', s.scenario_id)
+    insert into external_ids (object_kind, object_id, scheme, value) values ('participant', p_participant_id, i->>'scheme', i->>'value')
     on conflict do nothing;
   end loop;
 end;
@@ -528,12 +503,12 @@ begin
   end if;
   if exists (select 1 from meters m
               where m.organisation_id = p.organisation_id and m.scheme = p_scheme and m.identifier = p_identifier
-                and m.scenario_id is not distinct from p.scenario_id and m.valid_to is null) then
+                and m.valid_to is null) then
     raise exception 'meter_already_open: % % names an open connection point', p_scheme, p_identifier
       using errcode = 'unique_violation';
   end if;
-  insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction, valid_from, scenario_id)
-  values (v_id, p.organisation_id, p_participant_id, p_name, p_identifier, p_scheme, p_resource, p_direction, p_valid_from, p.scenario_id);
+  insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction, valid_from)
+  values (v_id, p.organisation_id, p_participant_id, p_name, p_identifier, p_scheme, p_resource, p_direction, p_valid_from);
   return v_id;
 end;
 $$;
@@ -541,38 +516,22 @@ $$;
 comment on function declare_meter(uuid, text, text, text, text, date, text) is
   'Declares a connection point carried by a participant under the identifier its operator knows. Refuses participant_not_found, invalid_identifier, meter_already_open, participant_group_carries. Returns its id.';
 
--- The participant a meter leaves is kept as a dated `carried_by` link, so
--- who carried the point stays readable.
-create or replace function assign_meter(p_meter_id uuid, p_participant_id uuid, p_on date default current_date)
+create or replace function assign_meter(p_meter_id uuid, p_participant_id uuid)
 returns void
 language plpgsql
 security invoker
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-declare
-  m       meters%rowtype;
-  v_since date;
 begin
-  select * into m from meters where id = p_meter_id;
+  update meters set participant_id = p_participant_id where id = p_meter_id;
   if not found then
     raise exception 'meter_not_found: %', p_meter_id using errcode = 'no_data_found';
   end if;
-  if m.participant_id = p_participant_id then
-    return;
-  end if;
-  -- Carried since the previous participant left it, else since the
-  -- participant joined, else since the identifier names the point.
-  select coalesce(max(l.valid_to)::date, (select join_date from participants where id = m.participant_id), m.valid_from)
-    into v_since
-    from links l where l.subject_id = p_meter_id and l.type_code = 'carried_by';
-  insert into links (subject_kind, subject_id, type_code, object_kind, object_id, valid_from, valid_to, scenario_id)
-  values ('meter', p_meter_id, 'carried_by', 'participant', m.participant_id, case when v_since < p_on then v_since end, p_on, m.scenario_id);
-  update meters set participant_id = p_participant_id where id = p_meter_id;
 end;
 $$;
 
-comment on function assign_meter(uuid, uuid, date) is
-  'Gives a meter to another participant from a day (a new tenant, a new owner); the participant it leaves is kept as a carried_by link ending that day. Refuses meter_not_found, participant_group_carries, parent_in_other_organisation.';
+comment on function assign_meter(uuid, uuid) is
+  'Gives a meter to another participant (a new tenant, a new owner). Refuses meter_not_found, participant_group_carries, parent_in_other_organisation.';
 
 create or replace function close_meter(p_meter_id uuid, p_on date default current_date)
 returns void
@@ -592,6 +551,6 @@ comment on function close_meter(uuid, date) is
   'Ends the period an identifier names a connection point: the register retired it. Refuses meter_not_open.';
 
 grant execute on function participant_meters(uuid), participant_of(text, uuid), country_of(text, uuid), place_of(uuid),
-  join_project(uuid, text, jsonb, text, uuid, date, text, text, text, uuid), locate_participant(uuid, jsonb), leave_project(uuid, date),
-  declare_meter(uuid, text, text, text, text, date, text), assign_meter(uuid, uuid, date), close_meter(uuid, date)
+  join_project(uuid, text, jsonb, text, uuid, date, text, text, uuid), locate_participant(uuid, jsonb), leave_project(uuid, date),
+  declare_meter(uuid, text, text, text, text, date, text), assign_meter(uuid, uuid), close_meter(uuid, date)
   to authenticated, service_role;

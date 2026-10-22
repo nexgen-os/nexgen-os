@@ -1,21 +1,20 @@
--- Nexgen OS — core: scenarios, what every kind of object shares, and the
--- one standard shape of a place.
+-- Nexgen OS — core: what every object shares, and the one standard shape of
+-- a place.
 --
--- The core names its objects: an organisation, a project, a participant, a
+-- The core names six objects: an organisation, a project, a participant, a
 -- meter, a device, a series. Each is a table with the columns it always
 -- has, and its hierarchy is its foreign keys: a participant belongs to a
 -- project, a meter and a device to a participant. An attachment (an
--- attribute, an identifier, a link, a document, a series, a run) names its
--- object by its kind and its id; `kinds` says which table holds a kind, and
--- `object_organisation()` reads an object's organisation there. There is
--- no registry (decision 0044).
+-- attribute, an identifier, a document, a series) names its object by its
+-- kind, one of those six words, and its id; `object_organisation()` reads
+-- an object's organisation in the table of its kind. There is no registry
+-- and no table of kinds (decision 0044).
 --
 -- The place of the core is the participant's: an address, a point, a time
 -- zone, geolocated but not described (decision 0045). What a place
 -- physically is — its ground, its buildings, their floors, rooms and units,
 -- their roof faces and facades — is the description of a building, the
--- `building` module's (decision 0008), which publishes its own kinds of
--- object in `kinds` and answers `participant_of()` for them.
+-- `building` module's (decision 0008).
 --
 -- Geometry is stored in WGS 84 (EPSG:4326), always three-dimensional, Z in
 -- metres above sea level. Any CRS is accepted on the way in. Metric
@@ -25,38 +24,12 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- scenarios — the reality, and the variants people design against it.
--- ---------------------------------------------------------------------------
-
-create table scenarios (
-  id               uuid primary key default gen_random_uuid(),
-  organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A scenario may build on another one (variant B of the extension).
-  parent_id        uuid references scenarios(id) on delete restrict,
-  name             text not null,
-  description      text,
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now(),
-  constraint scenarios_name_not_blank check (btrim(name) <> '')
-);
-
-comment on table scenarios is
-  'A design variant. Rows with scenario_id null describe what exists; rows with a scenario_id exist only in that variant (a new building, a PV system, a heat pump, a simulated series).';
-
-create index scenarios_organisation_idx on scenarios (organisation_id);
-
-create trigger scenarios_set_updated_at
-  before update on scenarios
-  for each row execute function set_updated_at();
-
--- ---------------------------------------------------------------------------
 -- What every kind of object shares.
 -- ---------------------------------------------------------------------------
 
 -- The organisation of an object named by its kind and its id, read in the
--- table `kinds` gives for the kind: one dynamic query. An organisation is
--- its own. Under row level security an object of an organisation the caller
--- does not read is not found.
+-- table of its kind. An organisation is its own. Under row level security
+-- an object of an organisation the caller does not read is not found.
 create or replace function object_organisation(p_kind text, p_id uuid)
 returns uuid
 language plpgsql
@@ -64,15 +37,18 @@ stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  t    text;
   org  uuid;
 begin
-  select k.table_name into t from kinds k where k.kind = p_kind;
-  if t is null then
-    raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
-  end if;
-  execute format('select %I from %s where id = $1', case when p_kind = 'organisation' then 'id' else 'organisation_id' end, t)
-    into org using p_id;
+  case p_kind
+    when 'organisation' then select id into org from organisations where id = p_id;
+    when 'project' then select organisation_id into org from projects where id = p_id;
+    when 'participant' then select organisation_id into org from participants where id = p_id;
+    when 'meter' then select organisation_id into org from meters where id = p_id;
+    when 'device' then select organisation_id into org from devices where id = p_id;
+    when 'series' then select organisation_id into org from series where id = p_id;
+    else
+      raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
+  end case;
   if org is null then
     raise exception 'object_not_found: % %', p_kind, p_id using errcode = 'no_data_found';
   end if;
@@ -81,38 +57,10 @@ end;
 $$;
 
 comment on function object_organisation(text, uuid) is
-  'The organisation of an object named by its kind and its id, read in the table of its kind. Refuses kind_unknown, object_not_found.';
-
--- The scenario an object exists only in; null for what exists (and for an
--- organisation, which belongs to none).
-create or replace function object_scenario(p_kind text, p_id uuid)
-returns uuid
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  t    text;
-  scn  uuid;
-begin
-  if p_kind = 'organisation' then
-    return null;
-  end if;
-  select k.table_name into t from kinds k where k.kind = p_kind;
-  if t is null then
-    raise exception 'kind_unknown: %', p_kind using errcode = 'foreign_key_violation';
-  end if;
-  execute format('select scenario_id from %s where id = $1', t) into scn using p_id;
-  return scn;
-end;
-$$;
-
-comment on function object_scenario(text, uuid) is
-  'The scenario an object named by its kind and its id exists only in; null when it exists in reality. Refuses kind_unknown.';
+  'The organisation of an object named by its kind (organisation, project, participant, meter, device, series) and its id, read in the table of its kind. Refuses kind_unknown, object_not_found.';
 
 -- BEFORE INSERT / UPDATE: the parent named by the foreign key tg_argv[0],
--- a row of the table tg_argv[1], is in the same organisation, and a parent
--- that exists only in a scenario only holds children of that scenario.
+-- a row of the table tg_argv[1], is in the same organisation.
 create or replace function parent_check()
 returns trigger
 language plpgsql
@@ -122,60 +70,43 @@ declare
   col  text := tg_argv[0];
   pid  uuid;
   org  uuid;
-  scn  uuid;
 begin
   execute format('select ($1).%I', col) into pid using new;
   if pid is null then
     return new;
   end if;
-  execute format('select organisation_id, scenario_id from %s where id = $1', tg_argv[1]) into org, scn using pid;
+  execute format('select organisation_id from %s where id = $1', tg_argv[1]) into org using pid;
   if org is null then
     raise exception 'parent_not_found: %', pid using errcode = 'foreign_key_violation';
   end if;
   if org <> new.organisation_id then
     raise exception 'parent_in_other_organisation: %', col using errcode = 'check_violation';
   end if;
-  if scn is not null and scn is distinct from new.scenario_id then
-    raise exception 'parent_in_other_scenario: %', col using errcode = 'check_violation';
-  end if;
   return new;
 end;
 $$;
 
 comment on function parent_check() is
-  'Trigger of a foreign key to a parent (its column, then the parent''s table): the parent is in the same organisation, and in the same scenario when it exists only in one.';
+  'Trigger of a foreign key to a parent (its column, then the parent''s table): the parent is in the same organisation.';
 
 -- AFTER DELETE on the table of a kind, tg_argv[0] being the kind: what was
--- attached to the row goes with it. An attachment is a table whose
--- `object_kind` (or `subject_kind`) references `kinds`, beside its
--- `object_id` (or `subject_id`): the core's, and those of a module that
--- attach to an object of any kind.
+-- attached to the row goes with it, in the four tables that attach.
 create or replace function drop_attachments()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-declare
-  t record;
 begin
-  for t in
-    select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
-      from pg_constraint f
-      join pg_class c on c.oid = f.conrelid
-      join pg_namespace n on n.oid = c.relnamespace
-      join pg_attribute a on a.attrelid = f.conrelid and a.attnum = f.conkey[1]
-     where f.contype = 'f' and f.confrelid = 'nexgen.kinds'::regclass and cardinality(f.conkey) = 1
-       and a.attname in ('object_kind', 'subject_kind') and not c.relispartition
-  loop
-    execute format('delete from %s where %I = $1 and %I = $2', t.table_name, t.side || '_kind', t.side || '_id')
-      using tg_argv[0], old.id;
-  end loop;
+  delete from attributes where object_kind = tg_argv[0] and object_id = old.id;
+  delete from external_ids where object_kind = tg_argv[0] and object_id = old.id;
+  delete from documents where object_kind = tg_argv[0] and object_id = old.id;
+  delete from series where object_kind = tg_argv[0] and object_id = old.id;
   return old;
 end;
 $$;
 
 comment on function drop_attachments() is
-  'AFTER DELETE on the table of a kind: deletes what was attached to the row, in every table whose object_kind (or subject_kind) references kinds.';
+  'AFTER DELETE on the table of a kind: deletes the attributes, identifiers, documents and series attached to the row.';
 
 -- ---------------------------------------------------------------------------
 -- Geometry helpers
@@ -313,39 +244,7 @@ $$;
 comment on function place_check(jsonb) is
   'Returns the place when it is the standard shape (the keys of place_of()), else refuses by name: place_invalid, place_key_unknown.';
 
--- ---------------------------------------------------------------------------
--- Gestures
--- ---------------------------------------------------------------------------
-
-create or replace function create_scenario(p_organisation_id uuid, p_name text, p_parent_id uuid default null, p_description text default null)
-returns uuid
-language plpgsql
-security invoker
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  v_id uuid := gen_random_uuid();
-begin
-  if p_parent_id is not null and not exists (select 1 from scenarios where id = p_parent_id and organisation_id = p_organisation_id) then
-    raise exception 'scenario_not_found: %', p_parent_id using errcode = 'no_data_found';
-  end if;
-  insert into scenarios (id, organisation_id, parent_id, name, description)
-  values (v_id, p_organisation_id, p_parent_id, p_name, p_description);
-  return v_id;
-end;
-$$;
-
-comment on function create_scenario(uuid, text, uuid, text) is
-  'Creates a design variant of an organisation, on top of another one when a parent is given. Returns its id.';
-
--- ---------------------------------------------------------------------------
--- Row level security
--- ---------------------------------------------------------------------------
-
-call secure_table('scenarios');
-
-grant execute on function object_organisation(text, uuid), object_scenario(text, uuid),
+grant execute on function object_organisation(text, uuid),
   metric_srid(geometry), area_m2(geometry), to_core_geometry(geometry),
-  place_check(jsonb),
-  create_scenario(uuid, text, uuid, text)
+  place_check(jsonb)
   to authenticated, service_role;

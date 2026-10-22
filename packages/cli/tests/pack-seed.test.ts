@@ -31,7 +31,7 @@ create table countries (
   code char(2) primary key, name text not null, currency char(3) not null, languages text[] not null,
   time_zones text[] not null, region_level text not null, postal_code_pattern text,
   municipality_scheme text references id_schemes(code), pack_version text, pack_checksum text,
-  certification text, certified_by text, certified_on date, published_by text not null);
+  published_by text not null);
 create table regions (
   code text primary key, country char(2) not null references countries(code), name text not null,
   parent text references regions(code), time_zone text, published_by text not null);
@@ -80,8 +80,8 @@ describe('the seed of a pack on a database', () => {
       expect([await count('sources'), await count('id_schemes'), await count('countries'), await count('regions'), await count('grid.operators'), await count('defaults')])
         .toEqual([3, 2, 1, 3, 2, 7]);
     }
-    const country = (await db.query<Record<string, unknown>>('select currency, time_zones, pack_version, pack_checksum, certification from countries')).rows[0];
-    expect(country).toMatchObject({ currency: 'XTS', time_zones: ['Etc/UTC', 'Etc/GMT-1'], pack_version: '0.1.0', certification: 'reviewed' });
+    const country = (await db.query<Record<string, unknown>>('select currency, time_zones, pack_version, pack_checksum from countries')).rows[0];
+    expect(country).toMatchObject({ currency: 'XTS', time_zones: ['Etc/UTC', 'Etc/GMT-1'], pack_version: '0.1.0' });
     expect(seed).toContain(`-- checksum       ${country!.pack_checksum}`);
     const step = await db.query<{ value: string; valid_to: Date | null }>(
       "select value, valid_to from defaults where property_code = 'metering_step' order by valid_from");

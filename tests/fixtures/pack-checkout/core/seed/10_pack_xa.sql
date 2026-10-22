@@ -52,8 +52,8 @@ on conflict (code) do update set
 where id_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
-insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, certification, certified_by, certified_on, published_by) values
-  ('XA', 'Examplia', 'XTS', array['en']::text[], array['Etc/UTC', 'Etc/GMT-1']::text[], 'province', '^[0-9]{4}$', 'xa_municipality', '0.1.0', 'sha256:1f4d471b52d59e4015c56f2956356a7720ea75aa89abad13022e6b0d510ddac5', 'reviewed', 'A grid engineer of the fixture, for the tests of the toolchain', '2026-10-19'::date, 'pack:xa')
+insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values
+  ('XA', 'Examplia', 'XTS', array['en']::text[], array['Etc/UTC', 'Etc/GMT-1']::text[], 'province', '^[0-9]{4}$', 'xa_municipality', '0.1.0', 'sha256:1f4d471b52d59e4015c56f2956356a7720ea75aa89abad13022e6b0d510ddac5', 'pack:xa')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
@@ -63,10 +63,7 @@ on conflict (code) do update set
   postal_code_pattern = excluded.postal_code_pattern,
   municipality_scheme = excluded.municipality_scheme,
   pack_version        = excluded.pack_version,
-  pack_checksum       = excluded.pack_checksum,
-  certification       = excluded.certification,
-  certified_by        = excluded.certified_by,
-  certified_on        = excluded.certified_on;
+  pack_checksum       = excluded.pack_checksum;
 
 -- regions: 3 at the level province and above, parents first.
 insert into regions (code, country, name, parent, time_zone, published_by) values
