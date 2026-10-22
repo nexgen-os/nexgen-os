@@ -12,13 +12,12 @@
 // extension, so all of it runs on PGlite; what it leaves to a real project
 // is in `docs/with-ekwo-os.md`.
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
-import { PGlite } from '@electric-sql/pglite';
-import { postgis } from '@electric-sql/pglite-postgis';
+import type { PGlite } from '@electric-sql/pglite';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as ekwo from 'ekwo-os';
 import { doctor, install } from '../packages/cli/src/index.js';
-import { asUser, one, repoRoot, sqlClient, USER_A, USER_B } from './helpers/db.js';
+import { asUser, emptyDatabase, one, repoRoot, sqlClient, USER_A, USER_B } from './helpers/db.js';
 
 const NEXGEN_SCHEMAS = ['nexgen', 'billing'];
 const EKWO_SCHEMAS = ['public', 'supabase_migrations'];
@@ -29,14 +28,7 @@ const EKWO_SCHEMAS = ['public', 'supabase_migrations'];
  * allowed to use that schema.
  */
 async function project(): Promise<PGlite> {
-  const db = await PGlite.create({ extensions: { postgis } });
-  await db.exec(await readFile(join(repoRoot, 'tests', 'helpers', 'supabase-shim.sql'), 'utf8'));
-  await db.exec(`
-    create schema if not exists extensions;
-    create extension if not exists postgis schema extensions;
-    grant usage on schema extensions to anon, authenticated, service_role;
-  `);
-  return db;
+  return emptyDatabase();
 }
 
 /** Ekwo's runner wants transactions; PGlite gives them. */

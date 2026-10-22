@@ -18,6 +18,7 @@ import { buildPacks, checkPacks, type PackReport } from './pack/command.js';
 import { GestureError, connect, type Computations, type SqlClient } from '@nexgen-os/core';
 import { GESTURE_COMMANDS, GESTURE_FLAGS, GESTURE_USAGE, printGesture, runGesture } from './gestures.js';
 import { PACKAGE_VERSION, SCHEMA_MIN, SCHEMA_VERSION } from './version.js';
+import { printTry, tryInMemory } from './try.js';
 
 const USAGE = `nexgen-os ${PACKAGE_VERSION} — install and operate Nexgen OS on a Postgres database with PostGIS
 
@@ -28,6 +29,7 @@ Usage:
   nexgen-os status   [--json]                                    version, modules, packs, counts
   nexgen-os pack build <cc>|--all [--root dir] [--json]          compile a pack into its seed (in a checkout)
   nexgen-os pack check <cc>|--all [--root dir] [--json]          refuse a pack or a seed that is not its output
+  nexgen-os try      [--year yyyy] [--json]                      no database: a house and its yield, in memory
 
 Options:
   --db <url>     the connection string (or NEXGEN_DB_URL); on Supabase, the session pooler or direct connection
@@ -35,6 +37,7 @@ Options:
   --modules      modules to install, comma-separated (default: every module shipped)
   --packs        country packs to install, comma-separated (default: none)
   --all          every pack of the checkout (pack build, pack check)
+  --year         the calendar year of the yield (try; default the last full one but two)
   --root <dir>   the checkout whose packs/ to read (default: the current directory)
   --version, --help
 ${GESTURE_USAGE}`;
@@ -50,6 +53,7 @@ const FLAGS: Record<string, 'value' | 'switch'> = {
   json: 'switch',
   help: 'switch',
   version: 'switch',
+  year: 'value',
   ...GESTURE_FLAGS,
 };
 
@@ -193,6 +197,13 @@ export async function main(argv: string[], io: Io): Promise<number> {
       return command === undefined && !flags.has('help') ? 1 : 0;
     }
     if (command === 'pack') return await packCommand(args, io);
+    if (command === 'try') {
+      const year = flags.get('year');
+      const r = await tryInMemory({ computations: io.computations, ...(typeof year === 'string' ? { year: Number(year) } : {}) });
+      if (flags.has('json')) io.out(JSON.stringify(r, null, 2));
+      else printTry(io.out, r);
+      return 0;
+    }
     if (command in GESTURE_COMMANDS) {
       const [first, second] = args.operands;
       const subs = GESTURE_COMMANDS[command]!;

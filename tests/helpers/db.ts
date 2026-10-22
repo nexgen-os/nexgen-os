@@ -1,10 +1,8 @@
 import { readdirSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PGlite } from '@electric-sql/pglite';
-import { postgis } from '@electric-sql/pglite-postgis';
-import { install, type SqlClient } from '../../packages/cli/src/index.js';
+import type { PGlite } from '@electric-sql/pglite';
+import { emptyMemoryDatabase, install, memorySqlClient, type SqlClient } from '../../packages/cli/src/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const repoRoot = join(here, '..', '..');
@@ -16,29 +14,14 @@ export const shippedModules: string[] = readdirSync(join(repoRoot, 'modules'), {
   .sort();
 
 /** A PGlite seen as the installer sees a database. Closing it is the caller's business. */
-export function sqlClient(db: PGlite): SqlClient {
-  return {
-    async exec(sql) {
-      await db.exec(sql);
-    },
-    async query<T>(sql: string, params: unknown[] = []) {
-      return (await db.query<T>(sql, params)).rows;
-    },
-    async close() {},
-  };
-}
+export const sqlClient: (db: PGlite) => SqlClient = memorySqlClient;
 
 /**
  * An empty database as a Supabase project is before `nexgen-os init`: the
- * Supabase shim (test only) and, unless told otherwise, PostGIS enabled.
+ * `auth` schema Supabase provides and, unless told otherwise, PostGIS
+ * enabled — the database in memory `nexgen-os try` starts from.
  */
-export async function emptyDatabase(options: { postgis?: boolean } = {}): Promise<PGlite> {
-  const db = await PGlite.create({ extensions: { postgis } });
-  await db.exec(await readFile(join(here, 'supabase-shim.sql'), 'utf8'));
-  if (options.postgis ?? true) await db.exec(`create schema if not exists extensions; grant usage on schema extensions to ${SUPABASE_ROLES};
-    create extension if not exists postgis with schema extensions`);
-  return db;
-}
+export const emptyDatabase: (options?: { postgis?: boolean }) => Promise<PGlite> = emptyMemoryDatabase;
 
 /**
  * A database built the way an installation is, by the installer's own
@@ -70,9 +53,6 @@ export async function one<T = Record<string, unknown>>(db: PGlite, sql: string, 
   if (r.rows.length === 0) throw new Error(`no row: ${sql}`);
   return r.rows[0];
 }
-
-// The roles a Supabase project grants its `extensions` schema to.
-const SUPABASE_ROLES = 'anon, authenticated, service_role';
 
 const GEOMETRY_COLUMNS = new Set(['geometry', 'footprint']);
 

@@ -1,7 +1,8 @@
--- Test-only shim. Supabase provides the `auth` schema; a bare Postgres (or
--- PGlite) does not, and the migrations reference auth.uid() from their row
--- level security policies. This file is applied BEFORE the migrations in the
--- test harness and is never shipped.
+-- What Supabase provides and a bare Postgres (or PGlite) does not: the
+-- `auth` schema the migrations reference from their row level security
+-- policies. It is applied BEFORE the migrations by the test harness and by
+-- `nexgen-os try`, on a database in memory, and never on a real project,
+-- where Supabase Auth owns it.
 
 create schema if not exists auth;
 
