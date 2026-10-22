@@ -79,7 +79,7 @@ jobs:
       # the source: run `nexgen-os pack build --all` and commit the result.
       - name: every pack passes its checks and its seed is its output
         run: |
-          npm run build -w packages/cli
+          npm run build
           node packages/cli/dist/bin.js pack check --all
 
   hygiene:

@@ -181,7 +181,7 @@ describe('a yield estimate computed by pvlib', () => {
     console.info(`a synthetic year, 20 kWp: pvwatts.ts ${here.annualKwh} kWh, pvlib ${viaPvlib.annualKwh} kWh (${pct(viaPvlib.annualKwh, here.annualKwh)})`);
     expect(Math.abs(viaPvlib.annualKwh - here.annualKwh) / here.annualKwh).toBeLessThan(0.01);
 
-    const estimate = await one<{ provenance: string; inputs: Record<string, any> }>(db, 'select provenance, inputs from estimates where id = $1', [viaPvlib.estimateId]);
+    const estimate = await one<{ provenance: string; inputs: Record<string, any> }>(db, 'select provenance, inputs from solar.estimates where id = $1', [viaPvlib.estimateId]);
     expect(estimate.provenance).toBe(installed!.version);
     expect(estimate.inputs).toMatchObject({ profile: 'pvwatts', engine: { name: 'pvlib', version: installed!.version, contract: 1 }, model: { pvlib: installed!.dependencies.pvlib } });
     const series = await db.query<{ quantity_code: string; n: number }>(
