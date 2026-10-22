@@ -66,6 +66,22 @@ export const MODULE_TOOLS: Tool[] = [
     run: ({ db, computations }, a) => core.compute(db, computations, 'solar.size', a),
   }),
   tool({
+    name: 'solar_describe_system',
+    title: 'Describe a PV system',
+    module: 'solar',
+    description: 'A PV system of a participant as the solar module reads it: a device of type solar, its DC power, and its arrays, each with its own azimuth (degrees clockwise from true north, 180 faces south) and tilt (degrees from horizontal) as the person stated them. Then solar_estimate_yield computes its yield.',
+    input: z.object({
+      participant_id: uuid, name: z.string().min(1), kwp: z.number().positive(),
+      arrays: z.array(z.object({
+        name: z.string().min(1), azimuth_deg: z.number().min(0).max(360), tilt_deg: z.number().min(0).max(90),
+        kwp: z.number().positive().optional(), mounting: z.string().optional(),
+      })).min(1),
+      installed_on: z.string().optional(),
+    }),
+    writes: true,
+    run: ({ db }, a) => core.describePvSystem(db, a),
+  }),
+  tool({
     name: 'solar_estimate_yield',
     title: 'Estimate a PV yield',
     module: 'solar',

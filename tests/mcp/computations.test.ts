@@ -53,4 +53,18 @@ describe('a computation through the server', () => {
     const estimates = (await client.callTool({ name: 'solar_estimates', arguments: { participant_id: home } })) as { content: { text: string }[] };
     expect(JSON.parse(estimates.content[0]!.text)).toMatchObject([{ id: sized.estimateId, kind: 'sizing', provenance: 'solar-size-0.3.0' }]);
   });
+
+  it('describes a PV system and its arrays as the solar module reads them', async () => {
+    const r = (await client.callTool({ name: 'solar_describe_system', arguments: {
+      participant_id: home, name: 'Roof PV', kwp: 8,
+      arrays: [{ name: 'East', azimuth_deg: 90, tilt_deg: 20, kwp: 4 }, { name: 'West', azimuth_deg: 270, tilt_deg: 20, kwp: 4 }],
+    } })) as { content: { text: string }[]; isError?: boolean };
+    expect(r.isError).toBeFalsy();
+    const described = JSON.parse(r.content[0]!.text);
+    expect(described.arrays).toHaveLength(2);
+    const arrays = await db.query<{ name: string; azimuth: number; kwp: number }>(
+      `select a.name, a.azimuth_deg::float8 azimuth, a.kwp_dc::float8 kwp from solar.pv_arrays a join solar.devices s on s.id = a.device_id
+        join devices d on d.id = s.id where d.id = $1 and d.participant_id = $2 and d.device_type = 'solar' order by a.name`, [described.device_id, home]);
+    expect(arrays.rows).toEqual([{ name: 'East', azimuth: 90, kwp: 4 }, { name: 'West', azimuth: 270, kwp: 4 }]);
+  });
 });
