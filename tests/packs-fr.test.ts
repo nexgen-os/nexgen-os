@@ -59,13 +59,13 @@ describe('the fr pack', () => {
   });
 
   it('brings its identifier schemes, and a meter number checks its pattern', async () => {
-    const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:fr' order by code`);
+    const schemes = await db.query<{ code: string }>(`select code from identifier_schemes where published_by = 'pack:fr' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['ban_address', 'insee', 'parcelle', 'prm', 'rnb_id', 'siren', 'siret']);
     const org = await organisation(db, 'Une régie', USER_A);
     const home = await participant(db, { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
     expect(await insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
     await expect(insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
-    const corsica = await one<{ ok: boolean }>(db, `select '2A004' ~ pattern ok from id_schemes where code = 'insee'`);
+    const corsica = await one<{ ok: boolean }>(db, `select '2A004' ~ pattern ok from identifier_schemes where code = 'insee'`);
     expect(corsica.ok).toBe(true);
   });
 
@@ -154,7 +154,7 @@ describe('the fr pack', () => {
       address: { street: 'Rue du Faubourg Saint-Honoré 55', postal_code: '75008', city: 'Paris', region: 'FR-75C', municipality_code: '75108', country: 'FR' },
       precision: 'rooftop',
       source_code: 'ban',
-      external_id: { scheme: 'ban_address', value: '75108_3522_00055' },
+      identifier: { scheme: 'ban_address', value: '75108_3522_00055' },
     });
     expect(places[1]).toMatchObject({ address: { street: 'Place de la Comédie', region: 'FR-34' }, precision: 'street' });
     expect((await g.reverse(2.3169, 48.8703))?.label).toBe('55 Rue du Faubourg Saint-Honoré 75008 Paris');

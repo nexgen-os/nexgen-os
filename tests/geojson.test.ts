@@ -108,7 +108,7 @@ describe('the GeoJSON export of a participant', () => {
       participant_id: FARM, height_m: 8, elevation_m: 64, floor_area_m2: 280, floors_above_ground: 1, year_built: 2004, global_id: 'way/445566778',
     });
     expect(barn.attributes).toEqual({});
-    expect(barn.external_ids).toEqual([]);
+    expect(barn.identifiers).toEqual([]);
 
     const field = byId(fc, FIELD).properties;
     expect(field).toMatchObject({ surface_kind: 'ground', participant_id: FARM, site_id: GROUND, building_id: null, azimuth_deg: 180, tilt_deg: 0 });

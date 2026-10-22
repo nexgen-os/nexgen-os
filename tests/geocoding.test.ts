@@ -42,7 +42,7 @@ describe('nominatim', () => {
       lat: 50.84673,
       precision: 'rooftop',
       source_code: 'nominatim',
-      external_id: { scheme: 'osm', value: 'way/123456789' },
+      identifier: { scheme: 'osm', value: 'way/123456789' },
     });
     const url = new URL(calls[0].url);
     expect(url.searchParams.get('countrycodes')).toBe('be');
@@ -80,7 +80,7 @@ describe('photon', () => {
     const g = photon({ fetch });
     const all = await g.search('rue de la loi', { near: { lon: 4.35, lat: 50.85 }, language: 'fr-BE' });
     expect(all.map((p) => [p.address.country, p.precision])).toEqual([['BE', 'rooftop'], ['FR', 'city']]);
-    expect(all[0].external_id).toEqual({ scheme: 'osm', value: 'way/123456789' });
+    expect(all[0].identifier).toEqual({ scheme: 'osm', value: 'way/123456789' });
     expect(all[0].address.region).toBeNull();
     const url = new URL(calls[0].url);
     expect(url.searchParams.get('lang')).toBe('fr');

@@ -11,7 +11,7 @@ law is not part of the open model. No country is the default.
 ```
 packs/xa/
 ├── pack.json         version, certification, checksum, sections, identity (countries, regions)
-├── identifiers.json  id_schemes: each scheme with a pattern and an example that matches
+├── identifiers.json  identifier_schemes: each scheme with a pattern and an example that matches
 ├── sources.json      sources: registers, geocoders, hubs, statistics, published texts
 ├── grid.json         grid.operators; voltage levels and connection thresholds as defaults
 ├── defaults.json     defaults: property, value, unit, region, validity, source, reference
@@ -22,7 +22,7 @@ supabase/seed/10_pack_xa.sql   compiled by `nexgen-os pack build xa`, committed
 | Section | Fills | Required |
 |---|---|---|
 | identity (in `pack.json`) | `countries`, `regions` | yes |
-| `identifiers` | `id_schemes` | when the country has schemes of its own |
+| `identifiers` | `identifier_schemes` | when the country has schemes of its own |
 | `sources` | `sources` | yes: at least the texts its values cite |
 | `grid` | `grid.operators`, `defaults` | when the pack describes energy (and names the `grid` module) |
 | `defaults` | `defaults` | yes |

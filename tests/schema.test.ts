@@ -19,7 +19,7 @@ afterAll(async () => {
 // nothing else (decision 0006). A new table of the core is a decision.
 const CORE_TABLES = [
   'attribute_types', 'attributes', 'connectors', 'contacts', 'countries', 'defaults', 'device_types',
-  'devices', 'documents', 'external_ids', 'forecast_values', 'id_schemes', 'meters', 'modules',
+  'devices', 'documents', 'forecast_values', 'identifier_schemes', 'identifiers', 'meters', 'modules',
   'organisation_members', 'organisations', 'participants', 'products', 'projects', 'quantities', 'regions',
   'schema_migrations', 'series', 'series_rollups', 'series_values', 'sources', 'units',
 ];
@@ -39,7 +39,7 @@ describe('the nexgen schema', () => {
 
   it('attaches to the six objects of the core, and refuses a seventh kind by its check', async () => {
     const org = await organisation(db, 'Six kinds', USER_A);
-    for (const table of ['attributes', 'external_ids', 'documents', 'series']) {
+    for (const table of ['attributes', 'identifiers', 'documents', 'series']) {
       const check = await one<{ def: string }>(
         db,
         `select pg_get_constraintdef(c.oid) def from pg_constraint c where c.conrelid = $1::regclass and c.conname = $2`,

@@ -103,7 +103,7 @@ describe('the be pack', () => {
   });
 
   it('brings its identifier schemes, reads a Belgian EAN on the core GSRN scheme, and checks the NIS code', async () => {
-    const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:be' order by code`);
+    const schemes = await db.query<{ code: string }>(`select code from identifier_schemes where published_by = 'pack:be' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['enterprise_number', 'icar_address', 'nis', 'urbis_building', 'vlaanderen_address', 'vlaanderen_building']);
     const org = await organisation(db, 'Een gemeente', USER_A);
     const home = await participant(db, { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
@@ -114,7 +114,7 @@ describe('the be pack', () => {
     expect(await insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
     await expect(insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
     const nis = await db.query<{ ok: boolean }>(
-      `select v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
+      `select v ~ (select pattern from identifier_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );
     expect(nis.rows.map((r) => r.ok)).toEqual([true, true, true, false, false]);
   });
@@ -177,7 +177,7 @@ describe('Geopunt, the Flemish register', () => {
       source_code: 'geopunt',
       label: 'Korenmarkt, 9000 Gent',
     });
-    expect(places[0].external_id).toBeUndefined();
+    expect(places[0].identifier).toBeUndefined();
     expect(places.every((p) => p.precision === 'street')).toBe(true);
   });
 
@@ -188,7 +188,7 @@ describe('Geopunt, the Flemish register', () => {
       address: { street: 'Korenmarkt 10', region: 'BE-VLG' },
       precision: 'rooftop',
       label: 'Korenmarkt 10, 9000 Gent',
-      external_id: { scheme: 'vlaanderen_address', value: '602422' },
+      identifier: { scheme: 'vlaanderen_address', value: '602422' },
     });
     expect(first.lon).toBeCloseTo(3.72231, 5);
     expect(first.lat).toBeCloseTo(51.05458, 5);
@@ -227,7 +227,7 @@ describe('ICAR, the Walloon register', () => {
       address: { street: 'Place Saint-Lambert 18', postal_code: '4000', city: 'Liège', region: 'BE-WAL', municipality_code: '62063', country: 'BE' },
       precision: 'rooftop',
       source_code: 'icar',
-      external_id: { scheme: 'icar_address', value: '1872629' },
+      identifier: { scheme: 'icar_address', value: '1872629' },
     });
     expect(place.lon).toBeCloseTo(5.5732, 4);
   });

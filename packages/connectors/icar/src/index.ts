@@ -82,7 +82,7 @@ function fromIcar(c: IcarCandidate, precision: Precision): Place | null {
     source_code: 'icar',
     label: [street, [postal, city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
   };
-  if (precision === 'rooftop' && c.house) place.external_id = { scheme: 'icar_address', value: String(c.house.ident) };
+  if (precision === 'rooftop' && c.house) place.identifier = { scheme: 'icar_address', value: String(c.house.ident) };
   return place;
 }
 

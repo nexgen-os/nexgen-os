@@ -208,7 +208,7 @@ describe('an IFC4 model with its equipment', () => {
       guid: string; source: string; predefined: string; lon: number; lat: number;
     }>(
       `select d.name, d.device_type, (f.value->'ifc'->'placement'->>'building')::uuid = $2 in_building, d.manufacturer, d.model, d.serial_number serial,
-              (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
+              (select value from identifiers where object_id = d.id and scheme = 'ifc_guid') guid,
               d.source_code source, f.value->'ifc'->'attributes'->>'PredefinedType' predefined,
               (f.value->'ifc'->'placement'->'position'->>0)::float lon, (f.value->'ifc'->'placement'->'position'->>1)::float lat
          from devices d join attributes f on f.object_kind = 'device' and f.object_id = d.id and f.attribute_type = 'file_record'

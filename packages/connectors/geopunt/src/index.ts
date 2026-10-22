@@ -69,7 +69,7 @@ function fromGeopunt(l: GeopuntLocation, typed?: Set<string>): Place {
     label: numberAsked ? l.FormattedAddress : [street, [l.Zipcode, l.Municipality].filter(Boolean).join(' ')].filter(Boolean).join(', '),
   };
   // The ID of a Flemish house number is its identifier in the address register.
-  if (region === 'BE-VLG' && precision === 'rooftop' && l.ID !== null) place.external_id = { scheme: 'vlaanderen_address', value: String(l.ID) };
+  if (region === 'BE-VLG' && precision === 'rooftop' && l.ID !== null) place.identifier = { scheme: 'vlaanderen_address', value: String(l.ID) };
   return place;
 }
 

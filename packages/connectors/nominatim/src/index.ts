@@ -81,7 +81,7 @@ function fromNominatim(row: NominatimPlace): Place | null {
     source_code: 'nominatim',
     label: row.display_name,
   };
-  if (row.osm_type && row.osm_id !== undefined) place.external_id = { scheme: 'osm', value: `${row.osm_type}/${row.osm_id}` };
+  if (row.osm_type && row.osm_id !== undefined) place.identifier = { scheme: 'osm', value: `${row.osm_type}/${row.osm_id}` };
   return place;
 }
 

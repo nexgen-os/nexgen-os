@@ -40,8 +40,8 @@ export interface Place {
   source_code: string;
   /** What the geocoder calls it, for a list of candidates. */
   label: string;
-  /** The identifier the geocoder knows the place by, in an `id_schemes` scheme. */
-  external_id?: { scheme: string; value: string };
+  /** The identifier the geocoder knows the place by, in an `identifier_schemes` scheme. */
+  identifier?: { scheme: string; value: string };
 }
 
 export interface SearchOptions {

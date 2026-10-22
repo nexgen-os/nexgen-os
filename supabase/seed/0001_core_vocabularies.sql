@@ -180,7 +180,7 @@ insert into sources (code, name, kind, base_url, docs_url, auth, license, attrib
 -- Identifier schemes that are global. National ones come with country packs.
 -- ---------------------------------------------------------------------------
 
-insert into id_schemes (code, name, pattern, url_template, source_code, description) values
+insert into identifier_schemes (code, name, pattern, url_template, source_code, description) values
   ('ifc_guid',      'IFC GlobalId',               '^[0-9A-Za-z_$]{22}$', null, null, 'The compressed GUID of an IFC object.'),
   ('cityjson',      'CityJSON object',            '^.+$', null, null, 'The id of a CityObject in a CityJSON file: a national building identifier in 3DBAG or UrbIS.'),
   ('osm',           'OpenStreetMap',              '^(node|way|relation)/[0-9]+$', 'https://www.openstreetmap.org/{value}', 'openstreetmap', 'An OpenStreetMap element.'),

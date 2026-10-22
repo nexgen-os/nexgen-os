@@ -413,6 +413,7 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
       'relation contacts',
       'relation documents',
       'relation modules',
+      'relation products',
       'relation schema_migrations',
       'type member_role',
     ]);

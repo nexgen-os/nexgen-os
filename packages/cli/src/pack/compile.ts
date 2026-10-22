@@ -16,7 +16,7 @@
  * conflict only closes a period or corrects a citation. Nothing is deleted.
  *
  * The tables are those of the core — `countries`, `regions`, `defaults`,
- * beside `sources` and `id_schemes` — and the operator table of the `grid`
+ * beside `sources` and `identifier_schemes` — and the operator table of the `grid`
  * module. Literals are quoted here and nowhere else; a pack holds no code
  * (see executable.ts), and the compiler would not run it if it did.
  */
@@ -50,13 +50,13 @@ export function compilePack(pack: Pack): string {
 
   if (pack.identifiers.length > 0) {
     out.push(
-      `-- id_schemes: ${pack.identifiers.length}. The identifiers the country issues; a value of external_ids or meters matches the pattern.`,
+      `-- identifier_schemes: ${pack.identifiers.length}. The identifiers the country issues; a value of identifiers or meters matches the pattern.`,
       ...upsert(
-        'id_schemes',
+        'identifier_schemes',
         ['code', 'name', 'description', 'pattern', 'url_template', 'source_code', 'published_by'],
         byCode(pack.identifiers).map((i) => [text(i.code), text(i.name), text(i.description), text(i.pattern), text(i.url_template), text(i.source_code), text(by)]),
         ['code'],
-        'id_schemes',
+        'identifier_schemes',
       ),
     );
   }

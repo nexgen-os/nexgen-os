@@ -209,7 +209,7 @@ create table meters (
   -- The metering point identifier and its numbering scheme (a GS1 GSRN, or
   -- a national scheme a pack publishes).
   identifier        text not null,
-  scheme            text not null references id_schemes(code),
+  scheme            text not null references identifier_schemes(code),
   resource          text not null default 'electricity',
   -- What the point can do: take from the grid, inject into it, both.
   direction         text not null default 'both',
@@ -329,7 +329,7 @@ $$;
 comment on function country_of(text, uuid) is
   'The country of the place of the participant an object belongs to. Selects the country packs and the country level of parameter_of().';
 
--- PL/pgSQL so that it may name `external_ids`, created with the attachments.
+-- PL/pgSQL so that it may name `identifiers`, created with the attachments.
 create or replace function place_of(p_participant_id uuid)
 returns jsonb
 language plpgsql
@@ -343,7 +343,7 @@ begin
     'geometry', ST_AsGeoJSON(p.geometry)::jsonb,
     'location_precision', p.location_precision, 'location_source_code', p.location_source_code,
     'identifiers', coalesce((select jsonb_agg(jsonb_build_object('scheme', e.scheme, 'value', e.value) order by e.scheme, e.value)
-                               from external_ids e where e.object_kind = 'participant' and e.object_id = p.id), '[]'::jsonb))
+                               from identifiers e where e.object_kind = 'participant' and e.object_id = p.id), '[]'::jsonb))
     from participants p where p.id = p_participant_id and p.country is not null);
 end;
 $$;
@@ -406,7 +406,7 @@ begin
           case when jsonb_typeof(v_place->'geometry') = 'object' then ST_GeomFromGeoJSON(v_place->'geometry') end,
           v_place->>'location_precision', v_place->>'location_source_code');
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_kind, object_id, scheme, value) values ('participant', v_id, i->>'scheme', i->>'value');
+    insert into identifiers (object_kind, object_id, scheme, value) values ('participant', v_id, i->>'scheme', i->>'value');
   end loop;
   return v_id;
 end;
@@ -452,7 +452,7 @@ begin
     location_source_code = case when v_place ? 'location_source_code' then v_place->>'location_source_code' else location_source_code end
    where id = p_participant_id;
   for i in select * from jsonb_array_elements(coalesce(v_place->'identifiers', '[]'::jsonb)) loop
-    insert into external_ids (object_kind, object_id, scheme, value) values ('participant', p_participant_id, i->>'scheme', i->>'value')
+    insert into identifiers (object_kind, object_id, scheme, value) values ('participant', p_participant_id, i->>'scheme', i->>'value')
     on conflict do nothing;
   end loop;
 end;

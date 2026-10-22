@@ -176,7 +176,7 @@ describe('what the core publishes', () => {
 
   it('names no country in what the core publishes', async () => {
     const r = await db.query(
-      `select code from id_schemes where code ~ '_(be|fr|nl|es|de|lu|sn)$'
+      `select code from identifier_schemes where code ~ '_(be|fr|nl|es|de|lu|sn)$'
        union all select code from device_types where code ~ '_(be|fr|nl|es|de|lu|sn)$'
        union all select code from building.profiles where code ~ '_(be|fr|nl|es|de|lu|sn)$'`,
     );
@@ -191,7 +191,7 @@ describe('what the core publishes', () => {
     await db.query(`select set_attribute('participant', $1, 'annual_consumption', '800')`, [shed]);
     await db.query(`select add_identifier('participant', $1, 'osm', 'way/1')`, [shed]);
     await db.query('delete from participants where id = $1', [shed]);
-    const left = await one<{ n: number }>(db, `select (select count(*) from attributes where object_id = $1) + (select count(*) from external_ids where object_id = $1) n`, [shed]);
+    const left = await one<{ n: number }>(db, `select (select count(*) from attributes where object_id = $1) + (select count(*) from identifiers where object_id = $1) n`, [shed]);
     expect(Number(left.n)).toBe(0);
   });
 

@@ -33,7 +33,7 @@ trigger per foreign key that reads the parent's row in the parent's table
 and refuses a parent of another organisation.
 
 **An attachment names its object by its kind and its id, and the kind is
-one of the six objects of the core.** `attributes`, `external_ids`,
+one of the six objects of the core.** `attributes`, `identifiers`,
 `documents` and `series` carry `object_kind` beside `object_id`, with
 `check (object_kind in ('organisation', 'project', 'participant', 'meter',
 'device', 'series'))`. A module table about an object of the core

@@ -76,7 +76,7 @@ export interface PlaceRecord {
   lat: number;
   /** ISO 3166-1 alpha-2. */
   country: string;
-  external_id: { scheme: string; value: string };
+  identifier: { scheme: string; value: string };
   address?: Partial<Address>;
   /** Typed values the register holds (an activity code, an annual consumption), keyed by `attribute_types` code. */
   attributes?: Record<string, string | number | boolean>;
@@ -86,7 +86,7 @@ export interface PlaceRecord {
 export interface PlacesProvider {
   readonly source_code: string;
   nearby(where: Point, radiusM: number, options?: { country?: string; limit?: number }): Promise<PlaceRecord[]>;
-  get?(externalId: string): Promise<PlaceRecord | null>;
+  get?(identifier: string): Promise<PlaceRecord | null>;
 }
 
 export interface SeriesTarget {

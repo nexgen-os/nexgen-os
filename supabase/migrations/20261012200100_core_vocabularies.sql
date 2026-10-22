@@ -8,11 +8,11 @@
 --
 -- Every vocabulary row maps to the open standard it comes from:
 --
---   device_types    Brick Schema equipment classes, IFC distribution elements
---   attribute_types buildingSMART Data Dictionary (bSDD), IFC property sets
---   quantities      QUDT quantity kinds and units
---   sources         the external systems data comes from, with their licence
---   id_schemes      IFC GlobalId, OpenStreetMap, Overture GERS, national registers
+--   device_types       Brick Schema equipment classes, IFC distribution elements
+--   attribute_types    buildingSMART Data Dictionary (bSDD), IFC property sets
+--   quantities         QUDT quantity kinds and units
+--   sources            the external systems data comes from, with their licence
+--   identifier_schemes IFC GlobalId, OpenStreetMap, Overture GERS, national registers
 --
 -- Vocabularies are shared by every organisation of an installation, read by
 -- everyone signed in and written only by migrations and seeds. Each row says
@@ -158,10 +158,10 @@ comment on table sources is
   'External systems data comes from: an open-data API, a grid operator''s hub, a solar API, a register, a device protocol. Identifiers, series, documents and attributes say which source they come from; connectors read here where to go.';
 
 -- ---------------------------------------------------------------------------
--- id_schemes — external identifier systems.
+-- identifier_schemes — external identifier systems.
 -- ---------------------------------------------------------------------------
 
-create table id_schemes (
+create table identifier_schemes (
   code            text primary key,
   name            text not null,
   description     text,
@@ -173,10 +173,10 @@ create table id_schemes (
   url_template    text,
   source_code     text references sources(code),
   published_by    text not null default 'core',
-  constraint id_schemes_code_format check (code ~ '^[a-z][a-z0-9_]*$')
+  constraint identifier_schemes_code_format check (code ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table id_schemes is
+comment on table identifier_schemes is
   'Identifier systems an object may also be known by: IFC GlobalId, OpenStreetMap, Overture GERS, a cadastre, a municipality code, a metering point numbering.';
 
 -- The one check of an identifier against its scheme, for every table that
@@ -187,7 +187,7 @@ language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select coalesce((select p_value ~ s.pattern from id_schemes s where s.code = p_scheme), true);
+  select coalesce((select p_value ~ s.pattern from identifier_schemes s where s.code = p_scheme), true);
 $$;
 
 comment on function identifier_valid(text, text) is
@@ -201,7 +201,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['device_types', 'quantities', 'attribute_types', 'sources', 'id_schemes'] loop
+  foreach t in array array['device_types', 'quantities', 'attribute_types', 'sources', 'identifier_schemes'] loop
     execute format('alter table %I enable row level security', t);
     execute format('create policy %I on %I for select to authenticated using (true)', t || '_read', t);
     execute format('grant select on %I to authenticated', t);

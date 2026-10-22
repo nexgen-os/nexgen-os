@@ -224,7 +224,7 @@ comment on function normalize_geometry() is
 --     "city": "…", "region": "<ISO 3166-2>", "country": "<ISO 3166-1>",
 --     "geometry": { "type": "Point", "coordinates": [lon, lat, z] },
 --     "location_precision": "rooftop", "location_source_code": "<source>",
---     "identifiers": [ { "scheme": "<id_schemes.code>", "value": "…" } ] }
+--     "identifiers": [ { "scheme": "<identifier_schemes.code>", "value": "…" } ] }
 --
 -- GeoJSON is the geometry's one interchange form; it is stored in WGS 84 3D.
 -- ---------------------------------------------------------------------------

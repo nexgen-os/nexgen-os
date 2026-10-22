@@ -2,7 +2,7 @@
 --
 --   attributes    a value of a defined property, valid over a period
 --                 (IFC property sets, bSDD properties)
---   external_ids  the identifiers an object is known by elsewhere
+--   identifiers  the identifiers an object is known by elsewhere
 --   documents     files about an object: a permit, a datasheet, a report, a
 --                 photo, a video
 --
@@ -196,30 +196,30 @@ comment on function attributes_of(uuid, timestamptz) is
   'Every attribute of an object holding at a moment, as one JSON object. The one place attributes are read from.';
 
 -- ---------------------------------------------------------------------------
--- external_ids
+-- identifiers
 -- ---------------------------------------------------------------------------
 
-create table external_ids (
+create table identifiers (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   object_kind      text not null,
   object_id        uuid not null,
-  scheme           text not null references id_schemes(code),
+  scheme           text not null references identifier_schemes(code),
   value            text not null,
   -- When the identifier named this object: registers retire and reissue.
   valid_from       timestamptz,
   valid_to         timestamptz,
   created_at       timestamptz not null default now(),
   primary key (organisation_id, scheme, value),
-  constraint external_ids_object_kind check (object_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
-  constraint external_ids_period check (valid_to is null or valid_from is null or valid_to > valid_from)
+  constraint identifiers_object_kind check (object_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
+  constraint identifiers_period check (valid_to is null or valid_from is null or valid_to > valid_from)
 );
 
-comment on table external_ids is
+comment on table identifiers is
   'Identifiers an object of the core is known by elsewhere (a national register, a municipality code, a geocoder''s id, a device''s serial in a hub). One value names one object per organisation.';
 
-create index external_ids_object_idx on external_ids (object_kind, object_id);
+create index identifiers_object_idx on identifiers (object_kind, object_id);
 
-create or replace function external_ids_check()
+create or replace function identifiers_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -233,15 +233,15 @@ begin
 end;
 $$;
 
-comment on function external_ids_check() is
-  'BEFORE INSERT / UPDATE on external_ids: the value matches its scheme (invalid_identifier).';
+comment on function identifiers_check() is
+  'BEFORE INSERT / UPDATE on identifiers: the value matches its scheme (invalid_identifier).';
 
-create trigger external_ids_attach
-  before insert or update on external_ids
+create trigger identifiers_attach
+  before insert or update on identifiers
   for each row execute function attach('object');
-create trigger external_ids_check
-  before insert or update on external_ids
-  for each row execute function external_ids_check();
+create trigger identifiers_check
+  before insert or update on identifiers
+  for each row execute function identifiers_check();
 
 -- ---------------------------------------------------------------------------
 -- documents
@@ -285,7 +285,7 @@ create trigger documents_attach
 -- ---------------------------------------------------------------------------
 
 call secure_table('attributes');
-call secure_table('external_ids');
+call secure_table('identifiers');
 call secure_table('documents');
 
 -- ---------------------------------------------------------------------------
@@ -340,7 +340,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   perform object_organisation(p_object_kind, p_object_id);
-  insert into external_ids (object_kind, object_id, scheme, value, valid_from)
+  insert into identifiers (object_kind, object_id, scheme, value, valid_from)
   values (p_object_kind, p_object_id, p_scheme, p_value, p_from);
 exception when unique_violation then
   raise exception 'identifier_taken: % % already names an object of this organisation', p_scheme, p_value

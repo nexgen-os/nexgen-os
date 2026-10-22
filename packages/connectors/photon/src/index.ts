@@ -85,7 +85,7 @@ function fromPhoton(feature: PhotonFeature): Place | null {
     label,
   };
   const osmType = p.osm_type ? { N: 'node', W: 'way', R: 'relation' }[p.osm_type] : undefined;
-  if (osmType && p.osm_id !== undefined) place.external_id = { scheme: 'osm', value: `${osmType}/${p.osm_id}` };
+  if (osmType && p.osm_id !== undefined) place.identifier = { scheme: 'osm', value: `${osmType}/${p.osm_id}` };
   return place;
 }
 

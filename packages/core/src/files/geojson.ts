@@ -40,7 +40,7 @@ export interface FeatureProperties {
   /** Attributes holding at the export's moment. */
   attributes: Record<string, unknown>;
   /** Identifiers the object is known by elsewhere, scheme by scheme. */
-  external_ids: { scheme: string; value: string }[];
+  identifiers: { scheme: string; value: string }[];
   calculations: CalculationSummary[];
   [column: string]: unknown;
 }
@@ -98,7 +98,7 @@ interface Row {
 interface Attachments {
   id: string;
   attributes: Record<string, unknown>;
-  external_ids: { scheme: string; value: string; source_code: string | null }[];
+  identifiers: { scheme: string; value: string; source_code: string | null }[];
   attribute_sources: string[] | null;
   closed_properties: string[] | null;
 }
@@ -208,8 +208,8 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     `select o.id,
             attributes_of(o.id, coalesce($2::timestamptz, now())) attributes,
             coalesce((select jsonb_agg(jsonb_build_object('scheme', e.scheme, 'value', e.value, 'source_code', i.source_code) order by e.scheme, e.value)
-                        from external_ids e join id_schemes i on i.code = e.scheme
-                       where e.object_id = o.id and ${holds('e')}), '[]'::jsonb) external_ids,
+                        from identifiers e join identifier_schemes i on i.code = e.scheme
+                       where e.object_id = o.id and ${holds('e')}), '[]'::jsonb) identifiers,
             (select array_agg(distinct a.source_code) from attributes a
               where a.object_id = o.id and a.source_code is not null and ${holds('a')}) attribute_sources,
             (select array_agg(distinct a.attribute_type) from attributes a join sources s on s.code = a.source_code
@@ -267,7 +267,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   for (const [, r] of all) if (r.source_code) codes.add(r.source_code);
   for (const a of attachments.rows) {
     for (const c of a.attribute_sources ?? []) codes.add(c);
-    for (const e of a.external_ids) if (e.source_code) codes.add(e.source_code);
+    for (const e of a.identifiers) if (e.source_code) codes.add(e.source_code);
   }
   const sources = await db.query<SourceAttribution & { redistributable: boolean }>(
     `select code, name, license, attribution, redistributable from sources where code = any($1::text[]) order by code`,
@@ -295,10 +295,10 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     }
     const a = attached.get(id);
     const attributes = { ...(a?.attributes ?? {}) };
-    let externalIds = (a?.external_ids ?? []).map(({ scheme, value, source_code: s }) => ({ scheme, value, source_code: s }));
+    let identifiers = (a?.identifiers ?? []).map(({ scheme, value, source_code: s }) => ({ scheme, value, source_code: s }));
     if (open) {
       for (const p of a?.closed_properties ?? []) delete attributes[p];
-      externalIds = externalIds.filter((e) => !e.source_code || !closed.has(e.source_code));
+      identifiers = identifiers.filter((e) => !e.source_code || !closed.has(e.source_code));
       for (const c of [...ADDRESS_LINES, ...PRIVATE_COLUMNS]) delete columns[c];
     }
     const properties: FeatureProperties = {
@@ -307,7 +307,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
       ...columns,
       ...(kind === 'participant' ? { location_source_code: source_code } : kind === 'site' || kind === 'building' || kind === 'surface' ? { source_code } : {}),
       attributes,
-      external_ids: externalIds.map(({ scheme, value }) => ({ scheme, value })),
+      identifiers: identifiers.map(({ scheme, value }) => ({ scheme, value })),
       calculations: calculations.get(id) ?? [],
     };
     features.push({ type: 'Feature', id, geometry: shape, properties });
@@ -318,7 +318,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
     for (const c of [f.properties.source_code, f.properties.location_source_code]) if (typeof c === 'string' && (!open || !closed.has(c))) used.add(c);
     const a = attached.get(f.id);
     for (const c of a?.attribute_sources ?? []) if (!open || !closed.has(c)) used.add(c);
-    for (const e of a?.external_ids ?? []) if (e.source_code && (!open || !closed.has(e.source_code))) used.add(e.source_code);
+    for (const e of a?.identifiers ?? []) if (e.source_code && (!open || !closed.has(e.source_code))) used.add(e.source_code);
   }
 
   const version = await db.query<{ v: string }>('select nexgen_schema_version() v');

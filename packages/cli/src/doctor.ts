@@ -34,7 +34,7 @@ export const VOCABULARIES = [
   'quantities',
   'units',
   'attribute_types',
-  'id_schemes',
+  'identifier_schemes',
   'sources',
   'countries',
   'regions',

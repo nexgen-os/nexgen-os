@@ -45,7 +45,7 @@ create table countries (
   -- The pattern its postal codes follow, and the identifier scheme of its
   -- municipality codes.
   postal_code_pattern  text,
-  municipality_scheme  text references id_schemes(code),
+  municipality_scheme  text references identifier_schemes(code),
   -- The pack that published the row: its version (semver), the checksum of
   -- its seed, and how far it was checked — community, maintained, or
   -- reviewed by a named professional on a day.

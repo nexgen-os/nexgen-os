@@ -31,7 +31,7 @@ describe('doctor', () => {
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);
-    expect(r.vocabularies.id_schemes).toBeGreaterThan(0);
+    expect(r.vocabularies.identifier_schemes).toBeGreaterThan(0);
   });
 
   it('names a table whose row level security was disabled, in the core and in a module, and exits 1', async () => {
@@ -78,7 +78,7 @@ describe('doctor', () => {
       await db.exec('set local session_replication_role = origin');
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems).toEqual([
-        { code: 'attachments_orphaned', detail: 'participant: 1 in nexgen.attributes, 1 in nexgen.external_ids name a participant that does not exist' },
+        { code: 'attachments_orphaned', detail: 'participant: 1 in nexgen.attributes, 1 in nexgen.identifiers name a participant that does not exist' },
       ]);
     } finally {
       await db.exec('rollback');

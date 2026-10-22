@@ -146,7 +146,7 @@
       "type": "object",
       "required": ["identifiers"],
       "additionalProperties": false,
-      "description": "identifiers.json: the identifier schemes of the country. Compiled into id_schemes.",
+      "description": "identifiers.json: the identifier schemes of the country. Compiled into identifier_schemes.",
       "properties": {
         "$schema": { "type": "string" },
         "identifiers": { "type": "array", "items": { "$ref": "#/$defs/identifier" } }

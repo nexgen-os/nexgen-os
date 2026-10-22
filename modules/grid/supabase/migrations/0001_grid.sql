@@ -31,7 +31,7 @@ create table grid.operators (
   -- Where a third party reads meter data with the customer's consent.
   data_hub_url       text,
   -- The scheme of the metering point identifiers it issues.
-  identifier_scheme  text references id_schemes(code),
+  identifier_scheme  text references identifier_schemes(code),
   published_by       text not null default 'grid',
   description        text,
   constraint operators_code_format check (code ~ '^[a-z][a-z0-9_]*$'),

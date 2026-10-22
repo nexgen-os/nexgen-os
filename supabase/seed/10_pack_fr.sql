@@ -56,8 +56,8 @@ on conflict (code) do update set
   redistributable = excluded.redistributable
 where sources.published_by = excluded.published_by;
 
--- id_schemes: 7. The identifiers the country issues; a value of external_ids or meters matches the pattern.
-insert into id_schemes (code, name, description, pattern, url_template, source_code, published_by) values
+-- identifier_schemes: 7. The identifiers the country issues; a value of identifiers or meters matches the pattern.
+insert into identifier_schemes (code, name, description, pattern, url_template, source_code, published_by) values
   ('ban_address', 'BAN address', 'The identifier of an address in the Base Adresse Nationale: municipality code, street, number.', '^[0-9][0-9abAB][0-9]{3}_[0-9a-z]+_[0-9a-z_]+$', 'https://adresse.data.gouv.fr/base-adresse-nationale/{value}', 'ban', 'pack:fr'),
   ('insee', 'Code INSEE', 'The code of a municipality in the official geographic code of the statistics office (code commune INSEE): the level at which the distribution operator, planning rules and most datasets are decided. It is not the postal code.', '^[0-9][0-9AB][0-9]{3}$', null, 'insee_cog', 'pack:fr'),
   ('parcelle', 'Cadastral parcel', 'The 14-character identifier of a cadastral parcel: municipality (5), prefix (3), section (2), number (4).', '^[0-9][0-9AB][0-9]{3}[0-9A-Z]{3}[0-9A-Z]{2}[0-9]{4}$', 'https://cadastre.data.gouv.fr/map?parcelleId={value}', 'cadastre', 'pack:fr'),
@@ -71,7 +71,7 @@ on conflict (code) do update set
   pattern      = excluded.pattern,
   url_template = excluded.url_template,
   source_code  = excluded.source_code
-where id_schemes.published_by = excluded.published_by;
+where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values

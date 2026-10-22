@@ -48,7 +48,7 @@ const open = await exportGeoJson(db, { projectId }, { open: true });    // what 
 | each device | `null`: a device is not placed | `device_type`, `participant_id`, `manufacturer`, `model`, `rated_power_kw`, `unit_count`, `status`, `installation_date`, `source_code` |
 
 Every feature also carries its `attributes` (read by `attributes_of()` at
-the moment asked) and its `external_ids` — an object of the core only has
+the moment asked) and its `identifiers` — an object of the core only has
 them — and the `calculations` every installed module computed on it (each
 module's table of them, `solar.estimates`, `community.settlements`…):
 module, table, provenance, last update and results, exactly as the module

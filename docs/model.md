@@ -170,7 +170,7 @@ these keys (`packages/formats/geojson`).
 geometry is WGS 84 with its height; `location_precision` is `rooftop`,
 `parcel`, `street`, `postal_code`, `city` or `region`; `location_source_code`
 names a row of `sources`; `identifiers` (a municipality code, a cadastral
-parcel, an address register id) become `external_ids` of the participant.
+parcel, an address register id) become `identifiers` of the participant.
 Any other key is refused (`place_key_unknown`).
 
 ## Connected by
@@ -309,7 +309,7 @@ same check.
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md)); the rest
   is an attribute. `set_attribute(kind, id, …)` closes the period holding
   and opens the next; `attributes_of(object, at)` reads them.
-- **external_ids** — unique per scheme in an organisation, checked against
+- **identifiers** — unique per scheme in an organisation, checked against
   the scheme's pattern, with validity (`add_identifier`).
 - **documents** — permit, datasheet, report, photo, video, plan: a URI, a
   media type, a source, a capture date (`attach_document`). Heavy files stay
@@ -347,7 +347,7 @@ everyone signed in.
 unit each, QUDT), `units` (QUDT codes and symbols, with the factor and
 offset of each), `attribute_types` (what an attribute may hold: the values
 `parameter_of()` resolves, those the packs publish and those a module
-declares), `id_schemes` and `sources` (the external APIs, datasets,
+declares), `identifier_schemes` and `sources` (the external APIs, datasets,
 registers and published texts: base URL, authentication type, licence,
 attribution, countries, regions, retention). An organisation's use of a
 source is a `connectors` row naming its secret: the connector, the code

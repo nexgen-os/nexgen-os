@@ -39,8 +39,8 @@ on conflict (code) do update set
   redistributable = excluded.redistributable
 where sources.published_by = excluded.published_by;
 
--- id_schemes: 2. The identifiers the country issues; a value of external_ids or meters matches the pattern.
-insert into id_schemes (code, name, description, pattern, url_template, source_code, published_by) values
+-- identifier_schemes: 2. The identifiers the country issues; a value of identifiers or meters matches the pattern.
+insert into identifier_schemes (code, name, description, pattern, url_template, source_code, published_by) values
   ('xa_metering_point', 'Metering point number', 'Issued by the distribution operator of the connection.', '^XA[0-9]{8}$', null, null, 'pack:xa'),
   ('xa_municipality', 'Municipality code', null, '^[0-9]{5}$', 'https://example.org/municipality/{value}', 'xa_statistics', 'pack:xa')
 on conflict (code) do update set
@@ -49,7 +49,7 @@ on conflict (code) do update set
   pattern      = excluded.pattern,
   url_template = excluded.url_template,
   source_code  = excluded.source_code
-where id_schemes.published_by = excluded.published_by;
+where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values

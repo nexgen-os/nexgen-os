@@ -52,8 +52,8 @@ on conflict (code) do update set
   redistributable = excluded.redistributable
 where sources.published_by = excluded.published_by;
 
--- id_schemes: 6. The identifiers the country issues; a value of external_ids or meters matches the pattern.
-insert into id_schemes (code, name, description, pattern, url_template, source_code, published_by) values
+-- identifier_schemes: 6. The identifiers the country issues; a value of identifiers or meters matches the pattern.
+insert into identifier_schemes (code, name, description, pattern, url_template, source_code, published_by) values
   ('enterprise_number', 'Enterprise number', 'The 10-digit number of an enterprise in the Crossroads Bank for Enterprises (KBO / BCE), starting with 0 or 1, written here without dots.', '^[01][0-9]{9}$', null, 'kbo_bce', 'pack:be'),
   ('icar_address', 'ICAR address', 'The identifier of a house number in ICAR, the Walloon address register. Wallonia keeps no building register: an ICAR address is the most precise identifier of a place there.', '^[0-9]+$', null, 'icar', 'pack:be'),
   ('nis', 'NIS code', 'The 5-digit code of a Belgian municipality given by Statbel (also called INS or REFNIS code): the level at which a distribution operator, local planning rules and most datasets are decided. The first digit names the province, or 2 for Brussels. It is not the postal code.', '^[0-9]{5}$', null, 'statbel', 'pack:be'),
@@ -66,7 +66,7 @@ on conflict (code) do update set
   pattern      = excluded.pattern,
   url_template = excluded.url_template,
   source_code  = excluded.source_code
-where id_schemes.published_by = excluded.published_by;
+where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, pack_version, pack_checksum, published_by) values

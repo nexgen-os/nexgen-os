@@ -71,7 +71,7 @@ function fromBan(f: BanFeature): Place {
     source_code: SOURCE_CODE,
     label: p.label,
   };
-  if (p.id) place.external_id = { scheme: 'ban_address', value: p.id };
+  if (p.id) place.identifier = { scheme: 'ban_address', value: p.id };
   return place;
 }
 

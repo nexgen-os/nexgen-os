@@ -4,7 +4,7 @@
 //
 // The tables below are the shapes the compiler writes into — `countries`,
 // `regions` and `defaults` of the core, the operator table of the `grid`
-// module, and the columns of `sources` and `id_schemes` it fills. They are
+// module, and the columns of `sources` and `identifier_schemes` it fills. They are
 // stand-ins, reduced to what a seed touches: the contract between the
 // compiler and the core, checked here without installing the core.
 import { readFile } from 'node:fs/promises';
@@ -24,13 +24,13 @@ create table sources (
   code text primary key, name text not null, description text, kind text not null, base_url text, docs_url text,
   auth text not null, countries text[] not null, regions text[] not null, license text, attribution text,
   retention_days integer, redistributable boolean not null, published_by text not null);
-create table id_schemes (
+create table identifier_schemes (
   code text primary key, name text not null, description text, pattern text, url_template text,
   source_code text references sources(code), published_by text not null);
 create table countries (
   code char(2) primary key, name text not null, currency char(3) not null, languages text[] not null,
   time_zones text[] not null, region_level text not null, postal_code_pattern text,
-  municipality_scheme text references id_schemes(code), pack_version text, pack_checksum text,
+  municipality_scheme text references identifier_schemes(code), pack_version text, pack_checksum text,
   published_by text not null);
 create table regions (
   code text primary key, country char(2) not null references countries(code), name text not null,
@@ -45,7 +45,7 @@ create table defaults (
 create table grid.operators (
   code text primary key, name text not null, kind text not null, country char(2) not null,
   regions text[] not null, coverage text, website text, data_hub_url text,
-  identifier_scheme text references nexgen.id_schemes(code), description text, published_by text not null);
+  identifier_scheme text references nexgen.identifier_schemes(code), description text, published_by text not null);
 insert into quantities values ('power', 'KiloW'), ('length', 'M'), ('emission_factor', 'KiloGM-PER-KiloW-HR');
 insert into attribute_types values
   ('connection_max_power_lv', 'number', 'power'), ('grid_co2_factor', 'number', 'emission_factor'),
@@ -77,7 +77,7 @@ describe('the seed of a pack on a database', () => {
     const seed = await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8');
     for (let run = 0; run < 2; run += 1) {
       await db.exec(seed);
-      expect([await count('sources'), await count('id_schemes'), await count('countries'), await count('regions'), await count('grid.operators'), await count('defaults')])
+      expect([await count('sources'), await count('identifier_schemes'), await count('countries'), await count('regions'), await count('grid.operators'), await count('defaults')])
         .toEqual([3, 2, 1, 3, 2, 7]);
     }
     const country = (await db.query<Record<string, unknown>>('select currency, time_zones, pack_version, pack_checksum from countries')).rows[0];

@@ -100,7 +100,7 @@ orders. It asserts that:
 - the second installation leaves every grant of the first as it was, Ekwo's
   revocations on `public` and its default privileges included, and each
   `doctor` reads the same before and after;
-- the short names both use (`contacts`, `documents`, `modules`,
+- the short names both use (`contacts`, `documents`, `modules`, `products`,
   `schema_migrations`, `member_role`, `set_updated_at`) live apart, each in
   its own schema;
 - the module schemas of both releases are disjoint, and none is `ekwo`;
