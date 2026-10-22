@@ -15,7 +15,7 @@ a VAT number, an IBAN or an invoice line, which are Ekwo's.
 
 | Table | Holds |
 |---|---|
-| `billing.companies` | the Ekwo company an organisation is, one each |
+| `billing.organisations` | the Ekwo company an organisation is, one each |
 | `billing.contacts` | the email and phone a contact is reached at, and the Ekwo contact it is; personal data, readable by the organisation's members only |
 | `billing.invoices` | one row per Ekwo invoice issued for or to a participant: its Ekwo id, the participant, the counterparty participant of a bill inside a community, `sale` or `purchase` from the participant's point of view, the first and last day it covers, and the settlement the amounts came from |
 
@@ -30,7 +30,7 @@ a VAT number, an IBAN or an invoice line, which are Ekwo's.
 | `billing.verify_remote_invoice(source, ekwo_invoice)` | the same check against an Ekwo OS on another database, through its API: raises `ekwo_remote_not_supported`: this module does not reach an Ekwo OS on another database |
 
 **When Ekwo OS shares the database**, the Ekwo ids are real foreign keys:
-`billing.companies.ekwo_company_id` to `public.companies`,
+`billing.organisations.ekwo_company_id` to `public.companies`,
 `billing.contacts.ekwo_contact_id` to `public.contacts`, and
 `billing.invoices.id` to `public.documents`, the one table where Ekwo OS
 keeps its sales and purchase invoices and credit notes. The gestures check

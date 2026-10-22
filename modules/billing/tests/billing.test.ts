@@ -118,7 +118,7 @@ describe('billing without Ekwo OS', () => {
       await db.query('select billing.link_company($1, $2)', [org, await uuid()]);
       await db.query('select billing.link_company($1, $2)', [org, company]);
     });
-    expect((await db.query('select ekwo_company_id from billing.companies where organisation_id = $1', [org])).rows).toEqual([{ ekwo_company_id: company }]);
+    expect((await db.query('select ekwo_company_id from billing.organisations where organisation_id = $1', [org])).rows).toEqual([{ ekwo_company_id: company }]);
     const c = await contact(org, 'Billing desk');
     await db.query(`insert into billing.contacts (id, email) values ($1, 'desk@example.org')`, [c]);
     const ekwoContact = await uuid();

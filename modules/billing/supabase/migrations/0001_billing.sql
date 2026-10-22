@@ -21,7 +21,7 @@ set search_path = nexgen, public, extensions;
 create schema billing;
 grant usage on schema billing to authenticated, service_role;
 
-create table billing.companies (
+create table billing.organisations (
   -- The organisation, by its own id.
   organisation_id  uuid primary key references organisations(id) on delete cascade,
   -- The company it is in Ekwo.
@@ -30,13 +30,13 @@ create table billing.companies (
   updated_at       timestamptz not null default now()
 );
 
-comment on table billing.companies is
+comment on table billing.organisations is
   'The Ekwo company an organisation is: its legal identity and its invoices live there.';
 
-create unique index companies_one_ekwo_company on billing.companies (ekwo_company_id);
-create trigger billing_companies_set_updated_at before update on billing.companies
+create unique index organisations_one_ekwo_company on billing.organisations (ekwo_company_id);
+create trigger billing_organisations_set_updated_at before update on billing.organisations
   for each row execute function set_updated_at();
-call secure_table('billing.companies');
+call secure_table('billing.organisations');
 
 create table billing.contacts (
   -- The contact, by its own id.
@@ -191,7 +191,7 @@ begin
   if billing.ekwo_row_exists('public.companies', p_ekwo_company_id) is false then
     raise exception 'ekwo_company_not_found: %', p_ekwo_company_id using errcode = 'foreign_key_violation';
   end if;
-  insert into billing.companies (organisation_id, ekwo_company_id)
+  insert into billing.organisations (organisation_id, ekwo_company_id)
   values (p_organisation_id, p_ekwo_company_id)
   on conflict (organisation_id) do update set ekwo_company_id = excluded.ekwo_company_id;
 end;
@@ -321,7 +321,7 @@ declare
 begin
   for k in
     select * from (values
-      ('billing.companies', 'companies_ekwo_company_fk', 'ekwo_company_id', 'public.companies', 'cascade'),
+      ('billing.organisations', 'organisations_ekwo_company_fk', 'ekwo_company_id', 'public.companies', 'cascade'),
       ('billing.contacts', 'contacts_ekwo_contact_fk', 'ekwo_contact_id', 'public.contacts', 'set null'),
       ('billing.invoices', 'invoices_ekwo_invoice_fk', 'id', 'public.documents', 'cascade')
     ) as t (tbl, name, col, target, on_delete)
@@ -354,7 +354,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if to_regclass('public.companies') is not null then
-    return query execute 'select ''billing.companies'', b.organisation_id, b.ekwo_company_id from billing.companies b
+    return query execute 'select ''billing.organisations'', b.organisation_id, b.ekwo_company_id from billing.organisations b
                            where not exists (select 1 from public.companies e where e.id = b.ekwo_company_id)';
   end if;
   if to_regclass('public.contacts') is not null then

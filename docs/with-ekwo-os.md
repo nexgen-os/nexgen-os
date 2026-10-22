@@ -57,7 +57,7 @@ core and keyed by the same ids, what links the two
 
 | Table | Holds |
 |---|---|
-| `billing.companies` | the Ekwo company an organisation is: `ekwo_company_id`, one each |
+| `billing.organisations` | the Ekwo company an organisation is: `ekwo_company_id`, one each |
 | `billing.contacts` | the Ekwo contact a contact is, and the email and phone it is reached at |
 | `billing.invoices` | the Ekwo invoices issued for or to a participant: the Ekwo id, the counterparty participant, `sale` or `purchase`, the period, the settlement |
 
@@ -100,12 +100,12 @@ orders. It asserts that:
 - the second installation leaves every grant of the first as it was, Ekwo's
   revocations on `public` and its default privileges included, and each
   `doctor` reads the same before and after;
-- the short names both use (`companies`, `contacts`, `documents`, `modules`,
+- the short names both use (`contacts`, `documents`, `modules`,
   `schema_migrations`, `member_role`, `set_updated_at`) live apart, each in
   its own schema;
 - the module schemas of both releases are disjoint, and none is `ekwo`;
 - a member of both sides reads its organisation and its company, a stranger
-  neither; `billing.companies` points at an Ekwo company;
+  neither; `billing.organisations` points at an Ekwo company;
 - with Ekwo OS installed first, the module's migration adds the foreign keys
   to `public.companies`, `public.contacts` and `public.documents`; with
   Nexgen OS first, `billing.reference_ekwo()` adds them; a participant's

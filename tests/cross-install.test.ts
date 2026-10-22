@@ -256,14 +256,14 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       expect(stranger).toEqual({ organisations: 0, companies: 0 });
     });
 
-    it('links the organisation to its Ekwo company through billing.companies', async () => {
+    it('links the organisation to its Ekwo company through billing.organisations', async () => {
       await asUser(db, USER_A, () =>
-        db.query('insert into billing.companies (organisation_id, ekwo_company_id) values ($1, $2)', [organisationId, companyId]),
+        db.query('insert into billing.organisations (organisation_id, ekwo_company_id) values ($1, $2)', [organisationId, companyId]),
       );
       const joined = await asUser(db, USER_A, () =>
         db.query<{ organisation: string; company: string }>(
           `select o.name as organisation, c.name as company
-             from billing.companies a
+             from billing.organisations a
              join nexgen.organisations o on o.id = a.organisation_id
              join public.companies c on c.id = a.ekwo_company_id`,
         ),
@@ -285,14 +285,14 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       // Ekwo first: the module's migration added them. Nexgen OS first: the
       // installation adds them once Ekwo OS is there.
       const added = (await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k;
-      expect(added).toEqual(order === 'ekwo-first' ? [] : ['companies_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);
+      expect(added).toEqual(order === 'ekwo-first' ? [] : ['organisations_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);
       expect(await keys()).toEqual([
-        'billing.companies public.companies true',
         'billing.contacts public.contacts true',
         'billing.invoices public.documents true',
+        'billing.organisations public.companies true',
       ]);
       await expect(
-        db.query('update billing.companies set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
+        db.query('update billing.organisations set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
       ).rejects.toThrow(/foreign key/);
     });
 
@@ -406,11 +406,10 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
       new Set([...set].filter((o) => !o.startsWith('schema ') && !/_(pkey|key)$/.test(o)).map(nameOf));
     const ekwoNames = named(e);
     // Each core reaches its own through its search path: `nexgen, public` for
-    // Nexgen OS, `public` for Ekwo OS; `billing.companies` and
-    // `public.companies` are read by their schema.
+    // Nexgen OS, `public` for Ekwo OS; `billing.contacts` and
+    // `public.contacts` are read by their schema.
     expect([...named(n)].filter((x) => ekwoNames.has(x)).sort()).toEqual([
       'function set_updated_at()',
-      'relation companies',
       'relation contacts',
       'relation documents',
       'relation modules',
