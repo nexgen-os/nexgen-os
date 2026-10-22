@@ -25,7 +25,7 @@ beforeAll(async () => {
     insert into sources (code, name, countries, published_by) values
       ('regional_office', 'A regional weather office', '{FR}', 'pack:test'),
       ('station_network', 'A network of stations', '{}', 'pack:test');
-    insert into weather.models (source_code, purposes, resolution_m, grid_deg, priority, published_by) values
+    insert into weather.sources (source_code, purposes, resolution_m, grid_deg, priority, published_by) values
       ('regional_office', '{irradiance,temperature}', 1300, 0.0125, 50, 'pack:test'),
       ('station_network', '{irradiance,temperature,history}', null, null, 60, 'pack:test');
   `);
@@ -40,13 +40,13 @@ describe('the weather module', () => {
     const m = await one<{ schema_name: string }>(db, `select schema_name from modules where code = 'weather'`);
     expect(m.schema_name).toBe('weather');
     const models = await db.query<{ source_code: string; grid_deg: string; purposes: string[] }>(
-      `select source_code, grid_deg::text, purposes from weather.models where published_by = 'weather' order by source_code`,
+      `select source_code, grid_deg::text, purposes from weather.sources where published_by = 'weather' order by source_code`,
     );
     expect(models.rows).toEqual([
       { source_code: 'open_meteo', grid_deg: '0.01', purposes: ['irradiance', 'temperature', 'wind', 'history', 'forecast'] },
       { source_code: 'pvgis', grid_deg: '0.05', purposes: ['irradiance', 'typical_year'] },
     ]);
-    expect((await one<{ t: string | null }>(db, `select to_regclass('weather.participant_points')::text t`)).t).toBe('weather.participant_points');
+    expect((await one<{ t: string | null }>(db, `select to_regclass('weather.participants')::text t`)).t).toBe('weather.participants');
     const prop = await one<{ published_by: string; datatype: string; applies_to: string[] }>(
       db, `select published_by, datatype, applies_to from property_defs where code = 'weather_source'`);
     expect(prop).toEqual({ published_by: 'weather', datatype: 'text', applies_to: ['participant', 'project'] });
@@ -112,7 +112,7 @@ describe('point_for', () => {
     );
     expect(p).toEqual({ cell_lon: '4.83', cell_lat: '45.76', resolution_m: 1000 });
     const readers = await db.query<{ participant_id: string }>(
-      `select participant_id from weather.participant_points where point_id = $1 order by participant_id`, [a.id]);
+      `select participant_id from weather.participants where point_id = $1 order by participant_id`, [a.id]);
     expect(readers.rows.map((r) => r.participant_id).sort()).toEqual([home, near].sort());
   });
 

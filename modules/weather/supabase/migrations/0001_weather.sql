@@ -5,8 +5,8 @@
 -- module holds what every other module needs to read it (decision 0012,
 -- "Weather: a module of its own, chosen per place"):
 --
---   models   which sources are weather models, for what, at which
---            resolution, and on which grid
+--   sources  which sources of the core are weather models, for what, at
+--            which resolution, and on which grid (keyed by the source)
 --   rules    what a pack or an installation decides for a country or a
 --            region
 --   points   the grid cell or the station a participant reads; its
@@ -14,7 +14,7 @@
 --            participants in it, as series of the organisation named by
 --            the point (`series.name` the point's name, `external_ref` its
 --            id, `source_code` its model)
---   participant_points   which point each participant reads, a row per
+--   participants   which point each participant reads, a row per
 --            participant and point
 --
 -- A participant may pin a model through the attribute `weather_source`.
@@ -29,10 +29,10 @@ create schema weather;
 grant usage on schema weather to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
--- models — the sources that are weather models.
+-- sources — the sources of the core that are weather models.
 -- ---------------------------------------------------------------------------
 
-create table weather.models (
+create table weather.sources (
   source_code   text primary key references sources(code) on delete cascade,
   -- What the model can be read for: irradiance, temperature, wind (the
   -- quantities), typical_year (a typical meteorological year), history
@@ -47,15 +47,15 @@ create table weather.models (
   -- Lower is preferred when several models cover a place for a purpose.
   priority      integer not null default 100,
   published_by  text not null default 'weather',
-  constraint models_purposes_known check (
+  constraint sources_purposes_known check (
     cardinality(purposes) > 0
     and purposes <@ array['irradiance', 'temperature', 'wind', 'typical_year', 'history', 'forecast']
   ),
-  constraint models_resolution_positive check (resolution_m is null or resolution_m > 0),
-  constraint models_grid_positive check (grid_deg is null or grid_deg > 0)
+  constraint sources_resolution_positive check (resolution_m is null or resolution_m > 0),
+  constraint sources_grid_positive check (grid_deg is null or grid_deg > 0)
 );
 
-comment on table weather.models is
+comment on table weather.sources is
   'The sources that are weather models: what each can be read for, its resolution, the grid that identifies a cell, and its priority. Coverage (countries, regions), licence and retention are those of the source.';
 
 -- ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ create table weather.rules (
   -- country. A regional rule wins over a rule for the whole country.
   regions       text[] not null default '{}',
   purpose       text not null,
-  source_code   text not null references weather.models(source_code) on delete cascade,
+  source_code   text not null references weather.sources(source_code) on delete cascade,
   -- Lower is preferred among rules of the same reach.
   priority      integer not null default 100,
   -- The pack (`pack:xx`) or the installation that decided it.
@@ -90,7 +90,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['weather.models', 'weather.rules'] loop
+  foreach t in array array['weather.sources', 'weather.rules'] loop
     execute format('alter table %s enable row level security', t);
     execute format('create policy %I on %s for select to authenticated using (true)', replace(t, '.', '_') || '_read', t);
     execute format('grant select on %s to authenticated', t);
@@ -107,7 +107,7 @@ create table weather.points (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   name             text not null,
-  source_code      text not null references weather.models(source_code),
+  source_code      text not null references weather.sources(source_code),
   -- The grid point or the station, as a point.
   geometry         geometry not null,
   resolution_m     integer,
@@ -126,7 +126,7 @@ create table weather.points (
 );
 
 comment on table weather.points is
-  'A grid cell or a station of a weather model that participants read (participant_points). Its weather series are stored once, as series of the organisation named by the point, whatever the number of participants that read it.';
+  'A grid cell or a station of a weather model that participants read (`weather.participants`). Its weather series are stored once, as series of the organisation named by the point, whatever the number of participants that read it.';
 
 -- One point per cell of a model in an organisation.
 create unique index points_one_per_cell on weather.points
@@ -140,10 +140,10 @@ create index points_organisation_idx on weather.points (organisation_id);
 call secure_table('weather.points');
 
 -- ---------------------------------------------------------------------------
--- participant_points — which point each participant reads.
+-- participants — which point each participant reads.
 -- ---------------------------------------------------------------------------
 
-create table weather.participant_points (
+create table weather.participants (
   participant_id   uuid not null references participants(id) on delete cascade,
   point_id         uuid not null references weather.points(id) on delete cascade,
   organisation_id  uuid not null references organisations(id) on delete cascade,
@@ -151,15 +151,15 @@ create table weather.participant_points (
   primary key (participant_id, point_id)
 );
 
-comment on table weather.participant_points is
+comment on table weather.participants is
   'The weather point (grid cell or station) a participant reads its weather from, one row per participant and point.';
 
-create index participant_points_point_idx on weather.participant_points (point_id);
-create trigger participant_points_participant_id_check before insert or update of participant_id on weather.participant_points
+create index participants_point_idx on weather.participants (point_id);
+create trigger participants_participant_id_check before insert or update of participant_id on weather.participants
   for each row execute function parent_check('participant_id', 'participants');
-create trigger participant_points_point_id_check before insert or update of point_id on weather.participant_points
+create trigger participants_point_id_check before insert or update of point_id on weather.participants
   for each row execute function parent_check('point_id', 'weather.points');
-call secure_table('weather.participant_points');
+call secure_table('weather.participants');
 
 
 -- The cell of a position for a model: longitude and latitude rounded to the
@@ -191,7 +191,7 @@ as $$
 declare
   c numeric[];
 begin
-  c := weather.cell_of(new.geometry, (select grid_deg from weather.models where source_code = new.source_code));
+  c := weather.cell_of(new.geometry, (select grid_deg from weather.sources where source_code = new.source_code));
   new.cell_lon := c[1];
   new.cell_lat := c[2];
   return new;
@@ -205,7 +205,7 @@ create trigger weather_points_set_cell before insert or update of geometry, sour
 -- Vocabulary rows the module publishes.
 -- ---------------------------------------------------------------------------
 
-insert into weather.models (source_code, purposes, resolution_m, grid_deg, priority, published_by) values
+insert into weather.sources (source_code, purposes, resolution_m, grid_deg, priority, published_by) values
   -- PVGIS: SARAH3 satellite irradiance and typical years, about 5 km.
   ('pvgis',      '{irradiance,typical_year}',                         5000, 0.05, 10, 'weather'),
   -- Open-Meteo: ERA5 and national models blended, history and forecast.
@@ -213,7 +213,7 @@ insert into weather.models (source_code, purposes, resolution_m, grid_deg, prior
 
 insert into property_defs (code, name, description, datatype, applies_to, published_by) values
   ('weather_source', 'Weather source',
-   'The weather model (a source code of weather.models) a participant or a project reads, pinned against the rules and the defaults.',
+   'The weather model (a source code of weather.sources) a participant or a project reads, pinned against the rules and the defaults.',
    'text', '{participant,project}', 'weather');
 
 -- ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ begin
   pinned := attributes_of(p_participant_id, now()) ->> 'weather_source';
   if pinned is not null then
     select m.source_code into found_code
-      from weather.models m
+      from weather.sources m
      where m.source_code = pinned and p_purpose = any (m.purposes);
     if found_code is not null then
       return found_code;
@@ -251,7 +251,7 @@ begin
   -- purpose (its config may restrict it to one purpose).
   select m.source_code into found_code
     from connectors c
-    join weather.models m on m.source_code = c.source_code
+    join weather.sources m on m.source_code = c.source_code
    where c.organisation_id = s.organisation_id
      and c.status = 'active'
      and p_purpose = any (m.purposes)
@@ -276,7 +276,7 @@ begin
 
   -- (d) The preferred model that covers the participant's country and region.
   select m.source_code into found_code
-    from weather.models m
+    from weather.sources m
     join sources src on src.code = m.source_code
    where p_purpose = any (m.purposes)
      and (cardinality(src.countries) = 0 or s.country = any (src.countries))
@@ -306,7 +306,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   s         participants%rowtype;
-  m         weather.models%rowtype;
+  m         weather.sources%rowtype;
   position  geometry;
   c         numeric[];
   point_id  uuid;
@@ -315,7 +315,7 @@ begin
   if not found then
     raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
-  select * into m from weather.models where source_code = p_source_code;
+  select * into m from weather.sources where source_code = p_source_code;
   if not found then
     raise exception 'weather_source_unknown: % is not a weather model', p_source_code using errcode = 'no_data_found';
   end if;
@@ -343,7 +343,7 @@ begin
     returning id into point_id;
   end if;
 
-  insert into weather.participant_points (participant_id, point_id, organisation_id)
+  insert into weather.participants (participant_id, point_id, organisation_id)
   values (p_participant_id, point_id, s.organisation_id)
   on conflict do nothing;
 
@@ -352,7 +352,7 @@ end;
 $$;
 
 comment on function weather.point_for(uuid, text) is
-  'The weather point a participant reads for a model: the organisation''s point in the model''s cell of the participant''s position, created when missing, and records that the participant reads it (participant_points). Named error participant_without_position when the participant has no geometry.';
+  'The weather point a participant reads for a model: the organisation''s point in the model''s cell of the participant''s position, created when missing, and records that the participant reads it (`weather.participants`). Named error participant_without_position when the participant has no geometry.';
 
 grant execute on function weather.cell_of(geometry, numeric), weather.source_for(uuid, text), weather.point_for(uuid, text)
   to authenticated, service_role;

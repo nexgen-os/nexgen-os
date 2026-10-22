@@ -66,7 +66,7 @@ An external series needs an object to hang on. When no participant owns
 it — a weather point shared by many participants, a bidding zone — it is a
 series of the organisation, named by the point or the zone; the module
 that knows the point holds it and says which participants read it
-(`weather.participant_points`).
+(`weather.participants`).
 
 **Open connectors, private connectors.** The interfaces are the contract. A
 connector is open when its data is. A connector whose data or terms are not
