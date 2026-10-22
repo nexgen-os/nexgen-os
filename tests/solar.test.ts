@@ -99,8 +99,8 @@ describe('the solar module', () => {
       { name: 'South', azimuth_deg: '180.00', tilt_deg: '30.00', kwp_dc: '3.400' },
       { name: 'West', azimuth_deg: '270.00', tilt_deg: '25.00', kwp_dc: '1.700' },
     ]);
-    const kind = await one<{ table_name: string; participant: string }>(db, `select table_name, participant_of('pv_array', $1) participant from kinds where kind = 'pv_array'`, [southArray]);
-    expect(kind).toEqual({ table_name: 'solar.pv_arrays', participant: home });
+    const owner = await one<{ participant: string }>(db, `select participant_of('device', pv_system_id) participant from solar.pv_arrays where id = $1`, [southArray]);
+    expect(owner).toEqual({ participant: home });
     // An array is not placed on a roof face: it keeps its own azimuth and tilt, nothing else.
     const columns = await db.query<{ column_name: string }>(
       `select column_name from information_schema.columns where table_schema = 'solar' and table_name = 'pv_arrays' and column_name in ('surface_id', 'geometry')`);
@@ -174,16 +174,35 @@ describe('horizons', () => {
     expect(r).toEqual({ organisation_id: org, n: 4 });
   });
 
-  it('refuses an empty profile, a malformed pair and a horizon on a device', async () => {
+  it('refuses an empty profile, a malformed pair and a horizon on what is neither a participant nor a device', async () => {
     await expect(
-      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('surface', $1, '[]')`, [south]),
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[]')`, [pv]),
     ).rejects.toThrow(/horizons_profile_not_empty/);
     await expect(
-      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('surface', $1, '[[400, 2]]')`, [south]),
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[[400, 2]]')`, [pv]),
     ).rejects.toThrow(/horizons_profile_pairs/);
     await expect(
-      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[[0, 2]]')`, [pv]),
-    ).rejects.toThrow(/horizon_on_participant_or_surface_only/);
+      db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('surface', $1, '[[0, 2]]')`, [south]),
+    ).rejects.toThrow(/kind_unknown: surface|horizons_object_kind/);
+    await db.query(`insert into solar.horizons (object_kind, object_id, profile) values ('device', $1, '[[0, 2]]')`, [pv]);
+  });
+});
+
+describe('design variants', () => {
+  it('keeps the variants of a participant\'s PV in the module, one on top of another, and counts their arrays only in them', async () => {
+    const a = (await one<{ id: string }>(db, `select solar.create_scenario($1, 'A west array') id`, [home])).id;
+    const b = (await one<{ id: string }>(db, `select solar.create_scenario($1, 'A west array and a carport', $2) id`, [home, a])).id;
+    expect((await one<{ parent: string }>(db, 'select parent_id parent from solar.scenarios where id = $1', [b])).parent).toBe(a);
+    const before = Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp);
+    await insert(db, 'solar.pv_arrays', {
+      organisation_id: org, pv_system_id: pv, name: 'Carport', mounting: 'open_rack', azimuth_deg: 180, tilt_deg: 10, kwp_dc: 2, scenario_id: b,
+    });
+    expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp)).toBe(before);
+    expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1, $2) kwp', [pv, b])).kwp)).toBe(before + 2);
+    expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1, $2) kwp', [pv, a])).kwp)).toBe(before);
+    const other = await participant(db, { organisation_id: org, name: 'Neighbour', country: 'BE' });
+    await expect(db.query(`select solar.create_scenario($1, 'Borrowed', $2)`, [other, a])).rejects.toThrow(/scenario_not_found/);
+    await db.query(`delete from solar.pv_arrays where scenario_id = $1`, [b]);
   });
 });
 

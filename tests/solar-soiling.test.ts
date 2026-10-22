@@ -1,5 +1,5 @@
-// The soiling of a place (`soiling_loss`): an attribute of a PV array, its
-// system or its site, read through parameter_of() the nearest first, that
+// The soiling of a place (`soiling_loss`): a column of a PV array, an
+// attribute of its system or its site, read the nearest first, that
 // takes the place of a yield profile's own soiling loss. A profile that
 // folds soiling into one aggregate loss keeps it, and the run says so.
 import { readFile } from 'node:fs/promises';
@@ -43,7 +43,9 @@ let south: string;
 let east: string;
 
 async function soiling(kind: string, objectId: string, value: number, source: string): Promise<void> {
-  await db.query(`insert into attributes (organisation_id, object_kind, object_id, property_code, value, source) values ($1, $2, $3, 'soiling_loss', $4::jsonb, $5)`, [org, kind, objectId, JSON.stringify(value), source]);
+  // An array says its own in its column; a system or a participant as an attribute, with its source.
+  if (kind === 'pv_array') await db.query('update solar.pv_arrays set soiling_loss = $2 where id = $1', [objectId, value]);
+  else await db.query(`insert into attributes (organisation_id, object_kind, object_id, property_code, value, source) values ($1, $2, $3, 'soiling_loss', $4::jsonb, $5)`, [org, kind, objectId, JSON.stringify(value), source]);
 }
 
 beforeAll(async () => {
@@ -86,7 +88,7 @@ describe('a yield run with the soiling of the place', () => {
     };
     const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
     expect(asked.map((u) => new URL(u).searchParams.get('loss'))).toEqual(['14', '14']);
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from runs where id = $1', [result.runId]);
+    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.runs where id = $1', [result.runId]);
     expect(run.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
     expect(run.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'participant', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
   });
@@ -97,7 +99,7 @@ describe('a yield run with the soiling of the place', () => {
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
     );
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from runs where id = $1', [result.runId]);
+    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.runs where id = $1', [result.runId]);
     expect(run.inputs.losses.find((l) => l.code === 'soiling')).toEqual({ code: 'soiling', pct: 5 });
     expect(run.inputs.losses.map((l) => l.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
     expect(run.inputs.arrays.map((a) => a.soiling)).toEqual([

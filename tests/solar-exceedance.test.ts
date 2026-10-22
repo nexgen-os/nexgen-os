@@ -35,7 +35,7 @@ afterAll(async () => {
 const yieldRun = async (name: string, perHour: Record<number, number>, results: Record<string, unknown> = {}) => {
   const { seriesId } = await storeSeries(db, { organisationId: org, objectKind: 'device', objectId: system, sourceCode: 'open_meteo', kind: 'simulated', name }, { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: years(perHour) });
   const span = Object.keys(perHour).map(Number);
-  return (await db.query<{ id: string }>(`select record_run('solar', 'fake 1.0.0', 'device', $1, null, $2::jsonb, $3::jsonb) id`, [system, JSON.stringify({ name, weather: { years: { from: Math.min(...span), to: Math.max(...span) } } }), JSON.stringify({ series_id: seriesId, ...results })])).rows[0].id;
+  return (await db.query<{ id: string }>(`select record_run('solar.runs', 'device', $1, 'fake 1.0.0', $2::jsonb, $3::jsonb) id`, [system, JSON.stringify({ name, weather: { years: { from: Math.min(...span), to: Math.max(...span) } } }), JSON.stringify({ series_id: seriesId, ...results })])).rows[0].id;
 };
 
 describe('the quantiles of the normal distribution', () => {
@@ -55,8 +55,8 @@ describe('P50 and P90 of a yield run', () => {
     expect(got.exceedance_kwh['90']).toBeCloseTo(876 * (1 - 1.2815516 * 0.1), 2);
     expect(Object.keys(got.exceedance_kwh)).toEqual(['75', '90', '99']);
 
-    const recorded = await one<{ engine_version: string; subject_id: string; inputs: Record<string, any> }>(db, 'select engine_version, subject_id, inputs from runs where id = $1', [got.runId]);
-    expect(recorded).toMatchObject({ engine_version: EXCEEDANCE_ENGINE_VERSION, subject_id: system, inputs: { kind: 'exceedance', yield_run_id: run, horizon_years: 1, uncertainties: [] } });
+    const recorded = await one<{ engine_version: string; device_id: string; inputs: Record<string, any> }>(db, 'select engine_version, device_id, inputs from solar.runs where id = $1', [got.runId]);
+    expect(recorded).toMatchObject({ engine_version: EXCEEDANCE_ENGINE_VERSION, device_id: system, inputs: { kind: 'exceedance', yield_run_id: run, horizon_years: 1, uncertainties: [] } });
     expect((await exceedance(db, { yieldRunId: run })).runId).toBe(got.runId);
   });
 

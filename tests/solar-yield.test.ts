@@ -60,8 +60,7 @@ describe('a pvgis_like yield run', () => {
     );
     expect(series).toEqual({ kind: 'simulated', source: 'pvgis', n: 48, max: Math.round(0.35008 * 2 * 1e6) / 1e6 });
 
-    const run = await one<{ module_code: string; status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select module_code, status, inputs, results from runs where id = $1', [result.runId]);
-    expect(run.module_code).toBe('solar');
+    const run = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.runs where id = $1', [result.runId]);
     expect(run.status).toBe('succeeded');
     expect(run.inputs).toMatchObject({
       profile: 'pvgis_like',

@@ -45,34 +45,34 @@ describe('a yield run computed by an engine', () => {
 
     // `pvwatts` names no transposition: the plane-of-array irradiance of the source, read per array.
     expect(asked.map((u) => [new URL(u).searchParams.get('hourly'), new URL(u).searchParams.get('azimuth')])).toEqual([
-      ['global_tilted_irradiance,temperature_2m,wind_speed_10m', '0'],
-      ['global_tilted_irradiance', '-90'],
+      ['global_tilted_irradiance,temperature_2m,wind_speed_10m', '-90'],
+      ['global_tilted_irradiance', '0'],
     ]);
     // The fake engine answers 0.5 kWh for every hour it was sent: the local year 2023, 8,760 hours.
     expect(result.annualKwh).toBe(4380);
     expect(result.kwhPerKwp).toBe(146);
 
+    // The series of an array hang on its system, told apart by the array's name.
     const stored = await db.query<{ object_id: string; quantity_code: string; kind: string; source_code: string; name: string; n: number }>(
       `select s.object_id, s.quantity_code, s.kind, s.source_code, s.name, count(v.*)::int n
          from series s join series_values v on v.series_id = s.id
-        where s.name = 'fake 2023-2023' group by s.id order by s.quantity_code, s.object_id = $1 desc`,
-      [south],
+        where s.name like 'fake 2023-2023%' group by s.id order by s.quantity_code, s.name`,
     );
     expect(stored.rows).toEqual([
-      { object_id: south, quantity_code: 'module_temperature', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
-      { object_id: east, quantity_code: 'module_temperature', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
-      { object_id: south, quantity_code: 'poa_irradiance', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
-      { object_id: east, quantity_code: 'poa_irradiance', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
+      { object_id: system, quantity_code: 'module_temperature', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023 East', n: 8760 },
+      { object_id: system, quantity_code: 'module_temperature', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023 South', n: 8760 },
+      { object_id: system, quantity_code: 'poa_irradiance', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023 East', n: 8760 },
+      { object_id: system, quantity_code: 'poa_irradiance', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023 South', n: 8760 },
       { object_id: system, quantity_code: 'production_energy', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
     ]);
 
-    const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from runs where id = $1', [result.runId]);
+    const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.runs where id = $1', [result.runId]);
     expect(run.engine_version).toBe('fake 1.0.0');
     expect(run.inputs).toMatchObject({
       profile: 'pvwatts',
       engine: { name: 'fake', version: 'fake 1.0.0', contract: 1, dependencies: { node: process.versions.node } },
       weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, time_zone: 'Europe/Brussels' },
-      arrays: [{ name: 'South', kwp: 20, module_model: 'pvwatts' }, { name: 'East', kwp: 10, module_model: 'pvwatts' }],
+      arrays: [{ name: 'East', kwp: 10, module_model: 'pvwatts' }, { name: 'South', kwp: 20, module_model: 'pvwatts' }],
       losses: [{ code: 'system', pct: 14 }],
     });
     // What the engine was told, as it echoes it: the profile's models.
@@ -102,7 +102,7 @@ describe('a yield run computed by an engine', () => {
 
       await db.query('update solar.pv_arrays set module_product_id = $1, modules_per_string = 23, strings = 1 where pv_system_id = $2', [module, system]);
       const result = await run({ pvSystemId: system });
-      const recorded = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [result.runId]);
+      const recorded = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.runs where id = $1', [result.runId]);
       expect(recorded.inputs.inverter).toEqual({ model: 'sandia', fitted_from: 'ond', parameters: sandiaFromOnd(ond) });
       expect(recorded.inputs.arrays.map((a: { module_model: string }) => a.module_model)).toEqual(['pvsyst', 'pvsyst']);
     } finally {
