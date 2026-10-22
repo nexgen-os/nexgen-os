@@ -1,0 +1,104 @@
+{
+  "defaults": [
+    {
+      "object": "device:battery",
+      "attribute_type": "round_trip_efficiency",
+      "at": "2026-06-15",
+      "value": 0.85,
+      "level": "generic",
+      "conditions": {},
+      "source_code": "atb_2025_residential_battery",
+      "source": "modules/storage: 85 %, the residential battery of the Annual Technology Baseline 2025, published for every country."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 199.5,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_eurostat_household_prices",
+      "source": "packs/be/defaults.json: Eurostat nrg_pc_204_c, 2025, network costs and taxes of the household band."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "market_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.13173,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_aib_residual_mix_2024",
+      "source": "packs/be/defaults.json: the residual mix of BE in 2024, Table 2 of the European Residual Mixes 2024 of the Association of Issuing Bodies."
+    }
+  ],
+  "batteries": [
+    {
+      "device": "battery",
+      "at": "2026-06-15",
+      "figures": {
+        "usable_capacity_kwh": {
+          "value": 5,
+          "level": "device"
+        },
+        "discharge_power_kw": {
+          "value": 2,
+          "level": "c_rate"
+        },
+        "round_trip_efficiency": {
+          "value": 0.85,
+          "level": "generic"
+        }
+      },
+      "source": "storage.battery_of(): 5 kWh at the generic C-rate of 0.4, the generic efficiency (Annual Technology Baseline 2025)."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "home",
+      "operator": "fluvius",
+      "by": "region",
+      "region": "BE-VLG",
+      "source": "packs/be/grid.json: fluvius, the one distribution operator of BE-VLG."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "self_consumed_energy",
+      "value": 11.0,
+      "tolerance": 1e-06,
+      "read": {
+        "direct": "computed",
+        "discharge": "measured"
+      },
+      "source": "9.5 kWh directly, 1.5 kWh through the battery."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.956522,
+      "tolerance": 1e-06,
+      "source": "11 / 11.5."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "battery_boost_rate",
+      "value": 0.178571,
+      "tolerance": 1e-06,
+      "source": "2.5 / 14."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings_household",
+      "value": 3.8896,
+      "tolerance": 1e-06,
+      "source": "11 kWh at 154.1 + 199.5 €/MWh, packs/be 2025."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "co2_avoided",
+      "refusal": "parameter_missing",
+      "source": "packs/be has no grid_co2_factor."
+    }
+  ]
+}

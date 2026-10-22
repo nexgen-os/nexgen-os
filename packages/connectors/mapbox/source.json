@@ -1,0 +1,14 @@
+{
+  "code": "mapbox",
+  "name": "Mapbox Geocoding",
+  "description": "A commercial geocoder, worldwide: an address to a point and a point to its address, with house-number precision where Mapbox has it. Read by @nexgen-os/mapbox, in the permanent mode, the one whose results Mapbox's terms let a customer store; asked after the country's register and the open fallback.",
+  "kind": "api",
+  "base_url": "https://api.mapbox.com/search/geocode/v6",
+  "docs_url": "https://docs.mapbox.com/api/search/geocoding/",
+  "auth": "api_key",
+  "license": "Mapbox Terms of Service and product terms: results of temporary geocoding may not be stored; permanent geocoding (permanent=true, billed per request) may be stored by the customer; neither may be redistributed as a dataset",
+  "attribution": "© Mapbox",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/mapbox"
+}

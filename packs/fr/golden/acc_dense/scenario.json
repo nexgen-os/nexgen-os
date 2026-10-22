@@ -1,0 +1,188 @@
+{
+  "name": "A collective self-consumption in Lyon, within 2 km",
+  "description": "A car-park canopy shares its surplus with a school and a bakery of Lyon, a large urban centre of the INSEE density grid: the participants furthest apart must be within 2 km of each other. Four hours of a June day.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A sharing operator of the case",
+  "project": {
+    "name": "Lyon car-park sharing",
+    "kind": "fr_acc",
+    "country": "FR"
+  },
+  "participants": [
+    {
+      "ref": "plant",
+      "name": "Car-park canopy",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-69M",
+        "municipality": "69123",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.8357,
+            45.764
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "plant",
+          "identifier": "30001000000001",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Canopy PV",
+          "rated_power_kw": 36
+        }
+      ]
+    },
+    {
+      "ref": "school",
+      "name": "Primary school",
+      "role": "consumer",
+      "segment": "public_entity",
+      "place": {
+        "country": "FR",
+        "region": "FR-69M",
+        "municipality": "69123",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.846002,
+            45.764
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "school",
+          "identifier": "30001000000002",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ]
+    },
+    {
+      "ref": "bakery",
+      "name": "Bakery",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-69M",
+        "municipality": "69123",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.856303,
+            45.764
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "bakery",
+          "identifier": "30001000000003",
+          "scheme": "prm"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        20,
+        30,
+        30,
+        20
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "injection_energy",
+      "values": [
+        18,
+        28,
+        28,
+        18
+      ]
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:school",
+      "quantity": "offtake_energy",
+      "values": [
+        10,
+        12,
+        12,
+        10
+      ]
+    },
+    {
+      "object": "meter:school",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:bakery",
+      "quantity": "offtake_energy",
+      "values": [
+        6,
+        8,
+        20,
+        6
+      ]
+    },
+    {
+      "object": "meter:bakery",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

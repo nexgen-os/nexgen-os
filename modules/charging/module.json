@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "charging",
+  "name": "Charging",
+  "description": "Electric vehicle chargers, their EVSEs and connectors, the sessions they deliver, the charging profiles they are asked to keep as commands, and the sizing of charge points, as estimates.",
+  "version": "0.3.0",
+  "schema": "charging",
+  "requires": {
+    "core": "0.3.0",
+    "modules": ["actions"]
+  },
+  "licence": "AGPL-3.0-only"
+}

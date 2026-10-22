@@ -1,0 +1,32 @@
+{
+  "sources": [
+    {
+      "code": "xa_grid_code",
+      "name": "Grid code of Examplia",
+      "kind": "text",
+      "url": "https://example.org/grid-code",
+      "license": "public text",
+      "redistributable": true
+    },
+    {
+      "code": "xa_address_register",
+      "name": "Address register of the North",
+      "kind": "api",
+      "url": "https://example.org/addresses",
+      "docs_url": "https://example.org/addresses/docs",
+      "license": "CC-BY-4.0",
+      "attribution": "Address register of the North",
+      "redistributable": true,
+      "regions": ["XA-N"]
+    },
+    {
+      "code": "xa_statistics",
+      "name": "Statistics office of Examplia",
+      "kind": "file",
+      "url": "https://example.org/statistics",
+      "license": "CC-BY-4.0",
+      "redistributable": false,
+      "retention_days": 30
+    }
+  ]
+}

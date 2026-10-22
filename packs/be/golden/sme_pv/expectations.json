@@ -1,0 +1,65 @@
+{
+  "defaults": [
+    {
+      "object": "participant:sme",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 102.5,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_eurostat_business_prices",
+      "source": "packs/be/defaults.json: Eurostat nrg_pc_205_c, 2025."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "sme",
+      "operator": "fluvius",
+      "by": "region",
+      "region": "BE-VLG",
+      "source": "packs/be/grid.json: fluvius serves BE-VLG."
+    }
+  ],
+  "solar": {
+    "energy_kwh": 111.183871,
+    "tolerance_pct": 0.1,
+    "source": "PVWatts DC model (Dobos 2014, NREL/TP-6A20-62641) with Faiman cell temperature U0 25, U1 6.84 and a 14 % system loss, the pvwatts profile of modules/solar, worked by hand hour by hour."
+  },
+  "kpis": [
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_rate",
+      "value": 0.792857,
+      "tolerance": 1e-06,
+      "source": "(140 − 29) / 140."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.917355,
+      "tolerance": 1e-06,
+      "source": "111 / (10 + 111)."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "specific_yield",
+      "value": 2.8,
+      "tolerance": 1e-06,
+      "source": "140 kWh over 50 kWp."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_savings_business",
+      "value": 33.522,
+      "tolerance": 1e-06,
+      "source": "111 kWh at 102.5 + 199.5 €/MWh, the business energy price and the grid fees and taxes of packs/be, 2025."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "injection_value",
+      "value": 2.0358,
+      "tolerance": 1e-06,
+      "source": "29 kWh injected (140 − 111) at 70.2 €/MWh, the mean day-ahead price of Belgium in 2024 (CREG, annual report 2024)."
+    }
+  ]
+}

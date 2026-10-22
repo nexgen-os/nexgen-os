@@ -1,0 +1,103 @@
+{
+  "name": "A ground-mounted PV farm of Arandas that injects everything",
+  "description": "A PV farm sells all it produces: nothing is self-consumed, the energy injected is valued at the reference price of the pack and, hour by hour, at a day-ahead price series of the project.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A PV producer of the case",
+  "project": {
+    "name": "Arandas PV farm",
+    "kind": "other",
+    "country": "FR"
+  },
+  "participants": [
+    {
+      "ref": "farm",
+      "name": "PV farm",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-01",
+        "municipality": "01013",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.48,
+            45.89
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "farm",
+          "identifier": "30005000000001",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Ground PV",
+          "rated_power_kw": 250
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "participant:farm",
+      "attribute_type": "installed_power",
+      "value": 250,
+      "source": "An input of the case: 250 kWp."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        50,
+        80,
+        90,
+        60
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:farm",
+      "quantity": "injection_energy",
+      "values": [
+        50,
+        80,
+        90,
+        60
+      ]
+    },
+    {
+      "object": "meter:farm",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "project",
+      "quantity": "energy_price",
+      "values": [
+        40,
+        35,
+        30,
+        45
+      ],
+      "source": "An input of the case: four hourly prices in €/MWh made up for it, not a market record."
+    }
+  ]
+}

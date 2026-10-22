@@ -1,0 +1,40 @@
+# Nexgen OS — Supabase project configuration, for a local project.
+#
+# The installer of Nexgen OS is `npx nexgen-os init` (packages/cli): it applies
+# the core, the modules and the country packs asked for and records each file
+# in `nexgen.schema_migrations`. This file lets `supabase start` and
+# `supabase db reset` build the core alone on a local project. `project_id` is
+# a local label; `supabase link --project-ref <ref>` is what points the CLI at
+# your own project.
+
+project_id = "nexgen-os"
+
+[db]
+major_version = 15
+
+[db.migrations]
+schema_paths = []
+
+# The vocabularies of the core only. A country seed fills tables of the
+# modules (`grid.operators`…), which the Supabase CLI does not install: a pack
+# is applied by `npx nexgen-os init --packs <cc>`.
+[db.seed]
+enabled = true
+sql_paths = ["./seed/0001_core_vocabularies.sql"]
+
+# PostgREST serves only the schemas listed here. The core is `nexgen`; a module
+# is a schema of its own and is served only once it is added. On a hosted
+# project it is Project Settings → Data API → Exposed schemas.
+#
+#   schemas = ["nexgen", "building", "solar", "weather"]
+#
+# Nothing is given to the anonymous role: everything is read signed in, under
+# row level security.
+[api]
+enabled = true
+schemas = ["nexgen"]
+extra_search_path = ["nexgen", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true

@@ -1,0 +1,73 @@
+{
+  "defaults": [
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 154.1,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_eurostat_household_prices",
+      "source": "packs/be/defaults.json: Eurostat nrg_pc_204_c, 2025."
+    },
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/be decides a perimeter for a Walloon be_cer only; the Brussels texts wait to be read (packs/be/README.md)."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "refusal": "parameter_missing",
+    "source": "No sharing_perimeter for be_energy_sharing in BE-BRU."
+  },
+  "operators": [
+    {
+      "meter": "flat_a",
+      "operator": "sibelga",
+      "by": "prefix",
+      "prefix": "5414489",
+      "source": "packs/be/grid.json: sibelga, whose EAN codes all start with 5414489 (sibelga.be, page EAN code)."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 28.5,
+    "participants": {
+      "roof": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 28.5
+      },
+      "flat_a": {
+        "shared_offtake_energy": 14.318182,
+        "shared_injection_energy": 0.0
+      },
+      "flat_b": {
+        "shared_offtake_energy": 14.181818,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. At 11:00 the flats take 11 kWh and the roof injects 9.5: flat A receives 9.5 × 5/11, flat B 9.5 × 6/11."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.791667,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "28.5 kWh shared over 36 kWh produced."
+    },
+    {
+      "object": "participant:flat_a",
+      "indicator": "residual_offtake_energy",
+      "value": 0.681818,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "15 kWh taken less what the key shared to flat A."
+    }
+  ]
+}

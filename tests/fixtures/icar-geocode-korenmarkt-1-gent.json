@@ -1,0 +1,42 @@
+{
+    "address": {
+        "city": {
+            "name": "Gent"
+        },
+        "zone": {
+            "ident": "9000"
+        },
+        "street": {
+            "resolvedNames": {
+                "fr": "Korenmarkt"
+            },
+            "name": "Korenmarkt"
+        },
+        "house": {
+            "name": "1"
+        }
+    },
+    "candidates": [
+        {
+            "score": 200,
+            "city": {
+                "ident": "64029",
+                "name": "Geer",
+                "lang": "F",
+                "geometry": {
+                    "type": "Point",
+                    "crs": {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+                    },
+                    "coordinates": [
+                        5.171000603328073,
+                        50.66831956932467
+                    ]
+                }
+            }
+        }
+    ]
+}

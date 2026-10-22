@@ -1,0 +1,111 @@
+{
+  "name": "A household of Gent with PV and a battery",
+  "description": "A house of Gent self-consumes its PV directly and through a 5 kWh battery the inverter meters.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A household of the case",
+  "project": {
+    "name": "Home self-consumption",
+    "kind": "individual_self_consumption",
+    "country": "BE"
+  },
+  "participants": [
+    {
+      "ref": "home",
+      "name": "House",
+      "role": "prosumer",
+      "segment": "individual",
+      "place": {
+        "country": "BE",
+        "region": "BE-VLG",
+        "municipality": "44021",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            3.7174,
+            51.0543
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "home",
+          "identifier": "541449000000000401",
+          "scheme": "gs1_gsrn"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 6
+        },
+        {
+          "ref": "battery",
+          "type": "battery",
+          "name": "Home battery",
+          "storage": {
+            "usable_capacity_kwh": 5
+          }
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        3,
+        4,
+        4,
+        3
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "device:battery",
+      "quantity": "battery_charge_energy",
+      "values": [
+        1,
+        1.5,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "device:battery",
+      "quantity": "battery_discharge_energy",
+      "values": [
+        0,
+        0,
+        0.5,
+        1
+      ]
+    },
+    {
+      "object": "meter:home",
+      "quantity": "injection_energy",
+      "values": [
+        0.5,
+        1,
+        0.5,
+        0
+      ]
+    },
+    {
+      "object": "meter:home",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0.5
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+    "result": [
+        {
+            "language": "fr",
+            "address": {
+                "street": {
+                    "name": "Marais de Jette-Ganshoren",
+                    "postCode": "1083",
+                    "municipality": "Ganshoren",
+                    "id": "153663379"
+                },
+                "number": ""
+            },
+            "adNc": "",
+            "score": 16,
+            "point": {
+                "x": 4.30607890076129,
+                "y": 50.87977228746054
+            },
+            "extent": {
+                "xmin": 2.3066892460101664,
+                "ymin": 49.29333540052289,
+                "xmax": 2.3066892460101664,
+                "ymax": 49.29333540052289
+            },
+            "qualificationText": {
+                "policeNumber": "Not found",
+                "postCode": "Not found",
+                "municipality": "Not introduced",
+                "streetName": "Not found or does not match perfectly"
+            },
+            "qualificationCode": {
+                "policeNumber": "2",
+                "postCode": "2",
+                "municipality": "0",
+                "streetName": "2"
+            }
+        },
+        {
+            "language": "fr",
+            "address": {
+                "street": {
+                    "name": "Rue du Korenbeek",
+                    "postCode": "1080",
+                    "municipality": "Molenbeek-Saint-Jean",
+                    "id": "2732"
+                },
+                "number": "1"
+            },
+            "adNc": "",
+            "score": 12.5,
+            "point": {
+                "x": 4.309482345666127,
+                "y": 50.85892381565481
+            },
+            "extent": {
+                "xmin": 4.2989069972165765,
+                "ymin": 50.85546634592452,
+                "xmax": 4.309667618549576,
+                "ymax": 50.859076980956374
+            },
+            "qualificationText": {
+                "policeNumber": "Position interpolate",
+                "postCode": "Not found",
+                "municipality": "Not introduced",
+                "streetName": "Not found or does not match perfectly"
+            },
+            "qualificationCode": {
+                "policeNumber": "3",
+                "postCode": "2",
+                "municipality": "0",
+                "streetName": "2"
+            }
+        }
+    ],
+    "error": false,
+    "status": "success",
+    "version": "2.0.4"
+}

@@ -1,0 +1,186 @@
+{
+  "name": "Energy sharing within a building of Brussels",
+  "description": "The co-ownership of a Brussels building shares the PV of its roof with two flats. The Brussels rules of a perimeter are not read into the pack yet: the perimeter is refused by name, the sharing settled all the same.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A co-ownership of the case",
+  "project": {
+    "name": "Building sharing",
+    "kind": "be_energy_sharing",
+    "country": "BE"
+  },
+  "participants": [
+    {
+      "ref": "roof",
+      "name": "Common parts",
+      "role": "producer",
+      "segment": "coproperty",
+      "place": {
+        "country": "BE",
+        "region": "BE-BRU",
+        "municipality": "21004",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.3517,
+            50.8466
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "roof",
+          "identifier": "541448900000000301",
+          "scheme": "gs1_gsrn"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Building PV",
+          "rated_power_kw": 10
+        }
+      ]
+    },
+    {
+      "ref": "flat_a",
+      "name": "Flat A",
+      "role": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "BE",
+        "region": "BE-BRU",
+        "municipality": "21004",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.3517,
+            50.8466
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "flat_a",
+          "identifier": "541448900000000302",
+          "scheme": "gs1_gsrn"
+        }
+      ]
+    },
+    {
+      "ref": "flat_b",
+      "name": "Flat B",
+      "role": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "BE",
+        "region": "BE-BRU",
+        "municipality": "21004",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.3517,
+            50.8466
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "flat_b",
+          "identifier": "541448900000000303",
+          "scheme": "gs1_gsrn"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        8,
+        10,
+        10,
+        8
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:roof",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:roof",
+      "quantity": "injection_energy",
+      "values": [
+        7.5,
+        9.5,
+        9.5,
+        7.5
+      ]
+    },
+    {
+      "object": "meter:flat_a",
+      "quantity": "offtake_energy",
+      "values": [
+        3,
+        4,
+        5,
+        3
+      ]
+    },
+    {
+      "object": "meter:flat_a",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:flat_b",
+      "quantity": "offtake_energy",
+      "values": [
+        2,
+        3,
+        6,
+        4
+      ]
+    },
+    {
+      "object": "meter:flat_b",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

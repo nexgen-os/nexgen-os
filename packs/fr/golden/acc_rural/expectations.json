@@ -1,0 +1,160 @@
+{
+  "defaults": [
+    {
+      "object": "participant:plant",
+      "attribute_type": "sharing_max_distance_m",
+      "at": "2026-06-15",
+      "value": 20000,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "project_kind": "fr_acc",
+        "density_class": "rural_very_dispersed"
+      },
+      "source_code": "fr_arrete_acc_perimeter",
+      "source": "packs/fr/defaults.json: 20 km by derogation in a rural municipality, the arrêté of 21 November 2019 as amended in 2023; Arandas is rural_very_dispersed in packs/fr/municipalities.json."
+    },
+    {
+      "object": "participant:sawmill",
+      "attribute_type": "sharing_max_distance_m",
+      "at": "2026-06-15",
+      "value": 20000,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "project_kind": "fr_acc",
+        "density_class": "rural_town"
+      },
+      "source_code": "fr_arrete_acc_perimeter",
+      "source": "The same derogation for Anglefort, a rural town."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "density_class",
+      "at": "2026-06-15",
+      "value": "rural_very_dispersed",
+      "level": "municipality",
+      "region": "FR-01013",
+      "source_code": "fr_insee_density_grid",
+      "source": "packs/fr/municipalities.json: INSEE grille communale de densité, 2025 edition."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "tolerance_m": 100,
+    "rule": {
+      "criteria": [
+        "max_distance_between_members"
+      ],
+      "level": "country",
+      "conditions": {
+        "project_kind": "fr_acc"
+      },
+      "source_code": "fr_arrete_acc_perimeter"
+    },
+    "participants": {
+      "plant": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": false,
+            "value_m": 20000,
+            "distance_m": 23040
+          }
+        ]
+      },
+      "farm": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": true,
+            "value_m": 20000,
+            "distance_m": 12021
+          }
+        ]
+      },
+      "dairy": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": true,
+            "value_m": 20000,
+            "distance_m": 19033
+          }
+        ]
+      },
+      "sawmill": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": false,
+            "value_m": 20000,
+            "distance_m": 23040
+          }
+        ]
+      }
+    },
+    "source": "On one parallel at 0, 12, 19 and 23 km: the greatest distance from each to another is 23, 12, 19 and 23 km against 20 km. The distances are the parallel's on the WGS 84 ellipsoid (1.00173 times the sphere's at 45.89°), held to 100 m."
+  },
+  "operators": [
+    {
+      "meter": "plant",
+      "operator": "enedis",
+      "by": "meter",
+      "source": "The scenario connects the meter to enedis."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 264.0,
+    "participants": {
+      "plant": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 264.0
+      },
+      "farm": {
+        "shared_offtake_energy": 82.194444,
+        "shared_injection_energy": 0.0
+      },
+      "dairy": {
+        "shared_offtake_energy": 136.222222,
+        "shared_injection_energy": 0.0
+      },
+      "sawmill": {
+        "shared_offtake_energy": 45.583333,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The pool (56, 76, 76, 56 kWh) is below the demand at every hour: all of it is shared."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.942857,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "264 kWh shared over 280 kWh produced."
+    },
+    {
+      "object": "participant:dairy",
+      "indicator": "shared_coverage_rate",
+      "refusal": "series_not_found",
+      "after": "settlement",
+      "source": "The dairy has no production series: its self-consumption cannot be computed, and the model refuses rather than take it for zero."
+    },
+    {
+      "object": "participant:sawmill",
+      "indicator": "residual_offtake_energy",
+      "value": 4.416667,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "50 kWh taken less what the key shared to the sawmill."
+    }
+  ]
+}

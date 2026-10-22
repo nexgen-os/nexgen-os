@@ -1,0 +1,68 @@
+{
+  "defaults": [
+    {
+      "object": "participant:school",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.2,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_bofip_vat_energy_subscriptions",
+      "source": "packs/fr/defaults.json: 20 % from 1 August 2025, BOI-RES-TVA-000209."
+    },
+    {
+      "object": "project",
+      "attribute_type": "injection_price_reference",
+      "at": "2026-06-15",
+      "value": 61.1,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_rte_bilan_2025",
+      "source": "packs/fr/defaults.json: the yearly mean day-ahead price, RTE Bilan électrique 2025."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "school",
+      "operator": "geg_reseaux",
+      "by": "region",
+      "region": "FR-38",
+      "source": "packs/fr/grid.json: geg_reseaux is the one distribution operator the pack lists in FR-38, and the meter says none itself."
+    }
+  ],
+  "solar": {
+    "energy_kwh": 71.353448,
+    "tolerance_pct": 0.1,
+    "source": "PVWatts DC model (Dobos 2014, NREL/TP-6A20-62641), E = kWp × G/1000 × (1 + γ (Tcell − 25)) × (1 − 14 %), Tcell by Faiman with U0 25 and U1 6.84: the pvwatts profile of modules/solar, worked by hand hour by hour."
+  },
+  "kpis": [
+    {
+      "object": "participant:school",
+      "indicator": "specific_yield",
+      "value": 2.866667,
+      "tolerance": 1e-06,
+      "source": "86 kWh over the 30 kWp the school's installed_power says."
+    },
+    {
+      "object": "participant:school",
+      "indicator": "self_consumption_rate",
+      "value": 0.732558,
+      "tolerance": 1e-06,
+      "source": "(86 − 23) / 86."
+    },
+    {
+      "object": "participant:school",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.940299,
+      "tolerance": 1e-06,
+      "source": "63 / (4 + 63)."
+    },
+    {
+      "object": "participant:school",
+      "indicator": "self_consumption_savings_business",
+      "value": 15.2082,
+      "tolerance": 1e-06,
+      "source": "63 kWh at 88.2 + 153.2 €/MWh, the business energy price and grid fees and taxes of the pack, 2025."
+    }
+  ]
+}

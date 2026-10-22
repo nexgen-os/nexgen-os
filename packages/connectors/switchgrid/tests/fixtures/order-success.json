@@ -1,0 +1,6 @@
+{
+  "id": "ord-0001",
+  "status": "SUCCESS",
+  "requests": [{ "id": "req-0001", "type": "R63", "status": "SUCCESS", "dataUrls": ["https://files.switchgrid.example/req-0001/r63-1.json?signature=redacted"] }],
+  "summaryPerContract": [{ "deliveryPointId": "00000000000002", "_status": "final", "timeRangeCoverageRatio": 0.96, "holes": [] }]
+}

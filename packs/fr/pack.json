@@ -1,0 +1,609 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "FR",
+  "name": "France",
+  "version": "0.3.0",
+  "checksum": "sha256:a17fe65f7b1c704340b524abe98139e9388e47f39ece5a6e03c700e1b6619993",
+  "schema_min": "0.3.0",
+  "seed_sequence": 10,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "fr"
+    ],
+    "time_zones": [
+      "Europe/Paris",
+      "America/Guadeloupe",
+      "America/Martinique",
+      "America/Cayenne",
+      "Indian/Reunion",
+      "Indian/Mayotte"
+    ],
+    "region_level": "department",
+    "postal_code_pattern": "^[0-9]{5}$",
+    "municipality_scheme": "insee",
+    "regions": [
+      {
+        "code": "FR-01",
+        "name": "Ain",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-02",
+        "name": "Aisne",
+        "parent": "FR-HDF"
+      },
+      {
+        "code": "FR-03",
+        "name": "Allier",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-04",
+        "name": "Alpes-de-Haute-Provence",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-05",
+        "name": "Hautes-Alpes",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-06",
+        "name": "Alpes-Maritimes",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-07",
+        "name": "Ardèche",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-08",
+        "name": "Ardennes",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-09",
+        "name": "Ariège",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-10",
+        "name": "Aube",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-11",
+        "name": "Aude",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-12",
+        "name": "Aveyron",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-13",
+        "name": "Bouches-du-Rhône",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-14",
+        "name": "Calvados",
+        "parent": "FR-NOR"
+      },
+      {
+        "code": "FR-15",
+        "name": "Cantal",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-16",
+        "name": "Charente",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-17",
+        "name": "Charente-Maritime",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-18",
+        "name": "Cher",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-19",
+        "name": "Corrèze",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-20R",
+        "name": "Corse"
+      },
+      {
+        "code": "FR-21",
+        "name": "Côte-d'Or",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-22",
+        "name": "Côtes-d'Armor",
+        "parent": "FR-BRE"
+      },
+      {
+        "code": "FR-23",
+        "name": "Creuse",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-24",
+        "name": "Dordogne",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-25",
+        "name": "Doubs",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-26",
+        "name": "Drôme",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-27",
+        "name": "Eure",
+        "parent": "FR-NOR"
+      },
+      {
+        "code": "FR-28",
+        "name": "Eure-et-Loir",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-29",
+        "name": "Finistère",
+        "parent": "FR-BRE"
+      },
+      {
+        "code": "FR-2A",
+        "name": "Corse-du-Sud",
+        "parent": "FR-20R"
+      },
+      {
+        "code": "FR-2B",
+        "name": "Haute-Corse",
+        "parent": "FR-20R"
+      },
+      {
+        "code": "FR-30",
+        "name": "Gard",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-31",
+        "name": "Haute-Garonne",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-32",
+        "name": "Gers",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-33",
+        "name": "Gironde",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-34",
+        "name": "Hérault",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-35",
+        "name": "Ille-et-Vilaine",
+        "parent": "FR-BRE"
+      },
+      {
+        "code": "FR-36",
+        "name": "Indre",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-37",
+        "name": "Indre-et-Loire",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-38",
+        "name": "Isère",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-39",
+        "name": "Jura",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-40",
+        "name": "Landes",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-41",
+        "name": "Loir-et-Cher",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-42",
+        "name": "Loire",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-43",
+        "name": "Haute-Loire",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-44",
+        "name": "Loire-Atlantique",
+        "parent": "FR-PDL"
+      },
+      {
+        "code": "FR-45",
+        "name": "Loiret",
+        "parent": "FR-CVL"
+      },
+      {
+        "code": "FR-46",
+        "name": "Lot",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-47",
+        "name": "Lot-et-Garonne",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-48",
+        "name": "Lozère",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-49",
+        "name": "Maine-et-Loire",
+        "parent": "FR-PDL"
+      },
+      {
+        "code": "FR-50",
+        "name": "Manche",
+        "parent": "FR-NOR"
+      },
+      {
+        "code": "FR-51",
+        "name": "Marne",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-52",
+        "name": "Haute-Marne",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-53",
+        "name": "Mayenne",
+        "parent": "FR-PDL"
+      },
+      {
+        "code": "FR-54",
+        "name": "Meurthe-et-Moselle",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-55",
+        "name": "Meuse",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-56",
+        "name": "Morbihan",
+        "parent": "FR-BRE"
+      },
+      {
+        "code": "FR-57",
+        "name": "Moselle",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-58",
+        "name": "Nièvre",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-59",
+        "name": "Nord",
+        "parent": "FR-HDF"
+      },
+      {
+        "code": "FR-60",
+        "name": "Oise",
+        "parent": "FR-HDF"
+      },
+      {
+        "code": "FR-61",
+        "name": "Orne",
+        "parent": "FR-NOR"
+      },
+      {
+        "code": "FR-62",
+        "name": "Pas-de-Calais",
+        "parent": "FR-HDF"
+      },
+      {
+        "code": "FR-63",
+        "name": "Puy-de-Dôme",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-64",
+        "name": "Pyrénées-Atlantiques",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-65",
+        "name": "Hautes-Pyrénées",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-66",
+        "name": "Pyrénées-Orientales",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-67",
+        "name": "Bas-Rhin",
+        "parent": "FR-6AE"
+      },
+      {
+        "code": "FR-68",
+        "name": "Haut-Rhin",
+        "parent": "FR-6AE"
+      },
+      {
+        "code": "FR-69",
+        "name": "Rhône",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-69M",
+        "name": "Métropole de Lyon",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-6AE",
+        "name": "Alsace",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-70",
+        "name": "Haute-Saône",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-71",
+        "name": "Saône-et-Loire",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-72",
+        "name": "Sarthe",
+        "parent": "FR-PDL"
+      },
+      {
+        "code": "FR-73",
+        "name": "Savoie",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-74",
+        "name": "Haute-Savoie",
+        "parent": "FR-ARA"
+      },
+      {
+        "code": "FR-75C",
+        "name": "Paris",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-76",
+        "name": "Seine-Maritime",
+        "parent": "FR-NOR"
+      },
+      {
+        "code": "FR-77",
+        "name": "Seine-et-Marne",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-78",
+        "name": "Yvelines",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-79",
+        "name": "Deux-Sèvres",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-80",
+        "name": "Somme",
+        "parent": "FR-HDF"
+      },
+      {
+        "code": "FR-81",
+        "name": "Tarn",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-82",
+        "name": "Tarn-et-Garonne",
+        "parent": "FR-OCC"
+      },
+      {
+        "code": "FR-83",
+        "name": "Var",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-84",
+        "name": "Vaucluse",
+        "parent": "FR-PAC"
+      },
+      {
+        "code": "FR-85",
+        "name": "Vendée",
+        "parent": "FR-PDL"
+      },
+      {
+        "code": "FR-86",
+        "name": "Vienne",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-87",
+        "name": "Haute-Vienne",
+        "parent": "FR-NAQ"
+      },
+      {
+        "code": "FR-88",
+        "name": "Vosges",
+        "parent": "FR-GES"
+      },
+      {
+        "code": "FR-89",
+        "name": "Yonne",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-90",
+        "name": "Territoire de Belfort",
+        "parent": "FR-BFC"
+      },
+      {
+        "code": "FR-91",
+        "name": "Essonne",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-92",
+        "name": "Hauts-de-Seine",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-93",
+        "name": "Seine-Saint-Denis",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-94",
+        "name": "Val-de-Marne",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-95",
+        "name": "Val-d'Oise",
+        "parent": "FR-IDF"
+      },
+      {
+        "code": "FR-971",
+        "name": "Guadeloupe",
+        "time_zone": "America/Guadeloupe"
+      },
+      {
+        "code": "FR-972",
+        "name": "Martinique",
+        "time_zone": "America/Martinique"
+      },
+      {
+        "code": "FR-973",
+        "name": "Guyane",
+        "time_zone": "America/Cayenne"
+      },
+      {
+        "code": "FR-974",
+        "name": "La Réunion",
+        "time_zone": "Indian/Reunion"
+      },
+      {
+        "code": "FR-976",
+        "name": "Mayotte",
+        "time_zone": "Indian/Mayotte"
+      },
+      {
+        "code": "FR-ARA",
+        "name": "Auvergne-Rhône-Alpes"
+      },
+      {
+        "code": "FR-BFC",
+        "name": "Bourgogne-Franche-Comté"
+      },
+      {
+        "code": "FR-BRE",
+        "name": "Bretagne"
+      },
+      {
+        "code": "FR-CVL",
+        "name": "Centre-Val de Loire"
+      },
+      {
+        "code": "FR-GES",
+        "name": "Grand Est"
+      },
+      {
+        "code": "FR-HDF",
+        "name": "Hauts-de-France"
+      },
+      {
+        "code": "FR-IDF",
+        "name": "Île-de-France"
+      },
+      {
+        "code": "FR-NAQ",
+        "name": "Nouvelle-Aquitaine"
+      },
+      {
+        "code": "FR-NOR",
+        "name": "Normandie"
+      },
+      {
+        "code": "FR-OCC",
+        "name": "Occitanie"
+      },
+      {
+        "code": "FR-PAC",
+        "name": "Provence-Alpes-Côte-d’Azur"
+      },
+      {
+        "code": "FR-PDL",
+        "name": "Pays-de-la-Loire"
+      }
+    ]
+  }
+}

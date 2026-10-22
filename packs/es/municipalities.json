@@ -1,0 +1,24 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "ine_municipalities",
+  "reference": "Relación de municipios y códigos por comunidades autónomas y provincias a 1 de enero de 2026: a representative subset, the largest cities, the island capitals, Ceuta and Melilla, and the small municipalities the golden cases use; the full list loads the same way",
+  "municipalities": [
+    { "code": "28079", "name": "Madrid", "parent": "ES-M" },
+    { "code": "28006", "name": "Alcobendas", "parent": "ES-M" },
+    { "code": "28065", "name": "Getafe", "parent": "ES-M" },
+    { "code": "08019", "name": "Barcelona", "parent": "ES-B" },
+    { "code": "46250", "name": "València", "parent": "ES-V" },
+    { "code": "41091", "name": "Sevilla", "parent": "ES-SE" },
+    { "code": "29067", "name": "Málaga", "parent": "ES-MA" },
+    { "code": "50297", "name": "Zaragoza", "parent": "ES-Z" },
+    { "code": "48020", "name": "Bilbao", "parent": "ES-BI" },
+    { "code": "15078", "name": "Santiago de Compostela", "parent": "ES-C" },
+    { "code": "07040", "name": "Palma", "parent": "ES-PM" },
+    { "code": "35016", "name": "Palmas de Gran Canaria, Las", "parent": "ES-GC" },
+    { "code": "42173", "name": "Soria", "parent": "ES-SO" },
+    { "code": "42134", "name": "Ólvega", "parent": "ES-SO" },
+    { "code": "44216", "name": "Teruel", "parent": "ES-TE" },
+    { "code": "51001", "name": "Ceuta", "parent": "ES-CE" },
+    { "code": "52001", "name": "Melilla", "parent": "ES-ML" }
+  ]
+}

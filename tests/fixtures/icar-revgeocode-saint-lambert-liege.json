@@ -1,0 +1,77 @@
+{
+    "location": {
+        "x": 5.5732,
+        "y": 50.6459
+    },
+    "crs": "EPSG:4326",
+    "candidates": [
+        {
+            "score": 4,
+            "city": {
+                "ident": "62063",
+                "name": "Liège",
+                "lang": "F"
+            },
+            "zone": {
+                "ident": "4000",
+                "name": "Liège"
+            },
+            "street": {
+                "ident": 7730055,
+                "name": "Place Saint-Lambert"
+            },
+            "house": {
+                "ident": 1872629,
+                "name": "18",
+                "rrn": "1086",
+                "geometry": {
+                    "type": "Point",
+                    "crs": {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+                    },
+                    "coordinates": [
+                        5.573204421686962,
+                        50.64586863066784
+                    ]
+                }
+            }
+        },
+        {
+            "score": 30,
+            "city": {
+                "ident": "62063",
+                "name": "Liège",
+                "lang": "F"
+            },
+            "zone": {
+                "ident": "4000",
+                "name": "Liège"
+            },
+            "street": {
+                "ident": 7730055,
+                "name": "Place Saint-Lambert"
+            },
+            "house": {
+                "ident": 1135110,
+                "name": "16",
+                "rrn": "1086",
+                "geometry": {
+                    "type": "Point",
+                    "crs": {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+                    },
+                    "coordinates": [
+                        5.573134945836447,
+                        50.64616435599927
+                    ]
+                }
+            }
+        }
+    ]
+}

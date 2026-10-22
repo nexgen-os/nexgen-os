@@ -1,0 +1,61 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "XA",
+  "name": "Examplia",
+  "version": "0.1.0",
+  "checksum": "sha256:9f5397c89743b5b411c128afe73047eb7a6964bea6b853192942f9ed43bb57a3",
+  "schema_min": "0.2.0",
+  "seed_sequence": 10,
+  "certification": {
+    "status": "reviewed",
+    "reviewer": "A grid engineer of the fixture, for the tests of the toolchain",
+    "date": "2026-10-19"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "XTS",
+    "currency_details": {
+      "name": "Code reserved for testing",
+      "decimal_places": 0
+    },
+    "languages": [
+      "en"
+    ],
+    "time_zones": [
+      "Etc/UTC",
+      "Etc/GMT-1"
+    ],
+    "region_level": "province",
+    "postal_code_pattern": "^[0-9]{4}$",
+    "municipality_scheme": "xa_municipality",
+    "regions": [
+      {
+        "code": "XA-NW",
+        "name": "North-West",
+        "parent": "XA-N"
+      },
+      {
+        "code": "XA-N",
+        "name": "North"
+      },
+      {
+        "code": "XA-S",
+        "name": "South",
+        "time_zone": "Etc/GMT-1"
+      }
+    ]
+  },
+  "golden": {
+    "exempt": "A fixture of the pack format for the tests of the installer: it describes no country, so no installation could find its figures."
+  }
+}

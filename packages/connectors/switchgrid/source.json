@@ -1,0 +1,15 @@
+{
+  "code": "switchgrid",
+  "name": "Switchgrid",
+  "description": "An intermediary that collects a customer's consent on its own page and relays the meter data of the operators it serves (load curves, indexes, technical data, as the operator's raw files). Read by @nexgen-os/switchgrid under the customer's mandate; what it gives is kept as long as that consent holds, and erased when it is withdrawn.",
+  "kind": "api",
+  "base_url": "https://api.switchgrid.tech",
+  "docs_url": "https://app.switchgrid.tech/docs/fr/v0/spec",
+  "auth": "mandate",
+  "countries": ["FR"],
+  "license": "Switchgrid terms of service; the data is the customer's, read with their consent",
+  "attribution": "Switchgrid",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/switchgrid"
+}

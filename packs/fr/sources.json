@@ -1,0 +1,304 @@
+{
+  "sources": [
+    {
+      "code": "ban",
+      "name": "Base Adresse Nationale",
+      "description": "The national address register: search as you type and reverse geocoding, with house-number precision. Read by packages/connectors/ban.",
+      "kind": "api",
+      "url": "https://api-adresse.data.gouv.fr/",
+      "docs_url": "https://adresse.data.gouv.fr/outils/api-doc/adresse",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© BAN — Base Adresse Nationale",
+      "redistributable": true
+    },
+    {
+      "code": "geo_api_gouv",
+      "name": "API Découpage administratif",
+      "description": "Municipalities, departments and regions, with their codes and boundaries.",
+      "kind": "api",
+      "url": "https://geo.api.gouv.fr/",
+      "docs_url": "https://geo.api.gouv.fr/decoupage-administratif",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© Etalab",
+      "redistributable": true
+    },
+    {
+      "code": "insee_cog",
+      "name": "Code officiel géographique (INSEE)",
+      "description": "The statistics office's official list of municipalities, departments and regions with their codes, published every year.",
+      "kind": "file",
+      "url": "https://www.insee.fr/fr/information/2560452",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© INSEE",
+      "redistributable": true
+    },
+    {
+      "code": "cadastre",
+      "name": "Cadastre (PCI vecteur, Etalab)",
+      "description": "Parcels, building footprints and sections of the cadastre, by municipality, as GeoJSON.",
+      "kind": "file",
+      "url": "https://cadastre.data.gouv.fr/",
+      "docs_url": "https://cadastre.data.gouv.fr/datasets/cadastre-etalab",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© DGFiP — Etalab",
+      "redistributable": true
+    },
+    {
+      "code": "bd_topo",
+      "name": "BD TOPO (IGN)",
+      "description": "The national topographic database: buildings with height and use, roads, land use, administrative limits.",
+      "kind": "file",
+      "url": "https://geoservices.ign.fr/bdtopo",
+      "docs_url": "https://geoservices.ign.fr/documentation/donnees/vecteur/bdtopo",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© IGN",
+      "redistributable": true
+    },
+    {
+      "code": "rnb",
+      "name": "Référentiel National des Bâtiments",
+      "description": "One stable identifier per building, with its footprint and the addresses and parcels it links to.",
+      "kind": "api",
+      "url": "https://rnb-api.beta.gouv.fr/",
+      "docs_url": "https://rnb.beta.gouv.fr/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© RNB",
+      "redistributable": true
+    },
+    {
+      "code": "sirene",
+      "name": "API Sirene (INSEE)",
+      "description": "The register of companies and establishments: SIREN, SIRET, legal form, activity, addresses.",
+      "kind": "api",
+      "url": "https://api.insee.fr/",
+      "docs_url": "https://www.sirene.fr/",
+      "auth": "api_key",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© INSEE",
+      "redistributable": true
+    },
+    {
+      "code": "enedis_open_data",
+      "name": "Enedis Open Data",
+      "description": "Aggregated consumption and production by municipality, grid capacities, energy sharing operations in service.",
+      "kind": "api",
+      "url": "https://data.enedis.fr/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© Enedis",
+      "redistributable": true
+    },
+    {
+      "code": "enedis_data_connect",
+      "name": "Enedis Data Connect",
+      "description": "A customer's meter data (daily index, 30-minute load curve, contract) read by a third party with the customer's consent, per PRM. Kept for the consent's duration, never passed on.",
+      "kind": "api",
+      "url": "https://datahub-enedis.fr/data-connect/",
+      "auth": "mandate",
+      "license": "Enedis Data Connect terms",
+      "attribution": "© Enedis",
+      "redistributable": false
+    },
+    {
+      "code": "enedis_sge",
+      "name": "Enedis SGE (web services for third parties)",
+      "description": "The operator's own web services for a third party under contract with it: point search, technical and contractual data, detailed measures, history orders and recurring publications (R63, R64, R50, R151, R4Q, R171). Read by @nexgen-os/enedis-sge with a client certificate and a login, under the customer's authorisation, which the third party collects, keeps and proves itself. What it gives is kept only as long as that authorisation holds, and never passed on.",
+      "kind": "api",
+      "url": "https://www.enedis.fr/",
+      "docs_url": "https://www.enedis.fr/media/2127/download",
+      "auth": "mandate",
+      "license": "Enedis third-party contract terms",
+      "attribution": "© Enedis",
+      "redistributable": false
+    },
+    {
+      "code": "odre",
+      "name": "Open Data Réseaux Énergies",
+      "description": "Datasets of the French energy networks: generation, consumption, exchanges, operators' areas, energy communities.",
+      "kind": "api",
+      "url": "https://odre.opendatasoft.com/",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© ODRÉ",
+      "redistributable": true
+    },
+    {
+      "code": "fr_enedis_load_curve_collection",
+      "name": "Enedis — activating and deactivating the collection of load curves",
+      "description": "The distribution operator's sheet on the collection of a meter's load curve: its step and history by meter size.",
+      "kind": "text",
+      "url": "https://www.enedis.fr/media/4543/download",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_cre_zni",
+      "name": "CRE — the energy transition in the non-interconnected zones",
+      "description": "The regulator's page on the zones not connected to the continental grid: Corsica, the overseas departments and islands.",
+      "kind": "text",
+      "url": "https://www.cre.fr/electricite/transition-energetique-dans-les-zni.html",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_rte_bilan_2024",
+      "name": "RTE — Bilan électrique 2024",
+      "description": "The transmission operator's yearly report on the French electricity system for 2024.",
+      "kind": "text",
+      "url": "https://analysesetdonnees.rte-france.com/bilan-electrique-2024/prix",
+      "license": "Public data, reuse with attribution (RTE legal notice)",
+      "attribution": "© RTE — Bilan électrique 2024",
+      "redistributable": true
+    },
+    {
+      "code": "fr_rte_bilan_2025",
+      "name": "RTE — Bilan électrique 2025",
+      "description": "The transmission operator's yearly report on the French electricity system for 2025.",
+      "kind": "text",
+      "url": "https://analysesetdonnees.rte-france.com/bilan-electrique-2025/emissions",
+      "license": "Public data, reuse with attribution (RTE legal notice)",
+      "attribution": "© RTE — Bilan électrique 2025",
+      "redistributable": true
+    },
+    {
+      "code": "fr_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "fr_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "fr_bofip_vat_energy_subscriptions",
+      "name": "BOFiP — VAT rate on electricity and gas subscriptions (BOI-RES-TVA-000209)",
+      "description": "The tax administration's answer on the end of the reduced VAT rate on subscriptions of electricity and natural gas up to 36 kVA.",
+      "kind": "text",
+      "url": "https://bofip.impots.gouv.fr/node/383125",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_cre_offpeak_hours",
+      "name": "CRE — questions and answers on peak and off-peak hours (6 February 2025)",
+      "description": "The regulator's answers on how off-peak hours are placed and on their reform under TURPE 7.",
+      "kind": "text",
+      "url": "https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2025/250206_FAQ_HP-HC.pdf",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_code_travail_voltage_domains",
+      "name": "Code du travail, article R. 4226-2 — voltage domains",
+      "description": "The article that defines the voltage domains of an electrical installation: very low, low and high voltage A and B.",
+      "kind": "text",
+      "url": "https://code.travail.gouv.fr/code-du-travail/r4226-2",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_code_energie_self_consumption",
+      "name": "Code de l'énergie, articles L315-1 and L315-2 — self-consumption",
+      "description": "The articles that define individual self-consumption (L315-1) and collective self-consumption (L315-2).",
+      "kind": "text",
+      "url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000032939883/",
+      "license": "Licence Ouverte 2.0",
+      "redistributable": true
+    },
+    {
+      "code": "fr_arrete_acc_perimeter",
+      "name": "Arrêté du 21 novembre 2019 fixant le critère de proximité géographique de l'autoconsommation collective étendue, as amended by the arrêté du 19 septembre 2023",
+      "description": "The order that sets the greatest distance between the participants of an extended collective self-consumption operation, and the derogations by density class of the municipalities.",
+      "kind": "text",
+      "url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000039417630",
+      "license": "Licence Ouverte 2.0",
+      "redistributable": true
+    },
+    {
+      "code": "fr_insee_density_grid",
+      "name": "INSEE — grille communale de densité à 7 niveaux",
+      "description": "The class of every municipality in the statistics office's seven-level density grid, the classification the order on collective self-consumption reads.",
+      "kind": "file",
+      "url": "https://www.insee.fr/fr/information/6439600",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "© INSEE",
+      "redistributable": true
+    },
+    {
+      "code": "fr_bofip_electricity_excise",
+      "name": "BOFiP BOI-RES-EAT-000240 — rates of the excise on electricity from 1 February 2026",
+      "description": "The tax administration's statement of the rates of the excise on electricity by category of consumer.",
+      "kind": "text",
+      "url": "https://bofip.impots.gouv.fr/bofip/14903-PGP.html/identifiant=BOI-RES-EAT-000240-20251231",
+      "license": "Licence Ouverte 2.0",
+      "redistributable": true
+    },
+    {
+      "code": "fr_cre_imbalance_settlement_15min",
+      "name": "CRE, délibération n° 2018-229 du 14 novembre 2018 (pas de règlement des écarts)",
+      "description": "The decision of the energy regulator granting the transmission operator a derogation, until 1 January 2025, from the 15-minute imbalance settlement period of Regulation (EU) 2017/2195: 30 minutes until then, 15 minutes from that day.",
+      "kind": "text",
+      "url": "https://www.cre.fr/content/download/20030/file/181114-2018-229_Ecarts15mn.pdf",
+      "docs_url": "https://www.cre.fr/content/download/20030/file/181114-2018-229_Ecarts15mn.pdf",
+      "license": "Public sector information, reuse with attribution (Licence Ouverte 2.0)",
+      "attribution": "Commission de régulation de l'énergie",
+      "redistributable": true
+    },
+    {
+      "code": "fr_code_energie_purchase_obligation",
+      "name": "Code de l'énergie, articles L314-1 and following — obligation d'achat",
+      "description": "The articles that oblige a buyer to purchase the electricity of the installations they list, under a contract of a set duration at a tariff an order sets.",
+      "kind": "text",
+      "url": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000023983208/",
+      "license": "Licence Ouverte 2.0",
+      "redistributable": true
+    },
+    {
+      "code": "fr_cre_negative_prices_2025",
+      "name": "CRE, délibération n° 2025-186 du 16 juillet 2025 — negative prices, article 175 of the finance law for 2025",
+      "description": "The regulator's opinion on the order applying article 175 of loi n° 2025-127 du 14 février 2025 de finances pour 2025, under which the buyer of a purchase obligation contract may ask an installation to stop or limit its production during negative prices, from a power of 10 MW.",
+      "kind": "text",
+      "url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250716_2025-186_Avis_arrete_prix_negatifs.pdf",
+      "license": "Licence Ouverte 2.0",
+      "attribution": "Commission de régulation de l'énergie",
+      "redistributable": true
+    },
+    {
+      "code": "fr_enedis_r6x_guide",
+      "name": "Enedis, implementation guide of the R6X flows (v2.0, 29/11/2023)",
+      "description": "The structure of the R63 (load curve) and R64 (index) files, the nature of each point, the steps by segment and the time convention of the files.",
+      "kind": "text",
+      "url": "https://www.enedis.fr/media/3751/download",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fr_aib_residual_mix_2024",
+      "name": "Association of Issuing Bodies — European Residual Mixes 2024",
+      "description": "The residual mix of each European country for 2024, what is left of its electricity once guarantees of origin are cancelled, with its direct CO2 per kWh, as the Association of Issuing Bodies calculates it for electricity disclosure.",
+      "kind": "text",
+      "url": "https://www.aib-net.org/sites/default/files/assets/eecs/Residual%20Mix/2024_Final%20_Residual%20mix%20calculation%20results_11082025.pdf",
+      "docs_url": "https://www.aib-net.org/facts/european-residual-mix/2024",
+      "license": "Terms not stated",
+      "redistributable": false
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+[
+  { "tag": "ask.verified", "askId": "6f2c1d3e-0000-4000-8000-000000000001", "status": "PENDING_USER_ACTION" },
+  { "tag": "ask.accepted", "askId": "6f2c1d3e-0000-4000-8000-000000000001" },
+  { "tag": "ask.contract_access_granted", "askId": "6f2c1d3e-0000-4000-8000-000000000001", "contractSeqs": [1] },
+  { "tag": "order.request_success", "requestId": "req-0001", "requestType": "R63" },
+  { "tag": "ask.revoked", "askId": "6f2c1d3e-0000-4000-8000-000000000001" },
+  { "tag": "ask.something_new", "askId": "6f2c1d3e-0000-4000-8000-000000000001" }
+]

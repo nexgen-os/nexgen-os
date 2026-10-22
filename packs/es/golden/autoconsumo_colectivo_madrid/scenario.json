@@ -1,0 +1,253 @@
+{
+  "name": "A collective self-consumption in Madrid, by transformer station and by 500 m",
+  "description": "A PV roof of an office building shares through the grid with a flat fed from the same transformer station 700 m away, a bakery 300 m away on another station, and an office 800 m away on that other station: the flat is in by its station, the bakery by the 500 m, the office out. The example engine shares among every participant: it applies no perimeter.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A self-consumption manager of the case",
+  "project": {
+    "name": "Madrid roof sharing",
+    "kind": "es_autoconsumo_colectivo",
+    "country": "ES"
+  },
+  "substations": [
+    {
+      "ref": "ct1",
+      "operator": "i_de",
+      "code": "CASE-CT1",
+      "name": "First transformer station of the case"
+    },
+    {
+      "ref": "ct2",
+      "operator": "i_de",
+      "code": "CASE-CT2",
+      "name": "Second transformer station of the case"
+    }
+  ],
+  "participants": [
+    {
+      "ref": "plant",
+      "name": "Office building roof",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-M",
+        "municipality": "28079",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -3.7038,
+            40.4168
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "plant",
+          "identifier": "ES0021000000000001RK",
+          "scheme": "cups",
+          "operator": "i_de",
+          "substation": "ct1"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 40
+        }
+      ]
+    },
+    {
+      "ref": "flat",
+      "name": "Flat",
+      "role": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "ES",
+        "region": "ES-M",
+        "municipality": "28079",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -3.695541,
+            40.4168
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "flat",
+          "identifier": "ES0021000000000002RE",
+          "scheme": "cups",
+          "operator": "i_de",
+          "substation": "ct1"
+        }
+      ]
+    },
+    {
+      "ref": "bakery",
+      "name": "Bakery",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-M",
+        "municipality": "28079",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -3.70734,
+            40.4168
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "bakery",
+          "identifier": "ES0021000000000003WT",
+          "scheme": "cups",
+          "operator": "i_de",
+          "substation": "ct2"
+        }
+      ]
+    },
+    {
+      "ref": "office",
+      "name": "Office",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-M",
+        "municipality": "28079",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -3.713239,
+            40.4168
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "office",
+          "identifier": "ES0021000000000004WR",
+          "scheme": "cups",
+          "operator": "i_de",
+          "substation": "ct2"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        30,
+        40,
+        40,
+        30
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "injection_energy",
+      "values": [
+        28,
+        38,
+        38,
+        28
+      ]
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:flat",
+      "quantity": "offtake_energy",
+      "values": [
+        5,
+        6,
+        6,
+        5
+      ]
+    },
+    {
+      "object": "meter:flat",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:bakery",
+      "quantity": "offtake_energy",
+      "values": [
+        8,
+        10,
+        12,
+        8
+      ]
+    },
+    {
+      "object": "meter:bakery",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:office",
+      "quantity": "offtake_energy",
+      "values": [
+        10,
+        12,
+        22,
+        10
+      ]
+    },
+    {
+      "object": "meter:office",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+# `billing` — the bridge to the invoicing side
+
+Status: shipped with schema 0.3, decision [0010](../../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md). Schema: `billing`.
+
+Who a company or a person legally is, how to reach them and how they are
+invoiced is kept by an invoicing application; Ekwo OS is the open one built
+on the same playbook. The core names no product and keeps no personal
+contact data: an organisation is a name, a contact is a name and a kind,
+and a participant of a project names the contact who answers for it
+(`participants.contact_id`), which is its billing contact. This module
+keeps, beside them and keyed by the same ids, what links them to the
+invoicing side: pointers and gestures, never an amount, a currency, a tax,
+a VAT number, an IBAN or an invoice line, which are Ekwo's.
+
+**One source for each fact.** On a database holding both cores, what Ekwo
+OS holds about a linked party is read from Ekwo OS and never copied here:
+its legal numbers, how it is reached, the tax of its invoices. Nexgen OS
+holds its own only while the party is not linked, or Ekwo OS runs
+elsewhere; linking moves the fact to Ekwo OS
+([with Ekwo OS](../../docs/with-ekwo-os.md#one-source-on-a-shared-database)).
+
+| Table | Holds |
+|---|---|
+| `billing.organisations` | the Ekwo company an organisation is, one each |
+| `billing.contacts` | the Ekwo contact a contact is, and the email and phone it is reached at while it is not linked to Ekwo OS on the same database (`contact_reach_held_by_ekwo` once it is); personal data, readable by the organisation's members only |
+| `billing.invoices` | one row per Ekwo invoice issued for or to a participant: its Ekwo id, the participant, the counterparty participant of a bill inside a community, `sale` or `purchase` from the participant's point of view, the first and last day it covers, and the settlement the amounts came from |
+
+| Function | Does |
+|---|---|
+| `billing.link_organisation(organisation, ekwo_company)` | says which Ekwo company an organisation is; on a shared database its legal numbers move to Ekwo OS: dropped when the company holds the same, refused otherwise (`organisation_not_found`, `ekwo_company_not_found`, `legal_identifier_conflict`) |
+| `billing.link_contact(contact, ekwo_contact)` | says which Ekwo contact a contact is; on a shared database its email and phone move to Ekwo OS the same way (`contact_not_found`, `ekwo_contact_not_found`, `contact_reach_conflict`) |
+| `billing.legal_identifiers(kind, id)` | the legal numbers of an organisation or a contact — scheme, ISO 6523 code, value, `held_by` — from Ekwo OS when the party is linked to it on the database (the registration and VAT numbers under the party and VAT schemes of its country, and its `identifiers`), from the organisation's identifiers under a scheme with an ISO 6523 code otherwise. No check digit is validated here |
+| `billing.reach_of(contact)` | the email and phone a contact is reached at, and who holds them: the one way to read it |
+| `billing.tax_of(participant, day)` | the tax of an invoice line: the code the pack names beside the rate (`vat_code_electricity`), with Ekwo OS's tax of that code and its rate on the day when the organisation is an Ekwo company on the database, the pack's rate for a simulation otherwise (`tax_code_missing`, `ekwo_tax_not_found`, `ekwo_tax_not_in_force`) |
+| `billing.record_invoice(participant, ekwo_invoice, kind, from, to, counterparty, settlement)` | records an Ekwo invoice of a participant; the invoice of a settlement has every product line taxed by `billing.tax_of()`'s Ekwo tax (`participant_not_found`, `participant_contact_missing`, `invoice_already_recorded`, `ekwo_invoice_not_found`, `invoice_tax_mismatch`) |
+| `billing.invoices_of(participant)` | the invoices of a participant, by period, with their Ekwo ids: what a page or an agent lists without knowing Ekwo |
+| `billing.reference_ekwo()` | adds the foreign keys to Ekwo's tables that exist; run by the migration, and again by the installation when Ekwo OS is installed after Nexgen OS |
+| `billing.unlinked_keys()` | the rows whose Ekwo id is not in Ekwo OS, read by `nexgen-os doctor` (`billing_key_unlinked`) |
+| `billing.held_twice()` | what is held both here and in Ekwo OS for a linked party, read by `nexgen-os doctor` (`billing_held_twice`) |
+| `billing.verify_remote_invoice(source, ekwo_invoice)` | the same check against an Ekwo OS on another database, through its API: raises `ekwo_remote_not_supported`: this module does not reach an Ekwo OS on another database |
+
+**When Ekwo OS shares the database**, the Ekwo ids are real foreign keys:
+`billing.organisations.ekwo_company_id` to `public.companies`,
+`billing.contacts.ekwo_contact_id` to `public.contacts`, and
+`billing.invoices.id` to `public.documents`, the one table where Ekwo OS
+keeps its sales and purchase invoices and credit notes. The gestures check
+the Ekwo id under the signed-in person's rights on Ekwo's side as well: a
+person who records an invoice is a member of the Ekwo company that issued
+it. **When it does not**, the same columns are plain uuids, and the
+gestures accept any id.
+
+**Issuing an invoice is not this module's.** The invoice is issued in
+Ekwo OS from a settlement line, and recorded here with
+`billing.record_invoice()`.
+
+Install: `npx nexgen-os init --modules billing`.

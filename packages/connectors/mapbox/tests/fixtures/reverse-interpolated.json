@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.29448, 48.85826] },
+      "properties": {
+        "feature_type": "address",
+        "full_address": "5 Avenue Anatole France, 75007 Paris, France",
+        "name": "5 Avenue Anatole France",
+        "coordinates": { "longitude": 2.29448, "latitude": 48.85826, "accuracy": "interpolated" },
+        "context": {
+          "address": { "address_number": "5", "street_name": "Avenue Anatole France", "name": "5 Avenue Anatole France" },
+          "postcode": { "name": "75007" },
+          "place": { "name": "Paris" },
+          "region": { "name": "Île-de-France", "region_code": "IDF", "region_code_full": "FR-IDF" },
+          "country": { "name": "France", "country_code": "FR" }
+        }
+      }
+    }
+  ]
+}

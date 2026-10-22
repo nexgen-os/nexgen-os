@@ -1,0 +1,37 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "be_cer",
+      "name": "Communauté d'énergie renouvelable",
+      "description": "A renewable energy community: an entity of participants close to the renewable plants it owns or runs, sharing their energy (Wallonia, Brussels).",
+      "parent": "energy_community",
+      "source_code": "be_wal_electricity_decree",
+      "reference": "Article 2 (definitions), communauté d'énergie renouvelable"
+    },
+    {
+      "code": "be_cec",
+      "name": "Communauté d'énergie citoyenne",
+      "description": "A citizen energy community: an entity of participants sharing energy, without the proximity a renewable one requires (Wallonia, Brussels).",
+      "parent": "energy_community",
+      "source_code": "be_wal_electricity_decree",
+      "reference": "Article 2 (definitions), communauté d'énergie citoyenne"
+    },
+    {
+      "code": "be_cel",
+      "name": "Communauté d'énergie locale",
+      "description": "A local energy community of the Brussels-Capital Region.",
+      "parent": "energy_community",
+      "source_code": "be_bru_electricity_ordinance",
+      "reference": "Article 2 (definitions), communauté d'énergie locale"
+    },
+    {
+      "code": "be_energy_sharing",
+      "name": "Partage d'énergie / Energiedelen",
+      "description": "Energy sharing between participants, inside one building or between a producer and its neighbours, without forming a community.",
+      "parent": "collective_self_consumption",
+      "source_code": "be_vlg_energy_decree",
+      "reference": "Article 1.1.3 (definitions), energiedelen"
+    }
+  ]
+}

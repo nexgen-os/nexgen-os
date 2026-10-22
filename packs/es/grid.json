@@ -1,0 +1,178 @@
+{
+  "operators": [
+    {
+      "code": "ree",
+      "name": "Red Eléctrica",
+      "kind": "tso",
+      "coverage": "The transmission grid of the peninsula, the Balearic and Canary Islands, Ceuta and Melilla, and the operation of the system.",
+      "website": "https://www.ree.es/",
+      "data_hub_url": "https://www.esios.ree.es/",
+      "description": "The transmission system operator: the transmission grid, the operation of the system, the codes of the distribution operators and the public data of the system (ESIOS)."
+    },
+    {
+      "code": "i_de",
+      "name": "i-DE Redes Eléctricas Inteligentes",
+      "kind": "dso",
+      "coverage": "Distribution in parts of several autonomous communities; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.i-de.es/",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0021"
+      ],
+      "description": "A distribution operator, code 0021 (unit R1-001) in the transmission operator's list."
+    },
+    {
+      "code": "ufd",
+      "name": "UFD Distribución Electricidad",
+      "kind": "dso",
+      "coverage": "Distribution in parts of several autonomous communities; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0022"
+      ],
+      "description": "A distribution operator, code 0022 (unit R1-002) in the transmission operator's list."
+    },
+    {
+      "code": "edistribucion",
+      "name": "Edistribución Redes Digitales",
+      "kind": "dso",
+      "coverage": "Distribution in parts of the peninsula and in the Balearic and Canary Islands; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0031"
+      ],
+      "description": "A distribution operator, code 0031 (units R1-299 and R1-299B) in the transmission operator's list. Points assigned before the companies it took over merged into it keep the codes of those companies, which the list no longer holds."
+    },
+    {
+      "code": "hidrocantabrico_distribucion",
+      "name": "Hidrocantábrico Distribución Eléctrica",
+      "kind": "dso",
+      "coverage": "Distribution in parts of northern Spain; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0026"
+      ],
+      "description": "A distribution operator, code 0026 (unit R1-008) in the transmission operator's list."
+    },
+    {
+      "code": "viesgo_distribucion",
+      "name": "Viesgo Distribución Eléctrica",
+      "kind": "dso",
+      "coverage": "Distribution in parts of northern Spain; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0027"
+      ],
+      "description": "A distribution operator, code 0027 (unit R1-005) in the transmission operator's list."
+    },
+    {
+      "code": "begasa",
+      "name": "Barras Eléctricas Galaico-Asturianas",
+      "kind": "dso",
+      "coverage": "Distribution in parts of Galicia and Asturias; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0033"
+      ],
+      "description": "A distribution operator, code 0033 (unit R1-003) in the transmission operator's list."
+    },
+    {
+      "code": "electrica_de_cadiz",
+      "name": "Suministradora Eléctrica de Cádiz",
+      "kind": "dso",
+      "coverage": "A local distribution operator of the province of Cádiz.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0034"
+      ],
+      "description": "A local distribution operator, code 0034 (unit R1-021) in the transmission operator's list."
+    },
+    {
+      "code": "estabanell",
+      "name": "Estabanell y Pahisa Energía",
+      "kind": "dso",
+      "coverage": "A local distribution operator of Catalonia.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0113"
+      ],
+      "description": "A local distribution operator, code 0113 (unit R1-018) in the transmission operator's list."
+    },
+    {
+      "code": "electrica_del_ebro",
+      "name": "Eléctrica del Ebro",
+      "kind": "dso",
+      "coverage": "A local distribution operator.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0232"
+      ],
+      "description": "A local distribution operator, code 0232 (unit R1-019) in the transmission operator's list."
+    },
+    {
+      "code": "ceuta_distribucion",
+      "name": "Empresa de Alumbrado Eléctrico de Ceuta Distribución",
+      "kind": "dso",
+      "regions": [
+        "ES-CE"
+      ],
+      "coverage": "The autonomous city of Ceuta.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0275"
+      ],
+      "description": "The distribution operator of Ceuta, code 0275 (unit R1-030) in the transmission operator's list."
+    },
+    {
+      "code": "melillense",
+      "name": "Compañía Melillense de Gas y Electricidad",
+      "kind": "dso",
+      "regions": [
+        "ES-ML"
+      ],
+      "coverage": "The autonomous city of Melilla.",
+      "identifier_scheme": "cups",
+      "identifier_prefixes": [
+        "ES0134"
+      ],
+      "description": "The distribution operator of Melilla, code 0134 (unit R1-027) in the transmission operator's list."
+    }
+  ],
+  "voltage_levels": {
+    "levels": [
+      {
+        "code": "bt",
+        "name": "Baja tensión",
+        "min_kv": 0,
+        "max_kv": 1
+      },
+      {
+        "code": "at_tercera",
+        "name": "Alta tensión, tercera categoría",
+        "min_kv": 1,
+        "max_kv": 30
+      },
+      {
+        "code": "at_segunda",
+        "name": "Alta tensión, segunda categoría",
+        "min_kv": 30,
+        "max_kv": 66
+      },
+      {
+        "code": "at_primera",
+        "name": "Alta tensión, primera categoría",
+        "min_kv": 66,
+        "max_kv": 220
+      },
+      {
+        "code": "at_especial",
+        "name": "Alta tensión, categoría especial",
+        "min_kv": 220,
+        "max_kv": 400
+      }
+    ],
+    "source_code": "es_rd_223_2008_line_categories",
+    "reference": "Article 3: third category above 1 kV up to 30 kV, second above 30 kV up to 66 kV, first above 66 kV and below 220 kV, special from 220 kV (and lower lines of the transmission grid); a line above 400 kV needs the voltage set by the administration. Low voltage is everything up to 1 kV. A line of exactly 220 kV is of the special category, where these levels, which include their upper bound, read the first. The decree was published on 19 March 2008 and entered into force six months later (final provision three)",
+    "valid_from": "2008-09-19"
+  }
+}

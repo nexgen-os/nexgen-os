@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "fr_acc",
+      "name": "Autoconsommation collective",
+      "description": "Collective self-consumption: producers and consumers sharing energy through the public grid, within a perimeter the order on geographic proximity sets.",
+      "parent": "collective_self_consumption",
+      "source_code": "fr_code_energie_self_consumption",
+      "reference": "Article L315-2"
+    },
+    {
+      "code": "fr_aci",
+      "name": "Autoconsommation individuelle",
+      "description": "Individual self-consumption: a producer consuming on its own site all or part of what it produces.",
+      "parent": "individual_self_consumption",
+      "source_code": "fr_code_energie_self_consumption",
+      "reference": "Article L315-1"
+    }
+  ]
+}

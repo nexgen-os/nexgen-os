@@ -1,0 +1,36 @@
+{
+  "identifiers": [
+    {
+      "code": "cups",
+      "name": "CUPS",
+      "description": "The universal code of a supply point (código universal de punto de suministro) of the Spanish grid, issued by the distribution operator the point is connected to: ES, four digits of that operator as the transmission operator assigns them, twelve digits of the point, two control letters computed from the sixteen digits (modulo 529, then 23), and optionally a digit and a letter naming a boundary point (F), a main, redundant or check measuring point (P, R, C) or a recorder (X, Y, Z). The code is permanent: it keeps the operator digits of the day it was assigned through later mergers.",
+      "pattern": "^ES[0-9]{16}[A-Z]{2}([0-9][FPRCXYZ])?$",
+      "example": "ES0987543210987654ZF",
+      "source_code": "es_po_10_8_cups"
+    },
+    {
+      "code": "ine",
+      "name": "Código de municipio INE",
+      "description": "The five-digit code of a municipality in the statistics office's register: two digits of the province, three of the municipality, without the control digit the register prints beside them. It is not the postal code.",
+      "pattern": "^(0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$",
+      "example": "28079",
+      "source_code": "ine_municipalities"
+    },
+    {
+      "code": "nif",
+      "name": "NIF de persona jurídica",
+      "description": "The tax identification number of a company or another legal entity (número de identificación fiscal, formerly CIF): a letter giving its legal form, seven digits, and a control character, a digit or a letter.",
+      "pattern": "^[ABCDEFGHJNPQRSUVW][0-9]{7}[0-9A-J]$",
+      "example": "B12345674",
+      "source_code": "es_orden_nif_legal_entities"
+    },
+    {
+      "code": "referencia_catastral",
+      "name": "Referencia catastral",
+      "description": "The identifier of a property in the cadastre: fourteen characters for the parcel, then four for the property within it and two control letters, twenty in all. The first fourteen characters alone name the parcel, the reference the rules on collective self-consumption read.",
+      "pattern": "^[0-9A-Z]{14}([0-9]{4}[A-Z]{2})?$",
+      "example": "9872023VH5797S0001WX",
+      "source_code": "catastro"
+    }
+  ]
+}

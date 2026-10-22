@@ -1,0 +1,242 @@
+{
+  "defaults": [
+    {
+      "object": "participant:flat",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-06-15",
+      "value": [
+        "same_substation",
+        "radius_around_producer"
+      ],
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "source_code": "es_rd_244_2019_self_consumption",
+      "source": "packs/es/defaults.json: Real Decreto 244/2019, article 3, letter g), ii) and iii), as amended by the Real Decreto-ley 7/2026 from 22 March 2026."
+    },
+    {
+      "object": "participant:bakery",
+      "attribute_type": "sharing_radius_m",
+      "at": "2026-06-15",
+      "value": 500,
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "source_code": "es_rd_244_2019_self_consumption",
+      "source": "packs/es/defaults.json: 500 m from the associated consumers, article 3, letter g), iii)."
+    },
+    {
+      "object": "device:pv",
+      "attribute_type": "sharing_radius_m",
+      "at": "2026-06-15",
+      "value": 5000,
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo",
+        "device_type": "solar"
+      },
+      "source_code": "es_rd_244_2019_self_consumption",
+      "source": "packs/es/defaults.json: 5 000 m for a photovoltaic installation of up to 5 MW through the grid, article 3, letter g), iii), second paragraph; asked from the device, as community.check_perimeter() does not ask."
+    },
+    {
+      "object": "participant:flat",
+      "attribute_type": "offpeak_hours",
+      "at": "2026-06-15",
+      "value": [
+        [
+          "00:00",
+          "08:00"
+        ]
+      ],
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "es_cnmc_circular_3_2020",
+      "source": "packs/es/defaults.json: period 3 of the 2.0 TD tariff on working days, Circular 3/2020, article 7.3; an individual is a residential segment."
+    },
+    {
+      "object": "participant:bakery",
+      "attribute_type": "offpeak_hours",
+      "at": "2026-06-15",
+      "refusal": "parameter_not_decided",
+      "source": "packs/es/defaults.json: for a business the periods depend on its access tariff, null by name."
+    },
+    {
+      "object": "participant:flat",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2025-06-15",
+      "value": 0.21,
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_ley_37_1992_vat",
+      "source": "packs/es/defaults.json: the general rate of 21 % from 1 January 2025, Ley 37/1992, article 90."
+    },
+    {
+      "object": "participant:flat",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "The temporary rate of the Real Decreto-ley 7/2026, article 42, from 22 March 2026 is not loaded: refused by name, never guessed."
+    },
+    {
+      "object": "project",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/es decides no emission factor of grid electricity yet."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "tolerance_m": 25,
+    "rule": {
+      "criteria": [
+        "same_substation",
+        "radius_around_producer"
+      ],
+      "level": "country",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "source_code": "es_rd_244_2019_self_consumption"
+    },
+    "participants": {
+      "plant": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": true
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": true,
+            "value_m": 500,
+            "distance_m": 0
+          }
+        ]
+      },
+      "flat": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": true
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": false,
+            "value_m": 500,
+            "distance_m": 700
+          }
+        ]
+      },
+      "bakery": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": false
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": true,
+            "value_m": 500,
+            "distance_m": 300
+          }
+        ]
+      },
+      "office": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": false
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": false,
+            "value_m": 500,
+            "distance_m": 800
+          }
+        ]
+      }
+    },
+    "source": "The four places lie on one parallel: the flat 700 m east of the roof, on its transformer station; the bakery 300 m and the office 800 m west, on another station. Distances worked out on a sphere of 111.32 km per degree of longitude times the cosine of the latitude, held to 25 m."
+  },
+  "operators": [
+    {
+      "meter": "office",
+      "operator": "i_de",
+      "by": "meter",
+      "source": "The scenario connects the meter to i_de and its transformer station."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 112.0,
+    "participants": {
+      "plant": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 112.0
+      },
+      "flat": {
+        "shared_offtake_energy": 21.7,
+        "shared_injection_energy": 0.0
+      },
+      "bakery": {
+        "shared_offtake_energy": 37.4,
+        "shared_injection_energy": 0.0
+      },
+      "office": {
+        "shared_offtake_energy": 52.9,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take. At 11:00 the demand (40 kWh) exceeds the pool (38 kWh): the flat receives 38 × 6/40, the bakery 38 × 12/40, the office 38 × 22/40; at the other hours every consumer receives what it takes."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.8,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "read": {
+        "production": "measured",
+        "shared_injection": "simulated"
+      },
+      "source": "112 kWh shared over 140 kWh produced."
+    },
+    {
+      "object": "participant:office",
+      "indicator": "residual_offtake_energy",
+      "value": 1.1,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "54 kWh taken from the grid less the 52.9 kWh shared to the office."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "self_consumption_rate",
+      "value": 0.057143,
+      "tolerance": 1e-06,
+      "source": "No series measures the self-consumption nor a battery: (140 − 132 − 0) / 140."
+    },
+    {
+      "object": "project",
+      "indicator": "self_consumption_savings_business",
+      "value": 1.9512,
+      "tolerance": 1e-06,
+      "source": "8 kWh self-consumed at 90.9 + 153.0 €/MWh (energy_price_business and grid_fees_and_taxes of the pack, 2025)."
+    }
+  ]
+}

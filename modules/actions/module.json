@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "actions",
+  "name": "Actions",
+  "description": "What has to be done on an object of the core, now or later: steps of a project planned from templates per country, region and condition, recommendations resting on an estimate, commands asked of a device in real time — one lifecycle for all three — and the progress of a participant or a project on a day.",
+  "version": "0.3.0",
+  "schema": "actions",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

@@ -1,0 +1,139 @@
+{
+  "name": "A collective self-consumption around Ólvega, a solar field and two consumers",
+  "description": "A ground-mounted PV field of the municipality of Ólvega (Soria) shares through the grid with a farming cooperative 450 m away and a school 2.5 km away, each on its own transformer station: the cooperative is in by the 500 m; the school is out by the rule check_perimeter applies, although the 5 000 m of a photovoltaic installation of up to 5 MW would hold it in, a value said for the device and not decided for the operation.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A rural cooperative of the case",
+  "project": {
+    "name": "Ólvega solar sharing",
+    "kind": "es_autoconsumo_colectivo",
+    "country": "ES"
+  },
+  "substations": [
+    {
+      "ref": "ct1",
+      "operator": "ufd",
+      "code": "CASE-R1",
+      "name": "Field transformer station of the case"
+    },
+    {
+      "ref": "ct2",
+      "operator": "ufd",
+      "code": "CASE-R2",
+      "name": "Cooperative transformer station of the case"
+    },
+    {
+      "ref": "ct3",
+      "operator": "ufd",
+      "code": "CASE-R3",
+      "name": "School transformer station of the case"
+    }
+  ],
+  "participants": [
+    {
+      "ref": "field",
+      "name": "Solar field",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-SO",
+        "municipality": "42134",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -1.9853,
+            41.7805
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "field",
+          "identifier": "ES0022000000000011FK",
+          "scheme": "cups",
+          "operator": "ufd",
+          "substation": "ct1"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Field PV",
+          "rated_power_kw": 900
+        }
+      ]
+    },
+    {
+      "ref": "coop",
+      "name": "Farming cooperative",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-SO",
+        "municipality": "42134",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -1.979879,
+            41.7805
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "coop",
+          "identifier": "ES0022000000000012FE",
+          "scheme": "cups",
+          "operator": "ufd",
+          "substation": "ct2"
+        }
+      ]
+    },
+    {
+      "ref": "school",
+      "name": "Village school",
+      "role": "consumer",
+      "segment": "public_entity",
+      "place": {
+        "country": "ES",
+        "region": "ES-SO",
+        "municipality": "42134",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -1.955184,
+            41.7805
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "school",
+          "identifier": "ES0022000000000013PT",
+          "scheme": "cups",
+          "operator": "ufd",
+          "substation": "ct3"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ]
+}

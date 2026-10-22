@@ -1,0 +1,487 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nexgen-os/nexgen-os/blob/main/packs/schema/pack.1.json",
+  "title": "Nexgen OS country pack, version 1",
+  "description": "A pack is the few values a country decides that a function of the model reads. This schema describes every file of packs/<cc>/: the manifest pack.json (the root of this schema, which carries the identity of the country) and the section files identifiers.json, sources.json, grid.json and defaults.json ($defs/identifiers_file, $defs/sources_file, $defs/grid_file, $defs/defaults_file). Nothing here is executable: there is no expression, no script, no hook, and there will not be one. A value is a value, a unit and a reference. Nothing is ever deleted from a pack: a value that stops holding gets a valid_to and the value that replaces it is a new row. `nexgen-os pack build <cc>` compiles a pack into supabase/seed/<seed_sequence>_pack_<cc>.sql; `nexgen-os pack check --all` refuses a seed that is not the exact output of its pack.",
+  "type": "object",
+  "required": ["country", "name", "version", "schema_min", "seed_sequence", "certification", "sections", "identity"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "country": {
+      "$ref": "#/$defs/country",
+      "description": "ISO 3166-1 alpha-2, upper case. The folder is the same code in lower case. Immutable once published."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The country in English, as countries.name holds it."
+    },
+    "version": {
+      "$ref": "#/$defs/semver",
+      "description": "The version of the pack, recorded in countries.pack_version. Patch: a name, a description, a reference corrected. Minor: a row added, or a validity that closes. Major: a section reshaped. Adding anything is a version."
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Written by `nexgen-os pack build`, never by hand: the sha256 of the JSON files the seed is compiled from (this file without its checksum, then each section file). Recorded in countries.pack_checksum, so an installation can be compared to a checkout."
+    },
+    "schema_min": {
+      "$ref": "#/$defs/semver",
+      "description": "The oldest schema version of the core (nexgen_schema_version()) whose tables this pack fills."
+    },
+    "seed_sequence": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 899,
+      "description": "The number the compiled seed carries: 12 gives supabase/seed/12_pack_<cc>.sql. Declared rather than derived, so that adding a country never renames the seed of another; immutable once published. Take the first number no pack of the checkout has taken: `nexgen-os pack check --all` refuses two packs claiming one."
+    },
+    "certification": { "$ref": "#/$defs/certification" },
+    "modules": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/code" },
+      "description": "Modules whose tables the seed writes into. A pack with grid operators names `grid`; the installer refuses the pack where the module is neither asked nor installed (pack_requires_module)."
+    },
+    "sections": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 2,
+      "items": { "enum": ["identifiers", "sources", "project_kinds", "municipalities", "grid", "defaults"] },
+      "description": "The section files this pack carries, each one <section>.json beside this file. sources and defaults are required; identifiers when the country has schemes of its own; project_kinds when its law defines frames of projects; municipalities when a value or an operator follows a municipality; grid when the pack describes energy. Every file listed exists and every JSON file present is listed."
+    },
+    "identity": { "$ref": "#/$defs/identity" },
+    "golden": {
+      "type": "object",
+      "required": ["exempt"],
+      "additionalProperties": false,
+      "properties": {
+        "exempt": { "type": "string", "minLength": 1, "description": "Why the pack carries no golden case." }
+      },
+      "description": "Only for a pack that cannot carry a golden case: why. Every other pack carries packs/<cc>/golden/<case>/scenario.json and expectations.json, read by `nexgen-os pack check` and replayed by tests/golden.test.ts."
+    }
+  },
+  "$defs": {
+    "country": { "type": "string", "pattern": "^[A-Z]{2}$" },
+    "region_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-[A-Z0-9]{1,3}$",
+      "description": "ISO 3166-2."
+    },
+    "place_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-[0-9A-Za-z]{1,12}$",
+      "description": "A region of identity.regions (ISO 3166-2), or a municipality of municipalities.json: the country code, a hyphen and its own code (FR-75056)."
+    },
+    "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "semver": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+    "date": { "type": "string", "format": "date", "description": "A calendar day, YYYY-MM-DD." },
+    "https_url": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "url_template": {
+      "type": "string",
+      "pattern": "^https://[^\\s]*\\{value\\}[^\\s]*$",
+      "description": "An https URL with {value} where the identifier goes."
+    },
+    "text": { "type": "string", "minLength": 1 },
+    "regions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/region_code" },
+      "description": "The regions a row is limited to, among those of identity.regions; absent or empty: the whole country."
+    },
+
+    "certification": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "description": "How much anyone has read this pack. community: proposed and checked by the toolchain; maintained: the maintainers keep it; reviewed: a named professional of the country read every value, on the date given.",
+      "properties": {
+        "status": { "enum": ["community", "maintained", "reviewed"] },
+        "reviewer": { "$ref": "#/$defs/text", "description": "Who read it and in which capacity. Required when reviewed." },
+        "date": { "$ref": "#/$defs/date", "description": "When it was read. Required when reviewed." }
+      }
+    },
+
+    "identity": {
+      "type": "object",
+      "required": ["currency", "languages", "time_zones", "region_level", "regions"],
+      "additionalProperties": false,
+      "description": "Who the country is: what joining a project, the geocoders and the applications read. Compiled into countries and regions.",
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "description": "ISO 4217: a row of currencies, the core's list or currency_details." },
+        "currency_details": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "decimal_places"],
+          "description": "The currency as a row of currencies, when the core's list does not hold it: added, never updated.",
+          "properties": {
+            "name": { "$ref": "#/$defs/text" },
+            "symbol": { "$ref": "#/$defs/text" },
+            "decimal_places": { "type": "integer", "minimum": 0, "maximum": 6 }
+          }
+        },
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$" },
+          "description": "BCP 47 tags of the official languages, in the order the country lists them."
+        },
+        "time_zones": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$" },
+          "description": "IANA time zones; the first is the one a participant of the country gets when its region names none."
+        },
+        "region_level": {
+          "$ref": "#/$defs/code",
+          "description": "The subdivision the pack's rows and places use, in English: region, province, department, state."
+        },
+        "postal_code_pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A regular expression a postal code of the country matches, anchored."
+        },
+        "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "description": "The box a map opens on: west, south, east, north, in degrees (WGS 84)." },
+        "municipality_scheme": {
+          "$ref": "#/$defs/code",
+          "description": "The id scheme, declared in identifiers.json, that numbers the municipalities."
+        },
+        "regions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/region" },
+          "description": "The subdivisions at region_level, and their parents when a row or a place names one. Every region a row of the pack names is declared here."
+        }
+      }
+    },
+    "region": {
+      "type": "object",
+      "required": ["code", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/region_code" },
+        "name": { "$ref": "#/$defs/text", "description": "The name the country uses." },
+        "parent": { "$ref": "#/$defs/region_code", "description": "The region it belongs to, declared in this pack." },
+        "time_zone": { "type": "string", "description": "One of identity.time_zones, when it is not the first." },
+        "names": { "type": "object", "additionalProperties": { "$ref": "#/$defs/text" }, "description": "Its name in other languages, by BCP 47 tag." },
+        "aliases": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "Other names it is written under: an old name, an abbreviation." },
+        "postal_prefixes": { "type": "array", "items": { "type": "string", "pattern": "^[0-9A-Z]+$" }, "description": "The first characters of the postal codes inside it." }
+      }
+    },
+
+    "identifiers_file": {
+      "type": "object",
+      "required": ["identifiers"],
+      "additionalProperties": false,
+      "description": "identifiers.json: the identifier schemes of the country. Compiled into identifier_schemes.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "identifiers": { "type": "array", "items": { "$ref": "#/$defs/identifier" } }
+      }
+    },
+    "identifier": {
+      "type": "object",
+      "required": ["code", "name", "example"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/text" },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A regular expression every value matches, anchored; the same expression in Postgres and in JavaScript."
+        },
+        "example": { "$ref": "#/$defs/text", "description": "A real-looking value that matches the pattern. Checked, not stored." },
+        "url_template": { "$ref": "#/$defs/url_template" },
+        "source_code": { "$ref": "#/$defs/code", "description": "The source whose service answers for this identifier." },
+        "icd": {
+          "type": "string",
+          "pattern": "^[0-9]{4}$",
+          "description": "The ISO 6523 International Code Designator of a register of legal persons, when ISO 6523 lists it: the code an electronic invoice carries the identifier under, and the one Ekwo OS's pack of the country names. No check digit is validated here: that is the invoicing side's."
+        }
+      }
+    },
+
+    "sources_file": {
+      "type": "object",
+      "required": ["sources"],
+      "additionalProperties": false,
+      "description": "sources.json: the registers, geocoders, data hubs, statistics and published texts of the country, as data. Compiled into sources. A value of the pack cites one of these by its code.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["code", "name", "kind", "url", "license", "redistributable"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/text" },
+        "kind": {
+          "enum": ["api", "file", "registry", "text"],
+          "description": "api: queried live; file: a downloaded dataset; registry: an official register; text: a published text a value is read from (a law, an operator's grid code, a statistic)."
+        },
+        "url": { "$ref": "#/$defs/https_url", "description": "Where the source is served or the text is published." },
+        "docs_url": { "$ref": "#/$defs/https_url" },
+        "auth": { "enum": ["none", "api_key", "oauth2", "certificate", "mandate"], "description": "How a connector authenticates; none when absent. The secret itself is never in a pack." },
+        "license": { "$ref": "#/$defs/text", "description": "The licence, by its usual name or SPDX identifier." },
+        "attribution": { "$ref": "#/$defs/text" },
+        "redistributable": { "type": "boolean", "description": "Whether what is fetched may be passed on to others." },
+        "retention_days": { "type": "integer", "minimum": 1, "description": "How long the licence lets an installation keep what it fetched; absent: for ever." },
+        "regions": { "$ref": "#/$defs/regions" }
+      }
+    },
+
+    "grid_file": {
+      "type": "object",
+      "required": ["operators"],
+      "additionalProperties": false,
+      "description": "grid.json: who runs the grid, its voltage levels and the connection thresholds a calculation reads. Operators are compiled into the operator table of the grid module; voltage levels and thresholds into defaults, as any other value.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "operators": { "type": "array", "items": { "$ref": "#/$defs/operator" } },
+        "voltage_levels": { "$ref": "#/$defs/voltage_levels" },
+        "thresholds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/default" },
+          "description": "Connection thresholds, written as defaults rows: a maximum power per voltage level, the power above which a connection needs a study."
+        },
+        "support_schemes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/support_scheme" },
+          "description": "The support schemes of the country, compiled into grid.support_schemes: who is eligible, for how long, and the dated obligation to stop at negative prices. The tariff is the contract's, never the pack's."
+        }
+      }
+    },
+    "support_scheme": {
+      "type": "object",
+      "required": ["code", "name", "kind", "source_code", "reference"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text" },
+        "kind": { "enum": ["feed_in_tariff", "contract_for_difference", "green_certificates", "net_metering"], "description": "A code of grid.support_scheme_kinds." },
+        "allocation": { "enum": ["open_window", "tender"], "description": "How a contract is awarded; absent: open_window." },
+        "device_types": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/code" }, "description": "The device types eligible, and the types refining them; absent: any." },
+        "min_power_kw": { "type": "number", "minimum": 0 },
+        "max_power_kw": { "type": "number", "minimum": 0 },
+        "duration_years": { "type": "integer", "minimum": 1 },
+        "negative_price_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["threshold_kw", "valid_from", "reference"],
+            "additionalProperties": false,
+            "properties": {
+              "threshold_kw": { "type": "number", "minimum": 0, "description": "A producer of this rated power or more stops, or loses its support, while the market price is negative." },
+              "valid_from": { "$ref": "#/$defs/date" },
+              "valid_to": { "$ref": "#/$defs/date" },
+              "source_code": { "$ref": "#/$defs/code", "description": "The text that sets the rule, when it is not the scheme's own." },
+              "reference": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "source_code": { "$ref": "#/$defs/code" },
+        "reference": { "$ref": "#/$defs/text" },
+        "valid_from": { "$ref": "#/$defs/date" },
+        "valid_to": { "$ref": "#/$defs/date" }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "required": ["code", "name", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text" },
+        "kind": { "enum": ["tso", "dso", "island"], "description": "tso: transmission; dso: distribution; island: a zone not connected to the main grid." },
+        "regions": { "$ref": "#/$defs/regions" },
+        "coverage": { "$ref": "#/$defs/text", "description": "What it covers, in plain words, when regions do not say it all." },
+        "website": { "$ref": "#/$defs/https_url" },
+        "data_hub_url": { "$ref": "#/$defs/https_url", "description": "Where a third party reads meter data with the customer's consent." },
+        "meter_data": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "How the operator's hub publishes meter data, read by its connectors: never written in their code.",
+          "properties": {
+            "sources": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/code" }, "description": "The sources that read the hub, in the order an installation tries them." },
+            "time_zone": { "type": "string", "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)+$", "description": "The IANA zone the hub's files date their steps in when they carry no offset." },
+            "quality_codes": {
+              "type": "object",
+              "additionalProperties": { "type": "integer", "minimum": 0 },
+              "description": "The hub's quality letters mapped to series_values.quality (0 measured, 1 estimated, 2 substituted, 3 missing, 100 and up the pack's own); the key missing for a step the file does not carry, none for a value without a letter."
+            },
+            "history_months": { "type": "integer", "minimum": 1, "description": "How far back the hub serves readings." },
+            "steps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^P(T[0-9]+[HMS]|[0-9]+D)$" }, "description": "The steps of its load curves, ISO 8601 durations." },
+            "source_code": { "$ref": "#/$defs/code" },
+            "reference": { "$ref": "#/$defs/text" }
+          }
+        },
+        "identifier_scheme": { "$ref": "#/$defs/code", "description": "The id scheme of the metering points it issues." },
+        "eic_code": { "type": "string", "pattern": "^[0-9]{2}[A-Z][A-Z0-9-]{13}$", "description": "Its Energy Identification Code as a market party (ENTSO-E EIC)." },
+        "municipalities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/place_code" },
+          "description": "The municipalities it serves when it serves part of a region only, declared in municipalities.json."
+        },
+        "identifier_prefixes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[0-9A-Za-z]+$" },
+          "description": "The prefixes of the metering point identifiers it issues, when its numbering says who issued a point; grid.operator_of() takes the longest that matches."
+        },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    },
+    "voltage_levels": {
+      "type": "object",
+      "required": ["levels", "source_code", "reference", "valid_from"],
+      "additionalProperties": false,
+      "description": "The voltage levels of the country, compiled into one defaults row of the property voltage_levels, in kilovolts.",
+      "properties": {
+        "levels": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/voltage_level" } },
+        "source_code": { "$ref": "#/$defs/code" },
+        "reference": { "$ref": "#/$defs/text" },
+        "valid_from": { "$ref": "#/$defs/date" },
+        "valid_to": { "$ref": "#/$defs/date" }
+      }
+    },
+    "voltage_level": {
+      "type": "object",
+      "required": ["code", "name", "min_kv", "max_kv"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text" },
+        "min_kv": { "type": "number", "minimum": 0, "description": "Nominal voltage above which a connection belongs to this level, excluded." },
+        "max_kv": { "type": "number", "minimum": 0, "description": "Nominal voltage up to which it does, included." }
+      }
+    },
+
+    "project_kinds_file": {
+      "type": "object",
+      "required": ["project_kinds"],
+      "additionalProperties": false,
+      "description": "project_kinds.json: the frames of projects the law of the country defines (a collective self-consumption operation, a renewable energy community), each refining a generic kind of the core and citing its text. Compiled into project_kinds.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "project_kinds": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/project_kind" } }
+      }
+    },
+    "project_kind": {
+      "type": "object",
+      "required": ["code", "name", "parent", "source_code", "reference"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "name": { "$ref": "#/$defs/text", "description": "The name the law gives it." },
+        "description": { "$ref": "#/$defs/text" },
+        "parent": { "$ref": "#/$defs/code", "description": "The generic kind of the core it refines: collective_self_consumption, energy_community…" },
+        "source_code": { "$ref": "#/$defs/code", "description": "The text that defines it, declared in sources.json." },
+        "reference": { "$ref": "#/$defs/text", "description": "The article." }
+      }
+    },
+
+    "municipalities_file": {
+      "type": "object",
+      "required": ["municipalities", "source_code", "reference"],
+      "additionalProperties": false,
+      "description": "municipalities.json: the municipalities of the country a value or an operator follows, each under its region, with its density class where the country publishes a density grid. Compiled into regions (kind municipality, code CC-<code>) and, for the classes, into defaults rows of the property density_class. A pack may list a subset; the full list is loaded the same way, from a larger file of the same shape or by a connector writing the same rows.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "source_code": { "$ref": "#/$defs/code", "description": "The register the list was read from, declared in sources.json." },
+        "reference": { "$ref": "#/$defs/text", "description": "Its edition." },
+        "density_classes": { "$ref": "#/$defs/density_classes" },
+        "municipalities": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/municipality" } }
+      }
+    },
+    "density_classes": {
+      "type": "object",
+      "required": ["classes", "source_code", "reference", "valid_from"],
+      "additionalProperties": false,
+      "description": "The classes of the density grid of the country, and where the class of each municipality was read.",
+      "properties": {
+        "classes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/code" } },
+        "source_code": { "$ref": "#/$defs/code" },
+        "reference": { "$ref": "#/$defs/text" },
+        "valid_from": { "$ref": "#/$defs/date" },
+        "valid_to": { "$ref": "#/$defs/date" }
+      }
+    },
+    "municipality": {
+      "type": "object",
+      "required": ["code", "name", "parent"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "pattern": "^[0-9A-Za-z]{1,12}$", "description": "The country's own code, a value of identity.municipality_scheme." },
+        "name": { "$ref": "#/$defs/text" },
+        "parent": { "$ref": "#/$defs/region_code", "description": "The region of identity.regions it is part of." },
+        "density_class": { "$ref": "#/$defs/code", "description": "One of density_classes.classes." }
+      }
+    },
+
+    "defaults_file": {
+      "type": "object",
+      "required": ["defaults"],
+      "additionalProperties": false,
+      "description": "defaults.json: the country and region values of the cascade parameter_of() resolves. Compiled into defaults.",
+      "properties": {
+        "$schema": { "type": "string" },
+        "defaults": { "type": "array", "items": { "$ref": "#/$defs/default" } }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "When a value holds, in the one shape of a condition the core checks (condition_check()) and matches (condition_matches()): every key optional, every key given must hold; {} or absent: every object. The same shape as a template of the actions module.",
+      "properties": {
+        "project_kind": { "$ref": "#/$defs/code", "description": "The kind of project (a project_kinds code, the core's or this pack's) and the kinds refining it." },
+        "segment": { "$ref": "#/$defs/code", "description": "The customer segment (a segments code of the core) and the segments refining it." },
+        "device_type": { "$ref": "#/$defs/code", "description": "The technology (a device_types code) and the types refining it, read when the value is asked from a device." },
+        "density_class": { "$ref": "#/$defs/code", "description": "The density class of the municipality, one of municipalities.json density_classes.classes." },
+        "attribute": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["attribute_type", "op", "value"],
+          "description": "An attribute of the object compared with a number; an object without the attribute is not decided.",
+          "properties": {
+            "attribute_type": { "$ref": "#/$defs/code" },
+            "op": { "enum": ["=", "<>", "<", "<=", ">", ">="] },
+            "value": { "type": "number" }
+          }
+        }
+      }
+    },
+    "default": {
+      "type": "object",
+      "required": ["attribute_type", "value", "unit", "source_code", "reference", "valid_from"],
+      "additionalProperties": false,
+      "description": "One value, for the whole country or for one region, over one period. A value that changes is never edited: the row gets a valid_to, and the new value is a new row whose valid_from is that day. A value that holds for some objects of the place only names its condition, in the one shape of a condition (a kind of project, a segment, a technology, a density class, an attribute); parameter_of() takes the most specific row whose condition the object meets.",
+      "properties": {
+        "attribute_type": { "$ref": "#/$defs/code", "description": "An attribute_types code; the database refuses an unknown one (attribute_type_unknown)." },
+        "region": { "$ref": "#/$defs/place_code", "description": "The region or the municipality the value holds in; absent: the whole country." },
+        "condition": { "$ref": "#/$defs/condition" },
+        "value": {
+          "type": ["number", "string", "boolean", "array", "object", "null"],
+          "description": "The value, in the attribute type's datatype. null: the country gives no single answer (it depends on the company, a contract or an option), and the reference says where that is decided."
+        },
+        "unit": {
+          "$ref": "#/$defs/text",
+          "description": "For a number, the unit code of the attribute type's quantity (QUDT, as quantities.unit holds it); the database refuses another (unit_mismatch). Otherwise the form of the value: ISO8601-duration, code, hours, list."
+        },
+        "source_code": { "$ref": "#/$defs/code", "description": "The source, declared in sources.json, the value was read from." },
+        "reference": { "$ref": "#/$defs/text", "description": "Where in that source: the article, the table, the page." },
+        "status": { "enum": ["published", "measured", "estimated", "default"], "description": "What kind of value it is (value_statuses): published when the source decides it, estimated for a statistic or a model, default for a conventional assumption. Absent: published." },
+        "valid_from": { "$ref": "#/$defs/date" },
+        "valid_to": { "$ref": "#/$defs/date", "description": "The first day the value does not hold, as everywhere in the model: a period is [valid_from, valid_to). The row that replaces it starts that day. Absent: it still holds." }
+      }
+    }
+  }
+}

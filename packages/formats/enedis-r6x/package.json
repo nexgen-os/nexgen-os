@@ -1,0 +1,34 @@
+{
+  "name": "@nexgen-os/enedis-r6x",
+  "version": "0.3.0",
+  "description": "The R63 (load curve) and R64 (index) files of Enedis, JSON and XML, read into plain series: every step at its start in UTC, the time zone and the quality table given by the caller, problems by name. No database, no network.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/enedis-r6x"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
+}

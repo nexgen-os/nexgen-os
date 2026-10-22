@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+packages/cli/assets/
+.venv-pvlib/
+__pycache__/
+*.egg-info/
+packages/cli/LICENSE
+.venv-sdk/
+packages/core/LICENSE
+packages/mcp/LICENSE

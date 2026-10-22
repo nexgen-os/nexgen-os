@@ -1,0 +1,182 @@
+{
+  "defaults": [
+    {
+      "object": "participant:school",
+      "attribute_type": "sharing_max_distance_m",
+      "at": "2026-06-15",
+      "value": 2000,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "project_kind": "fr_acc"
+      },
+      "source_code": "fr_arrete_acc_perimeter",
+      "source": "packs/fr/defaults.json: 2 km for an fr_acc, the arrêté of 21 November 2019 as amended in 2023, article 1; Lyon is a large urban centre, which no derogation covers."
+    },
+    {
+      "object": "participant:school",
+      "attribute_type": "electricity_excise",
+      "at": "2026-06-15",
+      "value": 26.58,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "segment": "professional"
+      },
+      "source_code": "fr_bofip_electricity_excise",
+      "source": "packs/fr/defaults.json: 26.58 €/MWh for a professional customer from 1 February 2026; a public entity is a professional segment (core segments)."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 88.2,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_eurostat_business_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_205_c, 2025, the latest open year."
+    },
+    {
+      "object": "project",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.02,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_rte_bilan_2025",
+      "source": "packs/fr/defaults.json: RTE, Bilan électrique 2025; a project reads the pack of its own country."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "tolerance_m": 25,
+    "rule": {
+      "criteria": [
+        "max_distance_between_members"
+      ],
+      "level": "country",
+      "conditions": {
+        "project_kind": "fr_acc"
+      },
+      "source_code": "fr_arrete_acc_perimeter"
+    },
+    "participants": {
+      "plant": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": true,
+            "value_m": 2000,
+            "distance_m": 1600
+          }
+        ]
+      },
+      "school": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": true,
+            "value_m": 2000,
+            "distance_m": 800
+          }
+        ]
+      },
+      "bakery": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "max_distance_between_members",
+            "in": true,
+            "value_m": 2000,
+            "distance_m": 1600
+          }
+        ]
+      }
+    },
+    "source": "The three places lie on one parallel, 0.8 km apart: the greatest distance from each to another is 1.6, 0.8 and 1.6 km, within 2 km. Distances worked out on a sphere of 111.32 km per degree, held to 25 m."
+  },
+  "operators": [
+    {
+      "meter": "plant",
+      "operator": "enedis",
+      "by": "meter",
+      "source": "The scenario connects the meter to enedis (grid.connect_to_operator), the point saying it itself."
+    },
+    {
+      "meter": "bakery",
+      "refusal": "grid_operator_not_found",
+      "source": "packs/fr/grid.json lists enedis without its regions and no identifier prefix: a meter of Lyon not connected to its operator is not resolved, and the model says so by name rather than guess."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 80.0,
+    "participants": {
+      "plant": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 80.0
+      },
+      "school": {
+        "shared_offtake_energy": 42.5,
+        "shared_injection_energy": 0.0
+      },
+      "bakery": {
+        "shared_offtake_energy": 37.5,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. At 11:00 the demand (32 kWh) exceeds the pool (28 kWh): the school receives 28 × 12/32, the bakery 28 × 20/32."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.8,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "read": {
+        "production": "measured",
+        "shared_injection": "simulated"
+      },
+      "source": "80 kWh shared over 100 kWh produced; the shared volumes are the settlement's simulated series."
+    },
+    {
+      "object": "participant:school",
+      "indicator": "residual_offtake_energy",
+      "value": 1.5,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "44 kWh taken from the grid less the 42.5 kWh shared to the school."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "self_consumption_rate",
+      "value": 0.08,
+      "tolerance": 1e-06,
+      "read": {
+        "direct": "computed",
+        "charge": "computed",
+        "production": "measured",
+        "injection": "measured"
+      },
+      "source": "No series measures the self-consumption nor a battery: (100 − 92 − 0) / 100."
+    },
+    {
+      "object": "project",
+      "indicator": "self_consumption_savings_business",
+      "value": 1.9312,
+      "tolerance": 1e-06,
+      "source": "8 kWh self-consumed at 88.2 + 153.2 €/MWh (energy_price_business and grid_fees_and_taxes of the pack, 2025), the project reading its country's values."
+    },
+    {
+      "object": "project",
+      "indicator": "co2_avoided",
+      "value": 0.16,
+      "tolerance": 1e-06,
+      "source": "8 kWh at 0.02 kg/kWh (grid_co2_factor, RTE 2025)."
+    }
+  ]
+}

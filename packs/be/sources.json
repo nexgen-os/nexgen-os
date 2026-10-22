@@ -1,0 +1,248 @@
+{
+  "sources": [
+    {
+      "code": "geopunt",
+      "name": "Geolocation API of Digitaal Vlaanderen (Geopunt)",
+      "description": "The Flemish address register (Basisregisters Vlaanderen) as a geocoder, with the Brussels UrbIS addresses alongside: search, reverse, house-number precision. Its matching is loose on house numbers; the adapter checks the number it matched. Read by the connectors `geopunt` and `urbis`.",
+      "kind": "api",
+      "url": "https://geo.api.vlaanderen.be/geolocation/",
+      "docs_url": "https://geo.api.vlaanderen.be/geolocation/",
+      "license": "Modellicentie Gratis Hergebruik (Basisregisters Vlaanderen); CC0-1.0 (UrbIS-Adm)",
+      "attribution": "© Digitaal Vlaanderen — Basisregisters Vlaanderen; © Paradigm — UrbIS",
+      "redistributable": true,
+      "regions": [
+        "BE-VLG",
+        "BE-BRU"
+      ]
+    },
+    {
+      "code": "basisregisters_vlaanderen",
+      "name": "Basisregisters Vlaanderen",
+      "description": "The Flemish base registers: addresses, streets, municipalities (by NIS code), parcels and buildings, each with a persistent identifier.",
+      "kind": "api",
+      "url": "https://api.basisregisters.vlaanderen.be/v2/",
+      "docs_url": "https://docs.basisregisters.vlaanderen.be/",
+      "license": "Modellicentie Gratis Hergebruik",
+      "attribution": "© Digitaal Vlaanderen — Basisregisters Vlaanderen",
+      "redistributable": true,
+      "regions": [
+        "BE-VLG"
+      ]
+    },
+    {
+      "code": "urbis",
+      "name": "UrbIS geolocation service",
+      "description": "The Brussels address register (UrbIS) as a geocoder: addresses in French or Dutch, with how well each part matched. Reverse lookup takes Belgian Lambert 72 only.",
+      "kind": "api",
+      "url": "https://geoservices.irisnet.be/localization/",
+      "docs_url": "https://geoservices.irisnet.be/localization/",
+      "license": "CC0-1.0",
+      "attribution": "© Paradigm — UrbIS",
+      "redistributable": true,
+      "regions": [
+        "BE-BRU"
+      ]
+    },
+    {
+      "code": "icar",
+      "name": "ICAR geocoding service (geocodeWS)",
+      "description": "The Walloon address register (ICAR, inventaire centralisé des adresses et des rues) as a geocoder: search, reverse, a match score per level and the NIS code of the municipality. Its terms of use are still being drafted by the Service public de Wallonie, so what it returns is not passed on.",
+      "kind": "api",
+      "url": "https://geoservices.wallonie.be/geocodeWS/",
+      "docs_url": "https://metawal.wallonie.be/geonetwork/srv/api/records/c79653b2-501b-4a91-9aa4-908a7cd5800e",
+      "license": "Free and open access; terms of use being drafted (not verified)",
+      "attribution": "© Service public de Wallonie — ICAR",
+      "redistributable": false,
+      "regions": [
+        "BE-WAL"
+      ]
+    },
+    {
+      "code": "rmi_aws",
+      "name": "RMI automatic weather stations",
+      "description": "Observations of the automatic weather stations of the Royal Meteorological Institute (IRM / KMI), every 10 minutes, hour and day: temperature, wind, humidity, global irradiance, through OGC WFS. A network of 14 stations, not a grid.",
+      "kind": "api",
+      "url": "https://opendata.meteo.be/service/aws/wfs",
+      "docs_url": "https://opendata.meteo.be/documentation/?dataset=aws",
+      "license": "CC-BY-4.0 (as stated by the Belgian Climate Centre catalogue; not verified on opendata.meteo.be)",
+      "attribution": "© Royal Meteorological Institute of Belgium (RMI)",
+      "redistributable": true
+    },
+    {
+      "code": "statbel",
+      "name": "Statbel — Statistics Belgium, open data",
+      "description": "The statistics office's open data, among them the official list of municipalities with their NIS codes and the statistical sectors.",
+      "kind": "file",
+      "url": "https://statbel.fgov.be/en/open-data",
+      "license": "CC-BY-4.0",
+      "attribution": "© Statbel (Directorate-general Statistics - Statistics Belgium)",
+      "redistributable": true
+    },
+    {
+      "code": "kbo_bce",
+      "name": "Crossroads Bank for Enterprises (KBO / BCE)",
+      "description": "The official register of Belgian enterprises and their establishments, searched by enterprise number.",
+      "kind": "registry",
+      "url": "https://kbopub.economie.fgov.be/",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "fluvius_open_data",
+      "name": "Fluvius open data",
+      "description": "The Flemish distribution operators' open datasets: load profiles, installed capacity of solar panels, network data by municipality.",
+      "kind": "api",
+      "url": "https://opendata.fluvius.be/",
+      "docs_url": "https://opendata.fluvius.be/explore/",
+      "license": "Open data license - FLUVIUS",
+      "attribution": "© Fluvius",
+      "redistributable": true,
+      "regions": [
+        "BE-VLG"
+      ]
+    },
+    {
+      "code": "elia_open_data",
+      "name": "Elia open data",
+      "description": "The transmission operator's open datasets: load, generation, cross-border exchanges, balancing and CO2 intensity of the country.",
+      "kind": "api",
+      "url": "https://opendata.elia.be/",
+      "docs_url": "https://opendata.elia.be/pages/api/",
+      "license": "Elia Open Data Licence",
+      "attribution": "© Elia",
+      "redistributable": true
+    },
+    {
+      "code": "be_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_fluvius_quarter_hour",
+      "name": "Fluvius — What are quarter-hour values (kwartierwaarden)?",
+      "description": "The Flemish distribution operator's page on the quarter-hour readings of its digital electricity meter.",
+      "kind": "text",
+      "url": "https://www.fluvius.be/nl/factuur-en-tarieven/kwartierwaarden",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_sibelga_consumption_history",
+      "name": "Sibelga — consumption history",
+      "description": "The Brussels distribution operator's page on the history of a customer's consumption, quarter-hourly for a smart meter.",
+      "kind": "text",
+      "url": "https://www.sibelga.be/en/connections-meters/meter-readings-and-consumption/consumptions-history",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_ores_smart_meter",
+      "name": "ORES — the communicating meter",
+      "description": "The main Walloon distribution operator's page on how its communicating meter collects consumption by quarter hour.",
+      "kind": "text",
+      "url": "https://www.ores.be/particulier/compteur-communicant-fonctionnement",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "be_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "be_fps_finance_energy_bill",
+      "name": "FPS Finance — Your energy bill (Uw energiefactuur)",
+      "description": "The federal tax administration's page on the VAT rate of natural gas and electricity and the excise reform that came with it.",
+      "kind": "text",
+      "url": "https://finance.belgium.be/en/node/17643",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_wal_electricity_decree",
+      "name": "Décret du 12 avril 2001 relatif à l'organisation du marché régional de l'électricité (Wallonia), as amended by the décret du 5 mai 2022",
+      "description": "The Walloon decree that defines energy sharing, renewable energy communities and citizen energy communities.",
+      "kind": "text",
+      "url": "https://wallex.wallonie.be/",
+      "license": "Terms not stated",
+      "redistributable": false,
+      "regions": [
+        "BE-WAL"
+      ]
+    },
+    {
+      "code": "be_bru_electricity_ordinance",
+      "name": "Ordonnance du 19 juillet 2001 relative à l'organisation du marché de l'électricité en Région de Bruxelles-Capitale, as amended",
+      "description": "The Brussels ordinance that defines local energy communities, renewable and citizen energy communities and energy sharing.",
+      "kind": "text",
+      "url": "https://www.ejustice.just.fgov.be/",
+      "license": "Terms not stated",
+      "redistributable": false,
+      "regions": [
+        "BE-BRU"
+      ]
+    },
+    {
+      "code": "be_vlg_energy_decree",
+      "name": "Energiedecreet van 8 mei 2009 (Flanders)",
+      "description": "The Flemish energy decree that defines energy sharing and energy communities.",
+      "kind": "text",
+      "url": "https://codex.vlaanderen.be/",
+      "license": "Terms not stated",
+      "redistributable": false,
+      "regions": [
+        "BE-VLG"
+      ]
+    },
+    {
+      "code": "be_wal_energy_sharing_order",
+      "name": "Arrêté du Gouvernement wallon du 17 mars 2023 relatif aux communautés d'énergie et au partage d'énergie",
+      "description": "The Walloon order that sets how energy communities are notified and authorised, and the proximity a renewable energy community's sharing respects (article 24).",
+      "kind": "text",
+      "url": "https://wallex.wallonie.be/",
+      "license": "Terms not stated",
+      "redistributable": false,
+      "regions": [
+        "BE-WAL"
+      ]
+    },
+    {
+      "code": "be_aib_residual_mix_2024",
+      "name": "Association of Issuing Bodies — European Residual Mixes 2024",
+      "description": "The residual mix of each European country for 2024, what is left of its electricity once guarantees of origin are cancelled, with its direct CO2 per kWh, as the Association of Issuing Bodies calculates it for electricity disclosure.",
+      "kind": "text",
+      "url": "https://www.aib-net.org/sites/default/files/assets/eecs/Residual%20Mix/2024_Final%20_Residual%20mix%20calculation%20results_11082025.pdf",
+      "docs_url": "https://www.aib-net.org/facts/european-residual-mix/2024",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_creg_annual_report_2024",
+      "name": "CREG — Annual report 2024",
+      "description": "The yearly report of the federal regulator of electricity and gas: the functioning of the Belgian markets in 2024, the average day-ahead price of the Belgian bidding zone among them.",
+      "kind": "text",
+      "url": "https://www.creg.be/en/publications/annual-report-ar2024",
+      "license": "Terms not stated",
+      "redistributable": false
+    }
+  ]
+}

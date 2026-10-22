@@ -1,0 +1,37 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "es_autoconsumo_individual",
+      "name": "Autoconsumo individual",
+      "description": "Individual self-consumption: one consumer associated with the production installations close to its consumption.",
+      "parent": "individual_self_consumption",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 4.3: self-consumption is individual or collective according to whether one or several consumers are associated with the generation installations"
+    },
+    {
+      "code": "es_autoconsumo_colectivo",
+      "name": "Autoconsumo colectivo",
+      "description": "Collective self-consumption: a group of consumers fed, by agreement, from production installations close to their consumption and associated with them, through an internal network or through the grid, sharing the energy by allocation coefficients notified to the distribution operator.",
+      "parent": "collective_self_consumption",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 3, letter m) (autoconsumo colectivo) and article 4.3"
+    },
+    {
+      "code": "es_comunidad_energias_renovables",
+      "name": "Comunidad de energías renovables",
+      "description": "A renewable energy community: a legal entity of open and voluntary participation, effectively controlled by members located near the renewable projects it owns and develops — natural persons, small and medium enterprises or local authorities — whose primary purpose is environmental, economic or social benefit rather than profit.",
+      "parent": "energy_community",
+      "source_code": "es_ley_24_2013_electricity",
+      "reference": "Article 6.1, letter j) and article 12 bis"
+    },
+    {
+      "code": "es_comunidad_ciudadana_energia",
+      "name": "Comunidad ciudadana de energía",
+      "description": "A citizen energy community: a legal entity of voluntary and open participation, effectively controlled by natural persons, local authorities or small enterprises, whose main purpose is environmental, economic or social benefit for its members or its locality rather than financial return.",
+      "parent": "energy_community",
+      "source_code": "es_ley_24_2013_electricity",
+      "reference": "Article 6.1, letter k) and article 12 ter"
+    }
+  ]
+}

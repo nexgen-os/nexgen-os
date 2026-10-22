@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexgen-os"
+version = "0.3.0"
+description = "Read and describe a Nexgen OS installation from Python: the readers of the model and of its series, the one write path of series, and attributes attached with their source."
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = ["psycopg>=3.1"]
+
+[project.optional-dependencies]
+binary = ["psycopg[binary]>=3.1"]
+arrow = ["pyarrow>=14"]
+pandas = ["pandas>=2.1"]
+polars = ["polars>=1.0"]
+
+[tool.setuptools]
+packages = ["nexgen_os"]

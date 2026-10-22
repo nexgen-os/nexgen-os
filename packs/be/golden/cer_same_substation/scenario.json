@@ -1,0 +1,206 @@
+{
+  "name": "A renewable energy community of Wallonia downstream of one substation",
+  "description": "A PV roof of Liège shares with a school of Namur, downstream of the same high-voltage substation, and a shop of Charleroi fed from another: the school is in by the substation, the shop out. The example engine shares among every participant: it applies no perimeter.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A Walloon cooperative of the case",
+  "project": {
+    "name": "Meuse substation community",
+    "kind": "be_cer",
+    "country": "BE"
+  },
+  "substations": [
+    {
+      "ref": "s1",
+      "operator": "ores",
+      "code": "CASE-S1",
+      "name": "First substation of the case"
+    },
+    {
+      "ref": "s2",
+      "operator": "ores",
+      "code": "CASE-S2",
+      "name": "Second substation of the case"
+    }
+  ],
+  "participants": [
+    {
+      "ref": "solar",
+      "name": "Warehouse roof",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "62063",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.5797,
+            50.6326
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "solar",
+          "identifier": "541449000000000201",
+          "scheme": "gs1_gsrn",
+          "operator": "ores",
+          "substation": "s1"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Warehouse PV",
+          "rated_power_kw": 60
+        }
+      ]
+    },
+    {
+      "ref": "school",
+      "name": "Namur school",
+      "role": "consumer",
+      "segment": "public_entity",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "92094",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.8719,
+            50.4674
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "school",
+          "identifier": "541449000000000202",
+          "scheme": "gs1_gsrn",
+          "operator": "ores",
+          "substation": "s1"
+        }
+      ]
+    },
+    {
+      "ref": "shop",
+      "name": "Charleroi shop",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "52011",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.4446,
+            50.4108
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "shop",
+          "identifier": "541449000000000203",
+          "scheme": "gs1_gsrn",
+          "operator": "ores",
+          "substation": "s2"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        30,
+        40,
+        40,
+        30
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:solar",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:solar",
+      "quantity": "injection_energy",
+      "values": [
+        28,
+        38,
+        38,
+        28
+      ]
+    },
+    {
+      "object": "meter:school",
+      "quantity": "offtake_energy",
+      "values": [
+        15,
+        20,
+        20,
+        15
+      ]
+    },
+    {
+      "object": "meter:school",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:shop",
+      "quantity": "offtake_energy",
+      "values": [
+        10,
+        15,
+        25,
+        10
+      ]
+    },
+    {
+      "object": "meter:shop",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

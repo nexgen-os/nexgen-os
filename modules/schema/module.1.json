@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nexgen-os/nexgen-os/blob/main/modules/schema/module.1.json",
+  "title": "Nexgen OS module manifest, version 1",
+  "description": "What a module of Nexgen OS says about itself. One file, `modules/<code>/module.json`, read by `nexgen-os init` to find the modules a release ships and by the tests that pin it to the row the module's first migration writes into `nexgen.modules`. Everything a module does is in its migrations and its code; this says what it is, where it lives and what it needs.",
+  "type": "object",
+  "required": ["code", "name", "version", "description", "schema", "requires", "licence"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "code": {
+      "$ref": "#/$defs/identifier",
+      "description": "The module's identifier, the name of its folder and the key of `nexgen.modules`. Immutable once published: a module whose name becomes more precise renames its folder and its schema and keeps its code (decision 0033)."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The one thing the module names (decision 0041), as `nexgen.modules.description` holds it."
+    },
+    "version": {
+      "$ref": "#/$defs/semver",
+      "description": "The module's version, as `nexgen.modules.version` holds it."
+    },
+    "schema": {
+      "$ref": "#/$defs/identifier",
+      "description": "The Postgres schema the module lives in. One schema per module, never `nexgen` nor `public` (decision 0032), and PostgREST serves it only once it is listed in the project's exposed schemas."
+    },
+    "requires": {
+      "type": "object",
+      "required": ["core"],
+      "additionalProperties": false,
+      "properties": {
+        "core": {
+          "$ref": "#/$defs/semver",
+          "description": "The oldest schema version of the core the module runs on, as `nexgen.modules.requires_core_min` holds it."
+        },
+        "modules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "uniqueItems": true,
+          "description": "The codes of the modules that must be installed before this one. Empty for a module that starts from the core alone, which is the rule: a module table never names a table of another module."
+        }
+      }
+    },
+    "licence": {
+      "type": "string",
+      "description": "The SPDX identifier of the module's licence: the modules are AGPL-3.0-only, like the core (decision 0005)."
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,30}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    }
+  }
+}

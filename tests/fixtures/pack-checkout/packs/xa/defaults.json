@@ -1,0 +1,59 @@
+{
+  "defaults": [
+    {
+      "attribute_type": "metering_step",
+      "value": "PT30M",
+      "unit": "ISO8601-duration",
+      "source_code": "xa_grid_code",
+      "reference": "Article 12",
+      "valid_from": "2020-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "metering_step",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "xa_grid_code",
+      "reference": "Article 12, as amended",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.12,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "xa_statistics",
+      "reference": "Yearly balance 2025, table 3",
+      "valid_from": "2026-01-01"
+    },
+    {
+      "attribute_type": "sharing_max_distance_m",
+      "region": "XA-S",
+      "value": 2000,
+      "unit": "M",
+      "source_code": "xa_grid_code",
+      "reference": "Article 31",
+      "valid_from": "2023-07-01"
+    },
+    {
+      "attribute_type": "offpeak_hours",
+      "value": null,
+      "unit": "hours",
+      "source_code": "xa_grid_code",
+      "reference": "Article 40: set by each supply contract",
+      "valid_from": "2020-01-01"
+    },
+    {
+      "attribute_type": "sharing_max_distance_m",
+      "region": "XA-S",
+      "condition": {
+        "project_kind": "xa_sharing",
+        "density_class": "sparse"
+      },
+      "value": 10000,
+      "unit": "M",
+      "source_code": "xa_grid_code",
+      "reference": "Article 31, second paragraph",
+      "valid_from": "2023-07-01"
+    }
+  ]
+}

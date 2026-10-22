@@ -1,0 +1,235 @@
+{
+  "name": "A collective self-consumption in rural Ain, within 20 km",
+  "description": "A barn roof of Arandas (rural, very dispersed) shares with a farm of Arandas and a dairy and a sawmill of Anglefort (a rural town): rural municipalities extend the perimeter to 20 km. The sawmill, 23 km from the barn, breaks it for both. The example engine shares among every participant: it applies no perimeter.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A rural sharing operator of the case",
+  "project": {
+    "name": "Ain valley sharing",
+    "kind": "fr_acc",
+    "country": "FR"
+  },
+  "participants": [
+    {
+      "ref": "plant",
+      "name": "Barn roof",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-01",
+        "municipality": "01013",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.48,
+            45.89
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "plant",
+          "identifier": "30002000000001",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Barn PV",
+          "rated_power_kw": 100
+        }
+      ]
+    },
+    {
+      "ref": "farm",
+      "name": "Goat farm",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-01",
+        "municipality": "01013",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.634873,
+            45.89
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "farm",
+          "identifier": "30002000000002",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ]
+    },
+    {
+      "ref": "dairy",
+      "name": "Dairy",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-01",
+        "municipality": "01010",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.725215,
+            45.89
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "dairy",
+          "identifier": "30002000000003",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ]
+    },
+    {
+      "ref": "sawmill",
+      "name": "Sawmill",
+      "role": "consumer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-01",
+        "municipality": "01010",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.776839,
+            45.89
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "sawmill",
+          "identifier": "30002000000004",
+          "scheme": "prm",
+          "operator": "enedis"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        60,
+        80,
+        80,
+        60
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "injection_energy",
+      "values": [
+        56,
+        76,
+        76,
+        56
+      ]
+    },
+    {
+      "object": "meter:farm",
+      "quantity": "offtake_energy",
+      "values": [
+        20,
+        25,
+        25,
+        20
+      ]
+    },
+    {
+      "object": "meter:farm",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:dairy",
+      "quantity": "offtake_energy",
+      "values": [
+        30,
+        40,
+        50,
+        30
+      ]
+    },
+    {
+      "object": "meter:dairy",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:sawmill",
+      "quantity": "offtake_energy",
+      "values": [
+        10,
+        15,
+        15,
+        10
+      ]
+    },
+    {
+      "object": "meter:sawmill",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

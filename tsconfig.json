@@ -1,0 +1,99 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@nexgen-os/ban": [
+        "./packages/connectors/ban/src/index.ts"
+      ],
+      "@nexgen-os/enedis-sge": [
+        "./packages/connectors/enedis-sge/src/index.ts"
+      ],
+      "@nexgen-os/geopunt": [
+        "./packages/connectors/geopunt/src/index.ts"
+      ],
+      "@nexgen-os/icar": [
+        "./packages/connectors/icar/src/index.ts"
+      ],
+      "@nexgen-os/mapbox": [
+        "./packages/connectors/mapbox/src/index.ts"
+      ],
+      "@nexgen-os/nominatim": [
+        "./packages/connectors/nominatim/src/index.ts"
+      ],
+      "@nexgen-os/open-meteo": [
+        "./packages/connectors/open-meteo/src/index.ts"
+      ],
+      "@nexgen-os/photon": [
+        "./packages/connectors/photon/src/index.ts"
+      ],
+      "@nexgen-os/pvgis": [
+        "./packages/connectors/pvgis/src/index.ts"
+      ],
+      "@nexgen-os/switchgrid": [
+        "./packages/connectors/switchgrid/src/index.ts"
+      ],
+      "@nexgen-os/urbis": [
+        "./packages/connectors/urbis/src/index.ts"
+      ],
+      "@nexgen-os/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@nexgen-os/cityjson": [
+        "./packages/formats/cityjson/src/index.ts"
+      ],
+      "@nexgen-os/enedis-r6x": [
+        "./packages/formats/enedis-r6x/src/index.ts"
+      ],
+      "@nexgen-os/energy-bill": [
+        "./packages/formats/energy-bill/src/index.ts"
+      ],
+      "@nexgen-os/geojson": [
+        "./packages/formats/geojson/src/index.ts"
+      ],
+      "@nexgen-os/homeassistant": [
+        "./packages/formats/homeassistant/src/index.ts"
+      ],
+      "@nexgen-os/ifc": [
+        "./packages/formats/ifc/src/index.ts"
+      ],
+      "@nexgen-os/ocpp": [
+        "./packages/formats/ocpp/src/index.ts"
+      ],
+      "@nexgen-os/panond": [
+        "./packages/formats/panond/src/index.ts"
+      ],
+      "@nexgen-os/parquet": [
+        "./packages/formats/parquet/src/index.ts"
+      ],
+      "@nexgen-os/weather-files": [
+        "./packages/formats/weather-files/src/index.ts"
+      ],
+      "@nexgen-os/mcp": [
+        "./packages/mcp/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "tests/**/*.ts",
+    "docs/demo/**/*.ts",
+    "packs/**/*.ts",
+    "modules/**/*.ts",
+    "./packages/**/src/**/*.ts",
+    "./packages/**/tests/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist"
+  ]
+}

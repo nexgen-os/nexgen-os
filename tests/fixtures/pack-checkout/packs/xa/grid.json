@@ -1,0 +1,67 @@
+{
+  "operators": [
+    {
+      "code": "xa_tso",
+      "name": "Transmission operator of Examplia",
+      "kind": "tso",
+      "website": "https://example.org/tso"
+    },
+    {
+      "code": "xa_north_dso",
+      "name": "Distribution operator of the North",
+      "kind": "dso",
+      "regions": [
+        "XA-N",
+        "XA-NW"
+      ],
+      "data_hub_url": "https://example.org/north/hub",
+      "identifier_scheme": "xa_metering_point",
+      "identifier_prefixes": [
+        "XA1"
+      ]
+    },
+    {
+      "code": "xa_dunmoor_dso",
+      "name": "Distribution operator of Dunmoor",
+      "kind": "dso",
+      "municipalities": [
+        "XA-20002"
+      ]
+    }
+  ],
+  "voltage_levels": {
+    "levels": [
+      {
+        "code": "lv",
+        "name": "Low voltage",
+        "min_kv": 0,
+        "max_kv": 1
+      },
+      {
+        "code": "mv",
+        "name": "Medium voltage",
+        "min_kv": 1,
+        "max_kv": 36
+      },
+      {
+        "code": "hv",
+        "name": "High voltage",
+        "min_kv": 36,
+        "max_kv": 400
+      }
+    ],
+    "source_code": "xa_grid_code",
+    "reference": "Article 2",
+    "valid_from": "2020-01-01"
+  },
+  "thresholds": [
+    {
+      "attribute_type": "connection_max_power_lv",
+      "value": 250,
+      "unit": "KiloW",
+      "source_code": "xa_grid_code",
+      "reference": "Article 7, table 1",
+      "valid_from": "2020-01-01"
+    }
+  ]
+}

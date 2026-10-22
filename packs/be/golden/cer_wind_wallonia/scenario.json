@@ -1,0 +1,189 @@
+{
+  "name": "A renewable energy community of Liège around a wind turbine",
+  "description": "A wind turbine of Liège shares with a neighbour of Liège and a school of Namur. The neighbour is in the producer's municipality; the school is not, and a wind turbine less than 9 km from the limit of its municipality extends the perimeter to the adjacent one: the limits are not in the model, so the extension is said and the verdict left open.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A renewable energy community of the case",
+  "project": {
+    "name": "Liège wind community",
+    "kind": "be_cer",
+    "country": "BE"
+  },
+  "participants": [
+    {
+      "ref": "wind",
+      "name": "Wind cooperative",
+      "role": "producer",
+      "segment": "business",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "62063",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.5797,
+            50.6326
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "wind",
+          "identifier": "541449000000000101",
+          "scheme": "gs1_gsrn",
+          "operator": "ores"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "turbine",
+          "type": "wind",
+          "name": "Turbine",
+          "rated_power_kw": 2000
+        }
+      ]
+    },
+    {
+      "ref": "neighbour",
+      "name": "Neighbour",
+      "role": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "62063",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.593862,
+            50.6326
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "neighbour",
+          "identifier": "541449000000000102",
+          "scheme": "gs1_gsrn",
+          "operator": "ores"
+        }
+      ]
+    },
+    {
+      "ref": "namur",
+      "name": "Namur school",
+      "role": "consumer",
+      "segment": "public_entity",
+      "place": {
+        "country": "BE",
+        "region": "BE-WAL",
+        "municipality": "92094",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.8719,
+            50.4674
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "namur",
+          "identifier": "541449000000000103",
+          "scheme": "gs1_gsrn",
+          "operator": "ores"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:turbine",
+      "quantity": "production_energy",
+      "values": [
+        40,
+        50,
+        60,
+        30
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:wind",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:wind",
+      "quantity": "injection_energy",
+      "values": [
+        39,
+        49,
+        59,
+        29
+      ]
+    },
+    {
+      "object": "meter:neighbour",
+      "quantity": "offtake_energy",
+      "values": [
+        2,
+        3,
+        3,
+        2
+      ]
+    },
+    {
+      "object": "meter:neighbour",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:namur",
+      "quantity": "offtake_energy",
+      "values": [
+        20,
+        30,
+        30,
+        25
+      ]
+    },
+    {
+      "object": "meter:namur",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

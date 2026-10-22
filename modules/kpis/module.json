@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "kpis",
+  "name": "Indicators",
+  "description": "Indicators as data: formulas over the series and parameters of a participant, a project, a meter or a device, their targets, the figures computed and written back as series, and export templates.",
+  "version": "0.3.0",
+  "schema": "kpis",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

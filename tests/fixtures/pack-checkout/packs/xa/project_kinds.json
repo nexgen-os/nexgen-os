@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "xa_sharing",
+      "name": "Energy sharing of Examplia",
+      "description": "Neighbours sharing what some of them produce, within the perimeter of the grid code.",
+      "parent": "collective_self_consumption",
+      "source_code": "xa_grid_code",
+      "reference": "Article 30"
+    }
+  ]
+}

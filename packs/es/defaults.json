@@ -1,0 +1,188 @@
+{
+  "defaults": [
+    {
+      "attribute_type": "bidding_zone",
+      "value": "10YES-REE------0",
+      "unit": "code",
+      "source_code": "es_entsoe_eic_codes",
+      "reference": "Row 10YES-REE------0, display name ES, functions Bidding Zone, Control Area, LFC Area, LFC Block, Member State, Scheduling Area",
+      "valid_from": "2026-10-22"
+    },
+    {
+      "attribute_type": "control_area",
+      "value": "10YES-REE------0",
+      "unit": "code",
+      "source_code": "es_entsoe_eic_codes",
+      "reference": "Row 10YES-REE------0, display name ES, functions Bidding Zone, Control Area, LFC Area, LFC Block, Member State, Scheduling Area",
+      "valid_from": "2026-10-22"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 110.8,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Spain, 2024, band KWH2500-4999, component NRG_SUP: 0.1108 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 110.8,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Spain, 2025, band KWH2500-4999, component NRG_SUP: 0.1108 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 93.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Spain, 2024, band MWH2000-19999, component NRG_SUP: 0.0935 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 90.9,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Spain, 2025, band MWH2000-19999, component NRG_SUP: 0.0909 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 127.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Spain, 2024, band KWH2500-4999, components NETC 0.0701 and TAX_FEE_LEV_CHRG 0.0574 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 153.0,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Spain, 2025, band KWH2500-4999, components NETC 0.0712 and TAX_FEE_LEV_CHRG 0.0818 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "value": 0.21,
+      "unit": "UNITLESS",
+      "source_code": "es_ley_37_1992_vat",
+      "reference": "Article 90.Uno: the general rate of 21 %; it applies to electricity from 1 January 2025, when the temporary rate of 10 % of the Real Decreto-ley 8/2023, article 21, ended on 31 December 2024; until 22 March 2026, when the Real Decreto-ley 7/2026, article 42, lowered it again for some contracts",
+      "valid_from": "2025-01-01",
+      "valid_to": "2026-03-22"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "region": "ES-CN",
+      "value": null,
+      "unit": "UNITLESS",
+      "source_code": "es_ley_37_1992_vat",
+      "reference": "Article 3.Dos.1.º b): the Canary Islands are outside the territory where VAT applies; a supply there bears the Canary Islands' general indirect tax (IGIC), which this pack does not hold",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "region": "ES-CE",
+      "value": null,
+      "unit": "UNITLESS",
+      "source_code": "es_ley_37_1992_vat",
+      "reference": "Article 3.Dos.1.º a): Ceuta is outside the territory where VAT applies; a supply there bears the city's own indirect tax (IPSI), which this pack does not hold",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "region": "ES-ML",
+      "value": null,
+      "unit": "UNITLESS",
+      "source_code": "es_ley_37_1992_vat",
+      "reference": "Article 3.Dos.1.º a): Melilla is outside the territory where VAT applies; a supply there bears the city's own indirect tax (IPSI), which this pack does not hold",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "offpeak_hours",
+      "value": null,
+      "unit": "hours",
+      "source_code": "es_cnmc_circular_3_2020",
+      "reference": "Article 7: the periods depend on the access tariff — three periods for the energy of the 2.0 TD tariff, six (P1 to P6) by season, type of day and electrical system for every other tariff",
+      "valid_from": "2020-01-25"
+    },
+    {
+      "attribute_type": "offpeak_hours",
+      "condition": {
+        "segment": "residential"
+      },
+      "value": [
+        ["00:00", "08:00"]
+      ],
+      "unit": "hours",
+      "source_code": "es_cnmc_circular_3_2020",
+      "reference": "Article 7.3, the three periods of the 2.0 TD tariff, period 3 (valle): 0 h to 8 h from Monday to Friday on the peninsula, the Balearic and Canary Islands, Ceuta and Melilla, and every hour of Saturdays, Sundays, 6 January and the national holidays of fixed date",
+      "valid_from": "2020-01-25"
+    },
+    {
+      "attribute_type": "sharing_perimeter",
+      "condition": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "value": [
+        "same_substation",
+        "radius_around_producer"
+      ],
+      "unit": "list",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 3, letter g), as amended by the Real Decreto-ley 7/2026, final provision 14.1, in force from 22 March 2026: a production installation is close to the consumption through the grid when it is connected to any low-voltage network fed from the same transformer station (ii), or within 500 metres of the associated consumers (iii); the same cadastral reference (iv) is not a criterion of the model yet",
+      "valid_from": "2026-03-22"
+    },
+    {
+      "attribute_type": "sharing_radius_m",
+      "condition": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "value": 500,
+      "unit": "M",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 3, letter g), iii), as amended by the Real Decreto-ley 7/2026, final provision 14.1: at a distance below 500 metres from the associated consumers, measured between the metering equipment in orthogonal projection on the plan",
+      "valid_from": "2026-03-22"
+    },
+    {
+      "attribute_type": "sharing_radius_m",
+      "condition": {
+        "project_kind": "es_autoconsumo_colectivo",
+        "device_type": "solar"
+      },
+      "value": 5000,
+      "unit": "M",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 3, letter g), iii), second paragraph, as amended by the Real Decreto-ley 7/2026, final provision 14.1: a photovoltaic installation of up to 5 MW connected to the consumers through the transmission or distribution lines, at a distance below 5 000 metres from them",
+      "valid_from": "2026-03-22"
+    },
+    {
+      "attribute_type": "sharing_radius_m",
+      "condition": {
+        "project_kind": "es_autoconsumo_colectivo",
+        "device_type": "wind"
+      },
+      "value": 5000,
+      "unit": "M",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Article 3, letter g), iii), second paragraph, as amended by the Real Decreto-ley 7/2026, final provision 14.1: a wind installation of up to 5 MW connected to the consumers through the transmission or distribution lines, at a distance below 5 000 metres from them",
+      "valid_from": "2026-03-22"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "value": "PT1H",
+      "unit": "ISO8601-duration",
+      "source_code": "es_rd_244_2019_self_consumption",
+      "reference": "Annex I.1: the net generated energy is allocated to each consumer hour by hour, by an hourly coefficient whose sum over the consumers is one for every hour of the billing period",
+      "valid_from": "2019-04-07"
+    }
+  ]
+}

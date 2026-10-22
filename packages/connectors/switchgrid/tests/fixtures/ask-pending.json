@@ -1,0 +1,6 @@
+{
+  "id": "6f2c1d3e-0000-4000-8000-000000000001",
+  "status": "PENDING_USER_ACTION",
+  "consentCollectionDetails": { "userUrl": "https://app.switchgrid.tech/consent/6f2c1d3e-0000-4000-8000-000000000001" },
+  "contracts": [{ "_energyType": "ELECTRICITY", "deliveryPointId": "00000000000002", "status": "PENDING" }]
+}

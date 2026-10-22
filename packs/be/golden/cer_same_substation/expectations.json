@@ -1,0 +1,92 @@
+{
+  "perimeter": {
+    "on": "2026-06-15",
+    "rule": {
+      "criteria": [
+        "same_municipality",
+        "same_substation"
+      ],
+      "level": "region",
+      "region": "BE-WAL",
+      "source_code": "be_wal_energy_sharing_order"
+    },
+    "participants": {
+      "solar": {
+        "in_perimeter": true
+      },
+      "school": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_municipality",
+            "in": false
+          },
+          {
+            "criterion": "same_substation",
+            "in": true
+          }
+        ]
+      },
+      "shop": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "same_municipality",
+            "in": false
+          },
+          {
+            "criterion": "same_substation",
+            "in": false
+          }
+        ]
+      }
+    },
+    "source": "Article 24, 2°: the school's meter and the producer's are downstream of CASE-S1; the shop's of CASE-S2, in another municipality, with no wind turbine to extend it."
+  },
+  "operators": [
+    {
+      "meter": "shop",
+      "operator": "ores",
+      "by": "meter",
+      "source": "The scenario connects the meter to ores and its substation."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 123.0,
+    "participants": {
+      "solar": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 123.0
+      },
+      "school": {
+        "shared_offtake_energy": 66.888889,
+        "shared_injection_energy": 0.0
+      },
+      "shop": {
+        "shared_offtake_energy": 56.111111,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. At 11:00 the demand (45 kWh) exceeds the pool (38 kWh): the school receives 38 × 20/45, the shop 38 × 25/45."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.878571,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "123 kWh shared over 140 kWh produced."
+    },
+    {
+      "object": "participant:shop",
+      "indicator": "residual_offtake_energy",
+      "value": 3.888889,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "60 kWh taken less what the key shared to the shop."
+    }
+  ]
+}

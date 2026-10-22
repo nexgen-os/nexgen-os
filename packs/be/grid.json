@@ -1,0 +1,102 @@
+{
+  "operators": [
+    {
+      "code": "elia",
+      "name": "Elia",
+      "kind": "tso",
+      "coverage": "The transmission grid of the whole country, from 30 kV to 380 kV.",
+      "website": "https://www.elia.be/",
+      "data_hub_url": "https://opendata.elia.be/",
+      "description": "The transmission system operator: the high-voltage grid, balancing, the connection of large plants, the public data of the system.",
+      "eic_code": "10X1001A1001A094"
+    },
+    {
+      "code": "fluvius",
+      "name": "Fluvius",
+      "kind": "dso",
+      "regions": [
+        "BE-VLG"
+      ],
+      "coverage": "The distribution of electricity and gas in Flanders.",
+      "website": "https://www.fluvius.be/",
+      "data_hub_url": "https://opendata.fluvius.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "The Flemish distribution operator: connection, digital meters, meter data."
+    },
+    {
+      "code": "sibelga",
+      "name": "Sibelga",
+      "kind": "dso",
+      "regions": [
+        "BE-BRU"
+      ],
+      "identifier_prefixes": [
+        "5414489"
+      ],
+      "coverage": "The 19 municipalities of the Brussels-Capital Region.",
+      "website": "https://www.sibelga.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "The Brussels distribution operator. Every EAN code of the Brussels-Capital Region starts with 5414489, as the operator publishes on its page \"EAN code\" (https://www.sibelga.be/en/connections-and-meters/ean-code)."
+    },
+    {
+      "code": "ores",
+      "name": "ORES",
+      "kind": "dso",
+      "regions": [
+        "BE-WAL"
+      ],
+      "coverage": "Most of the Walloon municipalities; each municipality is served by the operator it designated.",
+      "website": "https://www.ores.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "The main Walloon distribution operator."
+    },
+    {
+      "code": "resa",
+      "name": "RESA",
+      "kind": "dso",
+      "regions": [
+        "BE-WAL"
+      ],
+      "coverage": "Liège and its surroundings.",
+      "website": "https://www.resa.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "The Walloon distribution operator of the province of Liège."
+    },
+    {
+      "code": "aieg",
+      "name": "AIEG",
+      "kind": "dso",
+      "regions": [
+        "BE-WAL"
+      ],
+      "coverage": "Some municipalities of Wallonia.",
+      "website": "https://www.aieg.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Association Intercommunale d'Électricité et de Gaz, a Walloon local distribution operator."
+    },
+    {
+      "code": "aiesh",
+      "name": "AIESH",
+      "kind": "dso",
+      "regions": [
+        "BE-WAL"
+      ],
+      "coverage": "Some municipalities of Wallonia.",
+      "website": "https://www.aiesh.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "A Walloon local distribution operator."
+    },
+    {
+      "code": "rew",
+      "name": "REW",
+      "kind": "dso",
+      "regions": [
+        "BE-WAL"
+      ],
+      "coverage": "Some municipalities of Wallonia.",
+      "website": "https://www.rew.be/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "A Walloon local distribution operator."
+    }
+  ]
+}

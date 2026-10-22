@@ -1,0 +1,161 @@
+{
+  "sources": [
+    {
+      "code": "ine_municipalities",
+      "name": "INE — Relación de municipios y sus códigos por provincias",
+      "description": "The statistics office's yearly list of municipalities with their province and municipality codes and a control digit, at 1 January of each year.",
+      "kind": "file",
+      "url": "https://www.ine.es/daco/daco42/codmun/diccionario26.xlsx",
+      "docs_url": "https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica_C&cid=1254736177031&menu=ultiDatos&idp=1254734710990",
+      "license": "INE terms of reuse (free reuse with attribution) (not verified)",
+      "attribution": "© INE — Instituto Nacional de Estadística",
+      "redistributable": true
+    },
+    {
+      "code": "catastro",
+      "name": "Sede Electrónica del Catastro",
+      "description": "The cadastre of Spain outside the Basque Country and Navarre, which keep their own: parcels, buildings and their properties by cadastral reference, with their footprint, use and year, as open services and downloads.",
+      "kind": "api",
+      "url": "https://www.sedecatastro.gob.es/",
+      "docs_url": "https://www.catastro.hacienda.gob.es/webinspire/index.html",
+      "license": "Catastro terms of free reuse with attribution (not verified)",
+      "attribution": "© Dirección General del Catastro",
+      "redistributable": true
+    },
+    {
+      "code": "cartociudad",
+      "name": "CartoCiudad (IGN / CNIG)",
+      "description": "The national address and street register of the geographic institute: search and reverse geocoding of postal addresses. No connector of this repository reads it yet.",
+      "kind": "api",
+      "url": "https://www.cartociudad.es/geocoder/api/geocoder/",
+      "docs_url": "https://www.cartociudad.es/",
+      "license": "CC-BY-4.0 (IGN / CNIG licence of geographic information) (not verified)",
+      "attribution": "© Instituto Geográfico Nacional — CartoCiudad",
+      "redistributable": true
+    },
+    {
+      "code": "datadis",
+      "name": "Datadis",
+      "description": "The platform of the distribution operators where a customer, or a third party the customer authorised on it, reads the consumption, power and contract of each supply point by CUPS. Read under the customer's authorisation, never passed on.",
+      "kind": "api",
+      "url": "https://datadis.es/",
+      "auth": "mandate",
+      "license": "Datadis terms of use (not verified)",
+      "attribution": "Datadis",
+      "redistributable": false
+    },
+    {
+      "code": "ree_esios",
+      "name": "ESIOS — the transmission operator's information system",
+      "description": "The public data of the Spanish electricity system the transmission operator publishes: demand, generation, prices, emissions, and the codes of the market participants.",
+      "kind": "api",
+      "url": "https://www.esios.ree.es/",
+      "auth": "api_key",
+      "license": "Red Eléctrica terms of reuse of ESIOS data (not verified)",
+      "attribution": "© Red Eléctrica",
+      "redistributable": true
+    },
+    {
+      "code": "es_po_10_8_cups",
+      "name": "Resolución de 16 de noviembre de 2009 — procedimiento de operación 10.8, «Códigos universales para puntos frontera de clientes y productores de régimen especial»",
+      "description": "The operating procedure, approved by the Secretary of State for Energy, that sets the shape of a CUPS and how its control letters are computed.",
+      "kind": "text",
+      "url": "https://www.boe.es/boe/dias/2009/11/30/pdfs/BOE-A-2009-19040.pdf",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_ree_distributor_codes",
+      "name": "Red Eléctrica — Códigos de participantes de distribuidores",
+      "description": "The list of the four-digit codes the transmission operator assigns to each distribution operator, which the CUPS of the points it issues carry, with the R1 unit of each operator and whether it is in force.",
+      "kind": "text",
+      "url": "https://api.esios.ree.es/archives/124/download?date_type=datos&end_date=2026-08-21T23%3A59%3A59+00%3A00&locale=es&start_date=2026-08-07T00%3A00%3A00+00%3A00",
+      "license": "Red Eléctrica terms of reuse of ESIOS data (not verified)",
+      "attribution": "© Red Eléctrica",
+      "redistributable": true
+    },
+    {
+      "code": "es_orden_nif_legal_entities",
+      "name": "Orden EHA/451/2008, de 20 de febrero, por la que se regula la composición del número de identificación fiscal de las personas jurídicas y entidades sin personalidad jurídica",
+      "description": "The order that sets the nine characters of the tax number of a legal entity: the letter of its legal form, seven digits and a control character.",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2008-3580",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_rd_244_2019_self_consumption",
+      "name": "Real Decreto 244/2019, de 5 de abril, por el que se regulan las condiciones administrativas, técnicas y económicas del autoconsumo de energía eléctrica (consolidated text)",
+      "description": "The decree on self-consumption: its definitions (articles 3 and 4), the proximity of a production installation through the grid as amended by the Real Decreto-ley 7/2026, the simplified compensation of surplus (article 14), the hourly allocation coefficients of a collective self-consumption (annex I), the register (article 19).",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2019-5089",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_ley_24_2013_electricity",
+      "name": "Ley 24/2013, de 26 de diciembre, del Sector Eléctrico (consolidated text)",
+      "description": "The electricity act: the subjects of the sector (article 6), among them renewable energy communities and citizen energy communities, and their rights (articles 12 bis and 12 ter).",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-13645",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_cnmc_circular_3_2020",
+      "name": "Circular 3/2020, de 15 de enero, de la CNMC, por la que se establece la metodología para el cálculo de los peajes de transporte y distribución de electricidad (consolidated text)",
+      "description": "The regulator's circular on the access tariffs: their time periods (article 7), by season, type of day and electrical system.",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2020-1066",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_ley_37_1992_vat",
+      "name": "Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido (consolidated text)",
+      "description": "The VAT act: the territory where the tax applies (article 3) and its general rate (article 90).",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_rd_223_2008_line_categories",
+      "name": "Real Decreto 223/2008, de 15 de febrero — Reglamento sobre condiciones técnicas y garantías de seguridad en líneas eléctricas de alta tensión, article 3",
+      "description": "The article that classifies high-voltage lines by their nominal voltage: third, second, first and special category.",
+      "kind": "text",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2008-5269",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "es_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "es_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    }
+  ]
+}

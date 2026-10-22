@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<R63>
+<header><siDemandeur>000000000</siDemandeur><codeFlux>R63</codeFlux><idDemande>M0A00001</idDemande><format>JSON</format><dateHeureCreation>2026-10-26T06:12:00</dateHeureCreation><modePublication>P</modePublication></header>
+<mesures>
+<idPrm>00000000000001</idPrm>
+<etapeMetier>BRUT</etapeMetier>
+<periode><dateDebut>2026-01-15</dateDebut><dateFin>2026-01-16</dateFin></periode>
+<grandeur><grandeurMetier>CONS</grandeurMetier><grandeurPhysique>PA</grandeurPhysique><unite>W</unite>
+<points><v>400</v><d>2026-01-15 00:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>410</v><d>2026-01-15 00:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>420</v><d>2026-01-15 01:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>430</v><d>2026-01-15 01:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>440</v><d>2026-01-15 02:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>450</v><d>2026-01-15 02:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>460</v><d>2026-01-15 03:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>470</v><d>2026-01-15 03:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>480</v><d>2026-01-15 04:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>490</v><d>2026-01-15 04:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>500</v><d>2026-01-15 05:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>510</v><d>2026-01-15 05:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>520</v><d>2026-01-15 06:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>530</v><d>2026-01-15 06:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>540</v><d>2026-01-15 07:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>550</v><d>2026-01-15 07:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>560</v><d>2026-01-15 08:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>570</v><d>2026-01-15 08:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>580</v><d>2026-01-15 09:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>590</v><d>2026-01-15 09:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>600</v><d>2026-01-15 10:00:00</d><p>PT30M</p><n>E</n></points>
+<points><v>610</v><d>2026-01-15 10:30:00</d><p>PT30M</p><n>C</n><tc>1</tc></points>
+<points><v>620</v><d>2026-01-15 11:00:00</d><p>PT30M</p><n>R</n><iv>1</iv></points>
+<points><v>630</v><d>2026-01-15 11:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>640</v><d>2026-01-15 12:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>650</v><d>2026-01-15 12:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>660</v><d>2026-01-15 13:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>670</v><d>2026-01-15 13:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>680</v><d>2026-01-15 14:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>690</v><d>2026-01-15 14:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>700</v><d>2026-01-15 15:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>710</v><d>2026-01-15 15:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>720</v><d>2026-01-15 16:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>730</v><d>2026-01-15 16:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>740</v><d>2026-01-15 17:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>750</v><d>2026-01-15 17:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>760</v><d>2026-01-15 18:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>770</v><d>2026-01-15 18:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>780</v><d>2026-01-15 19:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>790</v><d>2026-01-15 19:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>800</v><d>2026-01-15 20:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>810</v><d>2026-01-15 20:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>820</v><d>2026-01-15 21:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>830</v><d>2026-01-15 21:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>840</v><d>2026-01-15 22:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>850</v><d>2026-01-15 22:30:00</d><p>PT30M</p><n>R</n></points>
+<points><v>860</v><d>2026-01-15 23:00:00</d><p>PT30M</p><n>R</n></points>
+<points><v>870</v><d>2026-01-15 23:30:00</d><p>PT30M</p><n>R</n></points>
+</grandeur>
+</mesures>
+</R63>

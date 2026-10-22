@@ -1,0 +1,64 @@
+{
+  "name": "A project of two participants in Testland over January and February 2026, read hour by hour, every figure computed by hand",
+  "time_zone": "UTC",
+  "period": { "from": "2026-01-01T00:00:00Z", "to": "2026-03-01T00:00:00Z" },
+  "months": ["2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"],
+  "parameters": {
+    "installed_power_kw": 5,
+    "grid_co2_factor": [
+      { "valid_from": "2020-01-01", "valid_to": "2026-02-01", "value": 0.2 },
+      { "valid_from": "2026-02-01", "value": 0.3 }
+    ],
+    "energy_price_household": 100,
+    "grid_fees_and_taxes": 50,
+    "injection_price_reference": 40
+  },
+  "series": {
+    "prosumer": {
+      "meter": {
+        "offtake_energy": [["2025-01-31T20:00:00Z", 6], ["2026-01-31T20:00:00Z", 3], ["2026-02-01T12:00:00Z", 1], ["2026-02-01T19:00:00Z", 2]],
+        "injection_energy": [["2026-01-31T10:00:00Z", 1], ["2026-02-01T12:00:00Z", 3]]
+      },
+      "device": {
+        "production_energy": [["2026-01-31T10:00:00Z", 4], ["2026-02-01T12:00:00Z", 6]],
+        "poa_irradiance": [["2026-01-31T10:00:00Z", 1000], ["2026-02-01T12:00:00Z", 1000], ["2026-02-01T13:00:00Z", 500]]
+      },
+      "participant": {
+        "shared_injection_energy": [["2026-01-31T10:00:00Z", 0.5], ["2026-02-01T12:00:00Z", 2]]
+      }
+    },
+    "consumer": {
+      "participant": {
+        "offtake_energy": [["2026-01-31T20:00:00Z", 2], ["2026-02-01T19:00:00Z", 2]],
+        "shared_offtake_energy": [["2026-01-31T10:00:00Z", 0.5], ["2026-02-01T12:00:00Z", 1.5]]
+      }
+    }
+  },
+  "expected": {
+    "prosumer_by_month": {
+      "self_consumed_energy":               { "months": [3, 3],         "total": 6,    "why": "production − injection: 4 − 1, 6 − 3" },
+      "self_consumption_rate":              { "months": [0.75, 0.5],    "total": 0.6,  "why": "3/4, 3/6; the period is 6/10, never the mean of the months" },
+      "self_sufficiency_rate":              { "months": [0.5, 0.5],     "total": 0.5,  "why": "3/(3 + 3), 3/(3 + 3), 6/12" },
+      "coverage_rate":                      { "months": [0.666666666667, 1], "total": 0.833333333333, "why": "4/6, 6/6, 10/12" },
+      "shared_rate":                        { "months": [0.125, 0.333333333333], "total": 0.25, "why": "0.5/4, 2/6, 2.5/10" },
+      "peak_offtake_power":                 { "months": [3, 2],         "total": 3,    "why": "the heaviest hour of each month, then of the period" },
+      "specific_yield":                     { "months": [0.8, 1.2],     "total": 2,    "why": "4/5, 6/5, 10/5 kWh/kWp" },
+      "performance_ratio":                  { "months": [0.8, 0.8],     "total": 0.8,  "why": "4/(5 × 1.0), 6/(5 × 1.5), 10/(5 × 2.5) with irradiation in kWh/m²" },
+      "co2_avoided":                        { "months": [0.6, 0.9],     "total": 1.5,  "why": "3 × 0.2, 3 × 0.3 as the factor changes on 1 February; the period sums the months" },
+      "self_consumption_savings_household": { "months": [0.45, 0.45],   "total": 0.9,  "why": "3 × (100 + 50)/1000 each month" },
+      "injection_value":                    { "months": [0.04, 0.12],   "total": 0.16, "why": "1 × 40/1000, 3 × 40/1000" }
+    },
+    "prosumer_january_against_the_year_before": { "offtake_change_rate": 0.5, "why": "3 in January 2026 over 6 in January 2025" },
+    "project_over_the_period": {
+      "self_consumed_energy":    { "value": 6,     "why": "only the prosumer produces" },
+      "self_sufficiency_rate":   { "value": 0.375, "why": "6/(offtake 6 + 4, plus 6 self-consumed)" },
+      "shared_coverage_rate":    { "value": 0.125, "why": "2/16" },
+      "residual_offtake_energy": { "value": 8,     "why": "10 taken from the grid, 2 of them covered by the sharing" }
+    },
+    "project_peak_by_month": { "months": [5, 4], "total": 5, "why": "31 January 20:00: 3 + 2; 1 February 19:00: 2 + 2" },
+    "portfolio": {
+      "self_consumed_energy":  { "value": 11,   "projects": 2, "why": "6 + (10 − 5) for a second project producing 10, injecting 5" },
+      "self_consumption_rate": { "value": 0.55, "projects": 2, "why": "(6 + 5)/(10 + 10): the rate of the added amounts" }
+    }
+  }
+}

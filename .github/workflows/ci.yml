@@ -1,0 +1,114 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+  connector-pvlib:
+    name: connector-pvlib
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install -e packages/connectors/pvlib
+      - run: echo '{"engine":"pvlib","contract":1,"request":{"describe":true}}' | python -m nexgen_pvlib
+      - run: npx vitest run tests/connectors-pvlib.test.ts tests/connectors-runner.test.ts
+        env:
+          NEXGEN_ENGINE_PVLIB: python -m nexgen_pvlib
+
+  sdk-python:
+    name: sdk-python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install -e "packages/python[binary]"
+      - run: npx vitest run tests/sdk-python.test.ts
+        env:
+          NEXGEN_SDK_PYTHON: python
+
+  packs:
+    name: packs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The country seeds are compiled from packs/. A seed that is not the
+      # exact output of its pack means the two have drifted, and the pack is
+      # the source: run `nexgen-os pack build --all` and commit the result.
+      - name: every pack passes its checks and its seed is its output
+        run: |
+          npm run build -w packages/cli
+          node packages/cli/dist/bin.js pack check --all
+
+  hygiene:
+    name: hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/hygiene.mjs
+
+  dco:
+    name: dco
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: every commit of the pull request carries a sign-off
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          missing=$(git log --format='%H %s' "$base..$head" | while read -r sha subject; do
+            git show -s --format=%B "$sha" | grep -q '^Signed-off-by: ' || echo "  $sha $subject"
+          done)
+          if [ -n "$missing" ]; then
+            echo "Commits without a Signed-off-by line (see CONTRIBUTING.md):"
+            echo "$missing"
+            exit 1
+          fi

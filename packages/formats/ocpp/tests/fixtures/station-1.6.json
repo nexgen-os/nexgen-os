@@ -1,0 +1,38 @@
+[
+  { "frame": [2, "b1", "BootNotification", { "chargePointVendor": "ExampleVendor", "chargePointModel": "AC22-2", "chargePointSerialNumber": "SN-0001", "firmwareVersion": "1.4.2", "meterType": "Example DIN rail meter", "meterSerialNumber": "M-0001" }] },
+  { "frame": [3, "b1", { "status": "Accepted", "currentTime": "2026-06-01T06:00:00Z", "interval": 300 }] },
+  { "frame": [2, "s1", "StatusNotification", { "connectorId": 1, "errorCode": "NoError", "status": "Available", "timestamp": "2026-06-01T06:00:01Z" }] },
+  { "frame": [3, "s1", {}] },
+  { "frame": [2, "s2", "StatusNotification", { "connectorId": 1, "errorCode": "NoError", "status": "Preparing", "timestamp": "2026-06-01T07:59:30Z" }] },
+  { "frame": [3, "s2", {}] },
+  { "frame": [2, "t1", "StartTransaction", { "connectorId": 1, "idTag": "TAG-EXAMPLE-01", "meterStart": 1250000, "timestamp": "2026-06-01T08:00:00Z" }] },
+  { "frame": [3, "t1", { "idTagInfo": { "status": "Accepted" }, "transactionId": 4711 }] },
+  { "frame": [2, "s3", "StatusNotification", { "connectorId": 1, "errorCode": "NoError", "status": "Charging", "timestamp": "2026-06-01T08:00:02Z" }] },
+  { "frame": [3, "s3", {}] },
+  { "frame": [2, "m1", "MeterValues", { "connectorId": 1, "transactionId": 4711, "meterValue": [
+    { "timestamp": "2026-06-01T08:15:00Z", "sampledValue": [
+      { "value": "1252750", "context": "Sample.Periodic", "measurand": "Energy.Active.Import.Register", "unit": "Wh" },
+      { "value": "11040", "context": "Sample.Periodic", "measurand": "Power.Active.Import", "unit": "W" },
+      { "value": "16.0", "context": "Sample.Periodic", "measurand": "Current.Import", "phase": "L1", "unit": "A" },
+      { "value": "231.2", "context": "Sample.Periodic", "measurand": "Voltage", "phase": "L1-N", "unit": "V" }
+    ] }
+  ] }] },
+  { "frame": [3, "m1", {}] },
+  { "frame": [2, "m2", "MeterValues", { "connectorId": 1, "transactionId": 4711, "meterValue": [
+    { "timestamp": "2026-06-01T08:30:00Z", "sampledValue": [
+      { "value": "1255500", "context": "Sample.Periodic", "measurand": "Energy.Active.Import.Register", "unit": "Wh" },
+      { "value": "7.36", "context": "Sample.Periodic", "measurand": "Power.Active.Import", "unit": "kW" }
+    ] }
+  ] }] },
+  { "frame": [3, "m2", {}] },
+  { "frame": [2, "p1", "SetChargingProfile", { "connectorId": 1, "csChargingProfiles": { "chargingProfileId": 7, "transactionId": 4711, "stackLevel": 1, "chargingProfilePurpose": "TxProfile", "chargingProfileKind": "Absolute", "chargingSchedule": { "startSchedule": "2026-06-01T08:30:00Z", "duration": 3600, "chargingRateUnit": "A", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 16, "numberPhases": 3 }, { "startPeriod": 1800, "limit": 10, "numberPhases": 3 } ] } } }] },
+  { "frame": [3, "p1", { "status": "Accepted" }] },
+  { "frame": [2, "p2", "SetChargingProfile", { "connectorId": 0, "csChargingProfiles": { "chargingProfileId": 8, "stackLevel": 0, "chargingProfilePurpose": "ChargePointMaxProfile", "chargingProfileKind": "Recurring", "recurrencyKind": "Daily", "chargingSchedule": { "startSchedule": "2026-06-01T00:00:00Z", "chargingRateUnit": "W", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 22000 }, { "startPeriod": 61200, "limit": 11000 } ] } } }] },
+  { "frame": [3, "p2", { "status": "Rejected" }] },
+  { "frame": [2, "x1", "StopTransaction", { "transactionId": 4711, "idTag": "TAG-EXAMPLE-01", "meterStop": 1262500, "timestamp": "2026-06-01T09:30:00Z", "reason": "EVDisconnected", "transactionData": [
+    { "timestamp": "2026-06-01T09:30:00Z", "sampledValue": [ { "value": "1262500", "context": "Transaction.End", "measurand": "Energy.Active.Import.Register", "unit": "Wh" } ] }
+  ] }] },
+  { "frame": [3, "x1", { "idTagInfo": { "status": "Accepted" } }] },
+  { "frame": [2, "s4", "StatusNotification", { "connectorId": 1, "errorCode": "NoError", "status": "Available", "timestamp": "2026-06-01T09:31:00Z" }] },
+  { "frame": [3, "s4", {}] }
+]

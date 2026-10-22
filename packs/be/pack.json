@@ -1,0 +1,64 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "BE",
+  "name": "Belgium",
+  "version": "0.3.0",
+  "checksum": "sha256:c9244ef80e0fbb3ada791f7812e3fb11ba3929e24bae5987dc5e4db1ef687f6e",
+  "schema_min": "0.3.0",
+  "seed_sequence": 11,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "fr",
+      "nl",
+      "de"
+    ],
+    "time_zones": [
+      "Europe/Brussels"
+    ],
+    "region_level": "region",
+    "postal_code_pattern": "^[1-9][0-9]{3}$",
+    "municipality_scheme": "nis",
+    "regions": [
+      {
+        "code": "BE-VLG",
+        "name": "Vlaanderen",
+        "names": {
+          "nl": "Vlaams Gewest",
+          "fr": "Région flamande"
+        }
+      },
+      {
+        "code": "BE-BRU",
+        "name": "Bruxelles-Capitale / Brussel-Hoofdstad",
+        "names": {
+          "fr": "Région de Bruxelles-Capitale",
+          "nl": "Brussels Hoofdstedelijk Gewest"
+        }
+      },
+      {
+        "code": "BE-WAL",
+        "name": "Wallonie",
+        "names": {
+          "fr": "Région wallonne",
+          "nl": "Waals Gewest",
+          "de": "Wallonische Region"
+        }
+      }
+    ]
+  }
+}

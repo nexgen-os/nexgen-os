@@ -1,0 +1,28 @@
+[
+  { "frame": [2, "b1", "BootNotification", { "reason": "PowerUp", "chargingStation": { "model": "DC50", "vendorName": "ExampleVendor", "serialNumber": "SN-0201", "firmwareVersion": "2.1.0" } }] },
+  { "frame": [3, "b1", { "currentTime": "2026-06-02T06:00:00Z", "interval": 300, "status": "Accepted" }] },
+  { "frame": [2, "s1", "StatusNotification", { "timestamp": "2026-06-02T06:00:01Z", "connectorStatus": "Available", "evseId": 1, "connectorId": 1 }] },
+  { "frame": [3, "s1", {}] },
+  { "frame": [2, "s2", "StatusNotification", { "timestamp": "2026-06-02T12:00:00Z", "connectorStatus": "Occupied", "evseId": 1, "connectorId": 1 }] },
+  { "frame": [3, "s2", {}] },
+  { "frame": [2, "e1", "TransactionEvent", { "eventType": "Started", "timestamp": "2026-06-02T12:00:05Z", "triggerReason": "Authorized", "seqNo": 0, "transactionInfo": { "transactionId": "tx-2026-06-02-a", "chargingState": "Charging" }, "evse": { "id": 1, "connectorId": 1 }, "idToken": { "idToken": "TOKEN-EXAMPLE-02", "type": "ISO14443" }, "meterValue": [
+    { "timestamp": "2026-06-02T12:00:05Z", "sampledValue": [ { "value": 8400.0, "context": "Transaction.Begin", "measurand": "Energy.Active.Import.Register", "unitOfMeasure": { "unit": "kWh", "multiplier": 0 } } ] }
+  ] }] },
+  { "frame": [3, "e1", { "idTokenInfo": { "status": "Accepted" } }] },
+  { "frame": [2, "e2", "TransactionEvent", { "eventType": "Updated", "timestamp": "2026-06-02T12:15:00Z", "triggerReason": "MeterValuePeriodic", "seqNo": 1, "transactionInfo": { "transactionId": "tx-2026-06-02-a", "chargingState": "Charging" }, "meterValue": [
+    { "timestamp": "2026-06-02T12:15:00Z", "sampledValue": [
+      { "value": 8411.5, "context": "Sample.Periodic", "measurand": "Energy.Active.Import.Register", "unitOfMeasure": { "unit": "kWh" } },
+      { "value": 48.2, "context": "Sample.Periodic", "measurand": "Power.Active.Import", "unitOfMeasure": { "unit": "W", "multiplier": 3 } },
+      { "value": 62, "context": "Sample.Periodic", "measurand": "SoC", "location": "EV", "unitOfMeasure": { "unit": "Percent" } }
+    ] }
+  ] }] },
+  { "frame": [3, "e2", {}] },
+  { "frame": [2, "p1", "SetChargingProfile", { "evseId": 1, "chargingProfile": { "id": 21, "stackLevel": 2, "chargingProfilePurpose": "TxProfile", "chargingProfileKind": "Relative", "transactionId": "tx-2026-06-02-a", "chargingSchedule": [ { "id": 21, "chargingRateUnit": "W", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 25000 } ] } ] } }] },
+  { "frame": [3, "p1", { "status": "Rejected", "statusInfo": { "reasonCode": "TxNotFound" } }] },
+  { "frame": [2, "p2", "SetChargingProfile", { "evseId": 0, "chargingProfile": { "id": 22, "stackLevel": 0, "chargingProfilePurpose": "ChargingStationExternalConstraints", "chargingProfileKind": "Absolute", "chargingSchedule": [ { "id": 22, "startSchedule": "2026-06-02T17:00:00Z", "duration": 10800, "chargingRateUnit": "W", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 30000 } ] } ] } }] },
+  { "frame": [2, "e3", "TransactionEvent", { "eventType": "Ended", "timestamp": "2026-06-02T12:40:00Z", "triggerReason": "EVCommunicationLost", "seqNo": 2, "transactionInfo": { "transactionId": "tx-2026-06-02-a", "chargingState": "Idle", "stoppedReason": "EVDisconnected" }, "meterValue": [
+    { "timestamp": "2026-06-02T12:40:00Z", "sampledValue": [ { "value": 8428.25, "context": "Transaction.End", "measurand": "Energy.Active.Import.Register", "unitOfMeasure": { "unit": "kWh" } } ] }
+  ] }] },
+  { "frame": [3, "e3", {}] },
+  { "frame": [4, "zz", "NotImplemented", "Unknown action", {}] }
+]

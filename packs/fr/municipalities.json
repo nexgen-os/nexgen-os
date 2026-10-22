@@ -1,0 +1,129 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "insee_cog",
+  "reference": "Code officiel géographique 2025: a representative subset, every class of the density grid present; the full list loads the same way",
+  "density_classes": {
+    "classes": [
+      "large_urban_centre",
+      "intermediate_urban_centre",
+      "urban_belt",
+      "small_town",
+      "rural_town",
+      "rural_dispersed",
+      "rural_very_dispersed"
+    ],
+    "source_code": "fr_insee_density_grid",
+    "reference": "Grille communale de densité à 7 niveaux, 2025 edition: 1 grands centres urbains, 2 centres urbains intermédiaires, 3 ceintures urbaines, 4 petites villes, 5 bourgs ruraux, 6 rural à habitat dispersé, 7 rural à habitat très dispersé",
+    "valid_from": "2025-01-01"
+  },
+  "municipalities": [
+    {
+      "code": "75056",
+      "name": "Paris",
+      "parent": "FR-75C",
+      "density_class": "large_urban_centre"
+    },
+    {
+      "code": "69123",
+      "name": "Lyon",
+      "parent": "FR-69M",
+      "density_class": "large_urban_centre"
+    },
+    {
+      "code": "13055",
+      "name": "Marseille",
+      "parent": "FR-13",
+      "density_class": "large_urban_centre"
+    },
+    {
+      "code": "59350",
+      "name": "Lille",
+      "parent": "FR-59",
+      "density_class": "large_urban_centre"
+    },
+    {
+      "code": "38185",
+      "name": "Grenoble",
+      "parent": "FR-38",
+      "density_class": "large_urban_centre"
+    },
+    {
+      "code": "01053",
+      "name": "Bourg-en-Bresse",
+      "parent": "FR-01",
+      "density_class": "intermediate_urban_centre"
+    },
+    {
+      "code": "01004",
+      "name": "Ambérieu-en-Bugey",
+      "parent": "FR-01",
+      "density_class": "intermediate_urban_centre"
+    },
+    {
+      "code": "01034",
+      "name": "Belley",
+      "parent": "FR-01",
+      "density_class": "urban_belt"
+    },
+    {
+      "code": "63430",
+      "name": "Thiers",
+      "parent": "FR-63",
+      "density_class": "urban_belt"
+    },
+    {
+      "code": "48095",
+      "name": "Mende",
+      "parent": "FR-48",
+      "density_class": "urban_belt"
+    },
+    {
+      "code": "01008",
+      "name": "Ambutrix",
+      "parent": "FR-01",
+      "density_class": "small_town"
+    },
+    {
+      "code": "01014",
+      "name": "Arbent",
+      "parent": "FR-01",
+      "density_class": "small_town"
+    },
+    {
+      "code": "01005",
+      "name": "Ambérieux-en-Dombes",
+      "parent": "FR-01",
+      "density_class": "rural_town"
+    },
+    {
+      "code": "01010",
+      "name": "Anglefort",
+      "parent": "FR-01",
+      "density_class": "rural_town"
+    },
+    {
+      "code": "01001",
+      "name": "L'Abergement-Clémenciat",
+      "parent": "FR-01",
+      "density_class": "rural_dispersed"
+    },
+    {
+      "code": "01002",
+      "name": "L'Abergement-de-Varey",
+      "parent": "FR-01",
+      "density_class": "rural_dispersed"
+    },
+    {
+      "code": "01013",
+      "name": "Arandas",
+      "parent": "FR-01",
+      "density_class": "rural_very_dispersed"
+    },
+    {
+      "code": "01019",
+      "name": "Armix",
+      "parent": "FR-01",
+      "density_class": "rural_very_dispersed"
+    }
+  ]
+}

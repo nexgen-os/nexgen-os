@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "building",
+  "name": "Building",
+  "description": "The physical description of the place of a participant: its ground, its buildings, their floors, rooms, zones and units, roof faces, facades and ground areas with their orientation, and which of them a participant occupies.",
+  "version": "0.3.0",
+  "schema": "building",
+  "requires": {
+    "core": "0.3.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}

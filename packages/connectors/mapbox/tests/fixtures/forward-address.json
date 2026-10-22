@@ -1,0 +1,41 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "dXJuOm1ieGFkcjpleGFtcGxl",
+      "geometry": { "type": "Point", "coordinates": [4.35212, 50.84673] },
+      "properties": {
+        "mapbox_id": "dXJuOm1ieGFkcjpleGFtcGxl",
+        "feature_type": "address",
+        "full_address": "Rue de la Loi 16, 1000 Bruxelles, Belgium",
+        "name": "Rue de la Loi 16",
+        "place_formatted": "1000 Bruxelles, Belgium",
+        "coordinates": { "longitude": 4.35212, "latitude": 50.84673, "accuracy": "rooftop" },
+        "context": {
+          "address": { "address_number": "16", "street_name": "Rue de la Loi", "name": "Rue de la Loi 16" },
+          "street": { "name": "Rue de la Loi" },
+          "postcode": { "name": "1000" },
+          "place": { "name": "Bruxelles" },
+          "region": { "name": "Brussels-Capital", "region_code": "BRU", "region_code_full": "BE-BRU" },
+          "country": { "name": "Belgium", "country_code": "BE", "country_code_alpha_3": "BEL" }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "dXJuOm1ieHBsYzpleGFtcGxl",
+      "geometry": { "type": "Point", "coordinates": [4.3517, 50.8503] },
+      "properties": {
+        "feature_type": "place",
+        "full_address": "Bruxelles, Brussels-Capital, Belgium",
+        "name": "Bruxelles",
+        "context": {
+          "region": { "name": "Brussels-Capital", "region_code_full": "BE-BRU" },
+          "country": { "name": "Belgium", "country_code": "BE" }
+        }
+      }
+    }
+  ],
+  "attribution": "NOTICE: © 2026 Mapbox and its suppliers. All rights reserved."
+}

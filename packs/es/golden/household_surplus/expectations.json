@@ -1,0 +1,89 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 110.8,
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_eurostat_household_prices",
+      "source": "packs/es/defaults.json: Eurostat nrg_pc_204_c, Spain, 2025."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "offpeak_hours",
+      "at": "2026-06-15",
+      "value": [
+        [
+          "00:00",
+          "08:00"
+        ]
+      ],
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "es_cnmc_circular_3_2020",
+      "source": "packs/es/defaults.json: period 3 of the 2.0 TD tariff on working days."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2025-06-15",
+      "value": 0.21,
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_ley_37_1992_vat",
+      "source": "packs/es/defaults.json: 21 % from 1 January 2025."
+    },
+    {
+      "object": "device:pv",
+      "attribute_type": "battery_c_rate",
+      "at": "2026-06-15",
+      "value": 0.4,
+      "level": "generic",
+      "conditions": {},
+      "source_code": "atb_2025_residential_battery",
+      "source": "modules/storage: a C-rate of 0.4, the residential battery of the Annual Technology Baseline 2025, published for every country."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "refusal": "parameter_missing",
+    "source": "An individual self-consumption shares nothing: packs/es decides no sharing_perimeter for es_autoconsumo_individual."
+  },
+  "operators": [
+    {
+      "meter": "home",
+      "operator": "i_de",
+      "by": "prefix",
+      "prefix": "ES0021",
+      "source": "packs/es/grid.json: the CUPS starts with ES0021, the code the transmission operator's list gives i-DE; the meter says no operator itself."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_rate",
+      "value": 0.7,
+      "tolerance": 1e-06,
+      "source": "(10 − 3) / 10: what is not injected."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.933333,
+      "tolerance": 1e-06,
+      "source": "7 / (0.5 + 7)."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings_household",
+      "value": 1.8466,
+      "tolerance": 1e-06,
+      "source": "7 kWh at 110.8 + 153.0 €/MWh, the household energy price and grid fees and taxes of the pack, 2025."
+    }
+  ]
+}

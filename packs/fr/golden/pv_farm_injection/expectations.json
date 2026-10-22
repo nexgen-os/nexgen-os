@@ -1,0 +1,52 @@
+{
+  "defaults": [
+    {
+      "object": "participant:farm",
+      "attribute_type": "injection_price_reference",
+      "at": "2026-06-15",
+      "value": 61.1,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_rte_bilan_2025",
+      "source": "packs/fr/defaults.json: RTE Bilan électrique 2025."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "farm",
+      "operator": "enedis",
+      "by": "meter",
+      "source": "The scenario connects the meter to enedis."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:farm",
+      "indicator": "self_consumption_rate",
+      "value": 0,
+      "tolerance": 1e-06,
+      "source": "Everything produced is injected."
+    },
+    {
+      "object": "participant:farm",
+      "indicator": "injection_value",
+      "value": 17.108,
+      "tolerance": 1e-06,
+      "source": "280 kWh at 61.1 €/MWh."
+    },
+    {
+      "object": "participant:farm",
+      "indicator": "injection_day_ahead_value",
+      "value": 10.2,
+      "tolerance": 1e-06,
+      "source": "50 × 40 + 80 × 35 + 90 × 30 + 60 × 45 = 10 200 kWh·€/MWh, the project's price series hour by hour."
+    },
+    {
+      "object": "participant:farm",
+      "indicator": "specific_yield",
+      "value": 1.12,
+      "tolerance": 1e-06,
+      "source": "280 kWh over 250 kWp."
+    }
+  ]
+}

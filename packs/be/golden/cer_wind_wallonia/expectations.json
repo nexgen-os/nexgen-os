@@ -1,0 +1,162 @@
+{
+  "defaults": [
+    {
+      "object": "participant:namur",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-06-15",
+      "value": [
+        "same_municipality",
+        "same_substation"
+      ],
+      "level": "region",
+      "region": "BE-WAL",
+      "conditions": {
+        "project_kind": "be_cer"
+      },
+      "source_code": "be_wal_energy_sharing_order",
+      "source": "packs/be/defaults.json: Arrêté du Gouvernement wallon du 17 mars 2023, article 24: the same municipality, or downstream of the same substation."
+    },
+    {
+      "object": "device:turbine",
+      "attribute_type": "sharing_municipality_extension_m",
+      "at": "2026-06-15",
+      "value": 9000,
+      "level": "region",
+      "region": "BE-WAL",
+      "conditions": {
+        "project_kind": "be_cer",
+        "device_type": "wind"
+      },
+      "source_code": "be_wal_energy_sharing_order",
+      "source": "packs/be/defaults.json: article 24, 1°, b): a wind turbine less than nine kilometres from the limit of its municipality."
+    },
+    {
+      "object": "participant:neighbour",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.06,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_fps_finance_energy_bill",
+      "source": "packs/be/defaults.json: 6 % since 1 April 2023, FPS Finance."
+    },
+    {
+      "object": "project",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/be decides no emission factor of grid electricity yet: refused by name, never guessed."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "rule": {
+      "criteria": [
+        "same_municipality",
+        "same_substation"
+      ],
+      "level": "region",
+      "region": "BE-WAL",
+      "source_code": "be_wal_energy_sharing_order"
+    },
+    "participants": {
+      "wind": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_municipality",
+            "in": true
+          }
+        ]
+      },
+      "neighbour": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_municipality",
+            "in": true
+          }
+        ]
+      },
+      "namur": {
+        "in_perimeter": null,
+        "criteria": [
+          {
+            "criterion": "same_municipality",
+            "in": null,
+            "extension": [
+              {
+                "value_m": 9000,
+                "source_code": "be_wal_energy_sharing_order"
+              }
+            ]
+          },
+          {
+            "criterion": "same_substation",
+            "in": null
+          }
+        ]
+      }
+    },
+    "source": "Article 24 as packs/be reads it: Liège holds the producer; Namur is another municipality, which the 9 km of the turbine may reach, and no meter says its substation."
+  },
+  "operators": [
+    {
+      "meter": "namur",
+      "operator": "ores",
+      "by": "meter",
+      "source": "The scenario connects the meter to ores: five distribution operators serve Wallonia in packs/be/grid.json, so the region alone does not say which."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 115.0,
+    "participants": {
+      "wind": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 115.0
+      },
+      "neighbour": {
+        "shared_offtake_energy": 10.0,
+        "shared_injection_energy": 0.0
+      },
+      "namur": {
+        "shared_offtake_energy": 105.0,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The turbine injects more than both take at every hour: each receives its whole offtake."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.638889,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "115 kWh shared over 180 kWh produced."
+    },
+    {
+      "object": "participant:namur",
+      "indicator": "residual_offtake_energy",
+      "value": 0,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "Its 105 kWh are all shared."
+    },
+    {
+      "object": "participant:wind",
+      "indicator": "self_consumption_rate",
+      "value": 0.022222,
+      "tolerance": 1e-06,
+      "source": "(180 − 176) / 180."
+    },
+    {
+      "object": "project",
+      "indicator": "co2_avoided",
+      "refusal": "parameter_missing",
+      "source": "packs/be has no grid_co2_factor."
+    }
+  ]
+}

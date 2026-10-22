@@ -1,0 +1,28 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "xa_statistics",
+  "reference": "Municipalities of Examplia, 2026 edition",
+  "density_classes": {
+    "classes": [
+      "dense",
+      "sparse"
+    ],
+    "source_code": "xa_statistics",
+    "reference": "Density grid 2026",
+    "valid_from": "2026-01-01"
+  },
+  "municipalities": [
+    {
+      "code": "20001",
+      "name": "Southport",
+      "parent": "XA-S",
+      "density_class": "dense"
+    },
+    {
+      "code": "20002",
+      "name": "Dunmoor",
+      "parent": "XA-S",
+      "density_class": "sparse"
+    }
+  ]
+}

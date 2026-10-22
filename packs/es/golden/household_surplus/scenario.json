@@ -1,0 +1,83 @@
+{
+  "name": "A household of València self-consuming its PV, with surplus",
+  "description": "A house self-consumes its roof PV and injects the surplus, which a simplified compensation would value against its bill; the meter is not connected to an operator, which its CUPS names.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A household of the case",
+  "project": {
+    "name": "Home self-consumption",
+    "kind": "es_autoconsumo_individual",
+    "country": "ES"
+  },
+  "participants": [
+    {
+      "ref": "home",
+      "name": "House",
+      "role": "prosumer",
+      "segment": "individual",
+      "place": {
+        "country": "ES",
+        "region": "ES-V",
+        "municipality": "46250",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -0.3763,
+            39.4699
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "home",
+          "identifier": "ES0021000000000021WH",
+          "scheme": "cups"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 4
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        2,
+        3,
+        3,
+        2
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:home",
+      "quantity": "injection_energy",
+      "values": [
+        0.5,
+        1,
+        1,
+        0.5
+      ]
+    },
+    {
+      "object": "meter:home",
+      "quantity": "offtake_energy",
+      "values": [
+        0.2,
+        0,
+        0,
+        0.3
+      ]
+    }
+  ]
+}

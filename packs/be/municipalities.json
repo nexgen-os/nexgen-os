@@ -1,0 +1,37 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "statbel",
+  "reference": "REFNIS codes of the municipalities, 2025: a representative subset, the six largest cities of the three regions; the full list loads the same way",
+  "municipalities": [
+    {
+      "code": "21004",
+      "name": "Bruxelles",
+      "parent": "BE-BRU"
+    },
+    {
+      "code": "11002",
+      "name": "Antwerpen",
+      "parent": "BE-VLG"
+    },
+    {
+      "code": "44021",
+      "name": "Gent",
+      "parent": "BE-VLG"
+    },
+    {
+      "code": "62063",
+      "name": "Liège",
+      "parent": "BE-WAL"
+    },
+    {
+      "code": "92094",
+      "name": "Namur",
+      "parent": "BE-WAL"
+    },
+    {
+      "code": "52011",
+      "name": "Charleroi",
+      "parent": "BE-WAL"
+    }
+  ]
+}

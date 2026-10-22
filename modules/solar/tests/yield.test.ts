@@ -1,0 +1,82 @@
+// A yield estimate of the `pvgis_like` profile on a system of two arrays: the
+// energies of the arrays add up hour by hour, the series lands as simulated
+// production of the system, and the estimate records the weather, the years, the
+// arrays, the losses and the conventions it was computed with.
+import { readFile } from 'node:fs/promises';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { PGlite } from '@electric-sql/pglite';
+import { pvgis } from '@nexgen-os/pvgis';
+import type { Fetch } from '@nexgen-os/core';
+import { estimateYield } from '../src/yield.js';
+import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
+
+let db: PGlite;
+let org: string;
+let home: string;
+let system: string;
+const asked: string[] = [];
+
+beforeAll(async () => {
+  db = await freshDatabase(['solar']);
+  org = await organisation(db, 'A cooperative', USER_A);
+  home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+  await db.query('insert into solar.devices (id, kwp_dc) values ($1, 30)', [system]);
+  // One statement each: arrays are read in the order they were created, and one statement gives both the same time.
+  await db.query(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
+  await db.query(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10)`, [org, system]);
+});
+
+afterAll(async () => {
+  await db.close();
+});
+
+describe('a pvgis_like yield estimate', () => {
+  it('asks PVGIS once per array, adds the energies, stores them as simulated production and records the estimate', async () => {
+    const recorded = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/pvgis-seriescalc-brussels-2023-48h.json`, 'utf8')) as { outputs: { hourly: { P: number }[] } };
+    const fetch: Fetch = async (url) => {
+      asked.push(url);
+      return { ok: true, status: 200, json: async () => recorded };
+    };
+    const result = await estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
+
+    expect(asked).toHaveLength(2);
+    const params = asked.map((u) => Object.fromEntries(new URL(u).searchParams)).sort((a, b) => Number(b.peakpower) - Number(a.peakpower));
+    expect(params.map((p) => [p.peakpower, p.aspect, p.angle, p.loss, p.mountingplace])).toEqual([['20', '0', '30', '14', 'building'], ['10', '-90', '30', '14', 'building']]);
+
+    // The recorded answer is the 1 kWp one and is served to both arrays: the estimate adds the two answers.
+    const recordedKwh = recorded.outputs.hourly.reduce((s, h) => s + h.P, 0) / 1000;
+    expect(result.kwp).toBe(30);
+    expect(result.annualKwh).toBeCloseTo(recordedKwh * 2, 3);
+    expect(result.kwhPerKwp).toBeCloseTo((recordedKwh * 2) / 30, 3);
+    expect(result.radiationDb).toBe('PVGIS-SARAH3');
+
+    const series = await one<{ kind: string; source: string; n: number; max: number }>(
+      db,
+      `select s.kind, s.source_code source, count(v.*)::int n, max(v.value)::float max
+         from series s join series_values v on v.series_id = s.id
+        where s.id = $1 group by s.kind, s.source_code`,
+      [result.seriesId],
+    );
+    expect(series).toEqual({ kind: 'simulated', source: 'pvgis', n: 48, max: Math.round(0.35008 * 2 * 1e6) / 1e6 });
+
+    const estimate = await one<{ provenance: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select provenance, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.provenance).toBe('pvgis-5.3+solar-0.3.0');
+    expect(estimate.inputs).toMatchObject({
+      profile: 'pvgis_like',
+      weather: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', years: { from: 2023, to: 2023 } },
+      conventions: { time: 'interval start, UTC' },
+    });
+    const arrays = (estimate.inputs.arrays as { kwp: number; azimuth_deg: number; tilt_deg: number }[]).sort((a, b) => b.kwp - a.kwp);
+    expect(arrays).toMatchObject([{ kwp: 20, azimuth_deg: 180, tilt_deg: 30 }, { kwp: 10, azimuth_deg: 90, tilt_deg: 30 }]);
+    expect(estimate.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
+  });
+
+  it('throws named errors for a profile PVGIS cannot run and a system whose participant has no position', async () => {
+    await expect(estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_computable_here/);
+    const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
+    const device = await insert(db, 'devices', { organisation_id: org, participant_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
+    await db.query('insert into solar.devices (id, kwp_dc) values ($1, 5)', [device]);
+    await expect(estimateYield(db, { deviceId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/participant_without_position/);
+  });
+});

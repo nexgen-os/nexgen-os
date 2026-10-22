@@ -1,0 +1,109 @@
+{
+  "defaults": [
+    {
+      "object": "participant:school",
+      "attribute_type": "sharing_radius_m",
+      "at": "2026-06-15",
+      "value": 500,
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "source_code": "es_rd_244_2019_self_consumption",
+      "source": "packs/es/defaults.json: 500 m, article 3, letter g), iii); Spain sets no distance by density class."
+    },
+    {
+      "object": "device:pv",
+      "attribute_type": "sharing_radius_m",
+      "at": "2026-06-15",
+      "value": 5000,
+      "level": "country",
+      "country": "ES",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo",
+        "device_type": "solar"
+      },
+      "source_code": "es_rd_244_2019_self_consumption",
+      "source": "packs/es/defaults.json: the 5 000 m of a photovoltaic installation of up to 5 MW connected through the grid, which a field of 900 kW is."
+    },
+    {
+      "object": "device:pv",
+      "attribute_type": "sharing_radius_m",
+      "at": "2026-03-21",
+      "refusal": "parameter_missing",
+      "source": "The pack loads the rule of article 3, letter g), from the day the Real Decreto-ley 7/2026 amended it, 22 March 2026; the earlier wording is not loaded."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "tolerance_m": 25,
+    "rule": {
+      "criteria": [
+        "same_substation",
+        "radius_around_producer"
+      ],
+      "level": "country",
+      "conditions": {
+        "project_kind": "es_autoconsumo_colectivo"
+      },
+      "source_code": "es_rd_244_2019_self_consumption"
+    },
+    "participants": {
+      "field": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": true
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": true,
+            "value_m": 500,
+            "distance_m": 0
+          }
+        ]
+      },
+      "coop": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": false
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": true,
+            "value_m": 500,
+            "distance_m": 450
+          }
+        ]
+      },
+      "school": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": false
+          },
+          {
+            "criterion": "radius_around_producer",
+            "in": false,
+            "value_m": 500,
+            "distance_m": 2500
+          }
+        ]
+      }
+    },
+    "source": "The three places lie on one parallel, 450 m and 2 500 m east of the field, each on its own transformer station; check_perimeter() reads the radius from the places of the participants, 500 m, and not the 5 000 m the field's technology gives. Distances held to 25 m."
+  },
+  "operators": [
+    {
+      "meter": "school",
+      "operator": "ufd",
+      "by": "meter",
+      "source": "The scenario connects the meter to ufd and its transformer station."
+    }
+  ]
+}

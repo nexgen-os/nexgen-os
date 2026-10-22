@@ -1,0 +1,63 @@
+{
+  "defaults": [
+    {
+      "object": "participant:workshop",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2025-06-15",
+      "refusal": "parameter_not_decided",
+      "source": "packs/es/defaults.json: null in ES-CN, the parent of ES-GC, Ley 37/1992, article 3: the Canary Islands are outside the territory of VAT."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 90.9,
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_eurostat_business_prices",
+      "source": "packs/es/defaults.json: Eurostat nrg_pc_205_c, Spain, 2025, a national figure."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "bidding_zone",
+      "at": "2026-10-22",
+      "value": "10YES-REE------0",
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_entsoe_eic_codes",
+      "source": "packs/es/defaults.json: the area of the ENTSO-E list; whether a non-peninsular system stands outside it is not decided by the pack; the row holds from the day it was read, 22 October 2026."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "workshop",
+      "operator": "edistribucion",
+      "by": "prefix",
+      "prefix": "ES0031",
+      "source": "packs/es/grid.json: the CUPS starts with ES0031, the code the transmission operator's list gives Edistribución Redes Digitales."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:workshop",
+      "indicator": "self_consumption_rate",
+      "value": 0.74,
+      "tolerance": 1e-06,
+      "source": "(50 − 13) / 50."
+    },
+    {
+      "object": "participant:workshop",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.948718,
+      "tolerance": 1e-06,
+      "source": "37 / (2 + 37)."
+    },
+    {
+      "object": "participant:workshop",
+      "indicator": "self_consumption_savings_business",
+      "value": 9.0243,
+      "tolerance": 1e-06,
+      "source": "37 kWh at 90.9 + 153.0 €/MWh, the business energy price and grid fees and taxes of the pack, 2025."
+    }
+  ]
+}

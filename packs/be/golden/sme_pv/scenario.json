@@ -1,0 +1,120 @@
+{
+  "name": "An SME of Antwerpen with PV on its roof",
+  "description": "A workshop self-consumes most of its PV; its yield on four hours by the PVWatts profile of the solar module.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A workshop of the case",
+  "project": {
+    "name": "Workshop roof PV",
+    "kind": "pv_roof",
+    "country": "BE"
+  },
+  "participants": [
+    {
+      "ref": "sme",
+      "name": "Workshop",
+      "role": "prosumer",
+      "segment": "business",
+      "place": {
+        "country": "BE",
+        "region": "BE-VLG",
+        "municipality": "11002",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.4025,
+            51.2194
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "sme",
+          "identifier": "541449000000000501",
+          "scheme": "gs1_gsrn"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Workshop PV",
+          "rated_power_kw": 50
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "participant:sme",
+      "attribute_type": "installed_power",
+      "value": 50,
+      "source": "An input of the case: 50 kWp."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        30,
+        38,
+        40,
+        32
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:sme",
+      "quantity": "injection_energy",
+      "values": [
+        5,
+        8,
+        10,
+        6
+      ]
+    },
+    {
+      "object": "meter:sme",
+      "quantity": "offtake_energy",
+      "values": [
+        4,
+        2,
+        1,
+        3
+      ]
+    }
+  ],
+  "solar": {
+    "device": "pv",
+    "profile": "pvwatts",
+    "kwp": 50,
+    "gamma_pdc": -0.0035,
+    "hours": [
+      {
+        "poa": 500,
+        "temperature": 18,
+        "wind": 3
+      },
+      {
+        "poa": 700,
+        "temperature": 20,
+        "wind": 4
+      },
+      {
+        "poa": 820,
+        "temperature": 21,
+        "wind": 4
+      },
+      {
+        "poa": 650,
+        "temperature": 21,
+        "wind": 3
+      }
+    ],
+    "source": "Inputs of the case: four June hours of plane-of-array irradiance, air temperature and wind, and a crystalline module's temperature coefficient of power, made up for it."
+  }
+}

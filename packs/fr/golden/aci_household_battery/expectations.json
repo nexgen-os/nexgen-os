@@ -1,0 +1,136 @@
+{
+  "defaults": [
+    {
+      "object": "device:battery",
+      "attribute_type": "battery_c_rate",
+      "at": "2026-06-15",
+      "value": 0.4,
+      "level": "generic",
+      "conditions": {},
+      "source_code": "atb_2025_residential_battery",
+      "source": "modules/storage: 5 kW / 12.5 kWh, the representative residential battery of the Annual Technology Baseline 2025, published for every country."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "electricity_excise",
+      "at": "2026-06-15",
+      "value": 30.85,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "fr_bofip_electricity_excise",
+      "source": "packs/fr/defaults.json: 30.85 €/MWh for a household from 1 February 2026; an individual is a residential segment."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 108.8,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_eurostat_household_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_204_c, 2025."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "market_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.02352,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_aib_residual_mix_2024",
+      "source": "packs/fr/defaults.json: the residual mix of FR in 2024, Table 2 of the European Residual Mixes 2024 of the Association of Issuing Bodies."
+    }
+  ],
+  "batteries": [
+    {
+      "device": "battery",
+      "at": "2026-06-15",
+      "figures": {
+        "usable_capacity_kwh": {
+          "value": 5,
+          "level": "device"
+        },
+        "charge_power_kw": {
+          "value": 2,
+          "level": "c_rate"
+        },
+        "round_trip_efficiency": {
+          "value": 0.85,
+          "level": "generic"
+        }
+      },
+      "source": "storage.battery_of(): the capacity the device says, its power at the generic C-rate (5 × 0.4 kW), the generic round-trip efficiency."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "refusal": "parameter_missing",
+    "source": "An individual self-consumption shares nothing: packs/fr decides no sharing_perimeter for fr_aci."
+  },
+  "operators": [
+    {
+      "meter": "home",
+      "operator": "enedis",
+      "by": "meter",
+      "source": "The scenario connects the meter to enedis."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "self_consumed_energy",
+      "value": 11.0,
+      "tolerance": 1e-06,
+      "read": {
+        "direct": "computed",
+        "discharge": "measured"
+      },
+      "source": "Direct self-consumption 14 − 2 − 2.5 = 9.5 kWh, computed with no series of it, and 1.5 kWh given back by the battery."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_rate",
+      "value": 0.857143,
+      "tolerance": 1e-06,
+      "source": "(9.5 + 2.5) / 14: what is not injected."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.956522,
+      "tolerance": 1e-06,
+      "source": "11 / (0.5 + 11)."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "battery_boost_rate",
+      "value": 0.178571,
+      "tolerance": 1e-06,
+      "source": "2.5 kWh stored over 14 kWh produced."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "battery_discharged_energy",
+      "value": 1.5,
+      "tolerance": 1e-06,
+      "source": "0.5 + 1 kWh."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings_household",
+      "value": 2.882,
+      "tolerance": 1e-06,
+      "source": "11 kWh at 108.8 + 153.2 €/MWh, the household energy price and grid fees and taxes of the pack, 2025."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "co2_avoided",
+      "value": 0.22,
+      "tolerance": 1e-06,
+      "source": "11 kWh at 0.02 kg/kWh."
+    }
+  ]
+}

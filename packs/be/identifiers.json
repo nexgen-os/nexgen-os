@@ -1,0 +1,55 @@
+{
+  "identifiers": [
+    {
+      "code": "nis",
+      "name": "NIS code",
+      "description": "The 5-digit code of a Belgian municipality given by Statbel (also called INS or REFNIS code): the level at which a distribution operator, local planning rules and most datasets are decided. The first digit names the province, or 2 for Brussels. It is not the postal code.",
+      "pattern": "^[0-9]{5}$",
+      "example": "44021",
+      "source_code": "statbel"
+    },
+    {
+      "code": "vlaanderen_address",
+      "name": "Basisregisters address",
+      "description": "The persistent identifier of an address in the Flemish address register (Adressenregister). Flanders only.",
+      "pattern": "^[0-9]+$",
+      "example": "602422",
+      "url_template": "https://data.vlaanderen.be/id/adres/{value}",
+      "source_code": "basisregisters_vlaanderen"
+    },
+    {
+      "code": "vlaanderen_building",
+      "name": "Basisregisters building (gebouwID)",
+      "description": "The persistent identifier of a building in the Flemish building register (Gebouwenregister). Flanders only.",
+      "pattern": "^[0-9]+$",
+      "example": "10321452",
+      "url_template": "https://data.vlaanderen.be/id/gebouw/{value}",
+      "source_code": "basisregisters_vlaanderen"
+    },
+    {
+      "code": "urbis_building",
+      "name": "UrbIS building",
+      "description": "The identifier of a building in UrbIS-Adm, the Brussels reference map. Brussels only.",
+      "pattern": "^[0-9]+$",
+      "example": "1234567",
+      "source_code": "urbis"
+    },
+    {
+      "code": "icar_address",
+      "name": "ICAR address",
+      "description": "The identifier of a house number in ICAR, the Walloon address register. Wallonia keeps no building register: an ICAR address is the most precise identifier of a place there.",
+      "pattern": "^[0-9]+$",
+      "example": "1872629",
+      "source_code": "icar"
+    },
+    {
+      "code": "enterprise_number",
+      "name": "Enterprise number",
+      "description": "The 10-digit number of an enterprise in the Crossroads Bank for Enterprises (KBO / BCE), starting with 0 or 1, written here without dots.",
+      "pattern": "^[01][0-9]{9}$",
+      "example": "0403200393",
+      "source_code": "kbo_bce",
+      "icd": "0208"
+    }
+  ]
+}

@@ -1,0 +1,391 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "ES",
+  "name": "Spain",
+  "version": "0.3.0",
+  "checksum": "sha256:47bf057ea5daf05d3496ce5fd104ae46425811e59617f3c5afa12e45cde268da",
+  "schema_min": "0.3.0",
+  "seed_sequence": 12,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "ca",
+      "eu",
+      "gl"
+    ],
+    "time_zones": [
+      "Europe/Madrid",
+      "Atlantic/Canary"
+    ],
+    "region_level": "province",
+    "postal_code_pattern": "^(0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$",
+    "municipality_scheme": "ine",
+    "regions": [
+      {
+        "code": "ES-A",
+        "name": "Alicante/Alacant",
+        "parent": "ES-VC"
+      },
+      {
+        "code": "ES-AB",
+        "name": "Albacete",
+        "parent": "ES-CM"
+      },
+      {
+        "code": "ES-AL",
+        "name": "Almería",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-AN",
+        "name": "Andalucía"
+      },
+      {
+        "code": "ES-AR",
+        "name": "Aragón"
+      },
+      {
+        "code": "ES-AS",
+        "name": "Asturias, Principado de"
+      },
+      {
+        "code": "ES-AV",
+        "name": "Ávila",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-B",
+        "name": "Barcelona",
+        "parent": "ES-CT"
+      },
+      {
+        "code": "ES-BA",
+        "name": "Badajoz",
+        "parent": "ES-EX"
+      },
+      {
+        "code": "ES-BI",
+        "name": "Bizkaia",
+        "parent": "ES-PV"
+      },
+      {
+        "code": "ES-BU",
+        "name": "Burgos",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-C",
+        "name": "A Coruña",
+        "parent": "ES-GA"
+      },
+      {
+        "code": "ES-CA",
+        "name": "Cádiz",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-CB",
+        "name": "Cantabria"
+      },
+      {
+        "code": "ES-CC",
+        "name": "Cáceres",
+        "parent": "ES-EX"
+      },
+      {
+        "code": "ES-CE",
+        "name": "Ceuta"
+      },
+      {
+        "code": "ES-CL",
+        "name": "Castilla y León"
+      },
+      {
+        "code": "ES-CM",
+        "name": "Castilla-La Mancha"
+      },
+      {
+        "code": "ES-CN",
+        "name": "Canarias",
+        "time_zone": "Atlantic/Canary"
+      },
+      {
+        "code": "ES-CO",
+        "name": "Córdoba",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-CR",
+        "name": "Ciudad Real",
+        "parent": "ES-CM"
+      },
+      {
+        "code": "ES-CS",
+        "name": "Castellón/Castelló",
+        "parent": "ES-VC"
+      },
+      {
+        "code": "ES-CT",
+        "name": "Catalunya",
+        "names": {
+          "es": "Cataluña",
+          "ca": "Catalunya"
+        }
+      },
+      {
+        "code": "ES-CU",
+        "name": "Cuenca",
+        "parent": "ES-CM"
+      },
+      {
+        "code": "ES-EX",
+        "name": "Extremadura"
+      },
+      {
+        "code": "ES-GA",
+        "name": "Galicia",
+        "names": {
+          "gl": "Galicia"
+        }
+      },
+      {
+        "code": "ES-GC",
+        "name": "Las Palmas",
+        "parent": "ES-CN",
+        "time_zone": "Atlantic/Canary"
+      },
+      {
+        "code": "ES-GI",
+        "name": "Girona",
+        "parent": "ES-CT"
+      },
+      {
+        "code": "ES-GR",
+        "name": "Granada",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-GU",
+        "name": "Guadalajara",
+        "parent": "ES-CM"
+      },
+      {
+        "code": "ES-H",
+        "name": "Huelva",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-HU",
+        "name": "Huesca",
+        "parent": "ES-AR"
+      },
+      {
+        "code": "ES-IB",
+        "name": "Illes Balears",
+        "names": {
+          "es": "Islas Baleares",
+          "ca": "Illes Balears"
+        }
+      },
+      {
+        "code": "ES-J",
+        "name": "Jaén",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-L",
+        "name": "Lleida",
+        "parent": "ES-CT"
+      },
+      {
+        "code": "ES-LE",
+        "name": "León",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-LO",
+        "name": "La Rioja",
+        "parent": "ES-RI"
+      },
+      {
+        "code": "ES-LU",
+        "name": "Lugo",
+        "parent": "ES-GA"
+      },
+      {
+        "code": "ES-M",
+        "name": "Madrid",
+        "parent": "ES-MD"
+      },
+      {
+        "code": "ES-MA",
+        "name": "Málaga",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-MC",
+        "name": "Murcia, Región de"
+      },
+      {
+        "code": "ES-MD",
+        "name": "Madrid, Comunidad de"
+      },
+      {
+        "code": "ES-ML",
+        "name": "Melilla"
+      },
+      {
+        "code": "ES-MU",
+        "name": "Murcia",
+        "parent": "ES-MC"
+      },
+      {
+        "code": "ES-NA",
+        "name": "Navarra",
+        "parent": "ES-NC"
+      },
+      {
+        "code": "ES-NC",
+        "name": "Navarra, Comunidad Foral de",
+        "names": {
+          "eu": "Nafarroako Foru Komunitatea"
+        }
+      },
+      {
+        "code": "ES-O",
+        "name": "Asturias",
+        "parent": "ES-AS"
+      },
+      {
+        "code": "ES-OR",
+        "name": "Ourense",
+        "parent": "ES-GA"
+      },
+      {
+        "code": "ES-P",
+        "name": "Palencia",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-PM",
+        "name": "Illes Balears",
+        "parent": "ES-IB"
+      },
+      {
+        "code": "ES-PO",
+        "name": "Pontevedra",
+        "parent": "ES-GA"
+      },
+      {
+        "code": "ES-PV",
+        "name": "País Vasco",
+        "names": {
+          "eu": "Euskal Herria"
+        }
+      },
+      {
+        "code": "ES-RI",
+        "name": "La Rioja"
+      },
+      {
+        "code": "ES-S",
+        "name": "Cantabria",
+        "parent": "ES-CB"
+      },
+      {
+        "code": "ES-SA",
+        "name": "Salamanca",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-SE",
+        "name": "Sevilla",
+        "parent": "ES-AN"
+      },
+      {
+        "code": "ES-SG",
+        "name": "Segovia",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-SO",
+        "name": "Soria",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-SS",
+        "name": "Gipuzkoa",
+        "parent": "ES-PV"
+      },
+      {
+        "code": "ES-T",
+        "name": "Tarragona",
+        "parent": "ES-CT"
+      },
+      {
+        "code": "ES-TE",
+        "name": "Teruel",
+        "parent": "ES-AR"
+      },
+      {
+        "code": "ES-TF",
+        "name": "Santa Cruz de Tenerife",
+        "parent": "ES-CN",
+        "time_zone": "Atlantic/Canary"
+      },
+      {
+        "code": "ES-TO",
+        "name": "Toledo",
+        "parent": "ES-CM"
+      },
+      {
+        "code": "ES-V",
+        "name": "Valencia/València",
+        "parent": "ES-VC"
+      },
+      {
+        "code": "ES-VA",
+        "name": "Valladolid",
+        "parent": "ES-CL"
+      },
+      {
+        "code": "ES-VC",
+        "name": "Valenciana, Comunitat",
+        "names": {
+          "es": "Valenciana, Comunidad",
+          "ca": "Valenciana, Comunitat"
+        }
+      },
+      {
+        "code": "ES-VI",
+        "name": "Araba/Álava",
+        "parent": "ES-PV"
+      },
+      {
+        "code": "ES-Z",
+        "name": "Zaragoza",
+        "parent": "ES-AR"
+      },
+      {
+        "code": "ES-ZA",
+        "name": "Zamora",
+        "parent": "ES-CL"
+      }
+    ]
+  }
+}

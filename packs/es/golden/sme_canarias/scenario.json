@@ -1,0 +1,83 @@
+{
+  "name": "An SME of Las Palmas de Gran Canaria with PV on its roof",
+  "description": "A workshop self-consumes the PV of its roof; in the Canary Islands VAT does not apply and the islands' own tax is not in the pack.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "An SME of the case",
+  "project": {
+    "name": "Workshop roof PV",
+    "kind": "pv_roof",
+    "country": "ES"
+  },
+  "participants": [
+    {
+      "ref": "workshop",
+      "name": "Workshop",
+      "role": "prosumer",
+      "segment": "business",
+      "place": {
+        "country": "ES",
+        "region": "ES-GC",
+        "municipality": "35016",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -15.4363,
+            28.1235
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "workshop",
+          "identifier": "ES0031000000000031NC",
+          "scheme": "cups"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Workshop roof PV",
+          "rated_power_kw": 25
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        10,
+        14,
+        15,
+        11
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:workshop",
+      "quantity": "injection_energy",
+      "values": [
+        2,
+        4,
+        5,
+        2
+      ]
+    },
+    {
+      "object": "meter:workshop",
+      "quantity": "offtake_energy",
+      "values": [
+        1,
+        0,
+        0,
+        1
+      ]
+    }
+  ]
+}
