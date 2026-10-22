@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { bbox, type Feature } from '@nexgen-os/geojson';
 import { exportGeoJson, type FeatureProperties, type GeoJsonExport as FeatureCollection } from '@nexgen-os/core';
-import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, repoRoot } from './helpers/db.js';
+import { USER_A, USER_B, asUser, freshDatabase, insert, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
 const SITE = '00000000-0000-4000-8000-000400000010';

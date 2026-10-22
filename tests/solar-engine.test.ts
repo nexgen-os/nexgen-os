@@ -17,8 +17,6 @@ const fake = { name: 'fake', command: [process.execPath, `${repoRoot}/tests/fixt
 let db: PGlite;
 let org: string;
 let system: string;
-let south: string;
-let east: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
@@ -26,8 +24,8 @@ beforeAll(async () => {
   const site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
-  south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
-  east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
+  await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10)`, [org, system]);
 });
 
 afterAll(async () => {
