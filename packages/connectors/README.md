@@ -78,10 +78,11 @@ the data, and `sources.retention_days` says when a cache expires.
 
 Grafana, Power BI, Spark, InfluxDB, Kafka and MQTT come through three doors
 — SQL, Parquet files, one message shape over a stream — and none of them gets
-a copy of the model. The pieces and their order are in
-[decision 0014](../../docs/decisions/0014-integrations-dashboards-warehouses-streams.md):
-`packages/formats/parquet`, `formats/influx-line-protocol`, `formats/grafana`,
-`connectors/mqtt`, `connectors/kafka`, and two flat views for BI tools.
+a copy of the model
+([decision 0014](../../docs/decisions/0014-integrations-dashboards-warehouses-streams.md)).
+`packages/formats/parquet` writes the files; the readers and connectors still
+to come, in the order installations ask for them, are in the
+[road to 1.0](../../docs/road-to-1.0.md).
 
 ## Programs in any language
 

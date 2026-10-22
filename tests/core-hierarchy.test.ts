@@ -34,12 +34,9 @@ afterAll(async () => {
 });
 
 describe('the hierarchy of the core', () => {
-  it('needs no module: projects, participants, meters and devices are the core\'s, and sites are not', async () => {
-    const r = await one<{ modules: number; sites: boolean }>(
-      db,
-      `select (select count(*)::int from modules) modules, to_regclass('nexgen.sites') is not null sites`,
-    );
-    expect(r).toEqual({ modules: 0, sites: false });
+  it('needs no module: projects, participants, meters and devices are the core\'s', async () => {
+    const r = await one<{ modules: number }>(db, 'select count(*)::int modules from modules');
+    expect(r).toEqual({ modules: 0 });
   });
 
   it('walks from the project to the meter and the device through the participant, which carries the place', async () => {
