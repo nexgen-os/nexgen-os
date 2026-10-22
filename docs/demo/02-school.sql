@@ -100,8 +100,8 @@ insert into attributes (object_kind, object_id, attribute_type, value, valid_fro
 
 -- The drawings and the model are the school's documents.
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
-  ('participant', '00000000-0000-4000-8000-000200000010', 'Ground floor plan', 'plan', 's3://nexgen-os-examples/school/ground-floor.dxf', 'image/vnd.dxf', 'architect'),
-  ('participant', '00000000-0000-4000-8000-000200000010', 'IFC model', 'document', 's3://nexgen-os-examples/school/main-building.ifc', 'application/x-step', 'architect');
+  ('participant', '00000000-0000-4000-8000-000200000010', 'Ground floor plan', 'plan', 's3://nexgen-os-demo/school/ground-floor.dxf', 'image/vnd.dxf', 'architect'),
+  ('participant', '00000000-0000-4000-8000-000200000010', 'IFC model', 'document', 's3://nexgen-os-demo/school/main-building.ifc', 'application/x-step', 'architect');
 
 -- Queries a page would run
 -- The rooms with their points, floor by floor:

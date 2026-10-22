@@ -20,7 +20,8 @@ version `0.3.0`, schema floor `0.3.0`.
 ### Added
 
 **The core**, in the schema `nexgen`: twenty-seven tables and one view
-([docs/model.md](docs/model.md)).
+([docs/model.md](docs/model.md)), its migrations and seed in `supabase/`
+([supabase/README.md](supabase/README.md)).
 
 - Six objects, in the order a page walks them: the organisation and its
   members, the project, the participant — the node that carries the place,
@@ -74,7 +75,9 @@ version `0.3.0`, schema floor `0.3.0`.
   `nexgen_schema_version()`.
 
 **The modules**, each in its own schema, each starting from an object of
-the core ([modules/README.md](modules/README.md),
+the core and each a folder with its manifest `module.json`
+(`modules/schema/module.1.json`), its migrations, its code and its tests
+([modules/README.md](modules/README.md),
 [0042](docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
 
 - `building`: the ground of a participant, its buildings, their spaces
@@ -138,7 +141,7 @@ and defaults, each value with its source and reference
   `settlement-example` programs, meant to be copied and replaced
   ([0013](docs/decisions/0013-a-program-connector-reads-one-request.md)).
 
-**The examples**: seven loadable datasets — a house, a school, an energy
+**The demo**: seven loadable datasets — a house, a school, an energy
 community, a farm, a district from open data, a drone survey, an office —
 and the twenty-minute yield of the README
 ([docs/demo/README.md](docs/demo/README.md)).

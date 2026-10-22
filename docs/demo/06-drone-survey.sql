@@ -32,13 +32,13 @@ insert into sources (code, name, kind, auth, countries, license, attribution, pu
   ('rae_drone_survey', 'Rilievi Aerei Emilia — drone surveys', 'device', 'none', '{IT}', 'client contract', '© Rilievi Aerei Emilia', 'rae', 'Photogrammetric surveys flown by the company''s own drones.');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source_code, source, captured_at, metadata) values
-  ('participant', '00000000-0000-4000-8000-000600000010', 'Orthophoto 2 cm', 'image', 's3://nexgen-os-examples/bologna/hall-a-ortho.tif', 'image/tiff', 'rae_drone_survey', 'flight 2026-04-08, DJI M3E', '2026-04-08',
+  ('participant', '00000000-0000-4000-8000-000600000010', 'Orthophoto 2 cm', 'image', 's3://nexgen-os-demo/bologna/hall-a-ortho.tif', 'image/tiff', 'rae_drone_survey', 'flight 2026-04-08, DJI M3E', '2026-04-08',
    '{"gsd_cm": 2.1, "crs": "EPSG:32632", "images": 412}'),
-  ('participant', '00000000-0000-4000-8000-000600000010', 'Oblique photos', 'image', 's3://nexgen-os-examples/bologna/hall-a-obliques.zip', 'application/zip', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
+  ('participant', '00000000-0000-4000-8000-000600000010', 'Oblique photos', 'image', 's3://nexgen-os-demo/bologna/hall-a-obliques.zip', 'application/zip', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
    '{"count": 96, "exif_pose": true}'),
-  ('participant', '00000000-0000-4000-8000-000600000010', 'Roof inspection video', 'video', 's3://nexgen-os-examples/bologna/hall-a-roof.mp4', 'video/mp4', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
+  ('participant', '00000000-0000-4000-8000-000600000010', 'Roof inspection video', 'video', 's3://nexgen-os-demo/bologna/hall-a-roof.mp4', 'video/mp4', 'rae_drone_survey', 'flight 2026-04-08', '2026-04-08',
    '{"duration_s": 214, "camera": "nadir sweep"}'),
-  ('participant', '00000000-0000-4000-8000-000600000010', 'Point cloud', 'document', 's3://nexgen-os-examples/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
+  ('participant', '00000000-0000-4000-8000-000600000010', 'Point cloud', 'document', 's3://nexgen-os-demo/bologna/hall-a.copc.laz', 'application/vnd.laszip+copc', 'rae_drone_survey', 'photogrammetry, OpenDroneMod 3.5', '2026-04-08',
    '{"points": 48200000, "density_per_m2": 850, "note": "a survey output kept as a document; the hosted capture tools read it"}');
 
 -- Roof faces measured on the 2 cm orthophoto, their material seen on the

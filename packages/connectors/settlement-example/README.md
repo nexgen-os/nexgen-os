@@ -1,7 +1,7 @@
 # `settlement_example` — a settlement engine to copy
 
 An engine of the `settlement` kind ([`../README.md`](../README.md),
-[`../../packages/core/src/connectors/settlement.ts`](../../packages/core/src/connectors/settlement.ts)) in pure Python, without a
+[`../../packages/core/src/connectors/settlement.ts`](../../core/src/connectors/settlement.ts)) in pure Python, without a
 dependency: each contract is settled at its fixed price on the volume it
 names. It is an example, meant to be copied and replaced by the
 settlement a site or a community actually applies; `nexgen-os init` does

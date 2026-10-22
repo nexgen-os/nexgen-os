@@ -82,8 +82,8 @@ insert into attributes (object_kind, object_id, attribute_type, value, source) v
   ('meter', '00000000-0000-4000-8000-000300000043', 'subscribed_power', '63', 'supply contract');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
-  ('project', '00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-examples/community/statutes-2024.pdf', 'application/pdf', 'notary'),
-  ('project', '00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-examples/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
+  ('project', '00000000-0000-4000-8000-000300000020', 'Community statutes', 'document', 's3://nexgen-os-demo/community/statutes-2024.pdf', 'application/pdf', 'notary'),
+  ('project', '00000000-0000-4000-8000-000300000020', 'Allocation key 2026', 'document', 's3://nexgen-os-demo/community/allocation-2026.pdf', 'application/pdf', 'general assembly');
 
 -- The month's settlement, computed in the community module: the lines
 -- of who received how much, and at which price.

@@ -48,8 +48,8 @@ insert into attributes (object_kind, object_id, attribute_type, value, source) v
   ('meter', '00000000-0000-4000-8000-000400000041', 'subscribed_power', '160', 'supply contract');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
-  ('participant', '00000000-0000-4000-8000-000400000010', 'Electricity invoices 2025', 'document', 's3://nexgen-os-examples/farm/invoices-2025.pdf', 'application/pdf', 'supplier'),
-  ('device', '00000000-0000-4000-8000-000400000052', 'Ground array layout', 'plan', 's3://nexgen-os-examples/farm/field-layout.geojson', 'application/geo+json', 'installer');
+  ('participant', '00000000-0000-4000-8000-000400000010', 'Electricity invoices 2025', 'document', 's3://nexgen-os-demo/farm/invoices-2025.pdf', 'application/pdf', 'supplier'),
+  ('device', '00000000-0000-4000-8000-000400000052', 'Ground array layout', 'plan', 's3://nexgen-os-demo/farm/field-layout.geojson', 'application/geo+json', 'installer');
 
 -- The orientation each estimate assumed: the barn roof faces south-south-east
 -- at 15°, the ground array south on flat ground, the carport south at 10°.

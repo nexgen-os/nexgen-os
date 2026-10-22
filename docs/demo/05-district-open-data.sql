@@ -38,7 +38,7 @@ select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-
 
 -- Heights come from the Copernicus height model, noted as such.
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source_code, source) values
-  ('project', '00000000-0000-4000-8000-000500000020', 'Height model tile', 'document', 's3://nexgen-os-examples/dakar/dem-n14w018.tif', 'image/tiff', 'copernicus_dem', 'GLO-30 tile N14 W018');
+  ('project', '00000000-0000-4000-8000-000500000020', 'Height model tile', 'document', 's3://nexgen-os-demo/dakar/dem-n14w018.tif', 'image/tiff', 'copernicus_dem', 'GLO-30 tile N14 W018');
 
 -- A roof face per building, flat, ready for the solar study.
 insert into building.surfaces (id, organisation_id, building_id, name, kind, azimuth_deg, tilt_deg)

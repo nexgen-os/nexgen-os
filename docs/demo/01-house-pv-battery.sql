@@ -65,8 +65,8 @@ insert into attributes (object_kind, object_id, attribute_type, value, valid_fro
   ('participant', '00000000-0000-4000-8000-000100000010', 'annual_consumption', '4300', null, null, 'supplier invoices 2025');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source, captured_at) values
-  ('participant', '00000000-0000-4000-8000-000100000010', 'Orbit video', 'video', 's3://nexgen-os-examples/house/orbit.mp4', 'video/mp4', 'drone flight', '2026-03-14'),
-  ('participant', '00000000-0000-4000-8000-000100000010', 'Building permit 1998', 'permit', 's3://nexgen-os-examples/house/permit-1998.pdf', 'application/pdf', 'town hall', null),
+  ('participant', '00000000-0000-4000-8000-000100000010', 'Orbit video', 'video', 's3://nexgen-os-demo/house/orbit.mp4', 'video/mp4', 'drone flight', '2026-03-14'),
+  ('participant', '00000000-0000-4000-8000-000100000010', 'Building permit 1998', 'permit', 's3://nexgen-os-demo/house/permit-1998.pdf', 'application/pdf', 'town hall', null),
   ('device', '00000000-0000-4000-8000-000100000051', 'Module datasheet', 'datasheet', 'https://static.trinasolar.com/vertex-s-425.pdf', 'application/pdf', 'manufacturer', null);
 
 -- A battery the family plans: a device of its own, planned until it is

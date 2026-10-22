@@ -83,7 +83,7 @@ insert into devices (id, organisation_id, participant_id, name, device_type, man
    'Heat pump 2', 'heat_pump', 'Viessmann', 'Vitocal 300-A Pro', 160, 'planned');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source) values
-  ('participant', '00000000-0000-4000-8000-000700000010', 'Insulation design 2026', 'report', 's3://nexgen-os-examples/office/insulation-design-2026.pdf', 'application/pdf', 'thermal engineer');
+  ('participant', '00000000-0000-4000-8000-000700000010', 'Insulation design 2026', 'report', 's3://nexgen-os-demo/office/insulation-design-2026.pdf', 'application/pdf', 'thermal engineer');
 
 -- Queries a page would run
 -- The envelope today:

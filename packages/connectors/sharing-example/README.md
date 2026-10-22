@@ -1,7 +1,7 @@
 # `sharing_example` — an energy_sharing engine to copy
 
 An engine of the `energy_sharing` kind ([`../README.md`](../README.md),
-[`sharing.ts`](../../packages/core/src/connectors/sharing.ts)) in pure Python, without a
+[`sharing.ts`](../../core/src/connectors/sharing.ts)) in pure Python, without a
 dependency: the energy the participants inject is shared among them in
 proportion to their offtake. It is an example, meant to be copied and
 replaced by the key a community actually applies; `nexgen-os init` does
