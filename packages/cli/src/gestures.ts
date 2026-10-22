@@ -17,6 +17,7 @@ import {
   createApiKey,
   createProject,
   declareMeter,
+  estimatePvYieldAt,
   geocoderChain,
   geocoderNames,
   importHomeAssistantSeries,
@@ -47,6 +48,7 @@ export const GESTURE_COMMANDS: Record<string, string[]> = {
   series: ['import'],
   size: [],
   kpis: ['', 'compute'],
+  solar: ['estimate'],
 };
 
 export const GESTURE_USAGE = `
@@ -63,6 +65,9 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os size --module solar|battery --request <file.json>                       to size, with a named criterion
   nexgen-os kpis --object-kind <k> --object <id> --from <iso> --to <iso>            the indicators of an object
   nexgen-os kpis compute --object-kind <k> --object <id> --indicator <code> --from <iso> --to <iso>
+  nexgen-os solar estimate --project <id> --name <n> --country <cc> --lon <x> --lat <y>
+                           --kwp <p> --azimuth <deg from north> --tilt <deg> [--year yyyy] [--time-zone tz]
+                                                                                    a PV system at a point and its yield by month
 `;
 
 /** The flags these commands take, beside those of the installer. */
@@ -71,12 +76,18 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
-  write: 'switch', expires: 'value',
+  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value',
 };
 
 function need(flags: Flags, name: string): string {
   const value = flags.get(name);
   if (typeof value !== 'string' || value.length === 0) throw new NexgenError('usage', `--${name} is required`);
+  return value;
+}
+
+function number(flags: Flags, name: string): number {
+  const value = Number(need(flags, name));
+  if (!Number.isFinite(value)) throw new NexgenError('usage', `--${name} takes a number`);
   return value;
 }
 
@@ -160,6 +171,13 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
       return kpisOf(db, need(f, 'object-kind'), need(f, 'object'), need(f, 'from'), need(f, 'to'));
     case 'kpis compute':
       return computeKpi(db, need(f, 'object-kind'), need(f, 'object'), need(f, 'indicator'), need(f, 'from'), need(f, 'to'));
+    case 'solar estimate':
+      return estimatePvYieldAt(db, io.computations ?? {}, {
+        project_id: need(f, 'project'), name: need(f, 'name'), country: need(f, 'country'),
+        lon: number(f, 'lon'), lat: number(f, 'lat'), kwp: number(f, 'kwp'), azimuth_deg: number(f, 'azimuth'), tilt_deg: number(f, 'tilt'),
+        year: optional(f, 'year') === undefined ? new Date().getUTCFullYear() - 3 : number(f, 'year'),
+        ...(optional(f, 'time-zone') ? { time_zone: optional(f, 'time-zone')! } : {}),
+      });
     default:
       throw new NexgenError('usage', `unknown command ${command} ${sub ?? ''}; run nexgen-os --help`);
   }
