@@ -23,7 +23,7 @@ export const PERFORMANCE_ENGINE_VERSION = 'solar-iec61724-0.3.0';
 const G_REF_W_M2 = 1000;
 
 export interface PerformanceRequest {
-  pvSystemId: string;
+  deviceId: string;
   /** First and last day included, `YYYY-MM-DD` in the participant's time zone. */
   from: string;
   to: string;
@@ -75,14 +75,14 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
       `select s.time_zone, p.kwp_dc,
               (($2::date)::timestamp at time zone coalesce(s.time_zone, 'UTC'))::text start,
               (($3::date + 1)::timestamp at time zone coalesce(s.time_zone, 'UTC'))::text "end"
-         from solar.pv_systems p
+         from solar.devices p
          join devices d on d.id = p.id
          join participants s on s.id = d.participant_id
         where p.id = $1`,
-      [request.pvSystemId, request.from, request.to],
+      [request.deviceId, request.from, request.to],
     )
   ).rows[0];
-  if (!system) throw new Error(`pv_system_not_found: ${request.pvSystemId}`);
+  if (!system) throw new Error(`pv_system_not_found: ${request.deviceId}`);
   if (!system.time_zone) throw new Error('time_zone_required: the participant of the PV system has no time zone; the indicators are given by month in it');
   const timeZone = system.time_zone;
   const kwp = Number(system.kwp_dc);
@@ -91,7 +91,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
   const measuredId = (
     await db.query<{ id: string }>(
       `select id from series where object_id = $1 and quantity_code = 'production_energy' and kind = 'measured' order by created_at, id limit 1`,
-      [request.pvSystemId],
+      [request.deviceId],
     )
   ).rows[0]?.id;
   if (!measuredId) throw new Error('series_not_found: no measured production on the PV system');
@@ -99,7 +99,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
 
   let estimate: { id: string; results: { series_id?: string; array_series?: Record<string, Record<string, string>> } } | undefined;
   if (request.yieldEstimateId) {
-    estimate = (await db.query<typeof estimate & object>(`select id, results from solar.estimates where id = $1 and device_id = $2`, [request.yieldEstimateId, request.pvSystemId])).rows[0];
+    estimate = (await db.query<typeof estimate & object>(`select id, results from solar.estimates where id = $1 and device_id = $2`, [request.yieldEstimateId, request.deviceId])).rows[0];
     if (!estimate) throw new Error(`estimate_not_of_system: ${request.yieldEstimateId} is not a yield estimate of this PV system`);
   }
 
@@ -109,7 +109,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
       `select s.id from series s
         where s.quantity_code = 'poa_irradiance' and s.kind = 'measured' and s.object_kind = 'device' and s.object_id = $1
         order by s.created_at, s.id`,
-      [request.pvSystemId],
+      [request.deviceId],
     )
   ).rows;
   let irradiance: Map<number, number>;
@@ -121,7 +121,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     irradianceInputs = { source: 'measured', series: [fingerprint(sensor)] };
     source = 'measured';
   } else if (estimate?.results.array_series) {
-    const arrays = (await db.query<{ name: string; kwp_dc: string }>(`select name, kwp_dc from solar.pv_arrays where pv_system_id = $1`, [request.pvSystemId])).rows;
+    const arrays = (await db.query<{ name: string; kwp_dc: string }>(`select name, kwp_dc from solar.pv_arrays where device_id = $1`, [request.deviceId])).rows;
     const weighted: { read: SeriesRead; kwp: number }[] = [];
     for (const a of arrays) {
       const id = estimate.results.array_series[a.name]?.poa_irradiance;
@@ -188,7 +188,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     },
   };
   const { estimateId } = await writeEstimate(db, {
-    provenance: PERFORMANCE_ENGINE_VERSION, deviceId: request.pvSystemId, inputs, results: () => ({ irradiance: source, total, months }), replaces: request.replaces,
+    provenance: PERFORMANCE_ENGINE_VERSION, deviceId: request.deviceId, inputs, results: () => ({ irradiance: source, total, months }), replaces: request.replaces,
   });
   return { estimateId, irradiance: source, total, months };
 }

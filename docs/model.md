@@ -205,7 +205,7 @@ Any other key is refused (`place_key_unknown`).
   the file it was read from, when no product is named), `retire_device`,
   `replace_device` (a new device of the same participant, installed the day
   the old one is retired). A module derives the types
-  it owns: `call derive_devices('solar.pv_systems', 'solar')` makes a table
+  it owns: `call derive_devices('solar.devices', 'solar')` makes a table
   with the same id, refused for any other type.
 - **device_directory** — products: manufacturer, model, unit power,
   capacity, price. Shared rows (`organisation_id` null) come from modules and

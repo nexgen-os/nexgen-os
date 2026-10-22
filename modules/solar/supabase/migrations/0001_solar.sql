@@ -2,7 +2,7 @@
 -- computed from.
 --
 -- Decision 0012. A PV system is a device of type `solar`, derived into
--- `solar.pv_systems` with the same id. It is made of arrays: one group of
+-- `solar.devices` with the same id. It is made of arrays: one group of
 -- modules with one orientation each (pvlib's Array, PVsyst's orientation,
 -- OpenSolar's module group, Orange Button's PVArray). The physics of a
 -- module or an inverter product is attached to its row of the core
@@ -33,10 +33,10 @@ create schema solar;
 grant usage on schema solar to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
--- pv_systems — the PV system as a device.
+-- devices — the PV system, a device of type solar.
 -- ---------------------------------------------------------------------------
 
-create table solar.pv_systems (
+create table solar.devices (
   id                        uuid primary key,
   -- Copied from the device by trigger, for row level security.
   organisation_id           uuid not null references organisations(id) on delete cascade,
@@ -56,19 +56,19 @@ create table solar.pv_systems (
   metadata                  jsonb not null default '{}',
   created_at                timestamptz not null default now(),
   updated_at                timestamptz not null default now(),
-  constraint pv_systems_kwp_positive check (kwp_dc is null or kwp_dc >= 0),
-  constraint pv_systems_kva_positive check (kva_ac is null or kva_ac >= 0),
-  constraint pv_systems_grid_connection check (grid_connection is null or grid_connection in ('injection', 'self_consumption', 'off_grid')),
-  constraint pv_systems_degradation_range check (degradation_pct_per_year is null or degradation_pct_per_year between 0 and 5),
-  constraint pv_systems_first_year_loss_range check (first_year_loss_pct is null or first_year_loss_pct between 0 and 20)
+  constraint devices_kwp_positive check (kwp_dc is null or kwp_dc >= 0),
+  constraint devices_kva_positive check (kva_ac is null or kva_ac >= 0),
+  constraint devices_grid_connection check (grid_connection is null or grid_connection in ('injection', 'self_consumption', 'off_grid')),
+  constraint devices_degradation_range check (degradation_pct_per_year is null or degradation_pct_per_year between 0 and 5),
+  constraint devices_first_year_loss_range check (first_year_loss_pct is null or first_year_loss_pct between 0 and 20)
 );
 
-comment on table solar.pv_systems is
-  'A PV system: a device of type solar, with its DC and AC power, grid connection, commissioning date and degradation (Orange Button PVSystem). Read with `from devices join solar.pv_systems using (id)`.';
+comment on table solar.devices is
+  'A PV system: a device of type solar, with its DC and AC power, grid connection, commissioning date and degradation (Orange Button PVSystem). Read with `from devices join solar.devices using (id)`.';
 
-call derive_devices('solar.pv_systems', 'solar');
+call derive_devices('solar.devices', 'solar');
 
-create or replace function solar.pv_systems_organisation()
+create or replace function solar.devices_organisation()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -79,12 +79,12 @@ begin
 end;
 $$;
 
-create trigger pv_systems_organisation before insert or update of id on solar.pv_systems
-  for each row execute function solar.pv_systems_organisation();
-create trigger pv_systems_set_updated_at before update on solar.pv_systems
+create trigger devices_organisation before insert or update of id on solar.devices
+  for each row execute function solar.devices_organisation();
+create trigger devices_set_updated_at before update on solar.devices
   for each row execute function set_updated_at();
-create index pv_systems_organisation_idx on solar.pv_systems (organisation_id);
-call secure_table('solar.pv_systems');
+create index devices_organisation_idx on solar.devices (organisation_id);
+call secure_table('solar.devices');
 
 -- ---------------------------------------------------------------------------
 -- module_products, inverter_products — the physics of a product.
@@ -314,7 +314,7 @@ call secure_table('solar.estimates');
 create table solar.pv_arrays (
   id                   uuid primary key default gen_random_uuid(),
   organisation_id      uuid not null references organisations(id) on delete cascade,
-  pv_system_id         uuid not null references solar.pv_systems(id) on delete cascade,
+  device_id         uuid not null references solar.devices(id) on delete cascade,
   name                 text not null,
   -- Its own, always: tilted frames on a flat roof differ from the roof. The
   -- `building` module fills them from the surface it places the array on when
@@ -362,7 +362,7 @@ create table solar.pv_arrays (
 comment on table solar.pv_arrays is
   'A group of modules with one orientation in a PV system: azimuth and tilt, mounting, module and inverter products and counts, string layout, albedo (pvlib Array, PVsyst orientation, OpenSolar module group, Orange Button PVArray).';
 
-create index pv_arrays_system_idx on solar.pv_arrays (pv_system_id);
+create index pv_arrays_system_idx on solar.pv_arrays (device_id);
 
 -- BEFORE INSERT / UPDATE: DC power comes from the module product when it
 -- is not given.
@@ -383,8 +383,8 @@ create trigger pv_arrays_fill before insert or update on solar.pv_arrays
   for each row execute function solar.pv_arrays_fill();
 -- The system of an array is a device of the core: the parent check reads
 -- its organisation there.
-create trigger pv_arrays_pv_system_id_check before insert or update of pv_system_id on solar.pv_arrays
-  for each row execute function parent_check('pv_system_id', 'devices');
+create trigger pv_arrays_device_id_check before insert or update of device_id on solar.pv_arrays
+  for each row execute function parent_check('device_id', 'devices');
 create trigger pv_arrays_variant_id_check before insert or update of variant_id on solar.pv_arrays
   for each row execute function parent_check('variant_id', 'solar.variants');
 create trigger pv_arrays_set_updated_at before update on solar.pv_arrays
@@ -403,9 +403,9 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
   select coalesce(
     (select sum(a.kwp_dc) from solar.pv_arrays a
-      where a.pv_system_id = p_system_id
+      where a.device_id = p_system_id
         and (a.variant_id is null or a.variant_id in (select variant_id from solar.variant_chain(p_variant_id)))),
-    (select kwp_dc from solar.pv_systems where id = p_system_id)
+    (select kwp_dc from solar.devices where id = p_system_id)
   );
 $$;
 

@@ -97,23 +97,23 @@ describe('a house', () => {
   it('lets a module derive the PV system into its own table, with the same id', async () => {
     await db.exec(`
       create schema energy;
-      create table energy.pv_systems (
+      create table energy.devices (
         id uuid primary key,
         inverter_count integer not null default 1,
         panel_technology text,
         annual_degradation numeric(5, 4) not null default 0.005
       );
-      call derive_devices('energy.pv_systems', 'solar');
+      call derive_devices('energy.devices', 'solar');
     `);
-    await db.query(`insert into energy.pv_systems (id, inverter_count, panel_technology) values ($1, 1, 'mono')`, [pv]);
+    await db.query(`insert into energy.devices (id, inverter_count, panel_technology) values ($1, 1, 'mono')`, [pv]);
     const r = await one<{ name: string; rated_power_kw: string; panel_technology: string }>(
       db,
-      `select d.name, d.rated_power_kw, p.panel_technology from devices d join energy.pv_systems p using (id) where d.id = $1`,
+      `select d.name, d.rated_power_kw, p.panel_technology from devices d join energy.devices p using (id) where d.id = $1`,
       [pv],
     );
     expect(r).toEqual({ name: 'PV system', rated_power_kw: '3.600', panel_technology: 'mono' });
     const battery = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Not a PV', device_type: 'battery' });
-    await expect(db.query(`insert into energy.pv_systems (id) values ($1)`, [battery])).rejects.toThrow(/device_type_mismatch/);
+    await expect(db.query(`insert into energy.devices (id) values ($1)`, [battery])).rejects.toThrow(/device_type_mismatch/);
     await db.query('delete from devices where id = $1', [battery]);
   });
 

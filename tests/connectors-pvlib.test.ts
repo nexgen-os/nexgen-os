@@ -166,8 +166,8 @@ describe('a yield estimate computed by pvlib', () => {
     const org = await organisation(db, 'A cooperative', USER_A);
     const home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
     system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 20 });
-    await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 20)', [system]);
-    await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
+    await db.query('insert into solar.devices (id, kwp_dc) values ($1, 20)', [system]);
+    await db.query(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
   });
 
   afterAll(async () => {
@@ -176,8 +176,8 @@ describe('a yield estimate computed by pvlib', () => {
 
   it.skipIf(!installed)(`the pvwatts profile through pvlib gives the annual of the pvwatts estimate on the same year, and records pvlib's version${skipped}`, async () => {
     const weather = () => ({ weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
-    const viaPvlib = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, engine: spec }, weather());
-    const here = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, typicalYear: false }, weather());
+    const viaPvlib = await estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, engine: spec }, weather());
+    const here = await estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, typicalYear: false }, weather());
     console.info(`a synthetic year, 20 kWp: pvwatts.ts ${here.annualKwh} kWh, pvlib ${viaPvlib.annualKwh} kWh (${pct(viaPvlib.annualKwh, here.annualKwh)})`);
     expect(Math.abs(viaPvlib.annualKwh - here.annualKwh) / here.annualKwh).toBeLessThan(0.01);
 

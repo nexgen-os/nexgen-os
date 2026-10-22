@@ -23,7 +23,7 @@ and written by the function that computed it
 
 | Table | What it is |
 |---|---|
-| `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
+| `solar.devices` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
 | `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
 | `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and variant, with its source |
@@ -72,7 +72,7 @@ losses, and where it is held in this module:
 | soiling | `soiling_loss` on the array, the system or the participant | every estimate, in place of the profile's `soiling` loss |
 | mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every estimate |
 | temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
-| degradation | `solar.pv_systems.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to an estimate |
+| degradation | `solar.devices.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to an estimate |
 
 ## Yield profiles shipped
 
@@ -97,7 +97,7 @@ say which weather, which period, which arrays, which models and losses, and
 which conventions it was computed with. Two estimates on the same roof are
 compared by reading their `solar.estimates.inputs` side by side.
 
-The request: `pvSystemId`, `years` (`from`, `to`, whole calendar years),
+The request: `deviceId`, `years` (`from`, `to`, whole calendar years),
 `profileCode` (`pvgis_like` unless given). The arrays are the system's
 (`solar.pv_arrays` of reality, by name), each with an azimuth, a tilt and a
 power; a system without arrays has no orientation and is refused
@@ -215,7 +215,7 @@ Production power and energy and the generic `irradiance` are the core's.
 
 ## Performance against the measurement
 
-`performanceIndicators(db, { pvSystemId, from, to, yieldEstimateId? })`
+`performanceIndicators(db, { deviceId, from, to, yieldEstimateId? })`
 ([`performance.ts`](src/performance.ts)) gives the indicators of IEC 61724-1
 for whole days in the participant's time zone, in total and by month:
 

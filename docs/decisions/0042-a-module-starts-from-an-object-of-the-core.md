@@ -20,14 +20,15 @@ nothing to do with its trade.
 three forms and no other:
 
 - **a derived table**, with the same id as the core object it enriches:
-  `solar.pv_systems` derives devices of type `solar` through
+  `solar.devices` derives devices of type `solar` through
   `derive_devices()`, `grid.meters` adds the operator and the voltage
   level of a meter, `billing.organisations` is keyed by the organisation's
   own id. A derived table that is the module's side of a core object carries
   that object's name in the module schema — `grid.meters` is the meter as the
   grid sees it, `billing.contacts` the contact as the invoicing side sees it: one
-  word per thing across schemas — and a derived table that holds a subtype
-  carries the subtype's name (`solar.pv_systems`);
+  word per thing across schemas — and so does a derived table that holds a
+  subtype, the subtype being its device type (`solar.devices`, the devices
+  of type `solar`);
 - **a secondary table**, with a foreign key to a core object:
   `solar.pv_arrays` belongs to a PV system, `building.sites` and
   `building.buildings` belong to a participant, `solar.estimates` to the PV

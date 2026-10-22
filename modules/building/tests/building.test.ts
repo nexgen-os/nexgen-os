@@ -53,6 +53,8 @@ describe('the module', () => {
       { table_schema: 'building', table_name: 'buildings' }, { table_schema: 'building', table_name: 'sites' },
       { table_schema: 'building', table_name: 'spaces' }, { table_schema: 'building', table_name: 'surfaces' },
       { table_schema: 'nexgen', table_name: 'devices' },
+      // The PV system: a device of the core as `solar` enriches it, never one the building places.
+      { table_schema: 'solar', table_name: 'devices' },
     ]);
     const columns = await one<{ n: number }>(
       db, `select count(*)::int n from information_schema.columns
@@ -132,10 +134,10 @@ describe('a participant occupies a unit', () => {
 describe('a PV array', () => {
   it('belongs to its system and keeps its own orientation, whatever the roof face below it', async () => {
     const system = (await one<{ id: string }>(db, `select install_device($1, 'solar', 'Roof PV') id`, [owner])).id;
-    await db.query('insert into solar.pv_systems (id) values ($1)', [system]);
-    const rack = await insert(db, 'solar.pv_arrays', { organisation_id: org, pv_system_id: system, name: 'Rack', azimuth_deg: 180, tilt_deg: 15, kwp_dc: 3 });
+    await db.query('insert into solar.devices (id) values ($1)', [system]);
+    const rack = await insert(db, 'solar.pv_arrays', { organisation_id: org, device_id: system, name: 'Rack', azimuth_deg: 180, tilt_deg: 15, kwp_dc: 3 });
     const r = await one<{ participant: string; azimuth_deg: string; tilt_deg: string }>(
-      db, `select participant_of('device', pv_system_id) participant, azimuth_deg, tilt_deg from solar.pv_arrays where id = $1`, [rack]);
+      db, `select participant_of('device', device_id) participant, azimuth_deg, tilt_deg from solar.pv_arrays where id = $1`, [rack]);
     expect(r).toEqual({ participant: owner, azimuth_deg: '180.00', tilt_deg: '15.00' });
   });
 });

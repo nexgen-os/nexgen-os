@@ -16,7 +16,7 @@ beforeAll(async () => {
   db = await freshDatabase(['grid', 'weather', 'solar']);
   await db.exec(await readFile(`${repoRoot}/docs/demo/01-house-pv-battery.sql`, 'utf8'));
   const readme = await readFile(`${repoRoot}/README.md`, 'utf8');
-  const describeSystem = readme.match(/^\s*(insert into solar\.pv_systems .*;)$/m)?.[1];
+  const describeSystem = readme.match(/^\s*(insert into solar\.devices .*;)$/m)?.[1];
   const describeArray = readme.match(/^\s*(insert into solar\.pv_arrays .*;)$/m)?.[1];
   if (!describeSystem || !describeArray) throw new Error('the README does not describe the PV system of example 01 and its array');
   await db.exec(`set search_path = nexgen, public, extensions; ${describeSystem} ${describeArray}`);

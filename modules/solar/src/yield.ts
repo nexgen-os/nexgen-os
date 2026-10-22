@@ -57,7 +57,7 @@ export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.3.0';
 const WEATHER_MODEL = 'era5';
 
 export interface YieldRequest {
-  pvSystemId: string;
+  deviceId: string;
   years: { from: number; to: number };
   /** Default `pvgis_like`. `pvgis_like` runs through PVGIS, `pvwatts` here. */
   profileCode?: string;
@@ -191,7 +191,7 @@ export async function estimateYield(db: Db, request: YieldRequest, clients: Yiel
   }
   if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
   // `pvwatts` and the engines cut days and months in the participant's local calendar.
-  const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined, request.years);
+  const context = await loadContext(db, request.deviceId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined, request.years);
   if (request.engine) return estimateWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
   return profileCode === 'pvgis_like'
     ? estimatePvgisLike(db, request, context, given.pvgis ?? pvgis())
@@ -199,19 +199,19 @@ export async function estimateYield(db: Db, request: YieldRequest, clients: Yiel
 }
 
 /** The system, its position, its arrays (or one for the whole system) and the profile, checked. */
-async function loadContext(db: Db, pvSystemId: string, profileCode: string, needsTimeZone: boolean, years: { from: number }): Promise<Context> {
+async function loadContext(db: Db, deviceId: string, profileCode: string, needsTimeZone: boolean, years: { from: number }): Promise<Context> {
   const system = (
     await db.query<SystemRow>(
       `select d.organisation_id, d.participant_id, s.time_zone, p.kwp_dc,
               ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat
-         from solar.pv_systems p
+         from solar.devices p
          join devices d on d.id = p.id
          join participants s on s.id = d.participant_id
         where p.id = $1`,
-      [pvSystemId],
+      [deviceId],
     )
   ).rows[0];
-  if (!system) throw new Error(`pv_system_not_found: ${pvSystemId}`);
+  if (!system) throw new Error(`pv_system_not_found: ${deviceId}`);
   if (system.lon === null || system.lat === null) throw new Error('participant_without_position: the participant of the PV system has no geometry');
   if (needsTimeZone && !system.time_zone) throw new Error(`time_zone_required: the participant of the PV system has no time zone; ${profileCode} cuts days and months in it`);
 
@@ -233,9 +233,9 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
          from solar.pv_arrays a
          left join solar.module_products m on m.id = a.module_product_id
          left join solar.inverter_products i on i.id = a.inverter_product_id
-        where a.pv_system_id = $1 and a.variant_id is null
+        where a.device_id = $1 and a.variant_id is null
         order by a.name, a.id`,
-      [pvSystemId],
+      [deviceId],
     )
   ).rows;
   if (rows.length === 0) {
@@ -252,7 +252,7 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
     arrays.push({
       ...a, kwp: Number(a.kwp_dc), azimuth_deg: Number(a.azimuth_deg), tilt_deg: Number(a.tilt_deg),
       gamma_pdc: a.gamma_pdc === null ? null : Number(a.gamma_pdc), albedo: a.albedo === null ? null : Number(a.albedo),
-      soiling: await soilingOf(db, a.id ?? pvSystemId, years.from),
+      soiling: await soilingOf(db, a.id ?? deviceId, years.from),
     });
   }
   return { system, where: { lon: system.lon, lat: system.lat }, profile, arrays, kwp: arrays.reduce((s, a) => s + a.kwp, 0) };
@@ -317,7 +317,7 @@ async function estimatePvgisLike(db: Db, request: YieldRequest, { system, where,
   const energy = sumSeries(perArray.map((x) => x.answer.series.find((s) => s.quantity_code === 'production_energy')!));
   const temperature = perArray[0].answer.series.find((s) => s.quantity_code === 'temperature')!;
   const owned: OwnedSeries[] = [
-    { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: client.source_code, series: energy },
+    { key: 'production', objectKind: 'device', objectId: request.deviceId, sourceCode: client.source_code, series: energy },
     { key: 'temperature', objectKind: 'participant', objectId: system.participant_id, sourceCode: client.source_code, series: temperature },
   ];
 
@@ -326,7 +326,7 @@ async function estimatePvgisLike(db: Db, request: YieldRequest, { system, where,
   const radiationDb = perArray[0].answer.meta.radiation_db;
   const { estimateId, results } = await writeEstimate(db, {
     provenance: ENGINE_VERSION,
-    deviceId: request.pvSystemId,
+    deviceId: request.deviceId,
     inputs: {
       profile: 'pvgis_like',
       weather: { source: client.source_code, radiation_db: radiationDb, meteo_db: perArray[0].answer.meta.meteo_db, years: request.years, horizon: perArray[0].answer.meta.horizon },
@@ -411,7 +411,7 @@ async function estimatePvwatts(db: Db, request: YieldRequest, { system, where, p
 
   const name = months ? `typical year ${years.from}-${years.to}` : null;
   const owned: OwnedSeries[] = [
-    { key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
+    { key: 'production', objectKind: 'device', objectId: request.deviceId, sourceCode: weather.source_code, name, series: { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: rounded(energy) } },
     ...(placeTemperature ? [{ key: 'temperature', objectKind: 'participant', objectId: system.participant_id, sourceCode: weather.source_code, name, series: { ...placeTemperature, values: rounded(temperature) } }] : []),
   ];
 
@@ -420,7 +420,7 @@ async function estimatePvwatts(db: Db, request: YieldRequest, { system, where, p
   const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
   const { estimateId, results } = await writeEstimate(db, {
     provenance: PVWATTS_ENGINE_VERSION,
-    deviceId: request.pvSystemId,
+    deviceId: request.deviceId,
     inputs: {
       profile: 'pvwatts',
       weather: {
@@ -582,7 +582,7 @@ async function estimateWithEngine(db: Db, request: YieldRequest, profileCode: st
   const energy = answered.find((s) => s.quantity_code === 'production_energy' && s.array === undefined);
   if (!energy) throw new Error(`engine_contract_mismatch: ${spec.name} answered no production_energy for the system`);
   const name = `${spec.name} ${years.from}-${years.to}`;
-  const owned: OwnedSeries[] = [{ key: 'production', objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name, series: energy, unit: engineUnit(energy.unit) }];
+  const owned: OwnedSeries[] = [{ key: 'production', objectKind: 'device', objectId: request.deviceId, sourceCode: weather.source_code, name, series: energy, unit: engineUnit(energy.unit) }];
   const arrayKeys: { array: string; quantity: string; key: string }[] = [];
   for (const s of answered.filter((x) => x.array !== undefined)) {
     const a = arrays.find((x) => x.name === s.array);
@@ -591,14 +591,14 @@ async function estimateWithEngine(db: Db, request: YieldRequest, profileCode: st
     // apart by the array's name; the results say which array each is.
     const key = `array ${a.name}: ${s.quantity_code}`;
     arrayKeys.push({ array: a.name, quantity: s.quantity_code, key });
-    owned.push({ key, objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name: `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
+    owned.push({ key, objectKind: 'device', objectId: request.deviceId, sourceCode: weather.source_code, name: `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
   }
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
   const annualKwh = round(covered.annual);
   const { estimateId, results } = await writeEstimate(db, {
     provenance: described.version,
-    deviceId: request.pvSystemId,
+    deviceId: request.deviceId,
     inputs: {
       profile: profileCode,
       engine: { name: spec.name, version: described.version, contract: ENGINE_CONTRACT, dependencies: described.dependencies },

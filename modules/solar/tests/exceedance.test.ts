@@ -25,7 +25,7 @@ beforeAll(async () => {
   org = await organisation(db, 'A cooperative', USER_A);
   const home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 1 });
-  await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 1)', [system]);
+  await db.query('insert into solar.devices (id, kwp_dc) values ($1, 1)', [system]);
 });
 
 afterAll(async () => {

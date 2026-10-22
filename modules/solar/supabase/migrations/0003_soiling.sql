@@ -37,7 +37,7 @@ declare
 begin
   -- An array: its own value, then its system's cascade, where the system's
   -- own value is the device's level. A system: the core's cascade.
-  select pv_system_id, soiling_loss into v_sys, v_own from solar.pv_arrays where id = p_object_id;
+  select device_id, soiling_loss into v_sys, v_own from solar.pv_arrays where id = p_object_id;
   if v_sys is null then
     return parameter_of('device', p_object_id, 'soiling_loss', p_at);
   end if;

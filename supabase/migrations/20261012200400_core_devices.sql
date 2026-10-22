@@ -7,8 +7,8 @@
 -- equip and point, SensorThings Sensor and Datastream): a weather station is
 -- one device with several series. The core keeps what every device has. A
 -- module derives the types it owns into its own table, with the same id
--- (`solar.pv_systems`): a page reads
--- `from devices join solar.pv_systems using (id)`.
+-- (`solar.devices`): a page reads
+-- `from devices join solar.devices using (id)`.
 --
 -- A device belongs to a participant (decision 0043), and is behind the
 -- meters that participant carries (`participant_meters()`): there is no
@@ -169,7 +169,7 @@ end;
 $$;
 
 comment on procedure derive_devices(text, text) is
-  'Declares a module table as the derivation of devices of one type: `call derive_devices(''solar.pv_systems'', ''solar'')`.';
+  'Declares a module table as the derivation of devices of one type: `call derive_devices(''solar.devices'', ''solar'')`.';
 
 -- ---------------------------------------------------------------------------
 -- Gestures

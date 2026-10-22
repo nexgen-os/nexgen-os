@@ -59,21 +59,21 @@ describe('the solar module', () => {
 
   it('derives a PV system from a device of type solar, and refuses any other type', async () => {
     await db.query(
-      `insert into solar.pv_systems (id, kwp_dc, kva_ac, grid_connection, commissioned_on, degradation_pct_per_year)
+      `insert into solar.devices (id, kwp_dc, kva_ac, grid_connection, commissioned_on, degradation_pct_per_year)
        values ($1, 5, 4.6, 'self_consumption', '2026-04-01', 0.4)`,
       [pv],
     );
     const r = await one<{ name: string; organisation_id: string; grid_connection: string }>(
       db,
-      `select d.name, p.organisation_id, p.grid_connection from devices d join solar.pv_systems p using (id) where d.id = $1`,
+      `select d.name, p.organisation_id, p.grid_connection from devices d join solar.devices p using (id) where d.id = $1`,
       [pv],
     );
     expect(r).toEqual({ name: 'PV system', organisation_id: org, grid_connection: 'self_consumption' });
     const battery = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Battery', device_type: 'battery' });
-    await expect(db.query('insert into solar.pv_systems (id) values ($1)', [battery])).rejects.toThrow(/device_type_mismatch/);
+    await expect(db.query('insert into solar.devices (id) values ($1)', [battery])).rejects.toThrow(/device_type_mismatch/);
     await expect(
-      db.query(`update solar.pv_systems set grid_connection = 'sometimes' where id = $1`, [pv]),
-    ).rejects.toThrow(/pv_systems_grid_connection/);
+      db.query(`update solar.devices set grid_connection = 'sometimes' where id = $1`, [pv]),
+    ).rejects.toThrow(/devices_grid_connection/);
   });
 
   it('gives the system its own DC power while it has no array', async () => {
@@ -83,23 +83,23 @@ describe('the solar module', () => {
 
   it('describes two arrays, each with its own orientation, read from the roof faces it looks like', async () => {
     const southArray = await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'South', mounting: 'roof_parallel', azimuth_deg: 180, tilt_deg: 30,
+      organisation_id: org, device_id: pv, name: 'South', mounting: 'roof_parallel', azimuth_deg: 180, tilt_deg: 30,
       module_product_id: moduleProduct, module_count: 8, modules_per_string: 8, strings: 1,
       inverter_product_id: inverterProduct, inverter_count: 1,
     });
     await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'West', mounting: 'roof_parallel', azimuth_deg: 270, tilt_deg: 25,
+      organisation_id: org, device_id: pv, name: 'West', mounting: 'roof_parallel', azimuth_deg: 270, tilt_deg: 25,
       module_product_id: moduleProduct, module_count: 4, kwp_dc: 1.7,
     });
     const r = await db.query<{ name: string; azimuth_deg: string; tilt_deg: string; kwp_dc: string }>(
-      `select name, azimuth_deg, tilt_deg, kwp_dc from solar.pv_arrays where pv_system_id = $1 order by name`,
+      `select name, azimuth_deg, tilt_deg, kwp_dc from solar.pv_arrays where device_id = $1 order by name`,
       [pv],
     );
     expect(r.rows).toEqual([
       { name: 'South', azimuth_deg: '180.00', tilt_deg: '30.00', kwp_dc: '3.400' },
       { name: 'West', azimuth_deg: '270.00', tilt_deg: '25.00', kwp_dc: '1.700' },
     ]);
-    const owner = await one<{ participant: string }>(db, `select participant_of('device', pv_system_id) participant from solar.pv_arrays where id = $1`, [southArray]);
+    const owner = await one<{ participant: string }>(db, `select participant_of('device', device_id) participant from solar.pv_arrays where id = $1`, [southArray]);
     expect(owner).toEqual({ participant: home });
     // An array is not placed on a roof face: it keeps its own azimuth and tilt, nothing else.
     const columns = await db.query<{ column_name: string }>(
@@ -115,7 +115,7 @@ describe('the solar module', () => {
   it('refuses a string layout that does not add up', async () => {
     await expect(
       insert(db, 'solar.pv_arrays', {
-        organisation_id: org, pv_system_id: pv, name: 'Odd', module_count: 9, modules_per_string: 4, strings: 2,
+        organisation_id: org, device_id: pv, name: 'Odd', module_count: 9, modules_per_string: 4, strings: 2,
       }),
     ).rejects.toThrow(/pv_arrays_strings_add_up/);
   });
@@ -195,7 +195,7 @@ describe('design variants', () => {
     expect((await one<{ parent: string }>(db, 'select parent_id parent from solar.variants where id = $1', [b])).parent).toBe(a);
     const before = Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp);
     await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'Carport', mounting: 'open_rack', azimuth_deg: 180, tilt_deg: 10, kwp_dc: 2, variant_id: b,
+      organisation_id: org, device_id: pv, name: 'Carport', mounting: 'open_rack', azimuth_deg: 180, tilt_deg: 10, kwp_dc: 2, variant_id: b,
     });
     expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp)).toBe(before);
     expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1, $2) kwp', [pv, b])).kwp)).toBe(before + 2);
@@ -249,7 +249,7 @@ describe('row level security', () => {
       one<{ arrays: number; systems: number; modules: number; inverters: number; profiles: number }>(
         db,
         `select (select count(*)::int from solar.pv_arrays) arrays,
-                (select count(*)::int from solar.pv_systems) systems,
+                (select count(*)::int from solar.devices) systems,
                 (select count(*)::int from solar.module_products) modules,
                 (select count(*)::int from solar.inverter_products) inverters,
                 (select count(*)::int from solar.yield_profiles) profiles`,

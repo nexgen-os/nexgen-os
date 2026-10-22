@@ -28,7 +28,7 @@ manifest (`tests/module-manifests.test.ts`).
    foreign key; the core has no hook and no idea it exists.
 2. **Start from an object of the core, and enrich it** ([0042](../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
    A module that needs more about an object of the core adds a table with
-   the same id (`call derive_devices('solar.pv_systems', 'solar')`;
+   the same id (`call derive_devices('solar.devices', 'solar')`;
    `grid.meters`, keyed by the meter's id); one that adds a kind of
    object of its own gives it a foreign key to the core object it belongs
    to, and says what describes it in its own columns (`building.buildings`:

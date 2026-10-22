@@ -53,9 +53,9 @@ beforeAll(async () => {
   org = await organisation(db, 'A cooperative', USER_A);
   home = await participant(db, { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
-  await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
-  south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
-  east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
+  await db.query('insert into solar.devices (id, kwp_dc) values ($1, 30)', [system]);
+  south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
+  east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
 });
 
 afterAll(async () => {
@@ -86,7 +86,7 @@ describe('a yield estimate with the soiling of the place', () => {
       asked.push(url);
       return { ok: true, status: 200, json: async () => recorded };
     };
-    const result = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
+    const result = await estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
     expect(asked.map((u) => new URL(u).searchParams.get('loss'))).toEqual(['14', '14']);
     const estimate = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
     expect(estimate.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
@@ -96,7 +96,7 @@ describe('a yield estimate with the soiling of the place', () => {
   it('sends the place\'s soiling to an engine in place of the profile\'s (pvsyst_like), and records it', async () => {
     const result = await estimateYield(
       db,
-      { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
+      { deviceId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
     );
     const estimate = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
@@ -112,7 +112,7 @@ describe('a yield estimate with the soiling of the place', () => {
     await soiling('pv_array', south, 0.01, 'cleaned every spring');
     await expect(estimateYield(
       db,
-      { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
+      { deviceId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
     )).rejects.toThrow(/losses_differ_between_arrays: (South and East|East and South) have different soiling/);
   });
