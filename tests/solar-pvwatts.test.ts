@@ -343,8 +343,8 @@ describe('a pvwatts yield estimate', () => {
     const temperature = await one<{ n: number }>(db, `select count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.object_id = $1 and s.quantity_code = 'temperature'`, [home]);
     expect(temperature.n).toBe(8760);
 
-    const estimate = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.estimates where id = $1', [result.estimateId]);
-    expect(estimate.engine_version).toBe('solar-pvwatts-0.3.0');
+    const estimate = await one<{ provenance: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select provenance, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.provenance).toBe('solar-pvwatts-0.3.0');
     expect(estimate.inputs).toMatchObject({
       profile: 'pvwatts',
       weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, period: { from: '2022-12-31', to: '2024-01-01' }, time_zone: 'Europe/Brussels' },
@@ -408,7 +408,7 @@ describe('a pvwatts yield estimate', () => {
     const viaPvgis = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch: answering(seriescalc) }));
     const viaPvwatts = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
 
-    const estimates = await db.query<{ id: string; engine_version: string; inputs: Record<string, any> }>('select id, engine_version, inputs from solar.estimates where id = any($1) order by engine_version', [[viaPvgis.estimateId, viaPvwatts.estimateId]]);
+    const estimates = await db.query<{ id: string; provenance: string; inputs: Record<string, any> }>('select id, provenance, inputs from solar.estimates where id = any($1) order by provenance', [[viaPvgis.estimateId, viaPvwatts.estimateId]]);
     const [pvgisLike, pvwatts] = estimates.rows;
     expect(pvgisLike.id).toBe(viaPvgis.estimateId);
     expect([pvgisLike.inputs.profile, pvwatts.inputs.profile]).toEqual(['pvgis_like', 'pvwatts']);

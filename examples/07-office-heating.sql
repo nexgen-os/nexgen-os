@@ -8,7 +8,7 @@
 -- setpoint of the building, the boiler's flow temperature, a winter week of
 -- gas consumption, and the second heat pump planned to replace the boiler
 -- once the facades are insulated, with the insulation design as a document.
--- A heat loss computed for either envelope would be a calculation of a `thermal`
+-- A heat loss computed for either envelope would be a figure of a `thermal`
 -- module, which does not ship yet.
 
 insert into organisations (id, name) values

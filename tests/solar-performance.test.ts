@@ -59,22 +59,23 @@ describe('the IEC 61724-1 indicators', () => {
     expect(got.months.map((m) => [m.period, m.hours])).toEqual([['2025-06', 5 * 24 - 1], ['2025-07', 3 * 24]]);
     expect(got.months.reduce((s, m) => s + m.energy_kwh, 0)).toBeCloseTo(got.total.energy_kwh, 5);
 
-    const estimate = await one<{ engine_version: string; device_id: string; inputs: Record<string, any> }>(db, 'select engine_version, device_id, inputs from solar.estimates where id = $1', [got.estimateId]);
-    expect(estimate).toMatchObject({ engine_version: PERFORMANCE_ENGINE_VERSION, device_id: system });
+    const estimate = await one<{ provenance: string; device_id: string; inputs: Record<string, any> }>(db, 'select provenance, device_id, inputs from solar.estimates where id = $1', [got.estimateId]);
+    expect(estimate).toMatchObject({ provenance: PERFORMANCE_ENGINE_VERSION, device_id: system });
     expect(estimate.inputs).toMatchObject({ kind: 'performance', standard: 'IEC 61724-1', kwp: 10, period: { from: '2025-06-26', to: '2025-07-03', time_zone: 'Europe/Brussels' }, irradiance: { source: 'measured', series: [{ series_id: sensor.seriesId }] } });
 
-    // The same readings give the same estimate; a new reading, a new one.
-    expect((await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' })).estimateId).toBe(got.estimateId);
+    // A new reading, a new computation: it replaces the estimate it names.
     await storeSeries(db, target('device', system, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: [{ at: '2025-06-26T12:00:00.000Z', value: 800 }] });
-    const renewed = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' });
-    expect(renewed.estimateId).not.toBe(got.estimateId);
+    const renewed = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', replaces: got.estimateId });
+    expect(renewed.estimateId).toBe(got.estimateId);
     expect(renewed.total.hours).toBe(8 * 24);
+    const replaced = await one<{ results: { total: { hours: number } } }>(db, 'select results from solar.estimates where id = $1', [got.estimateId]);
+    expect(replaced.results.total.hours).toBe(8 * 24);
   });
 
   it('compares with a yield estimate: the energy performance index, and the estimate\'s irradiance when no sensor is there', async () => {
     const expected = await storeSeries(db, target('device', system, 'simulated', 'fake 2025-2025'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8 / 0.95) });
     const poa = await storeSeries(db, target('device', system, 'simulated', 'fake 2025-2025 South'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => sun(i) * 1.05) });
-    const yieldEstimate = (await db.query<{ id: string }>(`select record_calculation('solar.estimates', 'device', $1, 'fake 1.0.0', '{"profile": "pvwatts"}', $2::jsonb) id`, [system, JSON.stringify({ series_id: expected.seriesId, array_series: { South: { poa_irradiance: poa.seriesId } } })])).rows[0].id;
+    const yieldEstimate = (await db.query<{ id: string }>(`insert into solar.estimates (organisation_id, device_id, provenance, inputs, results) values (object_organisation('device', $1), $1, 'fake 1.0.0', '{"profile": "pvwatts"}', $2::jsonb) returning id`, [system, JSON.stringify({ series_id: expected.seriesId, array_series: { South: { poa_irradiance: poa.seriesId } } })])).rows[0].id;
 
     const withSensor = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', yieldEstimateId: yieldEstimate });
     expect(withSensor.irradiance).toBe('measured');

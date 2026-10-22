@@ -35,12 +35,13 @@ const participantOf = (built: boolean, kind: string, id: string) =>
   built
     ? `case when ${kind} in ('site', 'building', 'space', 'surface') then building.participant_of(${kind}, ${id}) else participant_of(${kind}, ${id}) end`
     : `participant_of(${kind}, ${id})`;
-/** Every calculation of every module, in each table calculation_is_final() guards. */
+/** Every figure of every module, in each of its tables of the shape of a figure (provenance, inputs, results). */
 const everyCalculation = async (db: Awaited<ReturnType<typeof freshDatabase>>): Promise<string> => {
   const tables = (await db.query<{ t: string }>(
     `select format('%I.%I', n.nspname, c.relname) t
-       from modules m join pg_namespace n on n.nspname = m.schema_name join pg_class c on c.relnamespace = n.oid
-       join pg_trigger tg on tg.tgrelid = c.oid join pg_proc p on p.oid = tg.tgfoid and p.proname = 'calculation_is_final'
+       from modules m join pg_namespace n on n.nspname = m.schema_name join pg_class c on c.relnamespace = n.oid and c.relkind = 'r'
+      where (select count(*) from information_schema.columns f
+              where f.table_schema = n.nspname and f.table_name = c.relname and f.column_name in ('provenance', 'inputs', 'results')) = 3
       order by 1`,
   )).rows;
   return tables.length ? tables.map((t) => `select id from ${t.t}`).join(' union all ') : 'select null::uuid id where false';

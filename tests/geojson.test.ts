@@ -118,8 +118,8 @@ describe('the GeoJSON export of a participant', () => {
     expect(array).toMatchObject({ device_type: 'solar', participant_id: FARM, rated_power_kw: 99.19, unit_count: 182, installation_date: '2023-06-20' });
     expect(byId(fc, BARN_ARRAY).geometry).toBeNull();
     expect(array.calculations).toHaveLength(1);
-    expect(array.calculations[0]).toMatchObject({ module: 'solar', table: 'estimates', engine_version: 'pvgis-5.3+solar-0.3.0', results: { annual_kwh: 99190 } });
-    expect(array.calculations[0].inputs_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(array.calculations[0]).toMatchObject({ module: 'solar', table: 'estimates', provenance: 'pvgis-5.3+solar-0.3.0', results: { annual_kwh: 99190 } });
+    expect(array.calculations[0].updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(byId(fc, shedArray).properties.serial_number).toBe('SN-0042');
   });
 

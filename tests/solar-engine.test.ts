@@ -64,8 +64,8 @@ describe('a yield estimate computed by an engine', () => {
       { object_id: system, quantity_code: 'production_energy', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
     ]);
 
-    const estimate = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.estimates where id = $1', [result.estimateId]);
-    expect(estimate.engine_version).toBe('fake 1.0.0');
+    const estimate = await one<{ provenance: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select provenance, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.provenance).toBe('fake 1.0.0');
     expect(estimate.inputs).toMatchObject({
       profile: 'pvwatts',
       engine: { name: 'fake', version: 'fake 1.0.0', contract: 1, dependencies: { node: process.versions.node } },

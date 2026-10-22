@@ -60,8 +60,8 @@ describe('a pvgis_like yield estimate', () => {
     );
     expect(series).toEqual({ kind: 'simulated', source: 'pvgis', n: 48, max: Math.round(0.35008 * 2 * 1e6) / 1e6 });
 
-    const estimate = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.estimates where id = $1', [result.estimateId]);
-    expect(estimate.status).toBe('finished');
+    const estimate = await one<{ provenance: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select provenance, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.provenance).toBe('pvgis-5.3+solar-0.3.0');
     expect(estimate.inputs).toMatchObject({
       profile: 'pvgis_like',
       weather: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', years: { from: 2023, to: 2023 } },

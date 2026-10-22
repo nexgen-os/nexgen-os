@@ -154,16 +154,18 @@ describe('a curve reconstructed from a bill', () => {
     expect(at('2026-01-15T02:00:00.000Z')).toBeCloseTo(closed * 0.25, 5);
   });
 
-  it('is an estimate of the module that says its profile, its hours, its energy and its conventions, and the same inputs give the same estimate', async () => {
+  it('is an estimate of the module that says its profile, its hours, its energy and its conventions, and a new computation replaces the one it names', async () => {
     const request = { participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours', energy: { kwh: 41_850, source: 'electricity bill January 2026' } };
-    const first = await reconstructConsumption(db, request);
-    const again = await reconstructConsumption(db, request);
-    expect(again.estimateId).toBe(first.estimateId);
-    const estimate = await one<{ participant_id: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select participant_id, engine_version, inputs, results from consumption.estimates where id = $1', [first.estimateId],
+    const earlier = await reconstructConsumption(db, request);
+    const first = await reconstructConsumption(db, { ...request, replaces: earlier.estimateId });
+    expect(first.estimateId).toBe(earlier.estimateId);
+    expect((await db.query('select id from series where id = $1', [earlier.seriesId])).rows).toEqual([]);
+    await expect(reconstructConsumption(db, { ...request, replaces: '00000000-0000-4000-8000-00000000dead' })).rejects.toThrow(/estimate_not_found/);
+    const estimate = await one<{ participant_id: string; provenance: string; inputs: Record<string, any>; results: Record<string, any> }>(
+      db, 'select participant_id, provenance, inputs, results from consumption.estimates where id = $1', [first.estimateId],
     );
     expect(estimate.participant_id).toBe(BLOCK);
-    expect(estimate.engine_version).toBe('consumption-curve-0.3.0');
+    expect(estimate.provenance).toBe('consumption-curve-0.3.0');
     expect(estimate.inputs.profile).toMatchObject({ code: 'office_hours', method: 'activity_hours', closed_ratio: 0.25 });
     expect(estimate.inputs.activity_hours).toHaveLength(5);
     expect(estimate.inputs.activity_hours[0]).toEqual({ weekday: 1, opens: '07:00:00', closes: '19:00:00', valid_from: null, valid_to: null });
@@ -188,7 +190,7 @@ describe('a curve reconstructed from a bill', () => {
 });
 
 describe('a curve on quarter-hours', () => {
-  it('takes the step of its profile, and its series belongs to an estimate that is final', async () => {
+  it('takes the step of its profile, and its series names its estimate', async () => {
     await db.query(
       `insert into consumption.load_profiles (code, name, method, slots_per_day, day_shapes, published_by)
        values ('flat_quarter_hours', 'Flat, by quarter-hours', 'day_shapes', 96,
@@ -199,7 +201,8 @@ describe('a curve on quarter-hours', () => {
     // Five weekdays carry the energy, the weekend nothing: 1 kWh a quarter-hour.
     const v = await one<{ value: number }>(db, `select value from series_values where series_id = $1 and at = '2026-03-02T10:00:00Z'`, [r.seriesId]);
     expect(v.value).toBeCloseTo(1, 9);
-    await expect(store(db, r.seriesId, [{ at: '2026-03-02T10:00:00Z', value: 2 }])).rejects.toThrow(/calculation_is_final/);
+    const series = await one<{ source: string }>(db, 'select source from series where id = $1', [r.seriesId]);
+    expect(series.source).toBe(`consumption.estimates:${r.estimateId}`);
   });
 });
 

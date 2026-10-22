@@ -87,7 +87,8 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 
 -- The month's settlement, computed in the community module: the lines
 -- of who received how much, and at which price.
-select record_calculation('community.settlements', 'project', '00000000-0000-4000-8000-000300000020', 'settlement_example 0.3.0',
+insert into community.settlements (organisation_id, project_id, provenance, inputs, results) values
+ ('00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'settlement_example 0.3.0',
   '{"period": "2026-05", "allocation": "proportional", "price_eur_mwh": 95}',
   '{"shared_kwh": 18420, "lines": [
      {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95},

@@ -1,5 +1,5 @@
-// What each person may see and do, what never changes once written, and
-// what the core publishes.
+// What each person may see and do, what the core refuses, and what it
+// publishes.
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -82,9 +82,9 @@ describe('row level security', () => {
   });
 });
 
-describe('calculations', () => {
-  // A module that computes keeps its figures in a table of its own, of the
-  // shape the core's gesture writes (core/migrations/…_core_modules_calculations.sql).
+describe("a module's figures", () => {
+  // A module that computes keeps its figures in a plain table of its own, of
+  // the shape core/migrations/…_core_modules.sql describes.
   beforeAll(async () => {
     await db.exec(`
       create schema pv;
@@ -93,58 +93,36 @@ describe('calculations', () => {
         id               uuid primary key default gen_random_uuid(),
         organisation_id  uuid not null references nexgen.organisations(id) on delete cascade,
         participant_id   uuid not null references nexgen.participants(id) on delete cascade,
-        engine_version   text not null,
+        provenance       text not null,
         inputs           jsonb not null,
-        inputs_hash      text not null,
-        results          jsonb,
-        status           text not null default 'started' check (status in ('started', 'finished')),
-        started_at       timestamptz not null default now(),
-        finished_at      timestamptz,
-        check ((status = 'started') = (finished_at is null)));
-      create unique index estimates_one_per_input on pv.estimates (organisation_id, inputs_hash) where status = 'finished';
-      create trigger estimates_is_final before update on pv.estimates for each row execute function nexgen.calculation_is_final();
+        results          jsonb not null,
+        created_at       timestamptz not null default now(),
+        updated_at       timestamptz not null default now());
+      create trigger estimates_set_updated_at before update on pv.estimates for each row execute function nexgen.set_updated_at();
       call nexgen.secure_table('pv.estimates');
     `);
   });
 
-  it('returns the same calculation for the same inputs and engine version', async () => {
-    const inputs = { horizon: '2027', weather: 'tmy' };
-    const first = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_calculation('pv.estimates', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [homeA, inputs]),
-    );
-    const again = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_calculation('pv.estimates', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [
-        homeA,
-        { weather: 'tmy', horizon: '2027' },
-      ]),
-    );
-    const newer = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_calculation('pv.estimates', 'participant', $1, '0.2.0', $2, '{"kwh": 5410}') id`, [homeA, inputs]),
-    );
-    expect(again.id).toBe(first.id);
-    expect(newer.id).not.toBe(first.id);
-    await expect(asUser(db, USER_B, () => db.query(`select record_calculation('pv.estimates', 'participant', $1, '0.1.0', '{}', '{}')`, [homeA])))
-      .rejects.toThrow(/object_not_found/);
-  });
-
-  it('never changes a finished calculation', async () => {
-    await expect(db.query(`update pv.estimates set results = '{"kwh": 1}'`)).rejects.toThrow(/calculation_is_final/);
-    await expect(db.query(`update pv.estimates set inputs = '{}'`)).rejects.toThrow(/calculation_is_final/);
-  });
-
-  it('never changes the series a finished calculation computed', async () => {
+  it('are read and written by the members of their organisation only', async () => {
     const estimate = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_calculation('pv.estimates', 'participant', $1, '0.3.0', '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
-        homeA,
-        JSON.stringify([{ key: 'production', object_kind: 'participant', object_id: homeA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
-      ]),
+      one<{ id: string }>(db, `insert into pv.estimates (organisation_id, participant_id, provenance, inputs, results)
+                               values ($1, $2, 'pv 0.1.0', '{"horizon": "2027"}', '{"kwh": 5400}') returning id`, [orgA, homeA]),
     );
-    const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
-      db, `select s.id, e.results from pv.estimates e join series s on s.source = 'pv.estimates:' || e.id where e.id = $1`, [estimate.id]);
-    expect(owned.results).toEqual({ kwh: 5420, series: { production: owned.id } });
-    await expect(asUser(db, USER_A, () => db.query(`update series_values set value = 0 where series_id = $1`, [owned.id]))).rejects.toThrow(/permission denied/);
-    await expect(db.query(`select store($1, array['2028-06-01T12:00:00Z']::timestamptz[], array[1.0]::float8[])`, [owned.id])).rejects.toThrow(/calculation_is_final/);
-    await expect(db.query(`delete from series_values where series_id = $1`, [owned.id])).rejects.toThrow(/calculation_is_final/);
+    expect((await asUser(db, USER_B, () => db.query('select id from pv.estimates'))).rows).toEqual([]);
+    expect((await asUser(db, VIEWER, () => db.query('select id from pv.estimates'))).rows).toEqual([{ id: estimate.id }]);
+    expect((await asUser(db, VIEWER, () => db.query(`update pv.estimates set results = '{"kwh": 1}' returning id`))).rows).toEqual([]);
+    await expect(asUser(db, USER_B, () => db.query(`insert into pv.estimates (organisation_id, participant_id, provenance, inputs, results)
+                                                     values ($1, $2, 'pv 0.1.0', '{}', '{}')`, [orgA, homeA])))
+      .rejects.toThrow(/row-level security/);
+  });
+
+  it('are replaced by a new computation, which dates the change', async () => {
+    const before = await one<{ id: string; created_at: Date; updated_at: Date }>(db, 'select id, created_at, updated_at from pv.estimates');
+    await asUser(db, USER_A, () => db.query(`update pv.estimates set provenance = 'pv 0.2.0', results = '{"kwh": 5410}' where id = $1`, [before.id]));
+    const after = await one<{ provenance: string; results: { kwh: number }; created_at: Date; updated_at: Date }>(
+      db, 'select provenance, results, created_at, updated_at from pv.estimates where id = $1', [before.id]);
+    expect(after).toMatchObject({ provenance: 'pv 0.2.0', results: { kwh: 5410 }, created_at: before.created_at });
+    expect(after.updated_at.getTime()).toBeGreaterThanOrEqual(before.updated_at.getTime());
   });
 });
 

@@ -131,14 +131,15 @@ describe('energy sharing in a project, as a settlement', () => {
     expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, source: `community.settlements:${r.settlementId}` });
   });
 
-  it.skipIf(!installed)('is a settlement that names its engine, its key, its period and the series it read; the same inputs give the same settlement', async () => {
-    const first = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    const again = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    expect(again).toEqual(first);
-    const settlement = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select engine_version, project_id, inputs, results from community.settlements where id = $1', [first.settlementId],
+  it.skipIf(!installed)('is a settlement that names its engine, its key, its period and the series it read; a new computation replaces the one it names', async () => {
+    const earlier = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
+    const first = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec, replaces: earlier.settlementId });
+    expect(first.settlementId).toBe(earlier.settlementId);
+    expect(first.sharedKwh).toBeCloseTo(earlier.sharedKwh, 9);
+    const settlement = await one<{ provenance: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
+      db, 'select provenance, project_id, inputs, results from community.settlements where id = $1', [first.settlementId],
     );
-    expect(settlement).toMatchObject({ engine_version: 'sharing_example 0.3.0', project_id: PROJECT });
+    expect(settlement).toMatchObject({ provenance: 'sharing_example 0.3.0', project_id: PROJECT });
     expect(settlement.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.3.0', contract: 1 });
     expect(settlement.inputs.key).toEqual({
       method: 'proportional', parameters: {}, valid_from: '2025-12-31T23:00:00Z', valid_to: '2026-12-31T23:00:00Z', source: 'general assembly 2025', source_code: null,
@@ -148,9 +149,8 @@ describe('energy sharing in a project, as a settlement', () => {
     expect(plant.series).toEqual({ offtake_energy: [], injection_energy: ['00000000-0000-4000-8000-000300000074'] });
     expect(settlement.results.totals.steps).toBe(96);
     expect(settlement.results.meta.key).toEqual({ method: 'proportional', basis: 'offtake' });
-    // A finished settlement's series take no more values.
-    await expect(db.query(`select store($1, array['2026-05-02T00:00:00Z']::timestamptz[], array[1]::float8[])`, [first.series[PLANT].injection_energy]))
-      .rejects.toThrow(/calculation_is_final/);
+    // The series of the settlement it replaced were written again.
+    expect((await db.query('select id from series where id = $1', [earlier.series[PLANT].injection_energy])).rows).toEqual([]);
   });
 
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
