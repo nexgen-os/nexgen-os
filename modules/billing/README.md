@@ -17,13 +17,13 @@ a VAT number, an IBAN or an invoice line, which are Ekwo's.
 |---|---|
 | `billing.companies` | the Ekwo company an organisation is, one each |
 | `billing.contacts` | the email and phone a contact is reached at, and the Ekwo contact it is; personal data, readable by the organisation's members only |
-| `billing.invoices` | one row per Ekwo invoice issued for or to a participant: its Ekwo id, the participant, the counterparty participant of a bill inside a community, `sale` or `purchase` from the participant's point of view, the first and last day it covers, and the settlement run the amounts came from |
+| `billing.invoices` | one row per Ekwo invoice issued for or to a participant: its Ekwo id, the participant, the counterparty participant of a bill inside a community, `sale` or `purchase` from the participant's point of view, the first and last day it covers, and the settlement the amounts came from |
 
 | Function | Does |
 |---|---|
 | `billing.link_company(organisation, ekwo_company)` | says which Ekwo company an organisation is (`organisation_not_found`, `ekwo_company_not_found`) |
 | `billing.link_contact(contact, ekwo_contact)` | says which Ekwo contact a contact is (`contact_not_found`, `ekwo_contact_not_found`) |
-| `billing.record_invoice(participant, ekwo_invoice, kind, from, to, counterparty, run)` | records an Ekwo invoice of a participant (`participant_not_found`, `participant_contact_missing`, `invoice_already_recorded`, `ekwo_invoice_not_found`) |
+| `billing.record_invoice(participant, ekwo_invoice, kind, from, to, counterparty, settlement)` | records an Ekwo invoice of a participant (`participant_not_found`, `participant_contact_missing`, `invoice_already_recorded`, `ekwo_invoice_not_found`) |
 | `billing.invoices_of(participant)` | the invoices of a participant, by period, with their Ekwo ids: what a page or an agent lists without knowing Ekwo |
 | `billing.reference_ekwo()` | adds the foreign keys to Ekwo's tables that exist; run by the migration, and again by the installation when Ekwo OS is installed after Nexgen OS |
 | `billing.unlinked_keys()` | the rows whose Ekwo id is not in Ekwo OS, read by `nexgen-os doctor` (`billing_key_unlinked`) |

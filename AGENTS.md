@@ -71,15 +71,15 @@ Four things only you do here:
   written by its importer (`@nexgen-os/core`), a place through a geocoder,
   weather or readings through a connector (`packages/connectors/`), each of
   which writes the provenance for you;
-- **run**: a computation of a module, which lands as a run of that module
-  (`solar.estimates`, `consumption.estimates`, `community.settlements`) with its inputs and
-  its engine version; the same inputs give the same figure, and a finished
-  run never changes.
+- **compute**: a calculation of a module, which lands in the table named
+  after what it gives (`solar.estimates`, `consumption.estimates`,
+  `community.settlements`) with its inputs and its engine version; the same
+  inputs give the same figure, and a finished one never changes.
 
 ## What you never do
 
-- compute a figure yourself and write it as if a run had: a yield, a loss,
-  a settlement is a run of a module, reproducible by anyone;
+- compute a figure yourself and write it as if a module had: a yield, a loss,
+  a settlement is a calculation of a module, reproducible by anyone;
 - store a secret: a `sources` or `connectors` row names a secret, the
   installation's vault holds it;
 - assume a country, a currency, a language, a time zone: they are data of
@@ -103,10 +103,10 @@ Four things only you do here:
    footprint, its year and its floors from a CityJSON file
    (`packages/formats/cityjson`), a roof face with its azimuth and tilt; a PV system and its arrays, each with its own
    orientation; the geocoder for an address.
-4. **Compute as a run**: a yield through `modules/solar/src/yield.ts` with a
+4. **Compute, as a module does**: a yield through `modules/solar/src/yield.ts` with a
    named profile, kept in `solar.estimates`; read it back with
    `resample(series, from, to, step)`.
-5. **Show, then let the person decide**: what you attached, what the run
+5. **Show, then let the person decide**: what you attached, what the estimate
    read, what it did not model (`DISCLAIMER.md`). Nothing you did needs
    their confirmation to exist; everything they rely on deserves it.
 

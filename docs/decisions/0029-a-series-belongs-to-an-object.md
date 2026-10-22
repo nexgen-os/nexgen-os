@@ -18,7 +18,7 @@ organisation, a project, a participant, a meter, a device or another
 series, named by its kind and its id
 ([0001](0001-the-hierarchy-is-the-foreign-keys.md)). It says its quantity, its kind — measured,
 simulated, forecast or asked — its source, its step, and, when it is the
-output of a run, the run that wrote it.
+output of a calculation, the calculation that wrote it.
 
 **Every value is dated at the start of the interval it covers, in UTC.** A
 quarter-hour of energy from 10:00 to 10:15 is dated 10:00. A source that
@@ -50,7 +50,7 @@ a series of no participant has hours only.
 
 ## See also
 
-- [0004](0004-a-figure-is-a-run.md) — the series a run writes are its own.
+- [0004](0004-a-figure-names-its-inputs-and-never-changes.md) — the series a calculation writes are its own.
 - [0007](0007-series-at-scale.md) — where series are stored.
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) — the
   point is the series.

@@ -6,7 +6,7 @@
 -- for them (Ekwo contacts), a roof plant taking part as producer with its
 -- array behind its meter, two tenants grouped, a
 -- month of quarter-hour offtake per consumer and of injection by the plant,
--- the month's settlement as a run, and one bill between two participants,
+-- the month's settlement, and one bill between two participants,
 -- issued by Ekwo and recorded by the billing module.
 
 insert into organisations (id, name) values
@@ -96,7 +96,7 @@ select record_calculation('community.settlements', 'project', '00000000-0000-400
 
 -- Ekwo issued Van Dijk's bill for the energy it bought from the roof plant
 -- in May; the billing module keeps the Ekwo id, the two participants and
--- the run the amounts came from. The amounts, the tax and the lines are
+-- the settlement the amounts came from. The amounts, the tax and the lines are
 -- Ekwo's, read by that id.
 select billing.record_invoice('00000000-0000-4000-8000-000300000051', '22222222-2222-4222-8222-222222222201', 'purchase',
   '2026-05-01', '2026-05-31', '00000000-0000-4000-8000-000300000054',

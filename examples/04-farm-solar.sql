@@ -1,12 +1,12 @@
 -- Example 4 — a farm with PV on the roof, on the ground and over the car park, in the Nord.
--- Needs the `solar` module, whose runs the estimates are.
+-- Needs the `solar` module, whose table `solar.estimates` holds the estimates.
 --
 -- A farm is one participant of its study: its place, an offtake meter and
 -- an injection meter (a participant exceptionally carries several), and
 -- behind them PV on the barn roof, a ground array on the field and a
 -- carport on the car park, the
 -- annual consumption known from invoices, the product rows the devices are
--- instances of, and a PVGIS estimate for each array as a run with the
+-- instances of, and a PVGIS estimate for each array, in `solar.estimates`, with the
 -- orientation it assumed. The barn, the stable and their roof faces are a
 -- physical description, the `building` module's; the GeoJSON test adds them
 -- with the field the ground array stands on.
@@ -64,8 +64,8 @@ select record_calculation('solar.estimates', 'device', d.id, 'pvgis-5.3+solar-0.
 
 -- Queries a page would run
 -- The arrays, the orientation their estimate assumed and what they are expected to give:
---   select d.name, r.inputs->>'azimuth' azimuth, r.inputs->>'tilt' tilt, d.rated_power_kw, d.status, r.results->>'annual_kwh' annual_kwh
---     from devices d left join solar.estimates r on r.device_id = d.id
+--   select d.name, e.inputs->>'azimuth' azimuth, e.inputs->>'tilt' tilt, d.rated_power_kw, d.status, e.results->>'annual_kwh' annual_kwh
+--     from devices d left join solar.estimates e on e.device_id = d.id
 --    where d.device_type = 'solar' and d.organisation_id = '00000000-0000-4000-8000-000400000001' order by d.name;
 -- The meters the farm's devices are behind:
 --   select m.name from meters m where m.id in (select meter_id from participant_meters('00000000-0000-4000-8000-000400000010')) order by 1;

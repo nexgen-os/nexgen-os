@@ -19,7 +19,7 @@ export NEXGEN_ENGINE_PVLIB=".venv-pvlib/bin/python -m nexgen_pvlib"
 | 3.9.6 | 0.13.0 | 2.3.3 | 2.0.2 | 1.13.1 | macOS; 0.13.0 is the newest pvlib pip installs on Python 3.9 |
 | 3.12 | newest | newest | newest | newest | the `connector-pvlib` job of CI |
 
-The engine string a run records is pvlib's: `pvlib 0.16.1`. `describe`
+The engine string an estimate records is pvlib's: `pvlib 0.16.1`. `describe`
 answers the rest (`nexgen_pvlib`, Python, pandas, numpy, scipy).
 
 ## `pv_yield`

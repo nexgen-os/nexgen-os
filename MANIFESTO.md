@@ -93,9 +93,9 @@ now on, and the core is built so that it happens on your data, in your
 database, under your rules ([AGENTS.md](AGENTS.md)).
 
 **Nothing in the core calls a model.** A geometry, a value, a series, a
-computation is deterministic: a module hands its results back as a **run**,
-with the inputs it read and the version of the engine that read them, and a
-finished run never changes. The same inputs give the same figure, on your
+computation is deterministic: a module hands its results back as an **estimate** or a
+**settlement**, with the inputs it read and the version of the engine that read them, and a
+finished one never changes. The same inputs give the same figure, on your
 machine and on an auditor's, this year and in ten years when somebody asks
 why. Intelligence goes where it belongs — reading a plan, recognising a roof
 in a point cloud, proposing a layout, explaining a result — and the

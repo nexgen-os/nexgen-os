@@ -60,9 +60,9 @@ version `0.3.0`, schema floor `0.3.0`.
   cascade, `parameter_of()`
   ([0002](docs/decisions/0002-standards-as-vocabulary-mappings.md),
   [0021](docs/decisions/0021-one-cascade-of-defaults.md)).
-- The gesture every module's runs share: `record_calculation()`, `start_calculation()`,
+- The gesture every module's calculations share: `record_calculation()`, `start_calculation()`,
   `finish_calculation()`, `calculation_hash()`, `calculation_is_final()`
-  ([0004](docs/decisions/0004-a-figure-is-a-run.md)).
+  ([0004](docs/decisions/0004-a-figure-names-its-inputs-and-never-changes.md)).
 - Sources and an organisation's connectors, naming their secret
   ([0011](docs/decisions/0011-external-data.md)); row level security on
   every table, rights granted by name, refusals by name
@@ -80,14 +80,14 @@ the core ([modules/README.md](modules/README.md),
   Home Assistant homes
   ([0008](docs/decisions/0008-the-building-module-describes-what-is-built.md)).
 - `grid`: the operators of a country and the grid side of each meter.
-- `community`: energy sharing among the participants of a project, as runs
-  of a sharing program.
+- `community`: energy sharing among the participants of a project, as
+  settlements of a sharing program.
 - `billing`: the bridge to Ekwo OS — the participant is billed, Ekwo OS
   keeps the invoice
   ([0010](docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md),
   [docs/with-ekwo-os.md](docs/with-ekwo-os.md)).
 - `consumption`: load profiles, activity hours and a participant's curve,
-  measured, reconstructed from a bill or typical, as a run.
+  measured, reconstructed from a bill or typical, as a calculation.
 - `weather`: weather models with their coverage, the points participants
   read, and the model each participant reads for each purpose.
 - `solar`: PV systems and arrays, product physics, horizons, named yield

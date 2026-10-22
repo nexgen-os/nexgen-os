@@ -7,7 +7,7 @@ empty [Supabase](https://supabase.com) project is the usual one — brings an
 installation up to date, and says what is wrong with one. It applies the
 core's migrations and vocabularies, the modules and the country packs asked
 for, in order, each file in its own transaction, and records every file in
-`nexgen.schema_migrations` so that a second run applies only what is missing.
+`nexgen.schema_migrations` so that a second pass applies only what is missing.
 
 ## On an empty Supabase project, in five commands
 

@@ -6,7 +6,7 @@
 -- readings are series, a day of quarter-hour production, a drone video and
 -- the permit as documents, a planned battery, and the monthly production
 -- PVGIS published for the orientation it assumed, as a series of that
--- source. A yield computed in the installation is a run of the `solar`
+-- source. A yield computed in the installation is an estimate of the `solar`
 -- module (example 04). The house as a building, its roof faces and its
 -- energy label are a physical description, the `building` module's
 -- (examples 02, 05, 06, 07).

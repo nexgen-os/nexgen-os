@@ -45,11 +45,11 @@ a number borrowed from elsewhere.
 
 **A method constant is not a default.** The coefficients of a published
 model belong to the model's profile in its module (a yield profile, an
-allocation key), where the run records them; the cascade holds what varies
+allocation key), where the calculation records them; the cascade holds what varies
 by place and by owner.
 
-**A run records what it read.** The value and the level it came from are
-inputs of the run ([0004](0004-a-figure-is-a-run.md)), so the same run
+**A calculation records what it read.** The value and the level it came from are
+inputs of the calculation ([0004](0004-a-figure-names-its-inputs-and-never-changes.md)), so the same calculation
 replayed later reads the same number even after the pack moved on.
 
 ## What it forbids

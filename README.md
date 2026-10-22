@@ -67,8 +67,9 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
    converts their unit, checks their quality and step, and refreshes the
    aggregates; clients never resample, convert or fill.
 4. **Deterministic core, operable by an agent.** Nothing in the core calls a
-   model; a module keeps what it computes as its runs, written through
-   `record_calculation('<module>.runs', …)`: same inputs, same engine, same run. On top of it, an AI agent works as a user of the
+   model; a module keeps what it computes in a table named after it (`solar.estimates`,
+   `community.settlements`), written through `record_calculation()`: same
+   inputs, same engine, same figure. On top of it, an AI agent works as a user of the
    model — the same tables, the same rights, the same refusals by name — so
    that describing and studying a place can be delegated without the data
    leaving its owner ([AGENTS.md](AGENTS.md)).
@@ -112,9 +113,9 @@ the core's projects, participants and meters (participants carrying their
 place and their meter, contacts, groups, meter swap, cumulative register, a
 place in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries), the
-exact list of the tables of the core, the cascade of defaults, security (row level security, viewers, run immutability,
+exact list of the tables of the core, the cascade of defaults, security (row level security, viewers, immutable calculations,
 vocabulary hygiene), the series store across a clock change, the weather
-and solar modules with a yield run on PVGIS, on `pvwatts.ts` and on the
+and solar modules with a yield estimate on PVGIS, on `pvwatts.ts` and on the
 pvlib connector, the format libraries in and out without losing a field, the
 two country packs and the installer. Every example in `examples/` loads and
 is checked.
@@ -158,8 +159,8 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
    insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ('00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000051', 'South roof', 180, 30, 'roof_parallel', 3.825);
    ```
 
-7. Compute its yield for a year, as a run: PVGIS computes the energy (no
-   key), the run records the weather, the period, the array, the losses and
+7. Compute its yield for a year, as an estimate: PVGIS computes the energy (no
+   key), the estimate records the weather, the period, the array, the losses and
    the conventions, and the hourly energy is read back by month through
    `resample()`:
 
@@ -167,8 +168,8 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
    npx tsx examples/yield.ts 00000000-0000-4000-8000-000100000051 2023
    ```
 
-8. Read what the run says it was computed from. Run step 7 again: the same
-   inputs give back the same run and the same figure.
+8. Read what the estimate says it was computed from. Run step 7 again: the same
+   inputs give back the same estimate and the same figure.
 
    ```sql
    select engine_version, inputs->'weather', inputs->'arrays', results
@@ -176,8 +177,8 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
     order by started_at desc limit 1;
    ```
 
-The yield profiles, the other ways to run one (`pvwatts`, the pvlib connector)
-and what each run records: [modules/solar/README.md](modules/solar/README.md).
+The yield profiles, the other ways to compute one (`pvwatts`, the pvlib connector)
+and what each estimate records: [modules/solar/README.md](modules/solar/README.md).
 
 ## Layout
 

@@ -219,11 +219,11 @@ Any other key is refused (`place_key_unknown`).
   `command`), what one value means (`interval`, `instant`, `cumulative`),
   its step, its source and `external_ref` (how a connector finds the point:
   a Home Assistant entity, a Modbus register, an MQTT topic), a free note of
-  where its values come from (`source`: a run of a module names itself
-  there, `<module>.runs:<run id>`), and in `metadata` only what the source
+  where its values come from (`source`: a calculation of a module names itself
+  there, `<module>.<table>:<id>`), and in `metadata` only what the source
   adds. One series per identity — object, quantity, kind, source code,
   source, name — found or created by `series_ensure()`, which refuses
-  another value kind or step by name. A simulated series names its run or
+  another value kind or step by name. A simulated series names its calculation or
   its source (`series_calculation_required`).
 - **series_values** — the values, in the unit of the quantity, dated at the
   start of their interval in UTC, with a quality code checked by the column
@@ -246,7 +246,7 @@ is the only write the API roles are granted: the series by its id or by its
 identity (created through `series_ensure()`), the values converted from
 `unit` to the quantity's (`series_unit_mismatch`), a null stored missing,
 instants on the series' step (`series_step_mismatch`), a forecast with its
-issue time (`issued_at_required`), the series of a finished run never
+issue time (`issued_at_required`), the series of a finished calculation never
 written again (`calculation_is_final`). A value equal to the one stored is left as
 it is, so a second import of the same file changes nothing. Every write
 computes again the rollups of the hours it touched; **series_latest** is a
@@ -269,7 +269,7 @@ security; a role without a signed-in user reads nothing):
 | `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the participant's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets |
 | `nexgen.window(series, from, to, limit?)` | the stored values in time order: how an index is read (`window` is a reserved word: call it qualified) |
 | `latest(series[])` | the last value that is not missing, one row per series |
-| `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a run of a module (a validation module), with its method |
+| `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a calculation of a module (a validation module), with its method |
 | `coverage(series, from, to)` | the gaps of a regular series: bounds and count of the values it lacks |
 | `forecast_at(series, from, to, as_of?, horizon?)` | a forecast as known at `as_of`, or issued `horizon` before each instant, or its latest issue |
 | `export_rows(series[], from, to)` | series, instant, value, quality, sorted: the rows `exportSeriesParquet()` of `@nexgen-os/core` reads and `packages/formats/parquet` writes as a file |
@@ -278,16 +278,16 @@ The same calls are typed for TypeScript in `packages/core/src/series.ts` and for
 Python in `packages/python` (rows by default; Arrow, pandas and Polars as
 optional extras).
 
-- **runs** — a computation is a run of the module that computes it, kept
-  in that module's `runs` table (`solar.estimates`, `consumption.estimates`,
-  `community.settlements`), its subject a foreign key to an object of the core:
-  inputs, engine version, results ([0004](decisions/0004-a-figure-is-a-run.md),
-  [0004](decisions/0004-a-figure-is-a-run.md)). The core keeps the one
-  gesture: `record_calculation('<module>.runs', kind, id, engine_version, inputs,
+- **estimates and settlements** — a computation is a calculation of the
+  module that computes it, kept in that module's table named after what it
+  gives (`solar.estimates`, `consumption.estimates`, `community.settlements`), its subject a foreign key to an object of the core:
+  inputs, engine version, results
+  ([0004](decisions/0004-a-figure-names-its-inputs-and-never-changes.md)). The core keeps the one
+  gesture: `record_calculation('<module>.<table>', kind, id, engine_version, inputs,
   results, series)` (or `start_calculation()` then `finish_calculation()`) writes it with
   the series it computed, whose `source` names it; the same identity gives
-  the same run, a finished run and its series never change
-  (`calculation_is_final()`), and two runs never share a series.
+  the same calculation, a finished calculation and its series never change
+  (`calculation_is_final()`), and two calculations never share a series.
 - **design variants** are the `solar` module's (`solar.variants`): the
   arrays and horizons of a variant of a participant's PV. The core holds
   the world as it is; a planned device has the status `planned`.
@@ -338,7 +338,7 @@ same check.
   source_code, reference, valid_from}`. There is no global level: nothing
   found is `parameter_missing` naming the property and the level reached; a
   country that decides no single value answers `parameter_not_decided` with
-  its reference. A run records what it read.
+  its reference. A calculation records what it read.
 
 All three are written by the packs (`nexgen-os pack build`) and read by
 everyone signed in.
@@ -362,11 +362,11 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 | Module | Schema | Holds |
 |---|---|---|
 | `grid` | `grid` | the grid side of a meter of the core: `operators` (who runs the grid, written by packs) and `meters`, the grid side of a meter of the core, one row per meter with the meter's id, its operator and its voltage level (`connect_to_operator`) |
-| `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as its `runs` |
+| `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as its `settlements` |
 | `building` | `building` | the physical description of the place of a participant: `profiles` (the uses of a building or a place), `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree, with the participant that occupies one) and `surfaces` (roof faces, facades, ground areas), each described in its columns, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
-| `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `runs` that computed yields, performance and exceedance |
-| `consumption` | `consumption` | load profiles, activity hours and the `runs` that reconstructed a curve |
+| `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `estimates` of yields, performance and exceedance |
+| `consumption` | `consumption` | load profiles, activity hours and the `estimates` that reconstructed a curve |
 | `weather`, `tasks` | their own | weather models, points and which participants read them; tasks as data |
 
 ## Geometry

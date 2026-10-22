@@ -75,7 +75,7 @@ export function pvgis(options: { baseUrl?: string; fetch?: Fetch } = {}) {
   return {
     source_code: SOURCE_CODE,
 
-    /** Hourly series of a system over whole years: what a yield run of the `pvgis_like` profile stores. */
+    /** Hourly series of a system over whole years: what a yield estimate of the `pvgis_like` profile stores. */
     async hourly(where: Point, system: PvgisSystem, years: { from: number; to: number }, extra: { raddatabase?: string } = {}): Promise<PvgisHourly> {
       const params = new URLSearchParams({
         lat: String(where.lat), lon: String(where.lon),

@@ -16,7 +16,7 @@ clients compute nothing.
 ## Decision
 
 **Every act that writes several rows, or that carries a rule, is one function
-of the schema, named after the gesture.** Recording a run, storing the values
+of the schema, named after the gesture.** Recording a calculation, storing the values
 of a series, merging two objects, replacing a device, resolving a default:
 each is a function a client calls with what the person gave, and the function
 writes every row the act needs, checks every rule it carries, and refuses by
@@ -48,7 +48,7 @@ same functions ([0032](0032-a-module-has-its-own-schema.md)).
 - Inherits Ekwo OS 0016 (*A correction is one gesture*), 0051 (*A module has
   its own schema and posts through a function*) and 0056 (*The command line
   computes no amount*).
-- [0004](0004-a-figure-is-a-run.md) — a figure is a run, recorded by one
+- [0004](0004-a-figure-names-its-inputs-and-never-changes.md) — a figure is a calculation, recorded by one
   function.
 - [0031](0031-one-way-to-write-a-series-one-way-to-read-it.md) — the one write
   path of series.

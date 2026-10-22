@@ -5,7 +5,7 @@ It reads the model the one way the model is read (``attributes_of``,
 ``latest``, ``fill``, ``coverage``, ``forecast_at``, ``export_rows``),
 writes values the one way they are written (``store``), and attaches an
 attribute with its period and its source. Every method is one call of the
-SQL function of the same name. It computes nothing: a figure is a run of a
+SQL function of the same name. It computes nothing: a figure is a calculation of a
 module. Reads return rows (dataclasses); ``to_arrow()``, ``to_pandas()``
 and ``to_polars()`` on the result need the optional extras
 (``nexgen-os[arrow]``, ``[pandas]``, ``[polars]``).
@@ -61,7 +61,7 @@ class SeriesReading:
 
 @dataclass(frozen=True)
 class Gap:
-    """A run of values a regular series expects and does not have."""
+    """A stretch of values a regular series expects and does not have."""
 
     start: datetime
     end: datetime

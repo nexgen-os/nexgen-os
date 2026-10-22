@@ -1,7 +1,7 @@
 # With Ekwo OS — two cores on one database
 
 Nexgen OS describes places, devices and series and computes what is owed, as
-a run. [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os), the open invoicing and bookkeeping core
+a calculation. [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os), the open invoicing and bookkeeping core
 built on the same playbook, issues the invoice, its tax, its electronic
 invoicing and its ledger entry ([decision 0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)).
 Each is installed, upgraded and released on its own; both may live in the
@@ -59,7 +59,7 @@ core and keyed by the same ids, what links the two
 |---|---|
 | `billing.companies` | the Ekwo company an organisation is: `ekwo_company_id`, one each |
 | `billing.contacts` | the Ekwo contact a contact is, and the email and phone it is reached at |
-| `billing.invoices` | the Ekwo invoices issued for or to a participant: the Ekwo id, the counterparty participant, `sale` or `purchase`, the period, the settlement run |
+| `billing.invoices` | the Ekwo invoices issued for or to a participant: the Ekwo id, the counterparty participant, `sale` or `purchase`, the period, the settlement |
 
 The participant is the one who is billed, and its billing contact is the
 core's `participants.contact_id`; the amounts, the currency, the tax and the

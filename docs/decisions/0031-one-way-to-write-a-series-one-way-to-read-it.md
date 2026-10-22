@@ -4,7 +4,7 @@
 
 ## Context
 
-Values arrive through a connector, a file import, a module's run and a
+Values arrive through a connector, a file import, a module's calculation and a
 person's hand. If each path checks quality and units in its own way, some
 check nothing. A page asking "how much this month" of a cumulative register
 wants a consumption, not the last index of the month; left to each caller,
@@ -35,8 +35,8 @@ statement.
 
 **A gap is filled on read, and says so.** A filled value is flagged
 estimated and written nowhere. A substitute written as a value is a figure:
-a run of a module, with its method
-([0004](0004-a-figure-is-a-run.md)).
+a calculation of a module, with its method
+([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
 
 **Every client reads the same rows.** The clients return rows; a dataframe
 or an Arrow table is an optional extra of the Python client, and a Parquet

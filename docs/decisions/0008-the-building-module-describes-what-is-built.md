@@ -54,10 +54,10 @@ source;
 nothing keeps a second copy of the roof or of the building's numbers beside
 the model.
 
-**What is derived from a model is a run.** A tileset built from the
+**What is derived from a model is a calculation.** A tileset built from the
 surfaces, a model generated from parameters, a layout of modules on a face:
-each is produced by a run that records its inputs, so it can be rebuilt
-([0004](0004-a-figure-is-a-run.md)).
+each is produced by a calculation that records its inputs, so it can be rebuilt
+([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
 
 **The open repository describes what is built.** How a place is
 photographed and shown (flights, images and their poses, scenes, camera
@@ -70,7 +70,7 @@ paths, rendered videos) is not part of the description.
   (heights, floors, roof faces).
 - A building, a space or a surface in the core's schema, or a column of the
   core naming one.
-- A derived 3D artefact that no run produced.
+- A derived 3D artefact that no calculation produced.
 - A change to the shape of a place to make room for a model.
 
 ## See also

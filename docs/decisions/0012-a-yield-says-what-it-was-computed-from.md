@@ -57,14 +57,14 @@ model a participant reads is a default resolved through the one cascade
 the pack's rule for the country or the region, within the coverage of the
 model.
 
-**A run says everything.** A yield run records the system, the profile, the
+**A calculation says everything.** A yield estimate records the system, the profile, the
 weather series and their period, the horizon, the engine and its version,
 and writes its simulated series and its summary (annual and specific
 yield, performance ratio, P50 and P90). Measured production stays measured;
 the indicators of IEC 61724-1 compare the two.
 
 **Proprietary project files are read as results, never written.** A PVsyst
-or PV\*SOL result lands as a run and its documents; the weather a run used
+or PV\*SOL result lands as a calculation and its documents; the weather a calculation used
 is exported in a format those tools read, so that their user reruns the
 same weather.
 
@@ -82,8 +82,8 @@ references may come from a licensed dataset.
 
 ## See also
 
-- [0004](0004-a-figure-is-a-run.md), [0013](0013-a-program-connector-reads-one-request.md) —
-  runs and engines.
+- [0004](0004-a-figure-names-its-inputs-and-never-changes.md), [0013](0013-a-program-connector-reads-one-request.md) —
+  calculations and engines.
 - [`modules/solar/README.md`](../../modules/solar/README.md),
   [`modules/weather/README.md`](../../modules/weather/README.md).
 - IEC 61724-1, pvlib, SAM, Orange Button.

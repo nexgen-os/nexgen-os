@@ -61,9 +61,9 @@ properties an attribute may hold, identifier schemes, sources); the
 countries, their regions and the defaults the packs decide; the modules
 installed and an organisation's connectors to external data
 ([0011](0011-external-data.md)). The core is twenty-seven tables and one
-view, the last value of each series. A run, a design variant, the use of a
+view, the last value of each series. A calculation, a design variant, the use of a
 building, a relation between two things of a trade are a module's
-([0004](0004-a-figure-is-a-run.md)).
+([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
 
 **Every object is a table with the columns that object always has**
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read
@@ -104,13 +104,13 @@ in the open repository.
 - An attachment table per object (`building_documents`,
   `device_identifiers`): an attachment names the kind and the id of its
   object.
-- A table of the core for what one trade needs: runs, design variants,
+- A table of the core for what one trade needs: estimates, settlements, design variants,
   relations between the things of a trade, the uses of a building.
 
 ## See also
 
 - Inherits Ekwo OS 0008 (*Documents and entries are two joined layers*),
-  translated: a description (objects) and a computation (runs, series) are
+  translated: a description (objects) and a computation (estimates, settlements, series) are
   two layers; and 0044 (*A product is a catalogue entry in the core*).
 - [`docs/model.md`](../model.md) — the tables of the model.
 - [0042](0042-a-module-starts-from-an-object-of-the-core.md) — how a module

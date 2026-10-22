@@ -53,7 +53,7 @@ describe('the nexgen schema', () => {
     )).rejects.toThrow(/attributes_object_kind|kind_unknown/);
     await expect(db.query(`select set_attribute('surface', $1, 'efficiency', '0.9')`, [org])).rejects.toThrow(/kind_unknown: surface/);
     await expect(db.query(
-      `insert into documents (organisation_id, object_kind, object_id, name, uri) values ($1, 'run', $1, 'Report', 's3://x')`,
+      `insert into documents (organisation_id, object_kind, object_id, name, uri) values ($1, 'figure', $1, 'Report', 's3://x')`,
       [org],
     )).rejects.toThrow(/documents_object_kind|kind_unknown/);
   });

@@ -58,7 +58,7 @@ bills `billing`'s, its share of a community `community`'s, its tasks
 `tasks`', its weather `weather`'s.
 
 **The examples say which modules they need, and need no more.** Example
-01 (a house) needs the core only; 04 (a farm) records its estimates as runs
+01 (a house) needs the core only; 04 (a farm) records its yield estimates
 of `solar`; 03 (an energy community) needs `community`, `grid` and
 `billing`; 02 (a school), 05 (a district), 06 (a drone survey) and 07 (an
 office) describe buildings and install `building` first.

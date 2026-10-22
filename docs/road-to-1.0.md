@@ -24,8 +24,8 @@ integration written against one release keeps working against every later
    reads `time_zone_required` today reads it throughout 1.x.
 3. **`nexgen-os migrate` upgrades from any published version**, forward
    only.
-4. **A finished run never changes on upgrade**
-   ([0004](decisions/0004-a-figure-is-a-run.md)), and a newer pack reaches
+4. **A finished calculation never changes on upgrade**
+   ([0004](decisions/0004-a-figure-names-its-inputs-and-never-changes.md)), and a newer pack reaches
    an installation only through its own upgrade
    ([0034](decisions/0034-a-pack-upgrade-is-never-silent.md)).
 5. **The pack format is `pack.1.json`.** A pack valid against
@@ -40,7 +40,7 @@ integration written against one release keeps working against every later
   connectors, each usable without Nexgen OS; the installer, `nexgen-os`;
   the core client ([`releasing.md`](releasing.md)).
 - **An MCP server**, `@nexgen-os/mcp`, local and hosted, on the model of
-  Ekwo OS's: an agent describes a participant, imports a file, runs a yield
+  Ekwo OS's: an agent describes a participant, imports a file, computes a yield
   and reads it back, as the user, under row level security
   ([0039](decisions/0039-an-agent-is-a-user-of-the-model.md)).
 - **Versioned vocabulary identifiers** for every vocabulary row
@@ -62,14 +62,14 @@ integration written against one release keeps working against every later
   address and checksum, reference system, origin on the globe, rotation,
   scale, up axis, units, vertical datum, bounding box, level of detail, the
   source's georeferencing block), `drawings` and `tilesets` (3D Tiles built
-  by a run), and one function placing a model in the world. The acceptance
+  by a calculation), and one function placing a model in the world. The acceptance
   test: an IFC and a CityJSON of one building land as two models placed on
   the same footprint.
 - **Modules** ([`modules/README.md`](../modules/README.md)): `storage`,
   `charging`, `heating`, `thermal`, `kpis`, `monitoring`, `wind`, each
   starting from the participant and its devices
   ([0041](decisions/0041-a-module-names-one-thing.md)); a PV\*SOL study
-  imported as a run of `solar` and compared with the `pvsol_like` profile
+  imported as an estimate of `solar` and compared with the `pvsol_like` profile
   within a stated tolerance ([0012](decisions/0012-a-yield-says-what-it-was-computed-from.md)).
 - **Program connectors** ([0013](decisions/0013-a-program-connector-reads-one-request.md)):
   a long-running program served over HTTP with the same contract, when a
@@ -100,5 +100,5 @@ integration written against one release keeps working against every later
   duplicates, are still to write.
 - **Golden cases** ([0034](decisions/0034-a-pack-upgrade-is-never-silent.md)):
   the packs `fr` and `be` carry their checks and their certification; the
-  reference case each replays through the runs, and the runner that compares
+  reference case each replays through the calculations, and the runner that compares
   its figures, are still to write.

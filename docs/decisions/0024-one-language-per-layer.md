@@ -28,7 +28,7 @@ standardise.
 is a program connector in `packages/connectors/`, behind the contract of
 [0013](0013-a-program-connector-reads-one-request.md): one JSON request in and one JSON result
 out, never a read or a write of the database. What it answers is the
-engine of a run.
+engine of a calculation.
 
 **Python is the first-class client of the scientist.** The Python client
 reads and writes through the same SQL functions as every other client, with

@@ -16,7 +16,7 @@ drawer would hold, and a contributor cannot tell where a new thing goes.
 
 **A module names one thing, and that thing has its own physics or its own
 objects.** `solar` is the model: PV systems and arrays, their product
-physics, a yield run that says what it was computed from
+physics, a yield estimate that says what it was computed from
 ([0012](0012-a-yield-says-what-it-was-computed-from.md)). A turbine, a
 battery, a charger or a heat pump is the one thing of a module of its own,
 with its own physics. A module exists when a trade has objects and a

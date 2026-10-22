@@ -8,7 +8,7 @@ which losses it was computed with. This module holds those inputs as data.
 Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is an
 estimate, kept in `solar.estimates` and written through the core's
 gesture, `record_calculation('solar.estimates', …)`
-([0004](../../docs/decisions/0004-a-figure-is-a-run.md)).
+([0004](../../docs/decisions/0004-a-figure-names-its-inputs-and-never-changes.md)).
 
 ## Conventions
 

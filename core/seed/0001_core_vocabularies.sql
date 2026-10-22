@@ -144,7 +144,7 @@ insert into property_defs (code, name, datatype, quantity_code, minimum, maximum
   ('metering_step',               'Metering step',                          'text',   null,              null, null, 'The interval of the readings a grid operator publishes, as an ISO 8601 duration (PT15M).'),
   ('bidding_zone',                'Bidding zone',                           'text',   null,              null, null, 'The bidding zone of the wholesale electricity market, by its EIC code.'),
   ('grid_co2_factor',             'Emission factor of grid electricity',    'number', 'emission_factor', 0,    null, 'Greenhouse gas emitted per kWh taken from the grid, from the transmission operator''s yearly balance.'),
-  ('pv_specific_yield_fallback',  'Specific yield of PV, fallback',         'number', 'specific_yield',  0,    null, 'The mean yearly energy of one kWp, used only where no yield run exists, and marked as a fallback.'),
+  ('pv_specific_yield_fallback',  'Specific yield of PV, fallback',         'number', 'specific_yield',  0,    null, 'The mean yearly energy of one kWp, used only where no yield estimate exists, and marked as a fallback.'),
   ('vat_rate_electricity',        'Value added tax on electricity',         'number', 'ratio',           0,    1,    'The rate applied to a household electricity bill.'),
   ('energy_price_household',      'Energy price, households',               'number', null,              0,    null, 'In the currency of the country per MWh, without grid fees and taxes, from a public statistic.'),
   ('energy_price_business',       'Energy price, businesses',               'number', null,              0,    null, 'In the currency of the country per MWh, without grid fees and taxes, from a public statistic.'),

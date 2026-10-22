@@ -8,7 +8,7 @@ The same building arrives from a cadastre, from an IFC file and from a
 survey; the same meter is typed by hand and then imported from the grid
 operator. A building is split into two lots, two parcels are joined into
 one, an inverter is replaced by another. Deleting the old object loses
-everything that pointed to it — its series, its documents, the runs that
+everything that pointed to it — its series, its documents, the calculations that
 read it — and editing it in place hides that it ever existed. A table of
 splits, merges and replacements, or of dated links between objects of any
 kind, is a table nobody else reads.

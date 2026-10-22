@@ -8,7 +8,7 @@ Ekwo OS is the open-source invoicing and bookkeeping core built on the
 same playbook: companies, contacts, products, documents (quotes, invoices,
 credit notes), entries, tax, electronic invoicing, with a pack per country.
 A description of places meets invoicing at a few points: who an
-organisation or a participant legally is, and how an amount a run computed
+organisation or a participant legally is, and how an amount a calculation computed
 (a settlement, a share of a community's production) becomes an invoice.
 
 In an energy community the bills are issued per participant: what a
@@ -28,7 +28,7 @@ an installation bills from an Ekwo OS hosted elsewhere.
 ## Decision
 
 **Legal identity and invoicing are Ekwo's.** Nexgen OS computes what is
-owed, as a run; Ekwo OS issues the invoice, its tax, its electronic
+owed, as a settlement; Ekwo OS issues the invoice, its tax, its electronic
 invoicing, its payment and its ledger entry. Nexgen OS keeps no second
 ledger.
 
@@ -42,7 +42,7 @@ path.
 to a participant is a row of `billing.invoices`, keyed by the Ekwo id, with
 the participant, the counterparty participant of a bill inside a community,
 `sale` or `purchase` from the participant's point of view, the period it
-covers and the settlement run its amounts came from. Its billing contact is
+covers and the settlement its amounts came from. Its billing contact is
 the participant's own `contact_id`; `billing.record_invoice()` refuses a
 participant that names none (`participant_contact_missing`), and
 `billing.invoices_of()` lists a participant's invoices for a page or an

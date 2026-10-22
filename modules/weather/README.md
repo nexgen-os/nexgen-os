@@ -40,6 +40,6 @@ It publishes the property `weather_source` (a participant or a project pins a mo
 
 The database calls no weather API: a connector (`connectors/`, decision
 [0011](../../docs/decisions/0011-external-data.md)) reads the model and
-writes the series on the point. A project's pinned model is read by the run
+writes the series on the point. A project's pinned model is read by the estimate
 that studies the project; `source_for` reads the participant, which may take part
 in several projects.
