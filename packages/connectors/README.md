@@ -17,7 +17,7 @@ A connector comes in one of two kinds:
   answers one JSON result on stdout (pvlib in Python, the settlement and
   sharing examples): the computation of a run, done by code the core calls
   without rewriting it. Decision
-  [0013](../../docs/decisions/0013-external-engines.md); the contract is
+  [0013](../../docs/decisions/0013-a-program-connector-reads-one-request.md); the contract is
   [below](#programs-in-any-language).
 
 ## Clients of an external API
@@ -62,7 +62,7 @@ region when a country keeps one register per region (`BE-VLG`, `BE-BRU`,
 `BE-WAL`). `geocoderFor({ national, fallback, commercial })` of
 `@nexgen-os/core` chains them: the register of the country or its regions
 first, the open fallback next, the commercial one last; each place says which
-one answered ([decision 0009](../../docs/decisions/0009-addresses-and-geocoding.md)).
+one answered ([decision 0009](../../docs/decisions/0009-what-applies-follows-the-region.md)).
 
 ### Private connectors
 
@@ -194,7 +194,7 @@ that any program accepting it answers in.
   by priority — and how an index, a cap or a floor are read are the
   program's own. Amounts are not rounded to a currency's minor unit, and
   no invoice comes out of a program: a line goes to Ekwo (decision
-  [0010](../../docs/decisions/0010-ekwo-link.md)).
+  [0010](../../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)).
   [`settlement-example`](settlement-example/README.md) is one to copy.
 - `energy_sharing` ([`sharing.ts`](../core/src/connectors/sharing.ts)): the
   participants of a sharing over a period (`from`, `to`, `step`), each with

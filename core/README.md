@@ -19,7 +19,7 @@ produce — and what describes them beyond their columns is attached to one
 of them by kind and id: an attribute, an identifier, a document or a series
 names its object as `('participant', id)`, `('device', id)`, the kind one of
 the six words, and the hierarchy is the foreign keys
-([0044](../docs/decisions/0044-there-is-no-registry.md)). The core is
+([0001](../docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md)). The core is
 twenty-seven tables and one view; a run, a design variant, the use of a
 building or a link of a trade is the module's that needs it.
 The participant carries the place, geolocated but not described: its
@@ -31,7 +31,7 @@ source.
 
 Why this hierarchy: it is the one the commercial platform this core comes
 from has run for years, and it reads the way the trades speak
-([0045](../docs/decisions/0045-the-participant-is-the-node.md)). A
+([0043](../docs/decisions/0043-the-participant-is-the-node.md)). A
 **participant** is the envelope facing the grid: an actor of the project —
 a household, a company, a tenant, a PV plant — with its address and its
 point on the map, that carries the meter and groups the devices behind it;

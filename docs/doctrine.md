@@ -1,14 +1,13 @@
 # The doctrine of Nexgen OS
 
 The rules that hold, one line each, grouped by theme; each links to the
-record that says why, what it forbids and what it replaced. The full index,
+record that says why and what it forbids. The full index,
 with the statuses, is in [`decisions/`](decisions/README.md).
 
 ## The spirit
 
-Eight sentences every record answers to, written the way the founder says
-them; Ekwo OS, the invoicing and bookkeeping core built on the same playbook, is the
-measure.
+Eight sentences every record answers to; Ekwo OS, the invoicing and
+bookkeeping core built on the same playbook, is the measure.
 
 - **Simple.** A repository that reads in one screen — the core, the modules,
   the packs, the formats, the connectors — and nothing between
@@ -16,7 +15,7 @@ measure.
 - **Concrete.** The core names things of the trades — an organisation, a
   project, a participant, a meter, a device, a series — never an
   abstraction that stands for several
-  ([0006](decisions/0006-named-objects.md), [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
+  ([0006](decisions/0006-the-core-names-six-objects.md), [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
 - **Factorised.** Two objects that are one are merged; one shape of a place;
   one way to write a series; one function per gesture; nothing implemented
   twice ([0028](decisions/0028-two-objects-that-are-one-are-merged.md),
@@ -30,18 +29,18 @@ measure.
   thing the core already names
   ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md),
   [0011](decisions/0011-external-data.md),
-  [0013](decisions/0013-external-engines.md)).
+  [0013](decisions/0013-a-program-connector-reads-one-request.md)).
 - **Proven.** The shape follows the platform this core was taken from, which
   earned it in the field — organisation, project, participant, meter, device —
   and when two structures compete, the one the platform runs wins
-  ([nexgen-os-and-nexgen.md](nexgen-os-and-nexgen.md), [0006](decisions/0006-named-objects.md)).
+  ([services.md](services.md), [0006](decisions/0006-the-core-names-six-objects.md)).
 - **Few tables, complete on the functions.** The core is twenty-seven
   tables and one view: the six objects and what they need, nothing a single
   trade needs. A column only for what every
   row has, everything else attached to one of the six; the actions of the trades are
   functions of the schema, many of them, each one gesture
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md),
-  [0001](decisions/0001-one-entity-table-attached-values.md),
+  [0006](decisions/0006-the-core-names-six-objects.md),
   [0018](decisions/0018-one-function-per-gesture.md)).
 - **A module is one thing.** It starts from an object of the core and
   enriches it, with its own physics and its own schema, named after what it
@@ -52,13 +51,14 @@ measure.
 - **A country is data, a figure is a run, a file is a library.** Packs
   compiled into SQL, runs that never change, format libraries that touch no
   database ([0020](decisions/0020-a-pack-holds-what-a-function-reads.md),
-  [0004](decisions/0004-deterministic-runs.md),
+  [0004](decisions/0004-a-figure-is-a-run.md),
   [0035](decisions/0035-a-format-library-touches-no-database.md)).
+
 ## Objects
 
-- [0006](decisions/0006-named-objects.md) The core names six objects (the organisation, the project, the participant, the meter, the device, the series), and everything else is attached to them
-- [0045](decisions/0045-the-participant-is-the-node.md) The participant is the node: it carries the place, the meters and the devices, and every module starts from it
-- [0044](decisions/0044-there-is-no-registry.md) There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind, one of the six, and its id
+- [0006](decisions/0006-the-core-names-six-objects.md) The core names six objects (the organisation, the project, the participant, the meter, the device, the series), and everything else is attached to them
+- [0043](decisions/0043-the-participant-is-the-node.md) The participant is the node: it carries the place, the meters and the devices, and every module starts from it
+- [0001](decisions/0001-the-hierarchy-is-the-foreign-keys.md) The hierarchy is the foreign keys, and an attachment names its object's kind, one of the six, and its id
 - [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
 - [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
 - [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
@@ -70,13 +70,13 @@ measure.
 
 The place of the core is the participant's, geolocated but not described;
 its ground and what is built on it are the `building` module's, and a
-device is not placed.
+device belongs to its participant.
 
 - [0003](decisions/0003-geometry-wgs84-3d-utm.md) Geometry is stored in WGS 84 in 3D, and measured in UTM
 - [0025](decisions/0025-a-place-has-one-shape.md) A place has one shape: address, point, precision, source
-- [0009](decisions/0009-addresses-and-geocoding.md) What applies to a place follows its region, its municipality or its area
-- [0008](decisions/0008-3d-module.md) The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it
-- [0026](decisions/0026-a-device-is-not-placed-for-now.md) A device is not placed for now; the `building` module describes the place, and a space is one notion with a kind
+- [0009](decisions/0009-what-applies-follows-the-region.md) What applies to a place follows its region, its municipality or its area
+- [0008](decisions/0008-the-building-module-describes-what-is-built.md) The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it
+- [0026](decisions/0026-a-device-belongs-to-its-participant.md) A device belongs to its participant; the `building` module describes the place, and a space is one notion with a kind
 
 ## Series
 
@@ -88,9 +88,8 @@ device is not placed.
 ## Computation
 
 - [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
-- [0004](decisions/0004-deterministic-runs.md) A figure is a run, and a finished run never changes
-- [0046](decisions/0046-a-run-is-the-module-s.md) A run is the module's, and the core keeps the one gesture that writes it
-- [0013](decisions/0013-external-engines.md) A program connector reads one request and answers one result; "engine" names what computed a run
+- [0004](decisions/0004-a-figure-is-a-run.md) A figure is a run of the module that computes it, the core keeps the one gesture that writes it, and a finished run never changes
+- [0013](decisions/0013-a-program-connector-reads-one-request.md) A program connector reads one request and answers one result; "engine" names what computed a run
 - [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as a connector
 - [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is
 
@@ -98,16 +97,15 @@ device is not placed.
 
 - [0032](decisions/0032-a-module-has-its-own-schema.md) A module has its own schema and writes the core through a function
 - [0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md) A module starts from an object of the core and enriches it: a derived table, a secondary table or vocabulary rows
-- [0043](decisions/0043-the-participant-is-billed.md) The participant is billed, Ekwo OS keeps the invoice: a thin bridge module, with direct keys when both share a database
 - [0033](decisions/0033-a-module-code-outlives-its-names.md) A module code outlives its names
 - [0041](decisions/0041-a-module-names-one-thing.md) A module names one thing with its own physics, and there is no catch-all
-- Records of single modules: [0010](decisions/0010-ekwo-link.md) the billing bridge, [0012](decisions/0012-solar-module.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
+- Records of single modules: [0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) the participant is billed, Ekwo OS keeps the invoice, [0012](decisions/0012-a-yield-says-what-it-was-computed-from.md) the yield, [0017](decisions/0017-tasks-as-data.md) the tasks
 
 ## Packs
 
 - [0020](decisions/0020-a-pack-holds-what-a-function-reads.md) A pack holds what a function reads, and data cannot execute
 - [0021](decisions/0021-one-cascade-of-defaults.md) One cascade of defaults, climbing a region to its parent, and no global fallback
-- [0034](decisions/0034-a-pack-upgrade-is-never-silent.md) A pack upgrade is never silent, and a golden site is its contract
+- [0034](decisions/0034-a-pack-upgrade-is-never-silent.md) A pack upgrade is never silent, and a golden case is its contract
 
 ## Formats and external data
 
@@ -129,7 +127,7 @@ device is not placed.
 ## Releases
 
 - [0040](decisions/0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) A release has a tag, a schema version and a schema floor
-- [0005](decisions/0005-open-questions.md) The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
+- [0005](decisions/0005-agpl-core-mit-libraries-sign-off.md) The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
 
 ## Inherited
 

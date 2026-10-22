@@ -21,18 +21,18 @@ is specific to a trade lives here, one folder and one schema per module.
    any kind (a task) carries `object_kind` (or `subject_kind`) with the same
    check on the six words, beside the object's id, and goes with its
    object. There is no registry and no table of kinds: the hierarchy is the
-   foreign keys ([0044](../docs/decisions/0044-there-is-no-registry.md)).
+   foreign keys ([0001](../docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md)).
    A module table never names a table of another module. Every module
    table that carries `organisation_id` reaches a core table other than
    `organisations` by its foreign keys; `nexgen-os doctor` names one that
    does not (`module_table_detached`). The project, the participant, the
    meter and the device are the core's: a module never holds a notion of
    its own beside them, and the participant is the node it starts from
-   ([0045](../docs/decisions/0045-the-participant-is-the-node.md)).
+   ([0043](../docs/decisions/0043-the-participant-is-the-node.md)).
 3. **Read the core freely, write it through its functions** (`series_ensure()`,
    `store()`, `set_attribute()`…). A module that computes keeps its runs in
    `<module>.runs`, of the one shape the core's gesture writes
-   (`record_run('<module>.runs', …)`, [0046](../docs/decisions/0046-a-run-is-the-module-s.md)).
+   (`record_run('<module>.runs', …)`, [0004](../docs/decisions/0004-a-figure-is-a-run.md)).
    A module may also publish vocabulary rows (device types, properties,
    quantities, sources) with `published_by` set to its code.
 4. **Row level security on every table**, through `secure_table()`.
@@ -46,7 +46,7 @@ is specific to a trade lives here, one folder and one schema per module.
 ## Modules
 
 A module computes in TypeScript or hands a computation to a program
-connector (`packages/connectors/`, decision [0013](../docs/decisions/0013-external-engines.md)):
+connector (`packages/connectors/`, decision [0013](../docs/decisions/0013-a-program-connector-reads-one-request.md)):
 a program in any language, JSON in and out, that never reads the database.
 
 What an owner publishes is the core's, not a module's: a frozen document and a schema of its own
@@ -58,9 +58,9 @@ and `tasks` carries what has to be done, with its legal reference and its condit
 |---|---|---|
 | `grid` (shipped) | the grid side of a meter of the core: the operators of a country (`operators`, written by packs) and, for each meter, its operator and its voltage level (`grid.meters`, the meter's id) | later, meter-data mandates, supply contracts, tariff components and the retrieval of meter data from grid operators' hubs |
 | `community` (shipped) | energy sharing on the projects and participants of the core: the allocation key of a project and what it reads of a participant, as their attributes; the volumes allocated to each participant as series of a run of the module (`community.runs`) | who received how much: self-consumption of a participant, energy sharing in a community, volumes per participant and interval, through a sharing engine; with `contracts` a settlement engine turns them into settlement lines, handed to the accounting side through `billing` ([why](../README.md#invoicing-and-ekwo-os)) |
-| `billing` (shipped, [0010](../docs/decisions/0010-ekwo-link.md), [0043](../docs/decisions/0043-the-participant-is-billed.md)) | the billing bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact, and the Ekwo invoices issued for or to a participant of the core, as pointers; the line where Nexgen OS stops is in the [README](../README.md#invoicing-and-ekwo-os) | nothing: a settlement line is handed to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)), which keeps legal identity, invoices and the ledger; the two install side by side on one database ([with Ekwo OS](../docs/with-ekwo-os.md)) |
-| `building` (shipped, [0008](../docs/decisions/0008-3d-module.md), [README](building/README.md)) | the physical description of a participant's place: its ground (`sites`), buildings, their floors, rooms, zones and units (one tree of spaces), roof faces, facades and ground areas with their orientation, each described in its columns, the participant that occupies a floor or a unit, the uses of a building or a place (`profiles`); no placement of a device ([0026](../docs/decisions/0026-a-device-is-not-placed-for-now.md)); the importers of CityJSON, IFC and Home Assistant homes; later, georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | the level-of-detail 1 block of a building, the orientation of a face from its 3D polygon; later, placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
-| `solar` (schema shipped, [0012](../docs/decisions/0012-solar-module.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles, design variants of a participant's PV (`scenarios`), the runs it computed (`runs`) | PV yield as a run that says its weather, period, conventions, models and losses, computed by PVGIS, by `pvwatts.ts` or by the pvlib engine ([0013](../docs/decisions/0013-external-engines.md)); IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
+| `billing` (shipped, [0010](../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md), [0010](../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)) | the billing bridge: an organisation's Ekwo company, a contact's email, phone and Ekwo contact, and the Ekwo invoices issued for or to a participant of the core, as pointers; the line where Nexgen OS stops is in the [README](../README.md#invoicing-and-ekwo-os) | nothing: a settlement line is handed to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os) ([ekwo.ai](https://ekwo.ai)), which keeps legal identity, invoices and the ledger; the two install side by side on one database ([with Ekwo OS](../docs/with-ekwo-os.md)) |
+| `building` (shipped, [0008](../docs/decisions/0008-the-building-module-describes-what-is-built.md), [README](building/README.md)) | the physical description of a participant's place: its ground (`sites`), buildings, their floors, rooms, zones and units (one tree of spaces), roof faces, facades and ground areas with their orientation, each described in its columns, the participant that occupies a floor or a unit, the uses of a building or a place (`profiles`); no placement of a device ([0026](../docs/decisions/0026-a-device-belongs-to-its-participant.md)); the importers of CityJSON, IFC and Home Assistant homes; later, georeferenced models (glTF, IFC, CityJSON, meshes), drawings, 3D Tiles tilesets | the level-of-detail 1 block of a building, the orientation of a face from its 3D polygon; later, placing a model on the globe, extrusion tiles for MapLibre, 3D Tiles builds; drone flights, scenes and videos are Nexgen's, WeSmart's product |
+| `solar` (schema shipped, [0012](../docs/decisions/0012-a-yield-says-what-it-was-computed-from.md)) | PV systems, PV arrays (one orientation each), module and inverter product physics, horizons, named yield profiles, design variants of a participant's PV (`scenarios`), the runs it computed (`runs`) | PV yield as a run that says its weather, period, conventions, models and losses, computed by PVGIS, by `pvwatts.ts` or by the pvlib engine ([0013](../docs/decisions/0013-a-program-connector-reads-one-request.md)); IEC 61724 indicators against measured production; PVGIS, Open-Meteo, EPW, PAN/OND, PVsyst and PV*SOL results as formats |
 | `sensors` (proposed) | the diversity of measures and units of one device: the channels of an instrument, their calibration and accuracy, beside the series that hold the values ([0022](../docs/decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)) | nothing of its own: a weather station or a multisensor stays one device with several series |
 | `storage` | batteries and their product physics (usable capacity, cycles, round-trip efficiency), hydrogen later | charge and discharge dispatch on the series `solar` and `consumption` produce |
 | `charging` | EV chargers, charging sessions | charging load and its steering |

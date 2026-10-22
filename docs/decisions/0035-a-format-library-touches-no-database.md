@@ -1,16 +1,15 @@
 # 0035 — A format library is MIT, one package per format, and touches no database
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
-`formats/` started as the place where files are read and written: IFC,
-CityJSON, GeoJSON, EPW, PAN and OND. Some libraries then grew an importer
-that writes the buildings, the floors and the series of the model, through a
-database interface of their own; one held the national geocoders. A library
-that writes the schema is an importer, tied to one version of the model and
-unusable by anyone else; a library organised around a country is no longer a
-format. The libraries are meant to be the part of the project any product
+`packages/formats/` is where files are read and written: IFC, CityJSON,
+GeoJSON, EPW, PAN and OND. A library that also writes the buildings, the
+floors and the series of the model, through a database interface of its
+own, is an importer, tied to one version of the model and unusable by
+anyone else; a library organised around a country, holding its national
+geocoders, is a connector, not a format. The libraries are meant to be the part of the project any product
 can use, under MIT, and that only holds when they know nothing of the model.
 
 ## Decision
@@ -50,12 +49,6 @@ that a tool outside Nexgen OS can read an IFC or an EPW file with it.
   ([0025](0025-a-place-has-one-shape.md)).
 - A factor list for units repeated in a library where the core holds the
   conversion as data ([0030](0030-a-value-is-stored-in-the-unit-of-its-quantity.md)).
-
-## What it replaced
-
-Four libraries that wrote the model through a database interface of their
-own (`cityjson`, `homeassistant`, `ifc`, `geojson`), and the geocoders kept
-as a format library with national adapters inside it.
 
 ## See also
 

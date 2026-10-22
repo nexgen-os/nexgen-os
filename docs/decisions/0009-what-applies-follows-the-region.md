@@ -1,6 +1,6 @@
 # 0009 — What applies to a place follows its region, its municipality or its area
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -9,8 +9,8 @@ one address register, one set of grid rules and one energy policy per
 region; France has local distribution operators on some four hundred
 municipalities beside the national one; the Netherlands decides much per
 municipality. A grid operator's concession may follow no administrative
-line at all. A model that knew only the country of a site would pick the
-wrong register, the wrong operator or the wrong default for a site in the
+line at all. A model that knew only the country of a place would pick the
+wrong register, the wrong operator or the wrong default for a place in the
 wrong part of it.
 
 ## Decision
@@ -49,13 +49,6 @@ region, the region chooses which one is asked.
   country decides it per region or per municipality.
 - A region written in another code than ISO 3166-2.
 - A list of the municipalities of a country in code.
-
-## What it replaced
-
-The record "Addresses, positions and geocoding" of 13/10/2026, whose shape of
-address and whose geocoders now have their own rule
-([0025](0025-a-place-has-one-shape.md)), and whose regional level, added the
-same day, is this rule.
 
 ## See also
 

@@ -1,14 +1,14 @@
 # 0012 — A yield says what it was computed from
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026 · a record of the modules
+> Status: accepted · a record of the modules
 
 ## Context
 
-The platform this core comes from computed a PV yield in one function:
-hourly plane-of-array irradiance from a reanalysis, a cell temperature
-model, a PVWatts-like conversion with one system loss per organisation, a
-typical year chosen month by month. A six-week comparison with a partner's
-PV\*SOL studies showed where it diverged: the clock of the series, a
+A PV yield is easily computed in one function: hourly plane-of-array
+irradiance from a reanalysis, a cell temperature model, a PVWatts-like
+conversion with one system loss per organisation, a typical year chosen
+month by month. Compared over several weeks with PV\*SOL studies of the
+same roofs, such a function diverges, and the comparison shows where: the clock of the series, a
 multi-year hourly mean that smoothed the weather, one loss figure where
 PV\*SOL and PVsyst carry eight, the weather source itself (2 to 3 % on the
 annual), and conventions nobody wrote down: azimuth zero at south in one
@@ -22,8 +22,8 @@ which time convention, which models and which losses it was computed with.
 ## Decision
 
 **A trade is a module named after what it adds.** Photovoltaics is the
-`solar` module; weather, storage, consumption and sharing are modules of
-their own, each reading the series the others produce. There is no
+`solar` module; weather, consumption and the sharing of a community are
+modules of their own, each reading the series the others produce. There is no
 catch-all energy module.
 
 **The array is the level every tool exchanges.** Between the roof face and
@@ -80,16 +80,9 @@ references may come from a licensed dataset.
 - A yield without its profile, weather source, period and engine version.
 - A weather model chosen per device, or by a constant of the module.
 
-## What it replaced
-
-The planned catch-all `energy` module, the single system loss, the weather
-module's own order of resolution ending on a core default, and the list of
-modules to come that this record used to carry (now in the
-[road map](../road-to-0.1.md)).
-
 ## See also
 
-- [0004](0004-deterministic-runs.md), [0013](0013-external-engines.md) —
+- [0004](0004-a-figure-is-a-run.md), [0013](0013-a-program-connector-reads-one-request.md) —
   runs and engines.
 - [`modules/solar/README.md`](../../modules/solar/README.md),
   [`modules/weather/README.md`](../../modules/weather/README.md).

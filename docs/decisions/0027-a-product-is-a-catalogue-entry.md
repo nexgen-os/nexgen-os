@@ -1,13 +1,13 @@
 # 0027 — A product is a catalogue entry, and a device is an instance of it
 
-> Status: accepted · 12/10/2026
+> Status: accepted
 
 ## Context
 
 A PV module model, an inverter model, a heat pump model are described once
 by their manufacturer and installed thousands of times. Repeating their
 power, their dimensions and their datasheet on every installed device is
-how one site ends up with a 400 W module and the next with 0.4 kW of the
+how one roof ends up with a 400 W module and the next with 0.4 kW of the
 same model. IFC solves it with types and occurrences; Ekwo OS with a
 catalogue of products that a document line refers to without being bound
 by it.
@@ -42,15 +42,10 @@ stays where its licence allows.
   one.
 - Physical parameters of one trade as columns of the catalogue.
 
-## What it replaced
-
-The product catalogue was listed among the settled questions of
-[0005](0005-open-questions.md); it is a rule of its own here.
-
 ## See also
 
 - Inherits Ekwo OS 0044 (*A product is a catalogue entry in the core, not
   stock*).
 - [0032](0032-a-module-has-its-own-schema.md) — a module derives the
   catalogue.
-- [0012](0012-solar-module.md) — the physics of PV modules and inverters.
+- [0012](0012-a-yield-says-what-it-was-computed-from.md) — the physics of PV modules and inverters.

@@ -40,7 +40,7 @@ export const VOCABULARIES = [
   'regions',
 ] as const;
 
-/** The six objects of the core an attachment names by kind, and the table of each (decision 0044). */
+/** The six objects of the core an attachment names by kind, and the table of each (decision 0001). */
 export const OBJECT_TABLES: Record<string, string> = {
   organisation: 'nexgen.organisations',
   project: 'nexgen.projects',
@@ -154,7 +154,7 @@ export async function orphanedAttachments(db: SqlClient): Promise<{ kind: string
 
 /**
  * The rows of the `billing` module whose Ekwo id is no longer in Ekwo OS,
- * when Ekwo OS shares the database (decision 0043). The doctor reads no
+ * when Ekwo OS shares the database (decision 0010). The doctor reads no
  * table of Ekwo itself: the module's `billing.unlinked_keys()` does, and
  * answers nothing when the module or Ekwo's tables are absent.
  */

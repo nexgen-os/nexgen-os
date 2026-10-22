@@ -1,6 +1,6 @@
 # `weather` — which weather a place reads
 
-Status: shipped, decision [0012](../../docs/decisions/0012-solar-module.md)
+Status: shipped, decision [0012](../../docs/decisions/0012-a-yield-says-what-it-was-computed-from.md)
 ("Weather: a module of its own, chosen per place").
 Schema: `weather`.
 

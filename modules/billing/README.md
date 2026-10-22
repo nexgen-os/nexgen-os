@@ -1,7 +1,7 @@
 # `billing` — the bridge to the invoicing side
 
-Status: shipped with schema 0.3, decisions [0010](../../docs/decisions/0010-ekwo-link.md)
-and [0043](../../docs/decisions/0043-the-participant-is-billed.md). Schema: `billing`.
+Status: shipped with schema 0.3, decisions [0010](../../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)
+and [0010](../../docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md). Schema: `billing`.
 
 Who a company or a person legally is, how to reach them and how they are
 invoiced is kept by an invoicing application; Ekwo OS is the open one built

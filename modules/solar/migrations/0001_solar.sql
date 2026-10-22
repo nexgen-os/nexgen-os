@@ -8,7 +8,7 @@
 -- module or an inverter product is attached to its row of the core
 -- `device_directory`, in pvlib's parameter names. An array carries its own
 -- azimuth and tilt, and nothing else of where it is: the system belongs to
--- a participant, whose point the yield reads (decision 0045). A far
+-- a participant, whose point the yield reads (decision 0043). A far
 -- horizon belongs to a participant's place or to a PV system. A yield
 -- profile is a named set of modelling choices with an ordered list of
 -- losses, so that a run says what it was computed with.

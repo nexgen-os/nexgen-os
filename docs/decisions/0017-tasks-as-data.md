@@ -1,17 +1,16 @@
 # 0017 — What has to be done is a template, the same in every country
 
-> Status: accepted · 16/10/2026, rewritten 19/10/2026 · a record of the modules
+> Status: accepted · a record of the modules
 
 ## Context
 
 A roof of 30 kWp, an energy community, a carport: each needs a list of
 studies, notifications, permits, certificates, connections and consents, in
-an order, carried by someone. That list was in the head of an installer or
-a consultant. The first answer put the templates of tasks in the country
-packs, one set per country: the five steps every country shares (a
-feasibility study, a sizing, an offer, a commissioning, a handover) were
-written once per pack, with a legal reference each, and the packs grew a
-section no function of the core read.
+an order, carried by someone. That list lives in the head of an installer or
+a consultant. Written per country, it repeats five steps every country
+shares (a feasibility study, a sizing, an offer, a commissioning, a
+handover) once per pack, and the packs grow a section no function of the
+core reads.
 
 ## Decision
 
@@ -48,11 +47,6 @@ action as their source; the foundation does not know the action.
 - Task templates in a country pack.
 - A template per country for a step every country shares.
 - A module named after a core table it does not own.
-
-## What it replaced
-
-The `construction` module and its milestones, then per-country templates
-shipped in the `fr` and `be` packs.
 
 ## See also
 

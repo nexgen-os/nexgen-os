@@ -1,6 +1,6 @@
 # 0016 — A third party's name goes where its data, its computation or its file is
 
-> Status: accepted · 15/10/2026, rewritten 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -22,7 +22,7 @@ what it computes and takes the model as data.
 | Where | What the third party brings | Its name is… | Rewritten? |
 |---|---|---|---|
 | a connector (Open-Meteo, PVGIS) | data | the provider's: the data stays theirs, with its licence and version, recorded as the source of every value ([0011](0011-external-data.md)) | never |
-| a program connector (pvlib) | a computation, JSON in and JSON out | the tool's: a run records the engine and its version, or it cannot be replayed ([0013](0013-external-engines.md)) | never |
+| a program connector (pvlib) | a computation, JSON in and JSON out | the tool's: a run records the engine and its version, or it cannot be replayed ([0013](0013-a-program-connector-reads-one-request.md)) | never |
 | a format library (EPW, IFC, CityJSON, PAN and OND) | a file | the format's when it is a standard, the vendor's file name when the format is theirs ([0035](0035-a-format-library-touches-no-database.md)) | read, never re-implemented from behaviour |
 | a model inside a module (PVWatts, the Sandia inverter model) | a published method | the method's public name, as the literature cites it (NREL PVWatts, SAND2007-5036, IEC 61724-1): a reference, not a brand | yes, with the reference beside the code |
 
@@ -30,7 +30,7 @@ what it computes and takes the model as data.
 PV\*SOL, the closed parts of SAM) is read through its files and compared
 against, never re-implemented from its behaviour. A profile named
 `pvsyst_like` or `pvsol_like` says it *imitates* that tool's chain of losses
-for a calibration ([0012](0012-solar-module.md)); the suffix is the claim's
+for a calibration ([0012](0012-a-yield-says-what-it-was-computed-from.md)); the suffix is the claim's
 limit. These are the only places a vendor's name appears outside a format
 library.
 
@@ -51,11 +51,6 @@ never named after the platform that first ran it.
 - A rewritten method without the reference it implements.
 - A vendor's name outside a connector, an engine, a format library or a
   profile that says it imitates.
-
-## What it replaced
-
-Names chosen case by case: functions named after the model they happened to
-implement, and methods named after the product that first ran them.
 
 ## See also
 

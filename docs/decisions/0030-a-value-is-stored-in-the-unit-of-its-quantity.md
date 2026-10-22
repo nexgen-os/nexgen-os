@@ -1,13 +1,12 @@
 # 0030 — A value is stored in the unit of its quantity
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
 A meter answers in Wh, a hub in kWh, an inverter in W, a weather service in
-W/m² or J/cm², a gas meter in m³. Each format library of the first core
-carried its own list of conversion factors, and the same factor was written
-three times. A store that keeps each value in its original unit makes every
+W/m² or J/cm², a gas meter in m³. When each format library carries its own
+list of conversion factors, the same factor is written three times. A store that keeps each value in its original unit makes every
 sum a conversion and every comparison a risk; a store that converts in each
 client converts differently in each one.
 
@@ -38,10 +37,6 @@ never a signed sum keyed by hand.
 - A list of conversion factors in a format library, a connector or a
   client.
 - A negative value standing for a direction.
-
-## What it replaced
-
-The factor lists of the format libraries, each converting on its own.
 
 ## See also
 

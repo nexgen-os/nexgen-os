@@ -1,9 +1,9 @@
 # `building` — the shape of what is built
 
 Status: shipped, version 0.1.0, needs core 0.3.0 — decisions
-[0008](../../docs/decisions/0008-3d-module.md),
-[0026](../../docs/decisions/0026-a-device-is-not-placed-for-now.md) and
-[0045](../../docs/decisions/0045-the-participant-is-the-node.md).
+[0008](../../docs/decisions/0008-the-building-module-describes-what-is-built.md),
+[0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md) and
+[0043](../../docs/decisions/0043-the-participant-is-the-node.md).
 Module code `building`, schema `building`: the thing it holds is the
 building, and 3D is how a building is described.
 
@@ -27,7 +27,7 @@ device belongs to its participant, behind its meters. Install it with
 Sites, buildings, spaces and surfaces are the module's objects, each
 described in its own columns: the attachments of the core (attributes,
 identifiers, documents, series) name the six objects of the core only
-([0044](../../docs/decisions/0044-there-is-no-registry.md)). One identifier
+([0001](../../docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md)). One identifier
 names one site, building, space or surface of an organisation
 (`global_id`), so that a file is imported once.
 `building.participant_of(kind, id)` follows their foreign keys to the

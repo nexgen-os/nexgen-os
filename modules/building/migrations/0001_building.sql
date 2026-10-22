@@ -1,7 +1,7 @@
 -- Nexgen OS — module `building`: the physical description of a place.
 --
 -- The core keeps the participant and its place: an address, a point, a
--- time zone, geolocated but not described (decision 0045). What the place
+-- time zone, geolocated but not described (decision 0043). What the place
 -- physically is belongs here (decision 0008), and enriches the participant:
 -- its ground with its parcel, its buildings with their footprint and
 -- height, the floors, rooms, zones and units inside them as one tree, the

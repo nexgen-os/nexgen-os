@@ -34,7 +34,7 @@ attachments to anything else, in the schema `nexgen`. In plain words:
 
 The physical description of a place — its ground, buildings, floors, rooms
 and roof faces — enriches the participant in the `building` module; a
-device is not placed ([0045](docs/decisions/0045-the-participant-is-the-node.md)).
+device is not placed ([0043](docs/decisions/0043-the-participant-is-the-node.md)).
 
 Three rules shaped this structure, and settle every new question about it:
 **keep it simple**; **few words** — one word per thing across schemas,
@@ -232,8 +232,8 @@ for. The [`billing`](modules/billing/README.md) module is the bridge:
 an organisation's Ekwo company, a contact's Ekwo contact, the details of a
 contact that the invoicing side manages, so that the core holds no personal
 data, and the Ekwo invoices of each participant, who is the one billed
-([decisions 0010](docs/decisions/0010-ekwo-link.md) and
-[0043](docs/decisions/0043-the-participant-is-billed.md)). Issuing the
+([decisions 0010](docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) and
+[0010](docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)). Issuing the
 invoice from a settlement line is the invoicing bridge of the `contracts`
 module.
 

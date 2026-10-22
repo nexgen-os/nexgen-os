@@ -1,6 +1,6 @@
 # 0013 — A program connector reads one request and answers one result
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026 and 21/10/2026
+> Status: accepted
 
 ## Context
 
@@ -10,9 +10,9 @@ PySAM for NREL's System Advisor Model, research code on pandas — and some in
 R or Julia. Nexgen OS keeps its truth in Postgres and its tooling in
 TypeScript. Rewriting those libraries would lose their validation and their
 community; calling them through bindings would tie the core to one language
-and one way of installing it. A run already records which engine computed
-it ([0004](0004-deterministic-runs.md)); what was missing is how the core
-talks to an engine.
+and one way of installing it. A run records which engine computed it
+([0004](0004-a-figure-is-a-run.md)); this record says how the core talks to
+an engine.
 
 ## Decision
 
@@ -21,8 +21,8 @@ one request as JSON on stdin and answers one result as JSON on stdout.**
 It lives in `packages/connectors/<name>/`, beside the clients of the
 external APIs: code that reaches outside the database is a connector,
 whatever language it runs ([0011](0011-external-data.md)).
-**The word "engine" means what computed a run** (`runs.engine`,
-`engine_version`): PVGIS, `pvwatts.ts` or a program connector. The
+**The word "engine" means what computed a run** (the `engine_version` of a
+module's runs): PVGIS, `pvwatts.ts` or a program connector. The
 contract names the program by that word, since its answer is a run's
 engine: the envelope's `engine`, `runEngine()`, `describeEngine()`,
 `NEXGEN_ENGINE_<NAME>` and the `engine_*` refusals keep it. stderr is its log; exit code 0 with
@@ -72,19 +72,11 @@ module that builds the request.
   ([0024](0024-one-language-per-layer.md)).
 - A run that does not record the engine string it was computed with.
 
-## What it replaced
-
-Bindings or rewrites as the only ways to reach a scientific library, and a
-yield whose engine was the edge function that happened to compute it. Until
-21/10/2026 the programs had a root folder of their own, `engines/`, beside
-`packages/connectors/`: two words and two places for code that reaches
-outside, folded into one.
-
 ## See also
 
 - Inherits Ekwo OS 0020 (*One tax engine, several kinds of tax*),
   translated: one engine contract, several request kinds.
-- [0004](0004-deterministic-runs.md), [0012](0012-solar-module.md),
+- [0004](0004-a-figure-is-a-run.md), [0012](0012-a-yield-says-what-it-was-computed-from.md),
   [0016](0016-naming-third-party-methods.md).
 - `packages/core/src/connectors/runner.ts`, `packages/connectors/pvlib`, `tests/connectors-pvlib.test.ts`,
   `tests/connectors-runner.test.ts`.

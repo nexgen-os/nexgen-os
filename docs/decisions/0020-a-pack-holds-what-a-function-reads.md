@@ -1,16 +1,16 @@
 # 0020 — A pack holds what a function reads, and data cannot execute
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
 A country decides many things a description of a place depends on: how its
 regions are named, which identifiers a participant or a connection point carries,
 which registers and operators exist, which default values a study starts
-from. The first packs held all of that and more: legal texts and rules that
-no function read, task templates repeated per country for steps that are the
-same everywhere, hand-written SQL seeds loaded once and never again. A pack
-that holds what nobody reads is a library of law, maintained in an open
+from. A pack can easily hold more: legal texts and rules that no function
+reads, task templates repeated per country for steps that are the same
+everywhere, hand-written SQL seeds loaded once and never again. A pack that
+holds what nobody reads is a library of law, maintained in an open
 repository that computes nothing from it; and a rule nobody reads is never
 tested.
 
@@ -54,12 +54,6 @@ in the repository refuses one.
 - An expression, a condition language or a script in a pack.
 - A `case` on a country in a function, and a country literal in code.
 - A pack value without its source and reference.
-
-## What it replaced
-
-Packs as hand-written SQL seeds with legal sources, rules and per-country
-task templates beside the data functions read; national geocoder adapters
-shipped inside a pack.
 
 ## See also
 

@@ -1,6 +1,6 @@
 # 0039 — An agent is a user of the model
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -9,7 +9,7 @@ back is work an AI agent can do for a person, and agents are a first
 audience of the project. The easy way to let them in is a role of their
 own, a service key with wide rights, or a function that writes whatever the
 agent computed. Each of those turns the agent into a second, invisible
-operator of the database: what it may do is no longer what the person may
+operator of the database: what it may do is not what the person may
 do, and a figure it wrote cannot be told from a figure a run produced.
 
 ## Decision
@@ -27,7 +27,7 @@ given (a command line, an MCP server) calls those gestures and computes
 nothing itself.
 
 **An agent never writes a figure.** A yield, a loss or a settlement is a run,
-reproducible by anyone ([0004](0004-deterministic-runs.md)); a value it
+reproducible by anyone ([0004](0004-a-figure-is-a-run.md)); a value it
 attaches carries the source it came from, never a number it made up.
 
 **What the database refuses, the agent reports.** A named refusal is passed
@@ -44,11 +44,6 @@ reads the same.
 - A function that writes a computed figure outside a run.
 - Sending the data anywhere the person did not configure, or making any of
   it public without the person asking for it.
-
-## What it replaced
-
-Nothing: the rule held from the first core and was written in `AGENTS.md`;
-it is a record so that every tool given to an agent is held to it.
 
 ## See also
 

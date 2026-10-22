@@ -1,15 +1,14 @@
 # 0032 — A module has its own schema and writes the core through a function
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
 What a trade computes — a PV yield, the inside of a building, the weather of
 a place, an energy-sharing settlement — is not what every installation
 needs. Put in the core, it makes the core the sum of every trade; put in a
-client, it escapes the database's rules. The first modules (`architecture`,
-`solar`, `weather`, `tasks`) already lived in schemas of their own; this
-record states the rule they follow.
+client, it escapes the database's rules. Each module of the repository
+lives in a schema of its own; this record states the rule they follow.
 
 ## Decision
 
@@ -20,14 +19,15 @@ lives in its own schema too, `nexgen`, and `public` stays the
 installation's.
 
 **A module derives, it never widens.** A module that needs more about a
-device or a product adds a table with the same id; one that adds a kind of
-object declares it, so that attributes, identifiers, links, documents and
-series attach to it like to any object. No module adds a column to a core
-table.
+device or a product adds a table with the same id; one that adds an object
+of its own gives it a foreign key to the core object it belongs to and
+describes it in its own columns
+([0042](0042-a-module-starts-from-an-object-of-the-core.md)). No module
+adds a column to a core table.
 
 **A module reads the core freely and writes it through its functions.** A
 figure is a run of the module, written by the core's gesture
-(`record_run('<module>.runs', …)`, [0046](0046-a-run-is-the-module-s.md)); any other write goes through
+(`record_run('<module>.runs', …)`, [0004](0004-a-figure-is-a-run.md)); any other write goes through
 the gesture that carries its rule
 ([0018](0018-one-function-per-gesture.md)). A module may publish vocabulary
 rows, marked as published by it.
@@ -45,15 +45,10 @@ is in its pack.
 - A core function that names a module.
 - A module table without row level security.
 
-## What it replaced
-
-Nothing: the modules have followed it since the first one. The record makes
-it a rule that a new module is checked against.
-
 ## See also
 
 - Inherits Ekwo OS 0051 (*A module has its own schema and posts through a
   function*); the core in its own schema rather than `public` is a reasoned
-  divergence ([0010](0010-ekwo-link.md)).
+  divergence ([0010](0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)).
 - [0033](0033-a-module-code-outlives-its-names.md) — the code of a module.
 - `modules/README.md` — the rules of a module, in practice.

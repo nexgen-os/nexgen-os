@@ -1,17 +1,15 @@
 # 0019 — A column only for what every row has and every query filters on
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
-The first core held some facts twice: the year a building was built and its
-material as columns and as attributes, a device's installed power as a
-column and as a seeded property, a usage as a column and as a profile, a
-commissioning date under two names, a municipality code on the site and in
-the identifiers. Two places for one fact disagree one day, and nobody can
-tell which one is right. The opposite extreme, everything in attributes, was
-tried by the first core (one entity table) and withdrawn: every ordinary
-query paid a join.
+A fact can easily live twice: the year a building was built as a column and
+as an attribute, a device's installed power as a column and as a seeded
+property, a commissioning date under two names, a municipality code on a
+row and in its identifiers. Two places for one fact disagree one day, and
+nobody can tell which one is right. The opposite extreme, everything in
+attributes on one entity table, makes every ordinary query pay a join.
 
 ## Decision
 
@@ -44,17 +42,10 @@ that needs columns of its own derives a table with the same id
 - A `jsonb` column as a bag of properties: a value without a unit, a period
   or a source cannot be checked, compared or cited.
 
-## What it replaced
-
-The columns of the 0.1 core that repeated a property (`year_built`,
-`material`, the floor counts, the municipality code) and the seeded
-properties that repeated a column (installed power, usage, commissioning
-date).
-
 ## See also
 
 - Inherits the "compact columns" principle of Ekwo OS: what every row has is
   a column; the rest is a line table, never JSON.
-- [0006](0006-named-objects.md) — the objects and what is attached to them.
+- [0006](0006-the-core-names-six-objects.md) — the objects and what is attached to them.
 - [0021](0021-one-cascade-of-defaults.md) — a default is an attribute of a
   level.

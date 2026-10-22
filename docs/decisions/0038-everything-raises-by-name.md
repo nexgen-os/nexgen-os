@@ -1,6 +1,6 @@
 # 0038 — Everything raises, by name
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -50,12 +50,6 @@ country or a constant of the code.
   next.
 - A caller that retries a named refusal blindly instead of fixing what the
   name says.
-
-## What it replaced
-
-Nothing: the rule held from the first core and was written in `AGENTS.md`;
-it is a record so that a module, a connector and an engine are held to it
-too.
 
 ## See also
 

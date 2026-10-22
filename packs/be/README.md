@@ -11,7 +11,7 @@ Belgium decides most things per region: Flanders (`BE-VLG`), Brussels
 (`BE-BRU`) and Wallonia (`BE-WAL`) each keep their own address register,
 building identifiers and distribution operators. A row that holds in part of
 the country names its regions, and the geocoders return the region of each
-place they find ([decision 0009](../../docs/decisions/0009-addresses-and-geocoding.md)).
+place they find ([decision 0009](../../docs/decisions/0009-what-applies-follows-the-region.md)).
 The three regional registers answer as geocoders in the connectors
 [`geopunt`](../../packages/connectors/geopunt/README.md) for `BE-VLG`,
 [`urbis`](../../packages/connectors/urbis/README.md) for `BE-BRU` and

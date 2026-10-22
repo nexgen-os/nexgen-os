@@ -10,7 +10,7 @@
 -- (`solar.pv_systems`): a page reads
 -- `from devices join solar.pv_systems using (id)`.
 --
--- A device belongs to a participant (decision 0045), and is behind the
+-- A device belongs to a participant (decision 0043), and is behind the
 -- meters that participant carries (`participant_meters()`): there is no
 -- other path from a device to a meter or to a place. Where it sits among
 -- the buildings, rooms and roof faces of the place is not described for

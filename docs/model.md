@@ -2,15 +2,15 @@
 
 The core names six objects, in the order a page walks them:
 organisation → project → participant → meter and device → series
-([0006](decisions/0006-named-objects.md)); and what attaches to them, with
+([0006](decisions/0006-the-core-names-six-objects.md)); and what attaches to them, with
 the vocabularies, the countries and the gestures that keep them. The core
 is twenty-seven tables and one view. The participant is the node
-([0045](decisions/0045-the-participant-is-the-node.md)): it carries the
+([0043](decisions/0043-the-participant-is-the-node.md)): it carries the
 place, geolocated but not described, the meters and the devices behind
 them, and every module starts from it. Its ground, its buildings, floors,
 rooms and roof faces are the `building` module's
-([0008](decisions/0008-3d-module.md)); a device is not placed
-([0026](decisions/0026-a-device-is-not-placed-for-now.md)). A trade that
+([0008](decisions/0008-the-building-module-describes-what-is-built.md)); a device is not placed
+([0026](decisions/0026-a-device-belongs-to-its-participant.md)). A trade that
 needs more adds a module with its own schema, starting from one of these
 objects ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md));
 a country adds a pack.
@@ -36,7 +36,7 @@ erDiagram
 ```
 
 The hierarchy is the foreign keys, and nothing mirrors it
-([0044](decisions/0044-there-is-no-registry.md)). An attachment — an
+([0001](decisions/0001-the-hierarchy-is-the-foreign-keys.md)). An attachment — an
 attribute, an identifier, a document, a series — names its object by its
 kind and its id, the kind one of the six objects: `organisation`,
 `project`, `participant`, `meter`, `device`, `series`, checked by a plain
@@ -72,7 +72,7 @@ erDiagram
   documents and its own defaults attach to it as to any other.
 - **contacts** — a person or a company the organisation deals with: a name
   and a kind. How to reach and invoice them is the invoicing side's (the
-  `billing` module, [0010](decisions/0010-ekwo-link.md)). Nexgen OS keeps
+  `billing` module, [0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)). Nexgen OS keeps
   no invoice and no ledger: a settlement line goes to [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os)
   ([why](../README.md#invoicing-and-ekwo-os)), which installs beside it on one
   database ([with Ekwo OS](with-ekwo-os.md)).
@@ -86,7 +86,7 @@ erDiagram
   community, the installed power of a portfolio are attributes; the tasks of
   its works are the `tasks` module's.
 - **participants** — the node of a project
-  ([0045](decisions/0045-the-participant-is-the-node.md)): an actor — a
+  ([0043](decisions/0043-the-participant-is-the-node.md)): an actor — a
   household, a company, a tenant, a PV plant — `producer`, `consumer` or
   `prosumer`, with the contact who answers for it (the owner, the tenant,
   the company), its status and the period it takes part. It carries the
@@ -117,7 +117,7 @@ back. Everything of a participant inherits its country:
 geolocated, not described.
 
 What the place physically is belongs to the `building` module (`building`,
-[0008](decisions/0008-3d-module.md)), when it is installed:
+[0008](decisions/0008-the-building-module-describes-what-is-built.md)), when it is installed:
 
 - **building.sites** — the ground of a participant: a parcel or a plot
   with its outline, the area a register gives, its use, its source
@@ -131,7 +131,7 @@ What the place physically is belongs to the `building` module (`building`,
   said beyond the columns. `building.building_volume()` extrudes the
   footprint.
 - **building.spaces** — the inside of a building, one tree
-  ([0026](decisions/0026-a-device-is-not-placed-for-now.md)):
+  ([0026](decisions/0026-a-device-belongs-to-its-participant.md)):
   `floor` (with its `level`), `room`, `zone`, `unit`, each with its
   building, its parent space, elevation, height, geometry and floor area,
   the source it was described from, its identifier and its `metadata`
@@ -199,7 +199,7 @@ Any other key is refused (`place_key_unknown`).
   manufacturer, model, rated power, unit count, status, installation and
   removal dates. One device has as many series as it measures. It is not
   placed: where it sits in a building is not described for now
-  ([0026](decisions/0026-a-device-is-not-placed-for-now.md)); what a file
+  ([0026](decisions/0026-a-device-belongs-to-its-participant.md)); what a file
   said about it is an attribute the module that read the file declares
   (`file_record` of `building`). `install_device` (with the nameplate of
   the file it was read from, when no product is named), `retire_device`,
@@ -281,8 +281,8 @@ optional extras).
 - **runs** — a computation is a run of the module that computes it, kept
   in that module's `runs` table (`solar.runs`, `consumption.runs`,
   `community.runs`), its subject a foreign key to an object of the core:
-  inputs, engine version, results ([0004](decisions/0004-deterministic-runs.md),
-  [0046](decisions/0046-a-run-is-the-module-s.md)). The core keeps the one
+  inputs, engine version, results ([0004](decisions/0004-a-figure-is-a-run.md),
+  [0004](decisions/0004-a-figure-is-a-run.md)). The core keeps the one
   gesture: `record_run('<module>.runs', kind, id, engine_version, inputs,
   results, series)` (or `start_run()` then `finish_run()`) writes it with
   the series it computed, whose `source` names it; the same identity gives

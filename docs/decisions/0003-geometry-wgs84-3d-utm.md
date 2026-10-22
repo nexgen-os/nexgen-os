@@ -1,6 +1,6 @@
 # 0003 — Geometry is stored in WGS 84 in 3D, and measured in UTM
 
-> Status: accepted · 12/10/2026, rewritten 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -26,7 +26,7 @@ everywhere.
 **A geometry in the database is a shape, not a model.** Footprints, roof
 faces, points and parcels are rows; a point cloud, a mesh, a BIM file, a
 raster or a tileset is a file on object storage that a row points to
-([0008](0008-3d-module.md)).
+([0008](0008-the-building-module-describes-what-is-built.md)).
 
 ## What it forbids
 
@@ -36,13 +36,9 @@ raster or a tileset is a file on object storage that a row points to
 - An area or a length computed in degrees, or in a projection chosen by
   country.
 
-## What it replaced
-
-Nothing: written with the first core.
-
 ## See also
 
-- [0008](0008-3d-module.md) — heavy geometry stays in object storage.
+- [0008](0008-the-building-module-describes-what-is-built.md) — heavy geometry stays in object storage.
 - [0025](0025-a-place-has-one-shape.md) — the point of a place, in WGS 84.
 - [0035](0035-a-format-library-touches-no-database.md) — the libraries
   transform on the way in.

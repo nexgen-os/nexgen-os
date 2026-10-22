@@ -1,6 +1,6 @@
 # 0036 — A file is imported once, and a reader reports rather than corrects
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -49,11 +49,6 @@ the file is the sum of the rows written in it.
 - A reader that fills a gap, rounds a value, swaps a convention or picks a
   default to make a file pass.
 - An export that recomputes a figure the model already holds.
-
-## What it replaced
-
-Imports that trusted the caller not to run them twice, and readers whose
-behaviour on an incomplete file was left to each library.
 
 ## See also
 

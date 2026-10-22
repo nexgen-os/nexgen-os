@@ -4,20 +4,19 @@ Why Nexgen OS is shaped the way it is: one record per decision, each titled
 as the rule it sets, so that a contributor can argue with the reason rather
 than guess at it. The rules on one screen: [`docs/doctrine.md`](../doctrine.md).
 
-**A record states a rule that holds.** It says why in a few lines, what the
-rule forbids and what it replaced; it carries no plan, no road map and no
-"later". What is planned lives in the [road map](../road-to-0.1.md), and a
-record is written when its rule is decided, even where the code still has to
-follow it (the road map lists where). A decision that changes is rewritten in
-place and its record says what the rule now is; the history of the change is
-in the git log and in [`CHANGELOG.md`](../../CHANGELOG.md). A withdrawn
-record keeps its file and its number, with one line saying what superseded it.
+**A record states a rule that holds.** It says why in a few lines and what
+the rule forbids; it carries no plan, no road map and no "later". What is
+planned lives in the [road map](../road-to-1.0.md), and a record is written
+when its rule is decided, even where the code still has to follow it (the
+road map lists where). A decision that changes is rewritten in place and
+its record says what the rule is; the history of the change is in the git
+log and in [`CHANGELOG.md`](../../CHANGELOG.md). A withdrawn record keeps
+its file and its number, with one line saying what superseded it.
 
-A record has a **Status** line and five parts: **Context**, **Decision**,
-**What it forbids**, **What it replaced** and **See also**, where the
-decisions of Ekwo OS it inherits are named. New records take the next free
-number; numbers and file names never change, so a file name may keep an older
-title.
+A record has a **Status** line and four parts: **Context**, **Decision**,
+**What it forbids** and **See also**, where the decisions of Ekwo OS it
+inherits are named. New records take the next free number; numbers and
+file names never change.
 
 **A weakness that is still open is not written here.** A security issue goes
 first through a private advisory, as [`SECURITY.md`](../../SECURITY.md)
@@ -25,9 +24,9 @@ describes; its record is written once the fix has shipped.
 
 ## Objects
 
-- [0006](0006-named-objects.md) · The core names a few objects, and everything else is attached to them · accepted
-- [0044](0044-there-is-no-registry.md) · There is no registry: the hierarchy is the foreign keys, and an attachment names its object's kind · accepted
-- [0045](0045-the-participant-is-the-node.md) · The participant is the node: it carries the place, the meters and the devices, and every module starts from it · accepted
+- [0006](0006-the-core-names-six-objects.md) · The core names six objects, and everything else is attached to them · accepted
+- [0043](0043-the-participant-is-the-node.md) · The participant is the node: it carries the place, the meters and the devices, and every module starts from it · accepted
+- [0001](0001-the-hierarchy-is-the-foreign-keys.md) · The hierarchy is the foreign keys, and an attachment names its object's kind · accepted
 - [0023](0023-an-organisation-is-an-object.md) · An organisation is an object · accepted
 - [0019](0019-a-column-only-for-what-every-row-has.md) · A column only for what every row has and every query filters on · accepted
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) · The instrument is a device, the point is the series · accepted
@@ -39,9 +38,9 @@ describes; its record is written once the fix has shipped.
 
 - [0003](0003-geometry-wgs84-3d-utm.md) · Geometry is stored in WGS 84 in 3D, and measured in UTM · accepted
 - [0025](0025-a-place-has-one-shape.md) · A place has one shape · accepted
-- [0009](0009-addresses-and-geocoding.md) · What applies to a place follows its region, its municipality or its area · accepted
-- [0026](0026-a-device-is-not-placed-for-now.md) · A device is not placed for now; the `building` module describes the place, and a space is one notion with a kind · accepted
-- [0008](0008-3d-module.md) · The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
+- [0009](0009-what-applies-follows-the-region.md) · What applies to a place follows its region, its municipality or its area · accepted
+- [0026](0026-a-device-belongs-to-its-participant.md) · A device belongs to its participant; the `building` module describes the place, and a space is one notion with a kind · accepted
+- [0008](0008-the-building-module-describes-what-is-built.md) · The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
 
 ## Series
 
@@ -53,9 +52,8 @@ describes; its record is written once the fix has shipped.
 ## Computation
 
 - [0018](0018-one-function-per-gesture.md) · One function per gesture · accepted
-- [0004](0004-deterministic-runs.md) · A figure is a run, and a finished run never changes · accepted
-- [0046](0046-a-run-is-the-module-s.md) · A run is the module's, and the core keeps the one gesture that writes it · accepted
-- [0013](0013-external-engines.md) · A program connector reads one request and answers one result · accepted
+- [0004](0004-a-figure-is-a-run.md) · A figure is a run of the module that computes it, and a finished run never changes · accepted
+- [0013](0013-a-program-connector-reads-one-request.md) · A program connector reads one request and answers one result · accepted
 - [0024](0024-one-language-per-layer.md) · One language per layer · accepted
 - [0016](0016-naming-third-party-methods.md) · A third party's name goes where its data, its computation or its file is · accepted
 
@@ -63,14 +61,14 @@ describes; its record is written once the fix has shipped.
 
 - [0032](0032-a-module-has-its-own-schema.md) · A module has its own schema and writes the core through a function · accepted
 - [0042](0042-a-module-starts-from-an-object-of-the-core.md) · A module starts from an object of the core and enriches it · accepted
-- [0043](0043-the-participant-is-billed.md) · The participant is billed, Ekwo OS keeps the invoice · accepted
+- [0041](0041-a-module-names-one-thing.md) · A module names one thing with its own physics, and there is no catch-all · accepted
 - [0033](0033-a-module-code-outlives-its-names.md) · A module code outlives its names · accepted
 
 ## Packs
 
 - [0020](0020-a-pack-holds-what-a-function-reads.md) · A pack holds what a function reads, and data cannot execute · accepted
 - [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted
-- [0034](0034-a-pack-upgrade-is-never-silent.md) · A pack upgrade is never silent, and a golden site is its contract · accepted
+- [0034](0034-a-pack-upgrade-is-never-silent.md) · A pack upgrade is never silent, and a golden case is its contract · accepted
 
 ## Formats and external data
 
@@ -92,15 +90,10 @@ describes; its record is written once the fix has shipped.
 ## Releases
 
 - [0040](0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) · A release has a tag, a schema version and a schema floor · accepted
-- [0041](0041-a-module-names-one-thing.md) · A module names one thing with its own physics, and there is no catch-all · accepted
-- [0005](0005-open-questions.md) · The core is AGPL, the libraries MIT, and a sign-off is enough to contribute · accepted
+- [0005](0005-agpl-core-mit-libraries-sign-off.md) · The core is AGPL, the libraries MIT, and a sign-off is enough to contribute · accepted
 
 ## Records of single modules
 
-- [0010](0010-ekwo-link.md) · The billing bridge: one module reaches the invoicing side · accepted
-- [0012](0012-solar-module.md) · A yield says what it was computed from · accepted
+- [0010](0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) · The participant is billed, Ekwo OS keeps the invoice: one thin bridge module · accepted
+- [0012](0012-a-yield-says-what-it-was-computed-from.md) · A yield says what it was computed from · accepted
 - [0017](0017-tasks-as-data.md) · What has to be done is a template, the same in every country · accepted
-
-## Superseded
-
-- [0001](0001-one-entity-table-attached-values.md) · One entity table, with everything else attached to it · superseded by 0006

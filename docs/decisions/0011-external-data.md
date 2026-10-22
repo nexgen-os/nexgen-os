@@ -1,16 +1,16 @@
 # 0011 — A source is a row, a connector is code, and an organisation's use of it is a `connectors` row naming its secret
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026 and 21/10/2026
+> Status: accepted
 
 ## Context
 
 Most of what a page shows was not typed by anyone in the organisation: the
 weather comes from a model, the meter readings from the grid operator's
 hub, the prices and the carbon intensity from the transmission operator or
-a market, the buildings and the companies around a site from registers and
-maps, the roof from a solar API. The product this core comes from reads
-some forty such sources, each through code of its own, and keeps what they
-answered in columns and JSON that no longer say where it came from. Three
+a market, the buildings and the companies around a place from registers and
+maps, the roof from a solar API. A platform of the trade reads some forty
+such sources; read each through code of its own, with the answers kept in
+columns and JSON, nobody can say any more where a value came from. Three
 questions follow: where external data lives in the model, how an
 organisation's access to a source is described, and how a connector whose
 data or code cannot be open plugs into an open core.
@@ -30,7 +30,7 @@ third word.
 2. **A connector is code outside the database**, in `packages/connectors/`,
    whatever language it runs: a client of an external API in TypeScript,
    or a program that reads one JSON request and answers one JSON result
-   ([0013](0013-external-engines.md)). A client has one interface per kind of
+   ([0013](0013-a-program-connector-reads-one-request.md)). A client has one interface per kind of
    answer (weather, meter data, places, addresses) and one implementation
    per source. It answers in the core's terms (quantities, value kinds,
    steps, identifier schemes), and what it brings back is written on
@@ -57,15 +57,16 @@ because the data names its source.
 | weather forecast | a series of the participant or of a weather point, `forecast`, every issue kept | pages read the latest issue; an accuracy study reads what was known at a given time |
 | weather observed, reanalysis | a series, `measured` or `simulated` | a reanalysis is a model's view of the past: `simulated`, with its source |
 | meter readings | a series of the meter, `measured`, quality from the hub's codes | the mandate that allows the reading is the `grid` module's |
-| prices, imbalance, carbon intensity | a series of a zone a module declares as an object | a participant is linked to its zone; one series serves every participant in it |
-| grid topology | objects of the `grid` module, links to what they serve | with the operator's identifiers |
+| prices, imbalance, carbon intensity | a series of the organisation, named by its zone | one series serves every participant in the zone |
+| grid topology | rows of the `grid` module, pointing to the meters they serve | with the operator's identifiers |
 | registers, cadastre, building datasets, company data | places, buildings, identifiers, attributes, documents | each with its source; a licensed answer expires with its retention |
 | roof faces from a survey or a solar API | surfaces, with their source | a solar API's layers are a cache, never redistributed |
 
 An external series needs an object to hang on. When no participant owns
-it — a weather point shared by many participants, a bidding zone, a
-substation — the module that knows it declares the object, and
-participants are linked to it.
+it — a weather point shared by many participants, a bidding zone — it is a
+series of the organisation, named by the point or the zone; the module
+that knows the point holds it and says which participants read it
+(`weather.participant_points`).
 
 **Open connectors, private connectors.** The interfaces are the contract. A
 connector is open when its data is. A connector whose data or terms are not
@@ -84,15 +85,6 @@ database.
 - External data without its source.
 - A function of the schema that calls a network.
 - A page, a module or an open connector that imports a private connector.
-
-## What it replaced
-
-Some forty source readers, each with code of its own, writing answers in
-columns and JSON that no longer said where they came from; and the revised
-forecasts left open by [0005](0005-open-questions.md), settled by keeping
-every issue. Until 21/10/2026 an organisation's use of a source was a row
-of `connections`, a third word beside the source and the connector, and
-the programs in other languages sat in a root folder of their own.
 
 ## See also
 

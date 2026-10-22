@@ -1,17 +1,17 @@
 # 0028 — Two objects that are one are merged, and the absorbed one is retired
 
-> Status: accepted · 19/10/2026, rewritten 22/10/2026
+> Status: accepted
 
 ## Context
 
 The same building arrives from a cadastre, from an IFC file and from a
 survey; the same meter is typed by hand and then imported from the grid
-operator. A building is split into two lots, two sites are joined into one,
-an inverter is replaced by another. Deleting the old object loses
+operator. A building is split into two lots, two parcels are joined into
+one, an inverter is replaced by another. Deleting the old object loses
 everything that pointed to it — its series, its documents, the runs that
-read it — and editing it in place hides that it ever existed. The first
-core kept splits, merges and replacements in a table of their own, then as
-dated links between objects of any kind, a table nobody else read.
+read it — and editing it in place hides that it ever existed. A table of
+splits, merges and replacements, or of dated links between objects of any
+kind, is a table nobody else reads.
 
 ## Decision
 
@@ -40,17 +40,11 @@ acting for one decides.
 - A table of its own for one kind of relation between two objects, or a
   table of links between objects of any kind.
 
-## What it replaced
-
-The `successors` table of the 0.1 core, then the `split_into`,
-`merged_into` and `replaces` links of `links`, with `split_object()` and
-`merge_objects()` (until 22/10/2026).
-
 ## See also
 
 - Inherits Ekwo OS 0046 (*Settling applies identification, offers
   resemblance*), 0074 (*Two contacts of one company are merged, and the
   absorbed one is retired*) and 0075 (*The contacts that are probably one
   party are proposed*).
-- [0006](0006-named-objects.md) — what is attached to an object.
+- [0006](0006-the-core-names-six-objects.md) — what is attached to an object.
 - [0018](0018-one-function-per-gesture.md) — merging is a gesture.

@@ -1,23 +1,24 @@
 # 0033 — A module code outlives its names
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
-A module's names are not all of one kind. Its code is the key of the
-registry, the mark on the vocabulary rows it publishes and the name a run
-records as the module that produced it; a finished run never changes
-([0004](0004-deterministic-runs.md)). Its schema, its tables, its functions
-and its folder are names a client calls. The first modules were already
-renamed once before any release (`construction` became `tasks`); after a
-release, a rename meets runs that cannot be rewritten.
+A module's names are not all of one kind. Its code is the key of
+`nexgen.modules`, the mark on the vocabulary rows it publishes
+(`published_by`) and the name a run's series carry as their source
+(`<module>.runs:<run id>`); a finished run never changes
+([0004](0004-a-figure-is-a-run.md)). Its schema, its tables, its functions
+and its folder are names a client calls, and a name can always be made more
+precise. Once a release has installed a module somewhere, a rename meets
+runs and published rows that cannot be rewritten.
 
 ## Decision
 
-**The code of a module is permanent; every other name may be made more
-precise.** The schema, the tables, the functions, the policies, the pack
-section and the folder are renamed by a migration and a release; the code
-written on runs and published rows is not.
+**The code of a module is permanent once released; every other name may be
+made more precise.** The schema, the tables, the functions, the policies,
+the pack section and the folder are renamed by a migration and a release;
+the code written on runs and published rows is not.
 
 **A rename happens in place, in one migration that can run twice.**
 Renaming a schema or a table keeps its rows, keys, policies and grants;
@@ -28,9 +29,8 @@ catalogue.
 **What was published under an old name keeps working for one release**, and
 the release notes say when it goes.
 
-**The folder is named after what the module is.** When the code reads less
-precisely than the rest, the module's manifest says which code the folder
-carries, and the command line finds a module by either.
+**The folder is the code.** `modules/<code>/` holds the module whose row in
+`nexgen.modules` has that code, and the command line finds a module by it.
 
 ## What it forbids
 
@@ -38,10 +38,6 @@ carries, and the command line finds a module by either.
 - Rewriting the runs or published rows of a module to follow a new name.
 - A rename that removes the old name in the same release that introduces
   the new one.
-
-## What it replaced
-
-Nothing: written before the first rename after a release.
 
 ## See also
 

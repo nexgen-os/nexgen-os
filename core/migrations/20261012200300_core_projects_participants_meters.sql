@@ -5,7 +5,7 @@
 -- study, a construction site, a district plan, with the country whose rules
 -- apply and a lifecycle.
 --
--- A participant is the node of a project (decision 0045): an actor — a
+-- A participant is the node of a project (decision 0043): an actor — a
 -- household, a company, a tenant, a PV plant — as producer, consumer or
 -- prosumer, with the contact who answers for it and the period it is in. It
 -- carries the place: its address and its point on the map, its time zone,

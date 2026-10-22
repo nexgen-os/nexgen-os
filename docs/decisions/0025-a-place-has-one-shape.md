@@ -1,22 +1,22 @@
 # 0025 — A place has one shape
 
-> Status: accepted · 19/10/2026, completed 21/10/2026
+> Status: accepted
 
 ## Context
 
 A place is found by its address in one country and by its coordinates in
 another, and a form takes either and shows both. The geocoders the
 repository reads (open ones worldwide, national registers, commercial
-services an installation configures) each answered in a JSON shape of
-their own, and the importers that create places from a file did the same.
-Every caller translated, each a little differently, and the precision and
-the origin of a point were lost on the way more often than not.
+services an installation configures) each answer in a JSON shape of their
+own, and so do the files places are imported from. Left to every caller to
+translate, each a little differently, the precision and the origin of a
+point are lost on the way more often than not.
 
 ## Decision
 
 **A place has one shape, defined by the core**, that every geocoder, every
 importer and every connector produces and that a participant stores
-([0045](0045-the-participant-is-the-node.md)): `join_project()` takes it,
+([0043](0043-the-participant-is-the-node.md)): `join_project()` takes it,
 `locate_participant()` places a participant again from it, `place_of()`
 gives it back; a group of participants has none:
 
@@ -48,7 +48,7 @@ the database calls a geocoder: the core stores what came back and from
 whom.
 
 **The physical description of a place enriches it without changing it**
-([0008](0008-3d-module.md)): the ground, the buildings, their volumes and
+([0008](0008-the-building-module-describes-what-is-built.md)): the ground, the buildings, their volumes and
 models attach to the participant in the `building` module; the shape
 stays the same, on the participant.
 
@@ -61,17 +61,10 @@ stays the same, on the participant.
 - Parsing a free-text address or validating it against a register in the
   core: both are a geocoder's service.
 
-## What it replaced
-
-The shapes of each geocoder adapter and importer, and the address rules of
-decision 0009 written beside the geocoding library that held them. Until
-0.3.0 the shape was stored on a site of the core (`create_site()`,
-`locate_site()`); it is now the participant's.
-
 ## See also
 
 - Inherits Ekwo OS 0024 (*A tax follows the territory of the parties*),
-  translated by [0009](0009-addresses-and-geocoding.md): what applies to a
+  translated by [0009](0009-what-applies-follows-the-region.md): what applies to a
   place follows its region.
 - [0011](0011-external-data.md) — sources and connectors.
 - schema.org `PostalAddress`, Overture Maps addresses theme, RFC 7946

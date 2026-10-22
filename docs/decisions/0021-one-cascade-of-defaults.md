@@ -1,17 +1,16 @@
 # 0021 — One cascade of defaults, climbing a region to its parent, and no global fallback
 
-> Status: accepted · 19/10/2026 · completed 21/10/2026 (the climb through the parent region)
+> Status: accepted
 
 ## Context
 
 A yield, a sizing or a settlement starts from values nobody has measured
 yet: a system loss, a degradation rate, a share of self-consumption, a
-reference price. Before this rule each module found them its own way: one
-read a column of the organisation, another a constant in its code, the
-weather module its own order of project, connector, pack and core. Two
-modules asked the same question and got two answers, and a figure computed
-for one country silently used a number chosen for another when the pack had
-none.
+reference price. Left to each module, one reads a column of the
+organisation, another a constant in its code, a third its own order of
+project, connector, pack and core. Two modules ask the same question and get
+two answers, and a figure computed for one country silently uses a number
+chosen for another when the pack has none.
 
 ## Decision
 
@@ -20,7 +19,7 @@ order**: the object itself, then its parents (a device's participant, a
 participant's group and project), then its organisation, then the region
 of its participant's place, then the regions it is part of, nearest first,
 then its country
-([0045](0045-the-participant-is-the-node.md)). The first level that holds a value answers, and the answer says
+([0043](0043-the-participant-is-the-node.md)). The first level that holds a value answers, and the answer says
 which level it came from.
 
 **A region climbs to its parent.** `region` is the ISO 3166-2 subdivision a
@@ -29,7 +28,8 @@ the pack lists two levels, each subdivision names the one it is part of
 (`regions.parent`). A value decided at the upper level holds in every
 subdivision under it without a copy, and a value of the lower level wins
 over it. The answer names the region that decided. A pack with one level
-has no parent, and its cascade is the same as before.
+lists regions without a parent, and its cascade goes from the region to the
+country.
 
 **Below the country, a default is an attribute.** The object, its parents
 and its organisation hold their own values as attributes, with a period and
@@ -49,7 +49,7 @@ allocation key), where the run records them; the cascade holds what varies
 by place and by owner.
 
 **A run records what it read.** The value and the level it came from are
-inputs of the run ([0004](0004-deterministic-runs.md)), so the same run
+inputs of the run ([0004](0004-a-figure-is-a-run.md)), so the same run
 replayed later reads the same number even after the pack moved on.
 
 ## What it forbids
@@ -60,16 +60,10 @@ replayed later reads the same number even after the pack moved on.
 - A default stored as a column of an organisation or a project, or as a
   settings `jsonb` without unit, period and source.
 
-## What it replaced
-
-Per-module resolution orders (the weather model of a site, the loss of an
-organisation), constants in module code, and the "core default by coverage"
-at the end of the weather module's order.
-
 ## See also
 
 - Inherits Ekwo OS 0038 (*A deadline is a rule of the country; null is an
   answer*) and 0041 (*A company has a profile*), translated: the profile is
   the organisation's attributes.
-- [0009](0009-addresses-and-geocoding.md) — the region of a place.
+- [0009](0009-what-applies-follows-the-region.md) — the region of a place.
 - [0038](0038-everything-raises-by-name.md) — the refusal is named.

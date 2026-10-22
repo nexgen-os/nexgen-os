@@ -1,6 +1,6 @@
 # 0037 — The schema grants its own rights, and the surface is closed
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -28,7 +28,7 @@ schema is granted for reading.
 
 **Row level security is on every table**, of the core and of every module,
 by organisation: a member reads what the organisation holds, an owner or an
-editor writes it. A portfolio is what the caller may read; nothing else
+editor writes it. A list holds what the caller may read; nothing else
 filters it.
 
 **The surface is closed, not merely empty.** The anonymous role is granted
@@ -55,13 +55,6 @@ can stand in for one of the core.
 - `alter default privileges` or `grant all on all tables` as the way rights
   are given.
 - A function without its search path; the hygiene check refuses it.
-
-## What it replaced
-
-Rights given table by table through one procedure that enabled row level
-security, wrote the two standard policies and granted every verb, with no
-written rule saying which role may reach what, and nothing that compared
-the grants of an installation with those of a release.
 
 ## See also
 

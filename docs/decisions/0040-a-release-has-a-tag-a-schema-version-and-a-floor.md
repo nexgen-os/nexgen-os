@@ -1,6 +1,6 @@
 # 0040 — A release has a tag, a schema version and a schema floor
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -51,11 +51,6 @@ changelog says how.
 - A release whose schema changes without a new schema version.
 - Editing a migration that a tag has published.
 - A package published from a source that carries no tag.
-
-## What it replaced
-
-Nothing: the version function, the floor and the installer exist since the
-first release; the rule is written so that every package keeps to it.
 
 ## See also
 

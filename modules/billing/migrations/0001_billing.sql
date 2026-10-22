@@ -2,7 +2,7 @@
 --
 -- Who a company or a person legally is, how to reach them and how they are
 -- invoiced is kept by an invoicing application; Ekwo OS is the open one
--- built on the same playbook (decisions 0010 and 0043). The core names no
+-- built on the same playbook (decision 0010). The core names no
 -- product and keeps no personal contact data: an organisation is a name, a
 -- contact is a name and a kind, a participant names its contact. This
 -- module keeps, beside them and keyed by the same ids, the Ekwo company an

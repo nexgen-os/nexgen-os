@@ -1,13 +1,12 @@
 # 0024 — One language per layer
 
-> Status: accepted · 19/10/2026
+> Status: accepted
 
 ## Context
 
 Nexgen OS sits between two worlds. The tools that install, import and
-connect (a command line, format libraries, connectors, an MCP server) are
-written in TypeScript, the language the platform built on it already
-maintains. The science of the trades (pvlib, pandapower, PySAM, the
+connect (a command line, format libraries, connectors, the core client) are
+written in TypeScript, the language the platforms built on it maintain. The science of the trades (pvlib, pandapower, PySAM, the
 EnergyPlus bindings, research code on pandas) is written in Python, with
 some R and Julia, and the scientific partners of the project work there.
 Supporting both everywhere would mean two implementations of every rule,
@@ -22,13 +21,12 @@ implementation of the model and of every rule that spans rows
 calls them.
 
 **TypeScript is the one maintained toolchain.** The command line, the
-format libraries, the connectors, the core client and the MCP server are
-TypeScript, shipped as packages; one language to maintain, review and
+format libraries, the connectors and the core client are TypeScript, shipped as packages; one language to maintain, review and
 standardise.
 
 **Any other language is a connector.** A computation in Python, R or Julia
 is a program connector in `packages/connectors/`, behind the contract of
-[0013](0013-external-engines.md): one JSON request in and one JSON result
+[0013](0013-a-program-connector-reads-one-request.md): one JSON request in and one JSON result
 out, never a read or a write of the database. What it answers is the
 engine of a run.
 
@@ -48,16 +46,11 @@ exists once, in one module or one program connector.
 - A tool of the toolchain in another language than TypeScript.
 - A rule reimplemented in a client because its function was not called.
 
-## What it replaced
-
-Rules spread between TypeScript helpers, the Python client and SQL, with no
-statement of which one is the reference.
-
 ## See also
 
 - Inherits the principle of Ekwo OS that one rule exists once, and 0056
   (*The command line computes no amount*).
-- [0013](0013-external-engines.md) — the contract of the program connectors.
+- [0013](0013-a-program-connector-reads-one-request.md) — the contract of the program connectors.
 - [0016](0016-naming-third-party-methods.md) — where a third party's name
   goes.
 - [0035](0035-a-format-library-touches-no-database.md) — what a format

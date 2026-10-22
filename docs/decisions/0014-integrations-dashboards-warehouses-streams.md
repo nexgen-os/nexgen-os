@@ -1,10 +1,10 @@
 # 0014 — Integrations come through three doors
 
-> Status: accepted · 13/10/2026, rewritten 19/10/2026
+> Status: accepted
 
 ## Context
 
-An energy community, a building portfolio or a research group already has
+An energy community, the owner of many buildings or a research group already has
 its tools: Grafana on a screen in the plant room, Power BI in the finance
 department, InfluxDB fed by Home Assistant, Spark or pandas in the lab,
 Kafka between the meter gateways and the back office. Nexgen OS has to sit
@@ -49,11 +49,6 @@ object through the external identifiers, the same path as a file import.
 - A proprietary SDK in the core.
 - A message shape of its own per integration.
 - A dashboard connected with the owner's rights.
-
-## What it replaced
-
-Integrations designed one tool at a time, each with its own export and its
-own copy of the readings.
 
 ## See also
 

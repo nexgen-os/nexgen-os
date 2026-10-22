@@ -11,5 +11,5 @@ const [place] = await geocoder.search('Place Saint-Lambert 18, 4000 Liège');
 
 The place is the standard shape of `@nexgen-os/core` (address, WGS 84 point,
 precision, source); `placeFields(place)` gives the place columns of `participants` it fills.
-Decision [0009](../../../docs/decisions/0009-addresses-and-geocoding.md).
+Decision [0009](../../../docs/decisions/0009-what-applies-follows-the-region.md).
 

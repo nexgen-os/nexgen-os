@@ -1,6 +1,6 @@
 # `solar` — photovoltaic systems and what a yield is computed from
 
-Decision [0012](../../docs/decisions/0012-solar-module.md).
+Decision [0012](../../docs/decisions/0012-a-yield-says-what-it-was-computed-from.md).
 
 A PV yield is comparable with a PVsyst, PV\*SOL or PVGIS result only when it
 says which weather, which period, which time convention, which models and
@@ -8,7 +8,7 @@ which losses it was computed with. This module holds those inputs as data.
 Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is a
 run of this module, kept in `solar.runs` and written through the core's
 gesture, `record_run('solar.runs', …)`
-([0046](../../docs/decisions/0046-a-run-is-the-module-s.md)).
+([0004](../../docs/decisions/0004-a-figure-is-a-run.md)).
 
 ## Conventions
 
@@ -24,7 +24,7 @@ gesture, `record_run('solar.runs', …)`
 | Table | What it is |
 |---|---|
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
-| `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-is-not-placed-for-now.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
+| `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
 | `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
 | `solar.scenarios` | a design variant of a participant's PV, on top of another one when it has a parent (`solar.create_scenario()`): the arrays and horizons with a scenario exist only in it and the scenarios built on it |
@@ -162,7 +162,7 @@ the run records `bifacial: 'not modelled'` for each bifacial array.
 
 A profile and an engine are two axes. The profile chooses the weather,
 the models and the losses; the engine computes them. With `engine: { name:
-'pvlib', command? }` (decision [0013](../../docs/decisions/0013-external-engines.md),
+'pvlib', command? }` (decision [0013](../../docs/decisions/0013-a-program-connector-reads-one-request.md),
 [`packages/connectors/pvlib`](../../packages/connectors/pvlib/README.md)), `runYield` runs any
 profile whose models the engine has, and needs `profileCode`
 (`profile_required` otherwise) and the participant's time zone:

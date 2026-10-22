@@ -1,6 +1,6 @@
 # 0015 — Nothing is public until an owner publishes it, and a publication is kept as published
 
-> Status: accepted · 14/10/2026, rewritten 19/10/2026
+> Status: accepted
 
 ## Context
 
@@ -8,10 +8,10 @@ A city consulting its residents on a solar plan, a cooperative showing what
 its roofs would produce, a research partner citing a district study: each
 needs to show something to people who have no account and never will.
 Everything in the core is read under row level security, by organisation.
-Opening a table, a site or an organisation to the anonymous role would make
+Opening a table, a project or an organisation to the anonymous role would make
 part of the description public by a policy nobody re-reads, and would
 follow every later change of the rows: a resident would comment on a figure
-that is no longer the one shown.
+the page has since replaced.
 
 ## Decision
 
@@ -36,11 +36,12 @@ licences.
 
 **The public reads one schema of its own**, holding the publications not
 withdrawn, without the organisation's internal identifiers. It is the only
-schema the anonymous role is given, so that a new table of the core is
+schema the anonymous role may be given, so that a new table of the core is
 never public by accident.
 
-No module of the repository holds publications: an installation of the
-core and its modules makes nothing public.
+The core and the modules of this repository hold no publication: an
+installation of them makes nothing public until its owner adds that
+schema.
 
 ## What it forbids
 
@@ -49,12 +50,6 @@ core and its modules makes nothing public.
 - A publication edited after it was published.
 - A published document that carries data its sources do not allow to pass
   on.
-
-## What it replaced
-
-A `participation` module shipped on 14/10/2026 and removed before 0.1; the
-rule it carried stands without it. Its design is kept in
-[`docs/road-to-0.1.md`](../road-to-0.1.md).
 
 ## See also
 

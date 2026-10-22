@@ -1,6 +1,6 @@
 // The `billing` module without Ekwo OS: the participant of the core is the
 // one who is billed, and the module keeps a pointer to each Ekwo invoice
-// issued for or to it (decision 0043). Without Ekwo's tables in the
+// issued for or to it (decision 0010). Without Ekwo's tables in the
 // database, the Ekwo ids are plain uuids: no foreign key reaches `public`,
 // `record_invoice()` accepts any id, and the doctor finds nothing to report.
 // With Ekwo OS on the same database, the keys are real:

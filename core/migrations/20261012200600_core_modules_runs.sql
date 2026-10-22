@@ -9,7 +9,7 @@
 -- `consumption.runs.participant_id`, `community.runs.project_id`). The core
 -- keeps no run, only the gesture every such table shares, so that a run is
 -- recorded, found again and closed the same way in every module
--- (decision 0046):
+-- (decision 0004):
 --
 --   run_hash()     the identity of a result
 --   run_is_final() the trigger that keeps a finished run as it is

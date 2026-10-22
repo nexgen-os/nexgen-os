@@ -3,7 +3,7 @@
 Nexgen OS describes places, devices and series and computes what is owed, as
 a run. [Ekwo OS](https://github.com/Ekwo-ai/ekwo-os), the open invoicing and bookkeeping core
 built on the same playbook, issues the invoice, its tax, its electronic
-invoicing and its ledger entry ([decision 0010](decisions/0010-ekwo-link.md)).
+invoicing and its ledger entry ([decision 0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)).
 Each is installed, upgraded and released on its own; both may live in the
 same Supabase project, so that a settlement and the invoice it becomes are
 one transaction away. This page says how, and what each side owns.
@@ -53,7 +53,7 @@ reaches both cores with the same signed-in session.
 The core of Nexgen OS names no product and holds no personal contact data.
 The [`billing`](../modules/billing/README.md) module keeps, beside the
 core and keyed by the same ids, what links the two
-([decision 0043](decisions/0043-the-participant-is-billed.md)):
+([decision 0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md)):
 
 | Table | Holds |
 |---|---|
@@ -121,7 +121,7 @@ real project, `nexgen-os doctor` and `ekwo doctor` check the installation.
 
 ## See also
 
-- [Decision 0010](decisions/0010-ekwo-link.md) — legal identity and invoicing are Ekwo's.
+- [Decision 0010](decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) — legal identity and invoicing are Ekwo's.
 - [Decision 0032](decisions/0032-a-module-has-its-own-schema.md) — a module has its own schema.
 - [`packages/cli/README.md`](../packages/cli/README.md) — the Nexgen OS installer.
 - [Ekwo OS installer](https://github.com/Ekwo-ai/ekwo-os/tree/main/packages/cli) — `npx ekwo-os init`.

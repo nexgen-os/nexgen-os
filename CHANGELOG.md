@@ -12,9 +12,9 @@ release may break, and says how. How a release is cut:
 
 The core schema is rewritten in place, before its first release: twenty-seven
 tables and one view, from thirty-seven tables
-([0006](docs/decisions/0006-named-objects.md),
-[0044](docs/decisions/0044-there-is-no-registry.md),
-[0046](docs/decisions/0046-a-run-is-the-module-s.md)).
+([0006](docs/decisions/0006-the-core-names-six-objects.md),
+[0001](docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md),
+[0004](docs/decisions/0004-a-figure-is-a-run.md)).
 
 - `kinds` is gone: `attributes`, `external_ids`, `documents` and `series`
   name their object by `object_kind`, checked on the six objects
@@ -301,7 +301,7 @@ rewritten) — and a module starts from one of them and enriches it
   `building` module first (below).
 - The bridge to the invoicing side is the `billing` module (schema
   `billing`, module code `billing`), and the participant of the core is the
-  one who is billed (decision 0043, decision 0010 rewritten):
+  one who is billed (decision 0010, decision 0010 rewritten):
   `billing.invoices` holds one row per Ekwo invoice issued for or to a
   participant — its Ekwo id, the participant, the counterparty participant
   of a bill inside a community, `sale` or `purchase`, the period and the
@@ -371,7 +371,7 @@ the physical description of a place leaves the core for the `building` module:
   rewritten).
 
 There is no registry: the hierarchy is the foreign keys, and an attachment
-names its object's kind (decision 0044; 0001, 0006, 0023, 0026, 0029 and
+names its object's kind (decision 0001; 0001, 0006, 0023, 0026, 0029 and
 0042 rewritten):
 
 - `objects`, `object_kinds`, `object_parent_tables`, `register_object()`,
@@ -420,7 +420,7 @@ names its object's kind (decision 0044; 0001, 0006, 0023, 0026, 0029 and
   `attach()` take the kind.
 
 The participant is the node: it carries the place, the meters and the
-devices, and every module starts from it (decision 0045; 0006, 0008, 0021,
+devices, and every module starts from it (decision 0043; 0006, 0008, 0021,
 0022, 0025, 0029, 0042 and 0044 completed, 0026 rewritten: a device is not
 placed for now). The core names six objects: the organisation, the
 project, the participant, the meter, the device, the series. Rewritten in

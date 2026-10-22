@@ -4,7 +4,7 @@ Reads the files PVsyst writes and manufacturers publish next to their
 datasheets — PAN for a PV module, OND for an inverter, in PVsyst's text
 format (version 6 and later) — into a product and its physics. Read only:
 a PAN or OND file is never written (decision
-[0012](../../../docs/decisions/0012-solar-module.md)). MIT; no dependency,
+[0012](../../../docs/decisions/0012-a-yield-says-what-it-was-computed-from.md)). MIT; no dependency,
 no database, no network. The table names the product's fields, and where
 the importer of the `solar` module writes them.
 
