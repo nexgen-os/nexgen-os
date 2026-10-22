@@ -9,17 +9,17 @@
 -- known by.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000600000001', 'Rilievi Aerei Emilia srl');
+  ('00000000-0000-4000-8000-000600000001', 'Rilievi Esempio srl');
 
 insert into contacts (id, organisation_id, name, kind) values
-  ('00000000-0000-4000-8000-000600000005', '00000000-0000-4000-8000-000600000001', 'Meccanica Felsinea SpA', 'company');
+  ('00000000-0000-4000-8000-000600000005', '00000000-0000-4000-8000-000600000001', 'Meccanica Esempio SpA', 'company');
 
 -- The client answers for the place in the surveyor's solar study.
 insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Felsinea — rooftop solar study', 'study', 'IT', 'simulation');
+  ('00000000-0000-4000-8000-000600000040', '00000000-0000-4000-8000-000600000001', 'Esempio — rooftop solar study', 'study', 'IT', 'simulation');
 insert into participants (id, organisation_id, project_id, name, role, contact_id, status, country, street, postal_code, city, region) values
-  ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', 'Meccanica Felsinea', 'prosumer',
-   '00000000-0000-4000-8000-000600000005', 'simulation', 'IT', 'Via Emilia Levante 210', '40139', 'Bologna', 'IT-45');
+  ('00000000-0000-4000-8000-000600000010', '00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000600000040', 'Meccanica Esempio', 'prosumer',
+   '00000000-0000-4000-8000-000600000005', 'simulation', 'IT', 'Via dell''Esempio 210', '40139', 'Bologna', 'IT-45');
 
 -- Hall A, known to OpenStreetMap by its way, one floor seen on the
 -- oblique photos.

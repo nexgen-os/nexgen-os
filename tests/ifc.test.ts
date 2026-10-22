@@ -107,12 +107,12 @@ const roofs = (buildingId: string) =>
   ).then((r) => r.rows);
 
 describe('an IFC4 model with an IfcMapConversion', () => {
-  let site: string;
+  let home: string;
   let id: string;
 
   it('lands as a building near 4.89° E, 52.37° N at rooftop precision, with its footprint from the base slab', async () => {
-    site = await newParticipant(org, 'Canal house');
-    const r = await importIfc({ participantId: site }, mapFile, { sourceCode: 'architect_model', profile: 'residential' });
+    home = await newParticipant(org, 'Canal house');
+    const r = await importIfc({ participantId: home }, mapFile, { sourceCode: 'architect_model', profile: 'residential' });
     expect(r.georeference).toBe('map_conversion');
     expect(r.crs).toBe('EPSG:28992');
     expect(r.locationPrecision).toBe('rooftop');
@@ -195,8 +195,8 @@ describe('an IFC4 model with an IfcMapConversion', () => {
 describe('an IFC4 model with its equipment', () => {
   it('lands each piece of equipment as a device of the type its IFC class names, under the participant, the building that contains it kept as the file says', async () => {
     const installer = await organisation(db, 'An installer', USER_A);
-    const site = await newParticipant(installer, 'Canal house with its equipment');
-    const r = await importIfc({ participantId: site }, await fixture('ifc-house-equipment.ifc'), { sourceCode: 'architect_model' });
+    const home = await newParticipant(installer, 'Canal house with its equipment');
+    const r = await importIfc({ participantId: home }, await fixture('ifc-house-equipment.ifc'), { sourceCode: 'architect_model' });
     expect(r.counts).toEqual({ buildings: 1, floors: 2, spaces: 3, roofs: 1, devices: 4 });
     expect(r.skipped).toEqual([
       { entity: 'IfcGeographicElement', count: 1, reason: 'no place in the core for this entity type' },
@@ -213,7 +213,7 @@ describe('an IFC4 model with its equipment', () => {
               (f.value->'ifc'->'placement'->'position'->>0)::float lon, (f.value->'ifc'->'placement'->'position'->>1)::float lat
          from devices d join attributes f on f.object_kind = 'device' and f.object_id = d.id and f.property_code = 'file_record'
         where d.participant_id = $1 order by d.name`,
-      [site, r.buildings[0].id],
+      [home, r.buildings[0].id],
     );
     expect(devices.rows.map(({ lon, lat, predefined, ...d }) => d)).toEqual([
       { name: 'Electricity meter', device_type: 'meter', in_building: true, manufacturer: null, model: null, serial: null, guid: '0Eq1Mt2Ab3Cd4Ef5Gh6Ij7', source: 'architect_model' },
@@ -234,8 +234,8 @@ describe('an IFC4 model in millimetres placed by its site’s coordinates', () =
 
   it('lands at parcel precision, at the same place as the map conversion puts it, with its footprint from the exterior walls', async () => {
     const other = await organisation(db, 'A surveyor', USER_A);
-    const site = await newParticipant(other, 'Canal house');
-    const r = await importIfc({ participantId: site }, siteFile, { sourceCode: 'architect_model' });
+    const home = await newParticipant(other, 'Canal house');
+    const r = await importIfc({ participantId: home }, siteFile, { sourceCode: 'architect_model' });
     expect(r.georeference).toBe('site_coordinates');
     expect(r.crs).toMatch(/^\+proj=tmerc \+lat_0=52\.369826/);
     expect(r.locationPrecision).toBe('parcel');
@@ -286,8 +286,8 @@ describe('an IFC model with no georeference', () => {
 
   it('lands where options.origin says, and leaves the participant’s position alone', async () => {
     const other = await organisation(db, 'A draughtsman, with a map', USER_A);
-    const site = await newParticipant(other, 'Canal house');
-    const r = await importIfc({ participantId: site }, placeless(), {
+    const home = await newParticipant(other, 'Canal house');
+    const r = await importIfc({ participantId: home }, placeless(), {
       sourceCode: 'architect_model',
       origin: { lon: 4.887971, lat: 52.369826, rotationDeg: 30 },
     });

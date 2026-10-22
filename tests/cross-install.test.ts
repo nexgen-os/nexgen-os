@@ -6,7 +6,7 @@
 // Ekwo's migration runner from the published `ekwo-os` package, which carries
 // its migrations, and `nexgen-os init` — and checks that neither touches what
 // the other created: no name collides, each side keeps its schemas, Ekwo's
-// revocations on `public` leave Nexgen's grants as they were, a person who
+// revocations on `public` leave Nexgen OS's grants as they were, a person who
 // belongs to both sides reads both, and the `billing` module points at an
 // Ekwo company, contact and invoice by real foreign keys. Ekwo OS needs no
 // extension, so all of it runs on PGlite; what it leaves to a real project
@@ -202,7 +202,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
     await db?.close();
   });
 
-  it('public holds only Ekwo, nexgen and its module schemas only Nexgen', () => {
+  it('public holds only Ekwo, nexgen and its module schemas only Nexgen OS', () => {
     const { ekwo: e, nexgen: n } = run.side;
     expect(e.size).toBeGreaterThan(500);
     expect(n.size).toBeGreaterThan(150);
@@ -215,7 +215,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
   });
 
   it("the second installation leaves the grants of the first as they were", () => {
-    // Ekwo first: Ekwo's rights on public; Nexgen first: Nexgen's on nexgen
+    // Ekwo first: Ekwo's rights on public; Nexgen OS first: Nexgen OS's on nexgen
     // and billing, through every revocation Ekwo makes on public.
     expect(Object.keys(run.before).length).toBeGreaterThan(100);
     expect(run.after).toEqual(run.before);
@@ -282,7 +282,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
               where n.nspname = 'billing' and c.contype = 'f' and fn.nspname = 'public' order by 1`,
           )
         ).rows.map((r) => r.k);
-      // Ekwo first: the module's migration added them. Nexgen first: the
+      // Ekwo first: the module's migration added them. Nexgen OS first: the
       // installation adds them once Ekwo OS is there.
       const added = (await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k;
       expect(added).toEqual(order === 'ekwo-first' ? [] : ['companies_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);

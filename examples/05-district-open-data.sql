@@ -9,7 +9,7 @@
 -- inside the perimeter.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000500000001', 'Ville de Dakar — urbanisme');
+  ('00000000-0000-4000-8000-000500000001', 'Urbanisme — exemple');
 
 insert into projects (id, organisation_id, name, kind, country, status, geometry) values
   ('00000000-0000-4000-8000-000500000020', '00000000-0000-4000-8000-000500000001', 'Plateau — solar rooftops plan', 'district_plan', 'SN', 'simulation',

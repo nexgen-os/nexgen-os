@@ -156,7 +156,7 @@ describe('the energy community of example 3', () => {
            join community.runs r on r.id = i.run_id`,
       );
       expect(bills.rows).toEqual([
-        { id: '22222222-2222-4222-8222-222222222201', participant: 'Van Dijk Logistiek', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', project_id: '00000000-0000-4000-8000-000300000020' },
+        { id: '22222222-2222-4222-8222-222222222201', participant: 'Logistiek A', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', project_id: '00000000-0000-4000-8000-000300000020' },
       ]);
     } finally {
       await community.close();

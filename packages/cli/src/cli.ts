@@ -89,9 +89,9 @@ export function parseArgs(argv: string[]): Args {
 const list = (v: string | true | undefined): string[] | undefined =>
   typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
 
-/** Said once, after an init that installed something: where the foundation's team can be reached. */
+/** Said once, after an init that installed something: what to do next. */
 const HELP_LINE =
-  'Nexgen OS is the base of Nexgen, WeSmart\'s platform. For results rather than a database: https://nexgen.wesmart.com — for help on the foundation (install, modules, packs, integrations): https://wesmart.com/nexgen';
+  'next: nexgen-os doctor, then an example dataset (examples/README.md); questions on the foundation go to the issues of its repository';
 
 function printInstall(out: (line: string) => void, r: InstallReport): void {
   const verb = r.dryRun ? 'would apply' : 'applied';

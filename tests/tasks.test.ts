@@ -202,7 +202,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
     `);
     roofFr = await insert(db, 'projects', { organisation_id: ORG, name: 'Barn roof', country: 'FR', kind: 'pv_roof', status: 'creation' });
     roofBe = await insert(db, 'projects', { organisation_id: ORG, name: 'Flemish barn roof', country: 'BE', kind: 'pv_roof', status: 'creation' });
-    community = await insert(db, 'projects', { organisation_id: ORG, name: 'Mont Noir community', country: 'FR', kind: 'energy_community', status: 'creation' });
+    community = await insert(db, 'projects', { organisation_id: ORG, name: 'Farm community', country: 'FR', kind: 'energy_community', status: 'creation' });
   });
 
   it('keep a template well-formed: a known phase and role, a condition with a property, an operator and a number', async () => {

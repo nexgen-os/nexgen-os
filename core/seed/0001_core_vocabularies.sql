@@ -7,8 +7,8 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- Device types. The codes of Nexgen, in a tree aligned on Brick Equipment and
--- IFC. The module that derives a type into its own table is named when it
+-- Device types. The codes of the trades, in a tree aligned on Brick Equipment
+-- and IFC. The module that derives a type into its own table is named when it
 -- ships; the instrument that measures (a meter, a sensor) is a device too,
 -- and what it measures is a series.
 -- ---------------------------------------------------------------------------

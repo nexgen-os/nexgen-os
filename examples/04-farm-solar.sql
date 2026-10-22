@@ -12,13 +12,13 @@
 -- with the field the ground array stands on.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000400000001', 'GAEC du Mont Noir');
+  ('00000000-0000-4000-8000-000400000001', 'GAEC de l''Exemple');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
   ('00000000-0000-4000-8000-000400000005', '00000000-0000-4000-8000-000400000001', 'Farm solar', 'study', 'FR', 'active');
 
 insert into participants (id, organisation_id, project_id, name, role, country, street, postal_code, city, region, geometry) values
-  ('00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000005', 'Ferme du Mont Noir', 'prosumer', 'FR', 'Route de Boeschepe 3', '59270', 'Saint-Jans-Cappel', 'FR-HDF',
+  ('00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000005', 'Ferme de l''Exemple', 'prosumer', 'FR', 'Chemin de l''Exemple 3', '59270', 'Saint-Jans-Cappel', 'FR-HDF',
    ST_GeomFromText('POLYGON((2.7210 50.7705, 2.7250 50.7705, 2.7250 50.7730, 2.7210 50.7730, 2.7210 50.7705))', 4326));
 
 insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction) values

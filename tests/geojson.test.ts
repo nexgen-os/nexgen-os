@@ -14,7 +14,7 @@ import { exportGeoJson, type FeatureProperties, type GeoJsonExport as FeatureCol
 import { USER_A, USER_B, asUser, freshDatabase, insert, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
-const SITE = '00000000-0000-4000-8000-000400000010';
+const FARM = '00000000-0000-4000-8000-000400000010';
 const GROUND = '00000000-0000-4000-8000-000400000015';
 const BARN = '00000000-0000-4000-8000-000400000021';
 const BARN_ARRAY = '00000000-0000-4000-8000-000400000051';
@@ -40,17 +40,17 @@ beforeAll(async () => {
   );
   await db.query(
     `insert into attributes (object_kind, object_id, property_code, value, source_code) values ('participant', $1, 'installed_power', '640', 'roof_layer')`,
-    [SITE],
+    [FARM],
   );
   await db.query(`update building.buildings set floor_area_m2 = 280 where id = $1`, [BARN]);
   // A shed described from that layer, its roof and the array on it.
   shed = await insert(db, 'building.buildings', {
-    organisation_id: ORG, participant_id: SITE, name: 'Shed', source_code: 'roof_layer', height_m: 4,
+    organisation_id: ORG, participant_id: FARM, name: 'Shed', source_code: 'roof_layer', height_m: 4,
     footprint: { type: 'Polygon', coordinates: [[[2.7212, 50.7716], [2.7212, 50.7718], [2.7214, 50.7718], [2.7214, 50.7716], [2.7212, 50.7716]]] },
   });
   shedRoof = await insert(db, 'building.surfaces', { organisation_id: ORG, building_id: shed, name: 'Shed roof', kind: 'roof', azimuth_deg: 180, tilt_deg: 20, source_code: 'roof_layer' });
   shedArray = await insert(db, 'devices', {
-    organisation_id: ORG, participant_id: SITE, name: 'Shed array', device_type: 'solar', rated_power_kw: 6, serial_number: 'SN-0042',
+    organisation_id: ORG, participant_id: FARM, name: 'Shed array', device_type: 'solar', rated_power_kw: 6, serial_number: 'SN-0042',
   });
 });
 
@@ -71,7 +71,7 @@ describe('the GeoJSON export of a participant', () => {
   let fc: FeatureCollection;
 
   beforeAll(async () => {
-    fc = await exportGeoJson(db, { participantId: SITE });
+    fc = await exportGeoJson(db, { participantId: FARM });
   });
 
   it('is one FeatureCollection: the participant, its ground, buildings, surfaces and devices, in that order', () => {
@@ -99,23 +99,23 @@ describe('the GeoJSON export of a participant', () => {
   });
 
   it('carries the columns, the attributes, the identifiers and the runs of every object', () => {
-    const site = byId(fc, SITE).properties;
-    expect(site).toMatchObject({ name: 'Ferme du Mont Noir', country: 'FR', street: 'Route de Boeschepe 3', postal_code: '59270', time_zone: 'Europe/Paris' });
-    expect(site.attributes).toEqual({ annual_consumption: 186000, installed_power: 640 });
+    const farm = byId(fc, FARM).properties;
+    expect(farm).toMatchObject({ name: "Ferme de l'Exemple", country: 'FR', street: "Chemin de l'Exemple 3", postal_code: '59270', time_zone: 'Europe/Paris' });
+    expect(farm.attributes).toEqual({ annual_consumption: 186000, installed_power: 640 });
 
     const barn = byId(fc, BARN).properties;
     expect(barn).toMatchObject({
-      participant_id: SITE, height_m: 8, elevation_m: 64, floor_area_m2: 280, floors_above_ground: 1, year_built: 2004, global_id: 'way/445566778',
+      participant_id: FARM, height_m: 8, elevation_m: 64, floor_area_m2: 280, floors_above_ground: 1, year_built: 2004, global_id: 'way/445566778',
     });
     expect(barn.attributes).toEqual({});
     expect(barn.external_ids).toEqual([]);
 
     const field = byId(fc, FIELD).properties;
-    expect(field).toMatchObject({ surface_kind: 'ground', participant_id: SITE, site_id: GROUND, building_id: null, azimuth_deg: 180, tilt_deg: 0 });
-    expect(byId(fc, GROUND).properties).toMatchObject({ kind: 'site', participant_id: SITE, profile: 'land' });
+    expect(field).toMatchObject({ surface_kind: 'ground', participant_id: FARM, site_id: GROUND, building_id: null, azimuth_deg: 180, tilt_deg: 0 });
+    expect(byId(fc, GROUND).properties).toMatchObject({ kind: 'site', participant_id: FARM, profile: 'land' });
 
     const array = byId(fc, BARN_ARRAY).properties;
-    expect(array).toMatchObject({ device_type: 'solar', participant_id: SITE, rated_power_kw: 99.19, unit_count: 182, installation_date: '2023-06-20' });
+    expect(array).toMatchObject({ device_type: 'solar', participant_id: FARM, rated_power_kw: 99.19, unit_count: 182, installation_date: '2023-06-20' });
     expect(byId(fc, BARN_ARRAY).geometry).toBeNull();
     expect(array.runs).toHaveLength(1);
     expect(array.runs[0]).toMatchObject({ module: 'solar', engine_version: 'pvgis-5.3+solar-0.3.0', results: { annual_kwh: 99190 } });
@@ -131,11 +131,11 @@ describe('the GeoJSON export of a participant', () => {
   });
 
   it('is the same document twice: nothing in it depends on the moment it was made', async () => {
-    expect(await exportGeoJson(db, { participantId: SITE })).toEqual(fc);
+    expect(await exportGeoJson(db, { participantId: FARM })).toEqual(fc);
   });
 
   it('leaves the runs out when asked', async () => {
-    const lean = await exportGeoJson(db, { participantId: SITE }, { runs: false });
+    const lean = await exportGeoJson(db, { participantId: FARM }, { runs: false });
     expect(byId(lean, BARN_ARRAY).properties.runs).toEqual([]);
   });
 });
@@ -144,14 +144,14 @@ describe('the open export', () => {
   let fc: FeatureCollection;
 
   beforeAll(async () => {
-    fc = await exportGeoJson(db, { participantId: SITE }, { open: true });
+    fc = await exportGeoJson(db, { participantId: FARM }, { open: true });
   });
 
   it('keeps the postal code and the city, not the street', () => {
-    const site = byId(fc, SITE).properties;
-    expect(site).toMatchObject({ postal_code: '59270', city: 'Saint-Jans-Cappel' });
-    expect(site).not.toHaveProperty('street');
-    expect(site).not.toHaveProperty('address_extra');
+    const farm = byId(fc, FARM).properties;
+    expect(farm).toMatchObject({ postal_code: '59270', city: 'Saint-Jans-Cappel' });
+    expect(farm).not.toHaveProperty('street');
+    expect(farm).not.toHaveProperty('address_extra');
   });
 
   it('withholds what a closed source described, with everything on it, and says how many', () => {
@@ -165,7 +165,7 @@ describe('the open export', () => {
   });
 
   it('drops the attributes of a closed source, serial numbers and metadata, and owes only the open sources', () => {
-    expect(byId(fc, SITE).properties.attributes).toEqual({ annual_consumption: 186000 });
+    expect(byId(fc, FARM).properties.attributes).toEqual({ annual_consumption: 186000 });
     expect(byId(fc, BARN).properties).not.toHaveProperty('metadata');
     expect(fc.features.some((f) => 'serial_number' in f.properties)).toBe(false);
     expect(fc.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap']);
@@ -181,10 +181,10 @@ describe('a moment, a project', () => {
   it('reads attributes at the moment asked', async () => {
     await db.query(
       `update attributes set valid_from = '2026-01-01' where object_id = $1 and property_code = 'installed_power'`,
-      [SITE],
+      [FARM],
     );
-    const before = await exportGeoJson(db, { participantId: SITE }, { at: '2025-06-01T00:00:00Z' });
-    expect(byId(before, SITE).properties.attributes).toEqual({ annual_consumption: 186000 });
+    const before = await exportGeoJson(db, { participantId: FARM }, { at: '2025-06-01T00:00:00Z' });
+    expect(byId(before, FARM).properties.attributes).toEqual({ annual_consumption: 186000 });
     expect(before.nexgen_os.at).toBe('2025-06-01T00:00:00.000Z');
     // The roof layer is owed for the shed it described, not for an attribute that did not hold yet.
     expect(before.nexgen_os.sources.map((s) => s.code)).toEqual(['openstreetmap', 'roof_layer']);
@@ -192,7 +192,7 @@ describe('a moment, a project', () => {
 
   it('exports a project: its perimeter first, then every participant taking part', async () => {
     const project = await insert(db, 'projects', {
-      organisation_id: ORG, name: 'Mont Noir solar plan', kind: 'study', country: 'FR', start_date: '2026-03-01',
+      organisation_id: ORG, name: 'Farm solar plan', kind: 'study', country: 'FR', start_date: '2026-03-01',
       geometry: { type: 'Polygon', coordinates: [[[2.72, 50.77], [2.73, 50.77], [2.73, 50.775], [2.72, 50.775], [2.72, 50.77]]] },
     });
     const farm = await insert(db, 'participants', {
@@ -210,12 +210,12 @@ describe('a moment, a project', () => {
 describe('what it refuses', () => {
   it('asks for one target', async () => {
     await expect(exportGeoJson(db, {})).rejects.toThrow(/^target_required/);
-    await expect(exportGeoJson(db, { participantId: SITE, projectId: SITE })).rejects.toThrow(/^target_required/);
+    await expect(exportGeoJson(db, { participantId: FARM, projectId: FARM })).rejects.toThrow(/^target_required/);
   });
 
   it('exports what row level security lets the user read, and nothing for anyone else', async () => {
-    const mine = await asUser(db, USER_A, () => exportGeoJson(db, { participantId: SITE }));
+    const mine = await asUser(db, USER_A, () => exportGeoJson(db, { participantId: FARM }));
     expect(mine.features.length).toBeGreaterThan(10);
-    await expect(asUser(db, USER_B, () => exportGeoJson(db, { participantId: SITE }))).rejects.toThrow(/^participant_not_found/);
+    await expect(asUser(db, USER_B, () => exportGeoJson(db, { participantId: FARM }))).rejects.toThrow(/^participant_not_found/);
   });
 });

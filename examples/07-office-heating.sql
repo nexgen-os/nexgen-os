@@ -12,14 +12,14 @@
 -- module, which does not ship yet.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000700000001', 'Isar Immobilien GmbH');
+  ('00000000-0000-4000-8000-000700000001', 'Beispiel Immobilien GmbH');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
   ('00000000-0000-4000-8000-000700000005', '00000000-0000-4000-8000-000700000001', 'Heating renewal', 'study', 'DE', 'active');
 
 insert into participants (id, organisation_id, project_id, name, role, country, street, postal_code, city, region) values
   ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000005',
-   'Rosenheimer Straße 145', 'consumer', 'DE', 'Rosenheimer Straße 145', '81671', 'München', 'DE-BY');
+   'Beispielstraße 145', 'consumer', 'DE', 'Beispielstraße 145', '81671', 'München', 'DE-BY');
 
 insert into building.buildings (id, organisation_id, participant_id, name, profile, footprint, elevation_m, height_m) values
   ('00000000-0000-4000-8000-000700000020', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Office block', 'office',

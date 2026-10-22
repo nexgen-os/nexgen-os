@@ -10,19 +10,19 @@
 -- issued by Ekwo and recorded by the billing module.
 
 insert into organisations (id, name) values
-  ('00000000-0000-4000-8000-000300000001', 'Haven Energie Coöperatie');
+  ('00000000-0000-4000-8000-000300000001', 'Energiecoöperatie Voorbeeldkade');
 
 insert into contacts (id, organisation_id, name, kind) values
-  ('00000000-0000-4000-8000-000300000011', '00000000-0000-4000-8000-000300000001', 'Van Dijk Logistiek BV', 'company'),
-  ('00000000-0000-4000-8000-000300000012', '00000000-0000-4000-8000-000300000001', 'Maas Koeltransport BV', 'company'),
-  ('00000000-0000-4000-8000-000300000013', '00000000-0000-4000-8000-000300000001', 'Rijnmond Verpakkingen BV', 'company');
+  ('00000000-0000-4000-8000-000300000011', '00000000-0000-4000-8000-000300000001', 'Logistiek A BV', 'company'),
+  ('00000000-0000-4000-8000-000300000012', '00000000-0000-4000-8000-000300000001', 'Koeltransport B BV', 'company'),
+  ('00000000-0000-4000-8000-000300000013', '00000000-0000-4000-8000-000300000001', 'Verpakkingen C BV', 'company');
 
 -- Who they are for the invoicing side: their Ekwo contact and the address
 -- their invoices go to, kept by the billing module.
 insert into billing.contacts (id, ekwo_contact_id, email) values
-  ('00000000-0000-4000-8000-000300000011', '11111111-1111-4111-8111-111111111111', 'facturen@vandijk.example'),
-  ('00000000-0000-4000-8000-000300000012', '11111111-1111-4111-8111-111111111112', 'admin@maas.example'),
-  ('00000000-0000-4000-8000-000300000013', '11111111-1111-4111-8111-111111111113', 'boekhouding@rijnmond.example');
+  ('00000000-0000-4000-8000-000300000011', '11111111-1111-4111-8111-111111111111', 'facturen@logistiek-a.example'),
+  ('00000000-0000-4000-8000-000300000012', '11111111-1111-4111-8111-111111111112', 'admin@koeltransport-b.example'),
+  ('00000000-0000-4000-8000-000300000013', '11111111-1111-4111-8111-111111111113', 'boekhouding@verpakkingen-c.example');
 
 -- The distribution operator of the harbour. No pack of this country ships
 -- yet, so the installation declares it as a pack would.
@@ -35,10 +35,10 @@ insert into projects (id, organisation_id, name, kind, country, status, start_da
 -- The participants carry their place: three warehouses as consumers, a
 -- roof plant as producer, each with the company that answers for it.
 insert into participants (id, organisation_id, project_id, name, role, contact_id, status, join_date, country, street, postal_code, city) values
-  ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Van Dijk Logistiek', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 12', '3087 BM', 'Rotterdam'),
-  ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Maas Koeltransport', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 14', '3087 BM', 'Rotterdam'),
-  ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Rijnmond Verpakkingen', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01', 'NL', 'Waalhaven Oostzijde 16', '3087 BM', 'Rotterdam'),
-  ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Roof plant', 'producer', null, 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 20', '3087 BM', 'Rotterdam');
+  ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Logistiek A', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01', 'NL', 'Voorbeeldkade 12', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Koeltransport B', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01', 'NL', 'Voorbeeldkade 14', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Verpakkingen C', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01', 'NL', 'Voorbeeldkade 16', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Roof plant', 'producer', null, 'active', '2025-01-01', 'NL', 'Voorbeeldkade 20', '3087 BM', 'Rotterdam');
 
 -- Each participant carries its connection point.
 insert into meters (id, organisation_id, participant_id, identifier, scheme, resource, direction, valid_from) values
