@@ -24,13 +24,13 @@ beforeAll(async () => {
   for (const n of [1, 2, 3]) {
     const tenant = await insert(db, 'contacts', { organisation_id: org, name: `Tenant ${n}`, kind: 'company' });
     const participant = (await one<{ id: string }>(
-      db, `select join_project($1, $2, $3, 'consumer', $4, '2025-01-01', 'active', 'Europe/Amsterdam', 'warehouse') id`, [project, `Tenant ${n}`, unit(n), tenant])).id;
+      db, `select join_project($1, $2, $3, 'consumer', $4, '2025-01-01', 'active', 'Europe/Amsterdam') id`, [project, `Tenant ${n}`, unit(n), tenant])).id;
     const meter = (await one<{ id: string }>(db, `select declare_meter($1, $2, 'gs1_gsrn', p_valid_from => '2025-01-01') id`, [participant, `87100000000000000${n}`])).id;
     meters.push(meter);
     participants.push(participant);
   }
   const plant = (await one<{ id: string }>(
-    db, `select join_project($1, 'Roof plant', $2, 'producer', p_status => 'active', p_profile => 'plant') id`, [project, unit(9)])).id;
+    db, `select join_project($1, 'Roof plant', $2, 'producer', p_status => 'active') id`, [project, unit(9)])).id;
   await insert(db, 'meters', { organisation_id: org, participant_id: plant, identifier: '871000000000000009', scheme: 'gs1_gsrn', direction: 'injection' });
   await insert(db, 'devices', { organisation_id: org, participant_id: plant, name: 'Shared roof array', device_type: 'solar', rated_power_kw: 250 });
 });
@@ -67,7 +67,7 @@ describe('an energy community', () => {
     await db.query(`select leave_project($1, '2025-12-31')`, [participants[2]]);
     await expect(db.query(`select leave_project($1)`, [participants[2]])).rejects.toThrow(/participant_not_in_project/);
     const next = (await one<{ id: string }>(db, `select join_project($1, 'Next tenant', $2, 'consumer', null, '2026-02-01') id`, [project, unit(3)])).id;
-    await db.query(`select assign_meter($1, $2, '2026-02-01')`, [meters[2], next]);
+    await db.query(`select assign_meter($1, $2)`, [meters[2], next]);
     const carried = await one<{ participant_id: string }>(db, 'select participant_id from meters where id = $1', [meters[2]]);
     expect(carried.participant_id).toBe(next);
   });
@@ -86,16 +86,16 @@ describe('an energy community', () => {
     const old = await one<{ id: string }>(db, `select install_device($1, 'meter', 'Meter A', null, null, '2015-03-01') id`, [participants[0]]);
     // The new meter takes the old one's place, behind the same connection point.
     await one<{ id: string }>(db, `select replace_device($1, '2026-03-01', null, 'Meter B') id`, [old.id]);
-    const r = await one<{ name: string; identifier: string; replaces: string }>(
+    const r = await one<{ name: string; identifier: string; installed: string }>(
       db,
-      `select d.name, m.identifier, (select object_id from links where subject_kind = 'device' and subject_id = d.id and type_code = 'replaces') replaces
+      `select d.name, m.identifier, d.installation_date::text installed
          from devices d join meters m on m.participant_id = d.participant_id
         where m.id = $1 and d.device_type = 'meter' and d.status = 'in_service'`,
       [meters[0]],
     );
-    expect(r).toEqual({ name: 'Meter B', identifier: '871000000000000001', replaces: old.id });
-    const retired = await one<{ status: string }>(db, 'select status from devices where id = $1', [old.id]);
-    expect(retired.status).toBe('removed');
+    expect(r).toEqual({ name: 'Meter B', identifier: '871000000000000001', installed: '2026-03-01' });
+    const retired = await one<{ status: string; removed: string }>(db, 'select status, removal_date::text removed from devices where id = $1', [old.id]);
+    expect(retired).toEqual({ status: 'removed', removed: '2026-03-01' });
     await expect(db.query(`select replace_device($1)`, [old.id])).rejects.toThrow(/device_retired/);
   });
 
@@ -105,13 +105,6 @@ describe('an energy community', () => {
     const holder = (await one<{ participant_id: string }>(db, 'select participant_id from meters where id = $1', [meters[2]])).participant_id;
     const reissued = await one<{ id: string }>(db, `select declare_meter($1, '871000000000000003', 'gs1_gsrn', 'electricity', 'both', '2026-07-01') id`, [holder]);
     expect(reissued.id).not.toBe(meters[2]);
-  });
-
-  it('records who owns a participant\'s place for a period, and refuses a link whose kinds do not fit', async () => {
-    const landlord = (await one<{ id: string }>(db, `select join_project($1, 'Landlord', $2) id`, [project, unit(10)])).id;
-    await db.query(`select link_objects('participant', $1, 'owns', 'participant', $2, '2025-01-01')`, [landlord, participants[0]]);
-    await expect(db.query(`select link_objects('meter', $1, 'owns', 'participant', $2)`, [meters[0], participants[1]]))
-      .rejects.toThrow(/link_subject_kind/);
   });
 
   it('reads a cumulative register as the consumption of each step, and its index as a window', async () => {

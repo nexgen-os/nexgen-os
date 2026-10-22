@@ -12,7 +12,7 @@ import { reconstructConsumption, slotWeights, spreadEnergy, type LoadProfile } f
 
 const ORG = '00000000-0000-4000-8000-000700000001';
 const BLOCK = '00000000-0000-4000-8000-000700000010';
-const BUILDING = '00000000-0000-4000-8000-000700000020';
+const PROJECT = '00000000-0000-4000-8000-000700000005';
 const ELECTRICITY = '00000000-0000-4000-8000-000700000041';
 const TZ = 'Europe/Berlin';
 
@@ -140,10 +140,10 @@ describe('a curve reconstructed from a bill', () => {
     });
     expect(r).toMatchObject({ step: '60 minutes', slots: 744 });
     expect(r.kwh).toBeCloseTo(41_850, 3);
-    const series = await one<{ object_id: string; kind: string; quantity_code: string; step: string; run_id: string }>(
-      db, 'select object_id, kind, quantity_code, step::text, run_id from series where id = $1', [r.seriesId],
+    const series = await one<{ object_id: string; kind: string; quantity_code: string; step: string; source: string }>(
+      db, 'select object_id, kind, quantity_code, step::text, source from series where id = $1', [r.seriesId],
     );
-    expect(series).toEqual({ object_id: BLOCK, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', run_id: r.runId });
+    expect(series).toEqual({ object_id: BLOCK, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', source: `consumption.runs:${r.runId}` });
 
     const values = await db.query<{ at: Date; value: number }>('select at, value from series_values where series_id = $1 order by at', [r.seriesId]);
     // Thursday 15 January: 10:00 open, 03:00 closed.
@@ -159,10 +159,10 @@ describe('a curve reconstructed from a bill', () => {
     const first = await reconstructConsumption(db, request);
     const again = await reconstructConsumption(db, request);
     expect(again.runId).toBe(first.runId);
-    const run = await one<{ module_code: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select module_code, engine_version, inputs, results from runs where id = $1', [first.runId],
+    const run = await one<{ participant_id: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
+      db, 'select participant_id, engine_version, inputs, results from consumption.runs where id = $1', [first.runId],
     );
-    expect(run.module_code).toBe('consumption');
+    expect(run.participant_id).toBe(BLOCK);
     expect(run.engine_version).toBe('consumption-curve-0.1.0');
     expect(run.inputs.profile).toMatchObject({ code: 'office_hours', method: 'activity_hours', closed_ratio: 0.25 });
     expect(run.inputs.activity_hours).toHaveLength(5);
@@ -249,7 +249,7 @@ describe('the curve of a participant', () => {
 
 describe('activity hours', () => {
   it('belong to the organisation of what is open, and close after they open', async () => {
-    const id = await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'building', object_id: BUILDING, weekday: 6, opens: '09:00', closes: '24:00' });
+    const id = await insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'project', object_id: PROJECT, weekday: 6, opens: '09:00', closes: '24:00' });
     const row = await one<{ organisation_id: string; closes: string }>(db, 'select organisation_id, closes::text from consumption.activity_hours where id = $1', [id]);
     expect(row).toEqual({ organisation_id: ORG, closes: '24:00:00' });
     await expect(insert(db, 'consumption.activity_hours', { organisation_id: ORG, object_kind: 'participant', object_id: BLOCK, weekday: 1, opens: '18:00', closes: '08:00' })).rejects.toThrow(/activity_hours_order/);

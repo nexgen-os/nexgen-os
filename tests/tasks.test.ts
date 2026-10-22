@@ -33,16 +33,16 @@ interface Plan {
   skipped: { code: string; published_by: string; reason: string; property: string }[];
 }
 
-const progress = async (objectId: string, on: string, scenarioId: string | null = null): Promise<Progress> =>
-  (await one<{ p: Progress }>(db, 'select tasks.progress($1, $2, $3) p', [objectId, on, scenarioId])).p;
+const progress = async (objectId: string, on: string): Promise<Progress> =>
+  (await one<{ p: Progress }>(db, 'select tasks.progress($1, $2) p', [objectId, on])).p;
 
-const plan = async (projectId: string, scenarioId: string | null = null): Promise<Plan> =>
-  (await one<{ p: Plan }>(db, 'select tasks.plan($1, $2) p', [projectId, scenarioId])).p;
+const plan = async (projectId: string): Promise<Plan> =>
+  (await one<{ p: Plan }>(db, 'select tasks.plan($1) p', [projectId])).p;
 
 const task = (fields: Record<string, unknown>) => insert(db, 'tasks.tasks', { organisation_id: ORG, ...fields });
 
 beforeAll(async () => {
-  db = await freshDatabase(['tasks']);
+  db = await freshDatabase(['tasks', 'solar']);
   await db.exec(await readFile(join(repoRoot, 'examples', '04-farm-solar.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
@@ -65,12 +65,10 @@ afterAll(async () => {
 });
 
 describe('tasks', () => {
-  it('are objects of the participant of what they are about, so that a photo or a certificate attaches to them', async () => {
-    const m = await one<{ table_name: string; participant: string }>(db, `select k.table_name, participant_of(t.subject_kind, t.subject_id) participant from tasks.tasks t join kinds k on k.kind = 'task' where t.id = $1`, [installed]);
-    expect(m).toEqual({ table_name: 'tasks.tasks', participant: FARM });
-    await db.query(`select attach_document('task', $1, 'Rows 1 to 12 mounted', 'image', 's3://farm/rows-1-12.jpg', 'image/jpeg', null, 'site manager')`, [installed]);
-    const d = await one<{ organisation_id: string }>(db, 'select organisation_id from documents where object_id = $1', [installed]);
-    expect(d.organisation_id).toBe(ORG);
+  it('are about an object of the core, of the participant of what they are about, and name no seventh kind', async () => {
+    const m = await one<{ participant: string }>(db, `select participant_of(t.subject_kind, t.subject_id) participant from tasks.tasks t where t.id = $1`, [installed]);
+    expect(m).toEqual({ participant: FARM });
+    await expect(task({ subject_kind: 'building', subject_id: FARM, phase: 'design', name: 'On a building' })).rejects.toThrow(/tasks_subject_kind|kind_unknown/);
   });
 
   it('come in phases read from a vocabulary that covers the life of a project', async () => {
@@ -146,13 +144,6 @@ describe('where a project stands', () => {
     expect(p.done_share).toBe(0.6);
     expect(p.late).toEqual([]);
     expect(p.current_phase).toBe('grid_connection');
-  });
-
-  it('adds the tasks of a scenario only when asked', async () => {
-    const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'Battery later') returning id`, [ORG]);
-    await task({ subject_kind: 'participant', subject_id: FARM, phase: 'installation', name: 'Battery installed', planned_end: '2027-03-31', scenario_id: scenario.id });
-    expect((await progress(FARM, '2026-06-22')).total).toBe(7);
-    expect((await progress(FARM, '2026-06-22', scenario.id)).total).toBe(8);
   });
 
   it('sums a project up: its own tasks and those of every participant taking part', async () => {
@@ -262,11 +253,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
     expect(fr.rows.map((r) => r.name)).toEqual(['Statutes of the community signed', 'Yearly inspection of the arrays']);
   });
 
-  it('plan a scenario on its own, and refuse a project that is not there', async () => {
-    const scenario = await one<{ id: string }>(db, `insert into scenarios (organisation_id, name) values ($1, 'Bigger roof') returning id`, [ORG]);
-    expect(await plan(roofBe, scenario.id)).toMatchObject({ created: 2, existing: 0 });
-    expect((await progress(roofBe, '2026-06-22')).total).toBe(2);
-    expect((await progress(roofBe, '2026-06-22', scenario.id)).total).toBe(4);
+  it('refuse a project that is not there', async () => {
     await expect(plan('00000000-0000-4000-8000-0000000000ff')).rejects.toThrow(/^project_not_found/);
   });
 

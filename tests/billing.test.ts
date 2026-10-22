@@ -53,7 +53,8 @@ beforeAll(async () => {
   buyer = await participant(org, p, 'Warehouse', await contact(org, 'Warehouse tenant'));
   unnamed = await participant(org, p, 'Workshop', null);
   stranger = await participant(other, await project(other), 'Elsewhere', await contact(other, 'Someone else'));
-  run = (await one<{ id: string }>(db, `select record_run('billing', 'test-1', 'project', $1, null, '{"period": "2026-05"}', '{}') id`, [p])).id;
+  // The settlement run is the computing module's; the bill names it by its id.
+  run = await uuid();
 }, 120_000);
 
 afterAll(async () => {
@@ -148,14 +149,14 @@ describe('the energy community of example 3', () => {
     try {
       await community.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));
       const bills = await community.query(
-        `select i.id, p.name participant, c.name counterparty, i.kind, i.period_from::text, i.period_to::text, r.module_code
+        `select i.id, p.name participant, c.name counterparty, i.kind, i.period_from::text, i.period_to::text, r.project_id
            from billing.invoices_of('00000000-0000-4000-8000-000300000051') i
            join participants p on p.id = i.participant_id
            join participants c on c.id = i.counterparty_participant_id
-           join runs r on r.id = i.run_id`,
+           join community.runs r on r.id = i.run_id`,
       );
       expect(bills.rows).toEqual([
-        { id: '22222222-2222-4222-8222-222222222201', participant: 'Van Dijk Logistiek', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', module_code: 'community' },
+        { id: '22222222-2222-4222-8222-222222222201', participant: 'Van Dijk Logistiek', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', project_id: '00000000-0000-4000-8000-000300000020' },
       ]);
     } finally {
       await community.close();

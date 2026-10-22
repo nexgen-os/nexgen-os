@@ -46,9 +46,7 @@ describe('the weather module', () => {
       { source_code: 'open_meteo', grid_deg: '0.01', purposes: ['irradiance', 'temperature', 'wind', 'history', 'forecast'] },
       { source_code: 'pvgis', grid_deg: '0.05', purposes: ['irradiance', 'typical_year'] },
     ]);
-    const link = await one<{ published_by: string; subject_kinds: string[]; object_kinds: string[] }>(
-      db, `select published_by, subject_kinds, object_kinds from link_types where code = 'weather_from'`);
-    expect(link).toEqual({ published_by: 'weather', subject_kinds: ['participant'], object_kinds: ['weather_point'] });
+    expect((await one<{ t: string | null }>(db, `select to_regclass('weather.participant_points')::text t`)).t).toBe('weather.participant_points');
     const prop = await one<{ published_by: string; datatype: string; applies_to: string[] }>(
       db, `select published_by, datatype, applies_to from property_defs where code = 'weather_source'`);
     expect(prop).toEqual({ published_by: 'weather', datatype: 'text', applies_to: ['participant', 'project'] });
@@ -100,25 +98,22 @@ describe('point_for', () => {
     far = await participant(db, { organisation_id: org, name: 'Elsewhere', country: 'FR', geometry: point(4.9000, 45.7600) });
   });
 
-  it('shares one point between participants of the same cell and links them to it', async () => {
+  it('shares one point between participants of the same cell, and says which participants read it', async () => {
     const a = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [site]);
     const b = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [near]);
     const c = await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [far]);
     expect(b.id).toBe(a.id);
     expect(c.id).not.toBe(a.id);
-    // Asking again finds the same point and adds no second link.
+    // Asking again finds the same point and records nothing twice.
     expect((await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [site])).id).toBe(a.id);
 
-    const p = await one<{ cell_lon: string; cell_lat: string; resolution_m: number; kind: string }>(
-      db,
-      `select p.cell_lon::text, p.cell_lat::text, p.resolution_m, k.kind
-         from weather.points p join kinds k on k.table_name = 'weather.points' where p.id = $1`,
-      [a.id],
+    const p = await one<{ cell_lon: string; cell_lat: string; resolution_m: number }>(
+      db, `select p.cell_lon::text, p.cell_lat::text, p.resolution_m from weather.points p where p.id = $1`, [a.id],
     );
-    expect(p).toEqual({ cell_lon: '4.83', cell_lat: '45.76', resolution_m: 1000, kind: 'weather_point' });
-    const links = await db.query<{ subject_id: string }>(
-      `select subject_id from links where type_code = 'weather_from' and object_kind = 'weather_point' and object_id = $1 order by subject_id`, [a.id]);
-    expect(links.rows.map((r) => r.subject_id).sort()).toEqual([site, near].sort());
+    expect(p).toEqual({ cell_lon: '4.83', cell_lat: '45.76', resolution_m: 1000 });
+    const readers = await db.query<{ participant_id: string }>(
+      `select participant_id from weather.participant_points where point_id = $1 order by participant_id`, [a.id]);
+    expect(readers.rows.map((r) => r.participant_id).sort()).toEqual([site, near].sort());
   });
 
   it('refuses a second point in the same cell of a model', async () => {

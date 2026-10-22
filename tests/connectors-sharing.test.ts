@@ -127,18 +127,18 @@ describe('energy sharing in a project, as a run', () => {
     vanDijkMetered.forEach((v, i) => expect(vanDijkLeft[i] + vanDijkReceived[i]).toBeCloseTo(v, 5));
     expect(r.sharedKwh).toBeCloseTo(given.reduce((a, b) => a + b, 0), 3);
 
-    const series = await one<{ kind: string; object_id: string; run_id: string }>(db, 'select kind, object_id, run_id from series where id = $1', [r.series[VAN_DIJK].shared_offtake_energy]);
-    expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, run_id: r.runId });
+    const series = await one<{ kind: string; object_id: string; source: string }>(db, 'select kind, object_id, source from series where id = $1', [r.series[VAN_DIJK].shared_offtake_energy]);
+    expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, source: `community.runs:${r.runId}` });
   });
 
   it.skipIf(!installed)('is a run that names its engine, its key, its period and the series it read; the same inputs give the same run', async () => {
     const first = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
     const again = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
     expect(again).toEqual(first);
-    const run = await one<{ module_code: string; engine_version: string; subject_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select module_code, engine_version, subject_id, inputs, results from runs where id = $1', [first.runId],
+    const run = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
+      db, 'select engine_version, project_id, inputs, results from community.runs where id = $1', [first.runId],
     );
-    expect(run).toMatchObject({ module_code: 'community', engine_version: 'sharing_example 0.1.0', subject_id: PROJECT });
+    expect(run).toMatchObject({ engine_version: 'sharing_example 0.1.0', project_id: PROJECT });
     expect(run.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.1.0', contract: 1 });
     expect(run.inputs.key).toEqual({
       method: 'proportional', parameters: {}, valid_from: '2025-12-31T23:00:00Z', valid_to: '2026-12-31T23:00:00Z', source: 'general assembly 2025', source_code: null,
@@ -156,7 +156,7 @@ describe('energy sharing in a project, as a run', () => {
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
     await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
     const r = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from runs where id = $1', [r.runId]);
+    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.runs where id = $1', [r.runId]);
     expect(run.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
     await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
       .rejects.toThrow(/allocation_share/);
