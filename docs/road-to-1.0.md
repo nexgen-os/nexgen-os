@@ -24,8 +24,9 @@ integration written against one release keeps working against every later
    reads `time_zone_required` today reads it throughout 1.x.
 3. **`nexgen-os migrate` upgrades from any published version**, forward
    only.
-4. **A finished calculation never changes on upgrade**
-   ([0004](decisions/0004-a-figure-names-its-inputs-and-never-changes.md)), and a newer pack reaches
+4. **An upgrade leaves a module's figures as they are**: an estimate or a
+   settlement keeps its provenance, its inputs and its results
+   ([0004](decisions/0004-a-figure-says-where-it-comes-from.md)), and a newer pack reaches
    an installation only through its own upgrade
    ([0034](decisions/0034-a-pack-upgrade-is-never-silent.md)).
 5. **The pack format is `pack.1.json`.** A pack valid against
@@ -89,6 +90,12 @@ integration written against one release keeps working against every later
   publication's licence against its sources'.
 - **Tasks** ([0017](decisions/0017-tasks-as-data.md)): a vocabulary of kinds
   of project in place of free text.
+- **An activity log**: who did what, and when, on the six objects of the
+  core ([0006](decisions/0006-the-core-names-six-objects.md)) and on the
+  figures the modules write about them — the person or the agent acting
+  for them, the gesture, the object by its kind and id, the moment — as the
+  platform this core was taken from keeps it in its action events and
+  audit log. A figure says where it comes from; the log says who asked for it.
 - **A recording** of the twenty-minute path of the README, from an empty
   Supabase project to a building with a yield.
 
@@ -100,5 +107,5 @@ integration written against one release keeps working against every later
   duplicates, are still to write.
 - **Golden cases** ([0034](decisions/0034-a-pack-upgrade-is-never-silent.md)):
   the packs `fr` and `be` carry their checks and their certification; the
-  reference case each replays through the calculations, and the runner that compares
+  reference case each replays through the modules, and the runner that compares
   its figures, are still to write.

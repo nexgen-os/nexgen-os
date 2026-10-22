@@ -26,8 +26,9 @@ describes it in its own columns
 adds a column to a core table.
 
 **A module reads the core freely and writes it through its functions.** A
-figure is a calculation of the module, written by the core's gesture
-(`record_calculation('<module>.<table>', …)`, [0004](0004-a-figure-names-its-inputs-and-never-changes.md)); any other write goes through
+figure is a row of the module's own table, written by the module's function
+that computes it, with its provenance and its inputs
+([0004](0004-a-figure-says-where-it-comes-from.md)); any other write to the core goes through
 the gesture that carries its rule
 ([0018](0018-one-function-per-gesture.md)). A module may publish vocabulary
 rows, marked as published by it.
@@ -35,13 +36,13 @@ rows, marked as published by it.
 **A module is registered, secured and declared.** Its first migration
 registers it; every table it owns carries row level security by
 organisation; it declares its inputs and outputs, typed and with units, so
-that a calculation can be reproduced. It names no country: what a country decides
+that a figure says what it read. It names no country: what a country decides
 is in its pack.
 
 ## What it forbids
 
 - A module's table in the core's schema, or a core column added by a module.
-- A module writing a figure into the core outside a calculation.
+- A module writing a figure into the core.
 - A core function that names a module.
 - A module table without row level security.
 

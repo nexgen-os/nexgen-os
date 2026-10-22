@@ -60,9 +60,12 @@ version `0.3.0`, schema floor `0.3.0`.
   cascade, `parameter_of()`
   ([0002](docs/decisions/0002-standards-as-vocabulary-mappings.md),
   [0021](docs/decisions/0021-one-cascade-of-defaults.md)).
-- The gesture every module's calculations share: `record_calculation()`, `start_calculation()`,
-  `finish_calculation()`, `calculation_hash()`, `calculation_is_final()`
-  ([0004](docs/decisions/0004-a-figure-names-its-inputs-and-never-changes.md)).
+- A figure says where it comes from: each module keeps what it computes in
+  a plain table of its own (`solar.estimates`, `consumption.estimates`,
+  `community.settlements`), each row with its subject, its provenance, its
+  inputs and its results, written by the module's function that computes
+  it, and replaced by a new computation that names it
+  ([0004](docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
 - Sources and an organisation's connectors, naming their secret
   ([0011](docs/decisions/0011-external-data.md)); row level security on
   every table, rights granted by name, refusals by name
@@ -87,7 +90,7 @@ the core ([modules/README.md](modules/README.md),
   ([0010](docs/decisions/0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md),
   [docs/with-ekwo-os.md](docs/with-ekwo-os.md)).
 - `consumption`: load profiles, activity hours and a participant's curve,
-  measured, reconstructed from a bill or typical, as a calculation.
+  measured, reconstructed from a bill or typical, as an estimate.
 - `weather`: weather models with their coverage, the points participants
   read, and the model each participant reads for each purpose.
 - `solar`: PV systems and arrays, product physics, horizons, named yield

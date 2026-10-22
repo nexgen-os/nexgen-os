@@ -6,19 +6,18 @@
 
 A module's names are not all of one kind. Its code is the key of
 `nexgen.modules`, the mark on the vocabulary rows it publishes
-(`published_by`) and the name a calculation's series carry as their source
-(`<module>.<table>:<id>`); a finished calculation never changes
-([0004](0004-a-figure-names-its-inputs-and-never-changes.md)). Its schema, its tables, its functions
+(`published_by`) and the name the series of a figure carry as their source
+(`<module>.<table>:<id>`, [0004](0004-a-figure-says-where-it-comes-from.md)). Its schema, its tables, its functions
 and its folder are names a client calls, and a name can always be made more
 precise. Once a release has installed a module somewhere, a rename meets
-calculations and published rows that cannot be rewritten.
+series sources and published rows written under the old code.
 
 ## Decision
 
 **The code of a module is permanent once released; every other name may be
 made more precise.** The schema, the tables, the functions, the policies,
 the pack section and the folder are renamed by a migration and a release;
-the code written on calculations and published rows is not.
+the code written on series sources and published rows is not.
 
 **A rename happens in place, in one migration that can run twice.**
 Renaming a schema or a table keeps its rows, keys, policies and grants;
@@ -35,7 +34,7 @@ the release notes say when it goes.
 ## What it forbids
 
 - Changing the code of a released module.
-- Rewriting the calculations or published rows of a module to follow a new name.
+- Rewriting the series sources or published rows of a module to follow a new name.
 - A rename that removes the old name in the same release that introduces
   the new one.
 

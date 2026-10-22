@@ -10,7 +10,7 @@ audience of the project. The easy way to let them in is a role of their
 own, a service key with wide rights, or a function that writes whatever the
 agent computed. Each of those turns the agent into a second, invisible
 operator of the database: what it may do is not what the person may
-do, and a figure it wrote cannot be told from a figure a calculation produced.
+do, and a figure it wrote cannot be told from a figure a module computed.
 
 ## Decision
 
@@ -22,12 +22,12 @@ organisation. There is no agent role and no back door.
 **An agent uses the same gestures as everyone.** It reads through the read
 functions (`attributes_of()`, `resample()`, `participant_of()`, `country_of()`),
 attaches with a source, imports through the format libraries and the
-connectors, and computes by starting a calculation of a module. A tool an agent is
+connectors, and computes by calling a module's function. A tool an agent is
 given (a command line, an MCP server) calls those gestures and computes
 nothing itself.
 
-**An agent never writes a figure.** A yield, a loss or a settlement is a calculation,
-reproducible by anyone ([0004](0004-a-figure-names-its-inputs-and-never-changes.md)); a value it
+**An agent never writes a figure.** A yield, a loss or a settlement is computed by a
+module and says where it comes from ([0004](0004-a-figure-says-where-it-comes-from.md)); a value it
 attaches carries the source it came from, never a number it made up.
 
 **What the database refuses, the agent reports.** A named refusal is passed
@@ -41,7 +41,7 @@ reads the same.
 ## What it forbids
 
 - A database role, a key or a policy for agents as such.
-- A function that writes a computed figure outside a calculation.
+- A function that writes a computed figure outside the module that computes it.
 - Sending the data anywhere the person did not configure, or making any of
   it public without the person asking for it.
 

@@ -30,10 +30,11 @@ is specific to a trade lives here, one folder and one schema per module.
    its own beside them, and the participant is the node it starts from
    ([0043](../docs/decisions/0043-the-participant-is-the-node.md)).
 3. **Read the core freely, write it through its functions** (`series_ensure()`,
-   `store()`, `set_attribute()`…). A module that computes keeps its calculations in
-   a table named after what they give (`solar.estimates`,
-   `community.settlements`), of the one shape the core's gesture writes
-   (`record_calculation('<module>.<table>', …)`, [0004](../docs/decisions/0004-a-figure-names-its-inputs-and-never-changes.md)).
+   `store()`, `set_attribute()`…). A module that computes keeps its figures in
+   a plain table named after what they give (`solar.estimates`,
+   `community.settlements`), each row with its subject, its `provenance`, its
+   `inputs`, its `results`, `created_at` and `updated_at`, written by the
+   module's own function ([0004](../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
    A module may also publish vocabulary rows (device types, properties,
    quantities, sources) with `published_by` set to its code.
 4. **Row level security on every table**, through `secure_table()`.
@@ -42,7 +43,7 @@ is specific to a trade lives here, one folder and one schema per module.
 6. **The installed modules are a table.** A module's first migration writes
    its row into `nexgen.modules`.
 7. **A module declares its inputs and outputs**, typed and with units, so
-   that a calculation can be reproduced and compared.
+   that a figure says what it read and can be compared.
 
 ## Modules
 

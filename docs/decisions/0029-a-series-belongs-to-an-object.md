@@ -50,7 +50,7 @@ a series of no participant has hours only.
 
 ## See also
 
-- [0004](0004-a-figure-names-its-inputs-and-never-changes.md) — the series a calculation writes are its own.
+- [0004](0004-a-figure-says-where-it-comes-from.md) — the series a calculation writes are its own.
 - [0007](0007-series-at-scale.md) — where series are stored.
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) — the
   point is the series.

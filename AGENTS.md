@@ -73,13 +73,13 @@ Four things only you do here:
   which writes the provenance for you;
 - **compute**: a calculation of a module, which lands in the table named
   after what it gives (`solar.estimates`, `consumption.estimates`,
-  `community.settlements`) with its inputs and its engine version; the same
-  inputs give the same figure, and a finished one never changes.
+  `community.settlements`) with its inputs and its provenance, the program
+  and the version that computed it: a figure says where it comes from.
 
 ## What you never do
 
 - compute a figure yourself and write it as if a module had: a yield, a loss,
-  a settlement is a calculation of a module, reproducible by anyone;
+  a settlement is computed by a module and says where it comes from;
 - store a secret: a `sources` or `connectors` row names a secret, the
   installation's vault holds it;
 - assume a country, a currency, a language, a time zone: they are data of

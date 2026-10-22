@@ -67,8 +67,8 @@ initiative.
 
 - **A yield, a loss, a saving, a payback is an estimate**: the result of a
   computation that names the weather, the period, the models, the losses and
-  the prices it used. Change an input and the figure changes. A computation
-  is reproducible; it is not a guarantee of production.
+  the prices it used. Change an input and the figure changes. A figure says
+  where it comes from; it is not a guarantee of production.
 - **A P50 or a P90 is a probability over years of weather**, from the data
   and the method the computation names. It is an input to a bankability
   study, which a qualified professional carries out.

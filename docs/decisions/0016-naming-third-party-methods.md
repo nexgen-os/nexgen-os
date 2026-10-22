@@ -22,7 +22,7 @@ what it computes and takes the model as data.
 | Where | What the third party brings | Its name is… | Rewritten? |
 |---|---|---|---|
 | a connector (Open-Meteo, PVGIS) | data | the provider's: the data stays theirs, with its licence and version, recorded as the source of every value ([0011](0011-external-data.md)) | never |
-| a program connector (pvlib) | a computation, JSON in and JSON out | the tool's: a calculation records the engine and its version, or it cannot be replayed ([0013](0013-a-program-connector-reads-one-request.md)) | never |
+| a program connector (pvlib) | a computation, JSON in and JSON out | the tool's: an estimate records the engine and its version in its provenance, or nobody can say what computed it ([0013](0013-a-program-connector-reads-one-request.md)) | never |
 | a format library (EPW, IFC, CityJSON, PAN and OND) | a file | the format's when it is a standard, the vendor's file name when the format is theirs ([0035](0035-a-format-library-touches-no-database.md)) | read, never re-implemented from behaviour |
 | a model inside a module (PVWatts, the Sandia inverter model) | a published method | the method's public name, as the literature cites it (NREL PVWatts, SAND2007-5036, IEC 61724-1): a reference, not a brand | yes, with the reference beside the code |
 

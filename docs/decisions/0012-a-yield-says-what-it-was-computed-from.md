@@ -82,7 +82,7 @@ references may come from a licensed dataset.
 
 ## See also
 
-- [0004](0004-a-figure-names-its-inputs-and-never-changes.md), [0013](0013-a-program-connector-reads-one-request.md) —
+- [0004](0004-a-figure-says-where-it-comes-from.md), [0013](0013-a-program-connector-reads-one-request.md) —
   calculations and engines.
 - [`modules/solar/README.md`](../../modules/solar/README.md),
   [`modules/weather/README.md`](../../modules/weather/README.md).

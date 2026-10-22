@@ -49,11 +49,11 @@ bookkeeping core built on the same playbook, is the measure.
   ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md),
   [0041](decisions/0041-a-module-names-one-thing.md),
   [0032](decisions/0032-a-module-has-its-own-schema.md)).
-- **A country is data, a figure names its inputs and never changes, a file
-  is a library.** Packs compiled into SQL, estimates and settlements that
-  never change, format libraries that touch no
+- **A country is data, a figure says where it comes from, a file is a
+  library.** Packs compiled into SQL, estimates and settlements that name
+  their provenance and their inputs, format libraries that touch no
   database ([0020](decisions/0020-a-pack-holds-what-a-function-reads.md),
-  [0004](decisions/0004-a-figure-names-its-inputs-and-never-changes.md),
+  [0004](decisions/0004-a-figure-says-where-it-comes-from.md),
   [0035](decisions/0035-a-format-library-touches-no-database.md)).
 
 ## Objects
@@ -90,7 +90,7 @@ device belongs to its participant.
 ## Computation
 
 - [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
-- [0004](decisions/0004-a-figure-names-its-inputs-and-never-changes.md) A figure names its inputs and never changes: a row of the module that computes it, named after what it is (an estimate, a settlement), written by the one gesture the core keeps
+- [0004](decisions/0004-a-figure-says-where-it-comes-from.md) A figure says where it comes from: a row of the module that computes it, in a plain table named after what it is (an estimate, a settlement), with its provenance, its inputs and its results, written by the module's own function
 - [0013](decisions/0013-a-program-connector-reads-one-request.md) A program connector reads one request and answers one result; "engine" names what computed a figure
 - [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as a connector
 - [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is

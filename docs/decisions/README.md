@@ -52,7 +52,7 @@ describes; its record is written once the fix has shipped.
 ## Computation
 
 - [0018](0018-one-function-per-gesture.md) · One function per gesture · accepted
-- [0004](0004-a-figure-names-its-inputs-and-never-changes.md) · A figure is a calculation of the module that computes it, and a finished calculation never changes · accepted
+- [0004](0004-a-figure-says-where-it-comes-from.md) · A figure says where it comes from: a row of the module that computes it, with its provenance and its inputs · accepted
 - [0013](0013-a-program-connector-reads-one-request.md) · A program connector reads one request and answers one result · accepted
 - [0024](0024-one-language-per-layer.md) · One language per layer · accepted
 - [0016](0016-naming-third-party-methods.md) · A third party's name goes where its data, its computation or its file is · accepted

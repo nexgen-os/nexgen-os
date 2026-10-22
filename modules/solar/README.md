@@ -6,9 +6,9 @@ A PV yield is comparable with a PVsyst, PV\*SOL or PVGIS result only when it
 says which weather, which period, which time convention, which models and
 which losses it was computed with. This module holds those inputs as data.
 Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is an
-estimate, kept in `solar.estimates` and written through the core's
-gesture, `record_calculation('solar.estimates', …)`
-([0004](../../docs/decisions/0004-a-figure-names-its-inputs-and-never-changes.md)).
+estimate, kept in `solar.estimates` with its provenance and its inputs,
+and written by the function that computed it
+([0004](../../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
 
 ## Conventions
 
@@ -176,7 +176,7 @@ profile whose models the engine has, and needs `profileCode`
 What the engine answers is stored as it comes, in series named
 `<engine> <from>-<to>`: `production_energy` on the system,
 `poa_irradiance` and `module_temperature` on each array (on the system for
-a system without arrays). The estimate's `engine_version` is the engine's string
+a system without arrays). The estimate's `provenance` is the engine's string
 from `describe` (`pvlib 0.16.1`); its inputs keep the profile, the engine
 with its dependencies, the weather read and the models as the engine
 resolved them (`model`); its results the annual (the mean over the years
@@ -232,8 +232,8 @@ a `measured` `poa_irradiance` on the system, or on its one array; without
 a sensor, the yield estimate's simulated irradiance of each array, weighted by
 power, and the answer says `irradiance: 'simulated'`. The result is an estimate
 of `solar` (`solar-iec61724-0.3.0`) whose inputs name each series read with
-its number of hours and its total, so the same readings give the same estimate
-and a new reading a new one. Named errors: `pv_system_not_found`,
+its number of hours and its total: it says which readings it rests on, and a
+new computation that names it (`replaces`) replaces it. Named errors: `pv_system_not_found`,
 `time_zone_required`, `series_not_found`, `irradiance_required`,
 `estimate_not_of_system`, `period_not_covered`.
 

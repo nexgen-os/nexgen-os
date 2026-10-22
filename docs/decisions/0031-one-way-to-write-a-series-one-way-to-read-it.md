@@ -36,7 +36,7 @@ statement.
 **A gap is filled on read, and says so.** A filled value is flagged
 estimated and written nowhere. A substitute written as a value is a figure:
 a calculation of a module, with its method
-([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
+([0004](0004-a-figure-says-where-it-comes-from.md)).
 
 **Every client reads the same rows.** The clients return rows; a dataframe
 or an Arrow table is an optional extra of the Python client, and a Parquet

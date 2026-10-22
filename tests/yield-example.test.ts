@@ -49,7 +49,7 @@ describe('the yield of example 01, as the README runs it', () => {
     expect(months[0]?.month).toBe('2023-01');
     expect(months[0]?.kwh).toBeCloseTo(result.annualKwh, 1);
 
-    const estimate = await one<{ status: string; device_id: string }>(db, 'select status, device_id from solar.estimates where id = $1', [result.estimateId]);
-    expect(estimate).toEqual({ status: 'finished', device_id: PV_SYSTEM });
+    const estimate = await one<{ provenance: string; device_id: string }>(db, 'select provenance, device_id from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate).toEqual({ provenance: 'pvgis-5.3+solar-0.3.0', device_id: PV_SYSTEM });
   });
 });

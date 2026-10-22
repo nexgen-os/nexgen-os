@@ -54,13 +54,13 @@ documents, and stay close to the platform that proved it
 | `devices`, `device_directory` | what a participant has behind its meters, instruments included; the products it is an instance of | Brick equipment, Home Assistant devices |
 | `series`, `series_values`, `forecast_values`, `series_rollups`; the view `series_latest` | one quantity of an object over time, by the device that measures or is set when there is one: measured, simulated, forecast, setpoint, command; its values with their quality code; its hourly and daily aggregates, refreshed by every write; its latest value, a view | OGC SensorThings datastream, Brick and Haystack points |
 | `attributes`, `external_ids`, `documents` | what attaches to one of the six objects, named by its kind and its id: typed values with validity and source, identifiers, files | IFC property sets, bSDD |
-| `modules`, `connectors` | the modules installed, an organisation's use of a source through a connector; the gesture every module's calculations share (`record_calculation('<module>.<table>', …)`) | — |
+| `modules`, `connectors` | the modules installed, an organisation's use of a source through a connector; a module keeps its figures in its own schema | — |
 | `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys and a region's parents, with no global fallback | ISO 3166, ISO 4217 |
 | `device_types`, `quantities`, `units`, `property_defs`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, QUDT |
 
 Every act that writes several rows or carries a rule is one function named
 after the gesture — `join_project`, `locate_participant`, `declare_meter`,
-`assign_meter`, `install_device`, `series_ensure`, `store`, `record_calculation`…
+`assign_meter`, `install_device`, `series_ensure`, `store`…
 — that refuses by name. The grid side of a connection
 point (`grid`), the physical description of a participant's place
 (`building`: its ground, buildings, spaces, surfaces), the energy sharing

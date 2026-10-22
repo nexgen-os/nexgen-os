@@ -40,10 +40,10 @@ must then be one year (`energy_required` otherwise).
 
 The curve is a `simulated` `consumption_energy` series of the participant that
 names the estimate in its source (`consumption.estimates:<id>`), dated at the start of each slot in
-UTC, written through `store()` before the estimate finishes and final once it is
-finished. The estimate keeps the profile as it was read, the activity hours,
-the energy and its source, the period and the time zone: the same inputs
-give the same estimate.
+UTC, written through `store()`. The estimate keeps its provenance, the
+profile as it was read, the activity hours, the energy and its source, the
+period and the time zone: it says where it comes from. A new computation
+that names an estimate (`replaces`) replaces it, its curve written again.
 
 Days are the participant's local days, daylight-saving time included, since a
 timetable is read on the wall clock: the spring day has one hour less, the

@@ -63,7 +63,7 @@ installed and an organisation's connectors to external data
 ([0011](0011-external-data.md)). The core is twenty-seven tables and one
 view, the last value of each series. A calculation, a design variant, the use of a
 building, a relation between two things of a trade are a module's
-([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
+([0004](0004-a-figure-says-where-it-comes-from.md)).
 
 **Every object is a table with the columns that object always has**
 ([0019](0019-a-column-only-for-what-every-row-has.md)). Queries read

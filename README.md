@@ -68,8 +68,8 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
    aggregates; clients never resample, convert or fill.
 4. **Deterministic core, operable by an agent.** Nothing in the core calls a
    model; a module keeps what it computes in a table named after it (`solar.estimates`,
-   `community.settlements`), written through `record_calculation()`: same
-   inputs, same engine, same figure. On top of it, an AI agent works as a user of the
+   `community.settlements`), each row with its inputs and its provenance: a
+   figure says where it comes from. On top of it, an AI agent works as a user of the
    model — the same tables, the same rights, the same refusals by name — so
    that describing and studying a place can be delegated without the data
    leaving its owner ([AGENTS.md](AGENTS.md)).
@@ -113,7 +113,7 @@ the core's projects, participants and meters (participants carrying their
 place and their meter, contacts, groups, meter swap, cumulative register, a
 place in two projects), a district
 from open data (projected CRS, OSM identifiers, spatial queries), the
-exact list of the tables of the core, the cascade of defaults, security (row level security, viewers, immutable calculations,
+exact list of the tables of the core, the cascade of defaults, security (row level security, viewers, a module's figures,
 vocabulary hygiene), the series store across a clock change, the weather
 and solar modules with a yield estimate on PVGIS, on `pvwatts.ts` and on the
 pvlib connector, the format libraries in and out without losing a field, the
@@ -168,13 +168,13 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
    npx tsx examples/yield.ts 00000000-0000-4000-8000-000100000051 2023
    ```
 
-8. Read what the estimate says it was computed from. Run step 7 again: the same
-   inputs give back the same estimate and the same figure.
+8. Read what the estimate says it was computed from: its provenance, the
+   weather and the arrays it read.
 
    ```sql
-   select engine_version, inputs->'weather', inputs->'arrays', results
+   select provenance, inputs->'weather', inputs->'arrays', results
      from solar.estimates where device_id = '00000000-0000-4000-8000-000100000051'
-    order by started_at desc limit 1;
+    order by updated_at desc limit 1;
    ```
 
 The yield profiles, the other ways to compute one (`pvwatts`, the pvlib connector)

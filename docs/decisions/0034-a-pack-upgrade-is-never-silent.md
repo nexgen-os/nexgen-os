@@ -32,16 +32,16 @@ key (a country and a code, a scheme and a pattern) is what the seed upserts
 on, so applying a pack twice changes nothing.
 
 **A value is dated, never edited.** A new figure is a new row with the date it
-holds from, and the old one is closed on that date. A calculation replayed at its
-date reads the value it read the first time
-([0004](0004-a-figure-names-its-inputs-and-never-changes.md)).
+holds from, and the old one is closed on that date. A computation run again for
+its date reads the value it read the first time, and the figure names it
+in its inputs ([0004](0004-a-figure-says-where-it-comes-from.md)).
 
 **Adding anything is a version.** A pack that changes without a new version
 is a pack nobody can upgrade to.
 
 **A golden case is the contract of a pack.** A pack carries a reference
 case — a participant and what it carries, described as data — and the
-figures its calculations give; one runner, with no country in it, installs each
+figures its modules compute; one runner, with no country in it, installs each
 pack, replays its case and compares. A golden case proves coherence, not
 legal truth: what it cannot prove is carried by the references of the
 values and by the certification.

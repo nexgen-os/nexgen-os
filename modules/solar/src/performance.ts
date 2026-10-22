@@ -13,8 +13,8 @@
 // in-plane irradiance is measured when a sensor on the system (or on its one
 // array) gives it, else the yield estimate's simulated irradiance of each array,
 // weighted by the arrays' power, and the answer says which. The result is an
-// estimate of the `solar` module: the same readings give the same estimate, and a new
-// reading gives a new one.
+// estimate of the `solar` module whose inputs name every series read, and a new
+// computation that names it replaces it.
 
 import type { Db } from '@nexgen-os/core';
 import { writeEstimate } from './estimates.js';

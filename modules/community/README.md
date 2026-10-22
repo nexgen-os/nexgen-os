@@ -29,11 +29,11 @@ The module keeps the model and an engine shares:
   participants' attributes and the caller's `rules` to an engine of the
   `energy_sharing` kind ([packages/connectors/README.md](../../packages/connectors/README.md#programs-in-any-language));
 - the answer is a settlement of this module on the project (`community.settlements`),
-  its engine and version recorded: for each participant, `shared_offtake_energy`,
-  `shared_injection_energy` and what is left of its `offtake_energy` and
-  `injection_energy`, as `simulated` series of the settlement, final with it. The
-  same inputs and the same engine give the same settlement, without starting the
-  engine again.
+  its provenance (the engine and its version) and its inputs recorded: for each
+  participant, `shared_offtake_energy`, `shared_injection_energy` and what is
+  left of its `offtake_energy` and `injection_energy`, as `simulated` series of
+  the settlement. A new computation that names a settlement (`replaces`)
+  replaces it, its series written again.
 
 ```ts
 import { settleSharing } from './src/sharing.js';

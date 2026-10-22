@@ -48,9 +48,9 @@ model belong to the model's profile in its module (a yield profile, an
 allocation key), where the calculation records them; the cascade holds what varies
 by place and by owner.
 
-**A calculation records what it read.** The value and the level it came from are
-inputs of the calculation ([0004](0004-a-figure-names-its-inputs-and-never-changes.md)), so the same calculation
-replayed later reads the same number even after the pack moved on.
+**A figure records what it read.** The value and the level it came from are
+inputs of the estimate or the settlement ([0004](0004-a-figure-says-where-it-comes-from.md)), so it
+still says which number it read after the pack moved on.
 
 ## What it forbids
 
