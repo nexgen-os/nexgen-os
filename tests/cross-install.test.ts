@@ -350,7 +350,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         ).rejects.toThrow(/^ekwo_company_not_found/);
       });
 
-      it("nexgen-os doctor names a row whose Ekwo id is no longer in Ekwo OS", async () => {
+      it("nexgen-os doctor names a row whose Ekwo id is not in Ekwo OS", async () => {
         expect((await doctor(sqlClient(db))).problems.map((p) => p.code)).not.toContain('billing_key_unlinked');
         // A row left dangling as a restore without its foreign keys leaves it.
         const dangling = '00000000-0000-4000-8000-0000000000dd';
@@ -358,7 +358,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         await db.query(`insert into billing.invoices (id, organisation_id, participant_id, kind, period_from, period_to) values ($1, $2, $3, 'sale', '2026-06-01', '2026-06-30')`, [dangling, organisationId, participantId]);
         await db.exec('set session_replication_role = origin');
         const unlinked = (await doctor(sqlClient(db))).problems.filter((p) => p.code === 'billing_key_unlinked');
-        expect(unlinked).toEqual([{ code: 'billing_key_unlinked', detail: `billing.invoices ${dangling}: Ekwo id ${dangling} is no longer in Ekwo OS` }]);
+        expect(unlinked).toEqual([{ code: 'billing_key_unlinked', detail: `billing.invoices ${dangling}: Ekwo id ${dangling} is not in Ekwo OS` }]);
         await db.query('delete from billing.invoices where id = $1', [dangling]);
         await db.exec('set search_path = nexgen, public, extensions');
       });

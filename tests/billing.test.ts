@@ -130,7 +130,7 @@ describe('billing without Ekwo OS', () => {
     await expect(db.query('select billing.link_company($1, $2)', [await uuid(), company])).rejects.toThrow(/^organisation_not_found/);
   });
 
-  it('leaves the remote path to the invoicing bridge of the contracts module', async () => {
+  it('refuses by name an Ekwo OS on another database', async () => {
     await expect(db.query('select billing.verify_remote_invoice($1, $2)', ['ekwo-hosted', await uuid()])).rejects.toThrow(/^ekwo_remote_not_supported/);
   });
 

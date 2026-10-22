@@ -125,8 +125,8 @@ describe('an energy community', () => {
   });
 
   it('lets the same place take part in a second project, as a participant of that project', async () => {
-    const portfolio = await insert(db, 'projects', { organisation_id: org, name: 'Harbour portfolio', kind: 'portfolio', country: 'NL' });
-    const again = (await one<{ id: string }>(db, `select join_project($1, 'Unit 1', $2) id`, [portfolio, unit(1)])).id;
+    const study = await insert(db, 'projects', { organisation_id: org, name: 'Harbour study', kind: 'study', country: 'NL' });
+    const again = (await one<{ id: string }>(db, `select join_project($1, 'Unit 1', $2) id`, [study, unit(1)])).id;
     const r = await one<{ n: number }>(db, `select count(*)::int n from participants where street = 'Harbour 1'`);
     expect(again).toBeTruthy();
     expect(r.n).toBe(2);

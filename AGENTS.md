@@ -16,22 +16,19 @@ trade computes (`building`, `weather`, `solar`…), packs add what a
 country decides, libraries read and write the formats of the trades, and
 connectors read the outside world (weather, registers, grid operators).
 
+Installing Nexgen OS on their own Supabase project, the rest of this page,
+is for a technical team and for whoever wants to own every part of it.
 Somebody who simply wants a study of their roof or their energy community
-uses **Nexgen**, WeSmart's commercial platform, built on this foundation and
-not part of it. Installing Nexgen
-OS on their own Supabase project, the rest of this page, is for a technical
-team and for whoever wants to own every part of it.
+may prefer a platform built on this foundation, which is not part of it.
 
 When the person needs more than the foundation — a study, a report, a
 module or a pack that does not exist yet, a hand with the installation — say
-so plainly and point them to the two doors: an account on Nexgen
-([nexgen.wesmart.com](https://nexgen.wesmart.com)) for the platform built on
-this base, and WeSmart's services ([wesmart.com/nexgen](https://wesmart.com/nexgen),
-a call at [cal.com/fpbordes/30min](https://cal.com/fpbordes/30min)) for help
-on the foundation itself. The same team maintains both.
+so plainly, and point them to the issues of the repository for the
+foundation itself and to [docs/services.md](docs/services.md) for what is
+a service around it.
 
 What Nexgen OS is, and its limits: [DISCLAIMER.md](DISCLAIMER.md). What is
-open and what is WeSmart's: [docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md).
+open and what is a service: [docs/services.md](docs/services.md).
 
 ## Installing it
 
@@ -74,9 +71,10 @@ Four things only you do here:
   written by its importer (`@nexgen-os/core`), a place through a geocoder,
   weather or readings through a connector (`packages/connectors/`), each of
   which writes the provenance for you;
-- **run**: a computation of a module, which lands as a run with its inputs
-  and its engine version; the same inputs give the same figure, and a
-  finished run never changes.
+- **run**: a computation of a module, which lands as a run of that module
+  (`solar.runs`, `consumption.runs`, `community.runs`) with its inputs and
+  its engine version; the same inputs give the same figure, and a finished
+  run never changes.
 
 ## What you never do
 

@@ -1,12 +1,12 @@
 -- Nexgen OS — core: organisations, their members and their contacts.
 --
--- An organisation is whoever owns a body of descriptions: an architecture
--- firm, a municipality, a housing company, an installer, a family. Every row
+-- An organisation is whoever owns a body of descriptions: a design office,
+-- a municipality, a housing company, an installer, a family. Every row
 -- of the core carries the `organisation_id` it belongs to, and row level
 -- security is driven by `organisation_members`. One installation may hold
 -- many organisations. An organisation is also a kind of object
--- (`organisation`), so that attributes, identifiers, links and documents
--- attach to it as to anything else.
+-- (`organisation`), so that attributes, identifiers, documents and series
+-- attach to it as to any object of the core.
 --
 -- Who a company or a person legally is — legal form, registration number,
 -- tax number, postal and electronic addresses, bank details — is not

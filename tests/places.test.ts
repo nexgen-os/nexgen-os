@@ -27,7 +27,7 @@ const place = {
 beforeAll(async () => {
   db = await freshDatabase(['building']);
   org = await organisation(db, 'A firm', USER_A);
-  project = await insert(db, 'projects', { organisation_id: org, name: 'A portfolio', country: 'ZZ' });
+  project = await insert(db, 'projects', { organisation_id: org, name: 'A study', country: 'ZZ' });
   // What a country pack publishes: a country, two regions, one of them in
   // another time zone.
   await db.query(`insert into countries (code, name, currency, languages, time_zones, region_level, pack_version, published_by)
@@ -82,8 +82,8 @@ describe('a participant from the standard shape of a place', () => {
 
 describe('a building and its roof, by the gestures of the building module', () => {
   it('derives the orientation of a roof face from its 3D polygon: 30° tilted, facing south', async () => {
-    const site = (await one<{ id: string }>(db, `select join_project($1, 'House', '{"country": "ZZ"}') id`, [project])).id;
-    const house = (await one<{ id: string }>(db, `select building.add_building($1, 'House', null, 12, 7.5, 'residential') id`, [site])).id;
+    const home = (await one<{ id: string }>(db, `select join_project($1, 'House', '{"country": "ZZ"}') id`, [project])).id;
+    const house = (await one<{ id: string }>(db, `select building.add_building($1, 'House', null, 12, 7.5, 'residential') id`, [home])).id;
     // A 10 m wide face rising 5 m over 8.66 m towards the north: it faces south at 30°.
     const roof = (await one<{ id: string }>(
       db,
@@ -99,13 +99,13 @@ describe('a building and its roof, by the gestures of the building module', () =
   });
 
   it('refuses a roof face with neither orientation nor shape, and a surface on a device', async () => {
-    const site = (await one<{ id: string }>(db, `select join_project($1, 'Barn', '{"country": "ZZ"}') id`, [project])).id;
-    const barn = (await one<{ id: string }>(db, `select building.add_building($1, 'Barn') id`, [site])).id;
+    const home = (await one<{ id: string }>(db, `select join_project($1, 'Barn', '{"country": "ZZ"}') id`, [project])).id;
+    const barn = (await one<{ id: string }>(db, `select building.add_building($1, 'Barn') id`, [home])).id;
     await expect(db.query(`select building.add_surface($1, 'roof', 'Somewhere up')`, [barn])).rejects.toThrow(/orientation_unknown/);
-    const ground = (await one<{ id: string }>(db, `select building.add_site($1, 'Farmyard', p_area_m2 => 1200, p_profile => 'land') id`, [site])).id;
+    const ground = (await one<{ id: string }>(db, `select building.add_site($1, 'Farmyard', p_area_m2 => 1200, p_profile => 'land') id`, [home])).id;
     const flat = await one<{ id: string }>(db, `select building.add_surface($1, 'ground', 'Yard') id`, [ground]);
     expect(flat.id).toBeTruthy();
-    const device = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Battery') id`, [site])).id;
+    const device = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Battery') id`, [home])).id;
     await expect(db.query(`select building.add_surface($1, 'roof', 'On a battery', null, 180, 30)`, [device])).rejects.toThrow(/surface_host_kind/);
   });
 });

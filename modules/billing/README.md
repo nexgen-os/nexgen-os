@@ -26,8 +26,8 @@ a VAT number, an IBAN or an invoice line, which are Ekwo's.
 | `billing.record_invoice(participant, ekwo_invoice, kind, from, to, counterparty, run)` | records an Ekwo invoice of a participant (`participant_not_found`, `participant_contact_missing`, `invoice_already_recorded`, `ekwo_invoice_not_found`) |
 | `billing.invoices_of(participant)` | the invoices of a participant, by period, with their Ekwo ids: what a page or an agent lists without knowing Ekwo |
 | `billing.reference_ekwo()` | adds the foreign keys to Ekwo's tables that exist; run by the migration, and again by the installation when Ekwo OS is installed after Nexgen OS |
-| `billing.unlinked_keys()` | the rows whose Ekwo id is no longer in Ekwo OS, read by `nexgen-os doctor` (`billing_key_unlinked`) |
-| `billing.verify_remote_invoice(source, ekwo_invoice)` | the same check against an Ekwo OS on another database, through its API: raises `ekwo_remote_not_supported` until the invoicing bridge of the contracts module completes it |
+| `billing.unlinked_keys()` | the rows whose Ekwo id is not in Ekwo OS, read by `nexgen-os doctor` (`billing_key_unlinked`) |
+| `billing.verify_remote_invoice(source, ekwo_invoice)` | the same check against an Ekwo OS on another database, through its API: raises `ekwo_remote_not_supported`: this module does not reach an Ekwo OS on another database |
 
 **When Ekwo OS shares the database**, the Ekwo ids are real foreign keys:
 `billing.companies.ekwo_company_id` to `public.companies`,
@@ -39,9 +39,8 @@ person who records an invoice is a member of the Ekwo company that issued
 it. **When it does not**, the same columns are plain uuids, and the
 gestures accept any id.
 
-**Issuing an invoice is not this module's.** Turning a settlement line into
-an Ekwo invoice, through SQL or through Ekwo's API, is the invoicing bridge
-of the `contracts` module, which then records it here with
+**Issuing an invoice is not this module's.** The invoice is issued in
+Ekwo OS from a settlement line, and recorded here with
 `billing.record_invoice()`.
 
 Install: `npx nexgen-os init --modules billing`.

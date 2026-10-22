@@ -3,10 +3,8 @@
  * Publishes the packages of this repository to npm, in the order their
  * dependencies impose.
  *
- * The list is **read from the workspaces** and never written down. It used to
- * be a column of `npm publish` lines in `docs/releasing.md`, and the day a
- * brick was added to the repository and not to the column, a release run from
- * that page would have shipped all the packages but one. Whatever is a
+ * The list is **read from the workspaces** and never written down, so that a
+ * brick added to the repository is never left out of a release. Whatever is a
  * workspace and is not `private` is published; a package goes after every
  * package of this repository it depends on.
  *

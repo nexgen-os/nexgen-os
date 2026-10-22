@@ -77,7 +77,7 @@ describe('the nexgen schema', () => {
     await db.exec('set search_path = public');
     try {
       const project = await one<{ id: string }>(db, `insert into nexgen.projects (organisation_id, name, country) values ($1, 'Sheds', 'FR') returning id`, [org]);
-      const site = await one<{ id: string }>(
+      const home = await one<{ id: string }>(
         db,
         `insert into nexgen.participants (organisation_id, project_id, name, country, time_zone) values ($1, $2, 'Shed', 'FR', 'Europe/Paris') returning id`,
         [org, project.id],
@@ -85,7 +85,7 @@ describe('the nexgen schema', () => {
       const found = await one<{ organisation: string; country: string }>(
         db,
         `select nexgen.object_organisation('participant', $1) organisation, nexgen.country_of('participant', $1) country`,
-        [site.id],
+        [home.id],
       );
       expect(found).toEqual({ organisation: org, country: 'FR' });
       await expect(db.query('select 1 from participants')).rejects.toThrow(/relation "participants" does not exist/);

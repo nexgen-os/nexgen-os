@@ -21,8 +21,8 @@ let system: string;
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  const site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+  const home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
   await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10)`, [org, system]);
@@ -79,7 +79,7 @@ describe('a yield run computed by an engine', () => {
     expect(Object.keys(run.results.array_series).sort()).toEqual(['East', 'South']);
   });
 
-  it('a profile that names a transposition sends the horizontal components once for the site', async () => {
+  it('a profile that names a transposition sends the horizontal components once for the participant', async () => {
     const asked: string[] = [];
     // `pvsol_like` decomposes (Hofmann): only ghi is read. Its losses have no values; the fake engine does not check them.
     await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsol_like', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, asked) }) });

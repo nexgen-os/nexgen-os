@@ -1,6 +1,6 @@
 # `building` — the shape of what is built
 
-Status: shipped, version 0.1.0, needs core 0.3.0 — decisions
+Status: shipped, version 0.3.0, needs core 0.3.0 — decisions
 [0008](../../docs/decisions/0008-the-building-module-describes-what-is-built.md),
 [0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md) and
 [0043](../../docs/decisions/0043-the-participant-is-the-node.md).
@@ -69,14 +69,14 @@ devices under the participant). The GeoJSON export of `@nexgen-os/core` adds
 the ground, the buildings and the surfaces of a participant when this
 module is installed.
 
-## Later
+## Not here yet
 
 Georeferenced models (`building.models`: glTF, IFC, CityJSON, meshes, with
 CRS, origin, rotation, scale, up axis and units), drawings and 3D Tiles
 tilesets, `building.model_to_world(model_id)`, extrusion tiles with
-`ST_AsMVT` and 3D Tiles from the surfaces with pg2b3dm, when their epic
-comes.
+`ST_AsMVT` and 3D Tiles from the surfaces with pg2b3dm
+([road to 1.0](../../docs/road-to-1.0.md)).
 
-What stays out, in Nexgen, WeSmart's commercial platform: drone flights and their outputs
+What stays outside the open repository: drone flights and their outputs
 (images, point clouds, orthophotos), scenes, camera paths, videos and stills,
 API keys, the Mapbox `model` layer and Standard style.

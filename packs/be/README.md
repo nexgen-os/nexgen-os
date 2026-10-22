@@ -42,14 +42,13 @@ stays open until the next is published, which closes it. A value whose
 document gives no date (the metering step, the bidding zone) starts on the
 day it was read, 20 October 2026.
 
-## What left the pack
+## What the pack does not hold
 
-The legal register of release 0.1 (eleven texts) and its twenty-three task
-templates are no longer in the open repository: the law is not part of the
-model, and the steps of a project, in any region, are the generic templates
-of the [`tasks`](../../modules/tasks/README.md) module. The regional steps
-(planning exemption, authorisation of an energy community by Brugel, the
-CWaPE or the Flemish regulator) are no longer published.
+The law is not part of the model: no legal text and no rule is in the
+pack, and the steps of a project, in any region, are the generic templates
+of the [`tasks`](../../modules/tasks/README.md) module. Regional steps
+(a planning exemption, the authorisation of an energy community by a
+regional regulator) belong to an installation's own templates.
 
 ## What to check next
 

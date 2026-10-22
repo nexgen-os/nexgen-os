@@ -1,8 +1,8 @@
 # Contributing
 
-Nexgen OS is preparing its 0.1: the core schema is settled and its names may
-still move. The most useful
-contributions right now are reviews of the model ([docs/model.md](docs/model.md))
+Nexgen OS is released as minors before 1.0: the core schema is settled and
+its names may still move ([docs/road-to-1.0.md](docs/road-to-1.0.md)). The
+most useful contributions are reviews of the model ([docs/model.md](docs/model.md))
 by people who describe places for a living: architects, BIM modellers,
 engineers, surveyors, facility managers and public bodies.
 
@@ -12,8 +12,7 @@ engineers, surveyors, facility managers and public bodies.
 - Everything is written in English. Vocabulary labels may carry translations.
 - No country, currency or language is ever a default in the core.
 - Names are the words the trades use, spelt the same on both sides of the
-  Atlantic where possible (`floors`, `license`, `organisations` as the
-  product already says).
+  Atlantic where possible (`floors`, `license`, `organisations`).
 
 ## Sign-off
 

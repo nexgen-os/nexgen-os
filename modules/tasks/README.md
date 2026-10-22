@@ -64,8 +64,9 @@ gives the same answer. It reads under the caller's row level security.
   templates or a private overlay, never in a country pack; the law they
   answer is not kept in the open model.
 - Whether a rule applies beyond a threshold on one attribute (a protected
-  zone, a heritage building) is the `compliance` module's question, which
-  will create tasks in its turn.
+  zone, a heritage building) is a question of the law, which the open
+  repository does not hold; an installation that answers it records the
+  tasks it decides on.
 - Who is notified, the inbox, the comments and the screens belong to the
   application built on the foundation. An application that detects
   opportunities (an action worth taking) records the tasks it decides on

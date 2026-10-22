@@ -1,6 +1,6 @@
 // An address goes to a point and a point to an address, on two open
-// geocoders, with the precision and the source the site will keep; and the
-// site accepts exactly what the library hands it.
+// geocoders, with the precision and the source the participant will keep; and the
+// participant accepts exactly what the library hands it.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { addressLines, placeFields, type Fetch, type Place } from '@nexgen-os/core';
@@ -98,7 +98,7 @@ describe('photon', () => {
   });
 });
 
-describe('a place on a site', () => {
+describe('a place on a participant', () => {
   let db: PGlite;
   let org: string;
   const place: Place = {

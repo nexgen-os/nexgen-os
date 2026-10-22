@@ -3,7 +3,7 @@
 // a row of another publisher left alone, every refusal by name.
 //
 // The tables below are the shapes the compiler writes into — `countries`,
-// `regions` and `defaults` of the 0.2 core, the operator table of the `grid`
+// `regions` and `defaults` of the core, the operator table of the `grid`
 // module, and the columns of `sources` and `id_schemes` it fills. They are
 // stand-ins, reduced to what a seed touches: the contract between the
 // compiler and the core, checked here without installing the core.

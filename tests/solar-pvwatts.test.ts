@@ -118,7 +118,7 @@ describe('the pvwatts model, step by step', () => {
     expect(() => cleanWeather([{ at: at(0), poa: 10, temperature: 9, wind: null }])).toThrow(/weather_without_wind/);
   });
 
-  it('cuts years at the local standard midnight of the site, and lays them on a 365-day grid without 29 February', () => {
+  it('cuts years at the local standard midnight of the participant, and lays them on a 365-day grid without 29 February', () => {
     expect(hourOfYear('2023-01-01T00:00:00Z', 'UTC')).toEqual({ year: 2023, hour: 0 });
     expect(hourOfYear('2024-02-29T05:00:00Z', 'UTC')).toEqual({ year: 2024, hour: null });
     // 1 March is hour 59 × 24 in a leap year as in any other.
@@ -188,7 +188,7 @@ describe('the pvwatts model, step by step', () => {
     expect(() => typicalYear(toYearGrid(points.filter((p) => !p.at.endsWith('-01-05T12:00:00.000Z')), 'UTC'), Array(12).fill(2022), 2025, 'UTC')).toThrow(/period_not_covered: no year has the hour 2025-01-05T12:00:00.000Z/);
   });
 
-  it('a site at −120° (Los Angeles): every month of the typical year starts and ends at night', () => {
+  it('a participant at −120° (Los Angeles): every month of the typical year starts and ends at night', () => {
     // A sunlit day centred on 12:00 local solar time, i.e. 20:00 UTC; each
     // day's height varies with the day and the year, so that months come
     // from different years.
@@ -283,7 +283,7 @@ describe('the Open-Meteo archive', () => {
 describe('a pvwatts yield run', () => {
   let db: PGlite;
   let org: string;
-  let site: string;
+  let home: string;
   let system: string;
   let pvcalc: { outputs: { totals: { fixed: { E_y: number } } } };
   let weatherAsked: string[] = [];
@@ -292,8 +292,8 @@ describe('a pvwatts yield run', () => {
   beforeAll(async () => {
     db = await freshDatabase(['solar']);
     org = await organisation(db, 'A cooperative', USER_A);
-    site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-    system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+    home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
     // The south array's modules have PVWatts parameters; the east array's have none and are bifacial.
     const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
@@ -340,7 +340,7 @@ describe('a pvwatts yield run', () => {
     );
     expect(series).toMatchObject({ kind: 'simulated', source: 'open_meteo', name: 'typical year 2023-2023', n: 8760 });
     expect([new Date(series.first).toISOString(), new Date(series.last).toISOString()]).toEqual(['2022-12-31T23:00:00.000Z', '2023-12-31T22:00:00.000Z']);
-    const temperature = await one<{ n: number }>(db, `select count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.object_id = $1 and s.quantity_code = 'temperature'`, [site]);
+    const temperature = await one<{ n: number }>(db, `select count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.object_id = $1 and s.quantity_code = 'temperature'`, [home]);
     expect(temperature.n).toBe(8760);
 
     const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.runs where id = $1', [result.runId]);
@@ -358,7 +358,7 @@ describe('a pvwatts yield run', () => {
       remaining_fraction: 0.86,
       typical_year: { months: Array(12).fill(2023), hours_from_mean: 0, rescale_factor: 1, calendar_year: 2023, leap_hours_left_out: 0 },
       anchoring: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', annual_kwh: 2 * pvgisAnnual },
-      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the participant's time zone" },
+      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the time zone of the participant" },
     });
     // A monofacial array says nothing about a rear side.
     expect(run.inputs.arrays[1]).not.toHaveProperty('bifacial');
@@ -394,7 +394,7 @@ describe('a pvwatts yield run', () => {
     ).rejects.toThrow(/period_not_covered/);
   });
 
-  it('throws named errors for an array whose γ nobody gives, a γ out of its bounds, and a site without a time zone', async () => {
+  it('throws named errors for an array whose γ nobody gives, a γ out of its bounds, and a participant without a time zone', async () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, clients())).rejects.toThrow(/gamma_unknown: array East/);
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: 0.0035 }, clients())).rejects.toThrow(/gamma_out_of_range: 0.0035/);
     const somewhere = await participant(db, { organisation_id: org, name: 'Somewhere', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });

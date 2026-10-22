@@ -1,7 +1,7 @@
 # Security
 
 Nexgen OS holds the description of places and the series that come from
-their meters and sensors. A flaw here is not a crash: it is an organisation
+their meters and devices. A flaw here is not a crash: it is an organisation
 reading another organisation's participants, or a series written without a trace.
 Please report it, and please report it privately first.
 
@@ -27,7 +27,7 @@ will name you unless you ask otherwise.
 
 ## What is not
 
-- Nexgen, WeSmart's commercial platform, which has its own channel;
+- a platform built on Nexgen OS, which has its own channel;
 - a weak password on an installation you run, or a key left in a client.
 
 ## How the schema defends itself
@@ -35,5 +35,5 @@ will name you unless you ask otherwise.
 Every table carries row level security from its first migration
 (`secure_table`); the organisation of every attachment is derived from the
 object it is attached to, never trusted from the client; secrets never live
-in the database — a `sources` or `connections` row names a secret, the
+in the database — a `sources` or `connectors` row names a secret, the
 installation's vault holds it.

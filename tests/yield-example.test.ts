@@ -18,7 +18,7 @@ beforeAll(async () => {
   const readme = await readFile(`${repoRoot}/README.md`, 'utf8');
   const describeSystem = readme.match(/^\s*(insert into solar\.pv_systems .*;)$/m)?.[1];
   const describeArray = readme.match(/^\s*(insert into solar\.pv_arrays .*;)$/m)?.[1];
-  if (!describeSystem || !describeArray) throw new Error('the README no longer describes the PV system of example 01 and its array');
+  if (!describeSystem || !describeArray) throw new Error('the README does not describe the PV system of example 01 and its array');
   await db.exec(`set search_path = nexgen, public, extensions; ${describeSystem} ${describeArray}`);
 });
 

@@ -1,6 +1,6 @@
 // The IEC 61724-1 indicators of a PV system: final and reference yields,
 // performance ratio and energy performance index, on the hours every series
-// has, by month in the site's time zone, recorded as a run that a new
+// has, by month in the time zone of the participant, recorded as a run that a new
 // reading renews.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -17,15 +17,15 @@ const sun = (i: number) => Math.max(0, Math.sin(((i % 24) - 6) / 12 * Math.PI)) 
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let system: string;
 
 
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 10 });
+  home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 10 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 10)', [system]);
   await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc) values ($1, $2, 'South', 180, 30, 'roof_parallel', 10)`, [org, system]);
 });
@@ -38,14 +38,14 @@ const target = (objectKind: string, objectId: string, kind: 'measured' | 'simula
 
 describe('the IEC 61724-1 indicators', () => {
   it('refuses by name what it cannot compute', async () => {
-    await expect(performanceIndicators(db, { pvSystemId: site, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^pv_system_not_found/);
+    await expect(performanceIndicators(db, { pvSystemId: home, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^pv_system_not_found/);
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-01', to: '2025-06-30' })).rejects.toThrow(/^series_not_found: no measured production/);
     // Ten days of production at a performance ratio of 0.8, from 25 June to 4 July 2025 (UTC days, Brussels is UTC+2).
     await storeSeries(db, target('device', system, 'measured'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8) });
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-25', to: '2025-07-04' })).rejects.toThrow(/^irradiance_required/);
   });
 
-  it('gives the final and reference yields and the performance ratio from a sensor, by month in the site time zone, on the hours both have', async () => {
+  it('gives the final and reference yields and the performance ratio from a sensor, by month in the time zone of the participant, on the hours both have', async () => {
     const sensor = await storeSeries(db, target('device', system, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, sun).filter((_, i) => i !== 36) });
     const got = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' });
     expect(got.irradiance).toBe('measured');
@@ -89,11 +89,11 @@ describe('the IEC 61724-1 indicators', () => {
     expect(run.inputs.irradiance).toMatchObject({ source: 'simulated', run_id: yieldRun, series: [{ series_id: poa.seriesId, kwp: 10 }] });
     expect(run.inputs.expected).toMatchObject({ run_id: yieldRun, series_id: expected.seriesId });
 
-    await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', yieldRunId: site })).rejects.toThrow(/^run_not_of_system/);
+    await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', yieldRunId: home })).rejects.toThrow(/^run_not_of_system/);
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2024-06-26', to: '2024-07-03', yieldRunId: yieldRun })).rejects.toThrow(/^period_not_covered/);
   });
 
-  it('needs the site time zone', async () => {
+  it('needs the time zone of the participant', async () => {
     const other = await participant(db, { organisation_id: org, name: 'No zone', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
     const device = await insert(db, 'devices', { organisation_id: org, participant_id: other, name: 'PV', device_type: 'solar', rated_power_kw: 3 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 3)', [device]);

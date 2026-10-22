@@ -31,12 +31,12 @@ describe('conventions', () => {
 describe('the PVGIS connector', () => {
   let db: PGlite;
   let org: string;
-  let site: string;
+  let home: string;
 
   beforeAll(async () => {
     db = await freshDatabase();
     org = await organisation(db, 'A cooperative', USER_A);
-    site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   });
 
   afterAll(async () => {
@@ -60,10 +60,10 @@ describe('the PVGIS connector', () => {
     expect(got.series[2].values[0]).toEqual({ at: '2023-01-01T00:00:00.000Z', value: 15.4 });
   });
 
-  it('stores the energy as a simulated series and reads it back by day in the site time zone', async () => {
+  it('stores the energy as a simulated series and reads it back by day in the time zone of the participant', async () => {
     const { fetch } = fetchWith(await recorded('pvgis-seriescalc-brussels-2023-48h.json'));
     const got = await pvgis({ fetch }).hourly({ lon: 4.35, lat: 50.85 }, { kwp: 1, azimuth_deg: 180, tilt_deg: 35, mounting: 'building', system_loss_pct: 14 }, { from: 2023, to: 2023 });
-    const { seriesId } = await storeSeries(db, { organisationId: org, objectKind: 'participant', objectId: site, sourceCode: 'pvgis', kind: 'simulated' }, got.series[0]);
+    const { seriesId } = await storeSeries(db, { organisationId: org, objectKind: 'participant', objectId: home, sourceCode: 'pvgis', kind: 'simulated' }, got.series[0]);
     const days = await db.query<{ bucket: string; value: number; samples: number }>(`select bucket, value, samples from resample($1, '2023-01-01 00:00+01', '2023-01-03 00:00+01', '1 day')`, [seriesId]);
     expect(days.rows.map((d) => d.samples)).toEqual([23, 24]); // the first Brussels day starts at 23:00 UTC the day before
     const total = got.series[0].values.reduce((s, v) => s + v.value, 0);

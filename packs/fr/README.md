@@ -55,14 +55,12 @@ stays open until the next is published, which closes it. A value whose
 document gives no date (the metering step, the bidding zone) starts on the
 day it was read, 20 October 2026.
 
-## What left the pack
+## What the pack does not hold
 
-The legal register of release 0.1 (seventeen texts), its thirty-six rules on
-the grid, energy sharing, planning, support schemes and meter data, and its
-twenty-one task templates are no longer in the open repository: the law is
-not part of the model, and the steps of a project are the generic templates
-of the [`tasks`](../../modules/tasks/README.md) module. The sources
-`legifrance` and `operat` went with them.
+The law is not part of the model: no legal text and no rule on the grid,
+energy sharing, planning, support schemes or meter data is in the pack,
+and the steps of a project are the generic templates of the
+[`tasks`](../../modules/tasks/README.md) module.
 
 ## What to check next
 

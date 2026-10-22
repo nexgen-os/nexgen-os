@@ -1,8 +1,8 @@
 // The hierarchy of the core, in the order a page walks it: an organisation,
 // a project, a participant taking part in it with its place, a meter it
 // carries, a device behind it; then two flats of one building, two
-// participants each carrying its own meter, grouped, and the participant a
-// meter leaves kept as a dated link. No module is needed for any of it; the
+// participants each carrying its own meter, grouped, and a meter given to
+// the participant that carries it next. No module is needed for any of it; the
 // grid module, installed on a second database, adds the operator of the
 // meter on top.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

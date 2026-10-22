@@ -43,13 +43,14 @@ So Nexgen OS is five commitments.
 
 ## 1. One description of a place, for everyone who works on it.
 
-Nexgen OS names the things the trades name — a project, a site, a building,
-a roof face, a participant, a meter, a device, a sensor — and keeps each one
-once, in a table that says what it always has. What we know beyond that is
-**attached** to it: attributes with the period they hold for, measurements
-over time, tags, the identifiers other systems know it by, its links to
-other objects, its documents — and, through the modules, its floors and
-rooms, its 3D models and its drawings.
+Nexgen OS names the things the trades name — an organisation, a project, a
+participant with its place, the meter that connects it, the devices behind
+that meter, the series they produce — and keeps each one once, in a table
+that says what it always has. What we know beyond that is **attached** to
+it: attributes with the period they hold for, the identifiers other systems
+know it by, its documents — and, through the modules, its ground and its
+buildings, their floors and rooms, their roof faces, its PV arrays, its
+tasks.
 
 That is the whole core, and it is deliberately small and concrete. An
 architect, an energy engineer, a facility manager, a city planner and a
@@ -66,8 +67,7 @@ it stands for:
 - the spatial structure and the property sets of **IFC** (ISO 16739) and the
   buildingSMART Data Dictionary;
 - the floors of detail and surface semantics of **CityGML** and CityJSON;
-- the classes, points and relationships of **Brick**, and the tags of
-  **Project Haystack**;
+- the equipment and points of **Brick** and of **Project Haystack**;
 - the datastreams and observations of **OGC SensorThings**;
 - the quantities and units of **QUDT**;
 - global identifiers — IFC GlobalId, OpenStreetMap, Overture GERS, GS1 —
@@ -103,18 +103,19 @@ arithmetic stays in code anybody can read.
 
 ## 4. Modules beside the core, countries as data.
 
-Energy is the first thing we compute — production, self-consumption,
-batteries, charging, flexibility, energy sharing — and it is a **module**,
-like thermal simulation, real-time energy management, permitting and
-compliance, the tasks of a project and public participation. Each module
-lives in its own Postgres schema, with its own migrations and its own tests,
+Energy is the first thing we compute — production, consumption,
+self-consumption, energy sharing, and next batteries, charging and
+flexibility — and each is a **module**, like the description of buildings,
+the grid side of a meter, the bills of a participant and the tasks of a
+project. Each module starts from an object of the core, lives in its own
+Postgres schema, with its own migrations and its own tests,
 reads the core, and writes back through one function. A module the core has
 never heard of can be written by the people who need it, without asking us.
 
-A country is **data**: a pack of files that says which identifiers it uses,
-which rules apply to sharing energy, to putting panels on a roof or a
-turbine in a field, which zones are protected — that a professional can
-read, a contributor can propose and a test can prove. No country is the
+A country is **data**: a pack of files that says how its regions are named,
+which identifiers it uses, which registers and grid operators exist and
+which values a study starts from, each with its source — that a
+professional can read, a contributor can propose and a test can prove. No country is the
 default, and no feature is limited to one.
 
 Formats live in independent libraries — IFC, CityJSON, GeoJSON, 3D Tiles,
@@ -130,31 +131,26 @@ is the shared description they can all read from and write to.
 
 The core is free software under **AGPL-3.0**, so that what is built on it
 stays open. The format libraries and the connectors are **MIT**, so they can
-go anywhere, including into tools that will never use Nexgen OS. What
-WeSmart sells — Nexgen, its commercial platform built on this foundation,
-with the data connections, the studies and the agents it operates for you —
-pays for the rest, and never gates it
-([docs/nexgen-os-and-nexgen.md](docs/nexgen-os-and-nexgen.md)).
+go anywhere, including into tools that will never use Nexgen OS. Services
+around it — hosted platforms, licensed data, studies, agents operated for
+you — pay for the work, and never gate it
+([docs/services.md](docs/services.md)).
 
 ## Who builds it, who operates it, who it is for
 
-Nexgen OS is built and maintained by **WeSmart**, the energy-sharing and
-energy-management company behind the Nexgen platform, through its two
-companies: **Newide** in Belgium and **AI4Energy** in France. Nexgen OS is
-the foundation and the reference language; **Nexgen**, WeSmart's commercial
-platform for project holders, installers and communities, is built on it
-and remains WeSmart's product, with its own name, terms and roadmap. The
-foundation itself belongs to the organisation that carries it on GitHub,
-its decisions are public, and no single company can take it closed.
+Nexgen OS is the foundation and the reference language, taken from a
+platform that runs energy communities and studies in the field. Commercial
+platforms for project holders, installers and communities may be built on
+it, each with its own name, terms and roadmap. The foundation itself
+belongs to the organisation that carries it on GitHub, its decisions are
+public, and no single company can take it closed.
 
 It is also a research foundation. Describing places once, with their
 provenance and their rules, is what a research project on energy
 communities, on building renovation, on grid flexibility or on digital
 twins spends its first months rebuilding. Nexgen OS is that base, open, so
 that universities, research centres and companies can start from it, test a
-method on real descriptions and publish a module. WeSmart builds its own
-research projects on it and welcomes partners who want to:
-[wesmart.com/research](https://wesmart.com/research).
+method on real descriptions and publish a module.
 
 Nexgen OS is built by the people who know places: **architects and BIM
 modellers** who map their models, **engineers** who write a module,

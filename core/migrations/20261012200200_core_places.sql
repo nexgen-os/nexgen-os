@@ -7,8 +7,8 @@
 -- project, a meter and a device to a participant. An attachment (an
 -- attribute, an identifier, a document, a series) names its object by its
 -- kind, one of those six words, and its id; `object_organisation()` reads
--- an object's organisation in the table of its kind. There is no registry
--- and no table of kinds (decision 0001).
+-- an object's organisation in the table of its kind; the kind is checked by
+-- a plain constraint (decision 0001).
 --
 -- The place of the core is the participant's: an address, a point, a time
 -- zone, geolocated but not described (decision 0043). What a place

@@ -1,5 +1,5 @@
 // The Python client (packages/python), when psycopg is installed: a fresh
-// installation served over the Postgres protocol, a site with a series and
+// installation served over the Postgres protocol, a participant with a series and
 // another without a time zone, then the client's own tests run against it.
 // Without the client and psycopg, the test is skipped and says how to
 // install them.

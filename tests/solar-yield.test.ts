@@ -12,15 +12,15 @@ import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let system: string;
 const asked: string[] = [];
 
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
+  home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   // One statement each: arrays are read in the order they were created, and one statement gives both the same time.
   await db.query(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20)`, [org, system]);
@@ -72,7 +72,7 @@ describe('a pvgis_like yield run', () => {
     expect(run.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
   });
 
-  it('throws named errors for a profile PVGIS cannot run and a system whose site has no position', async () => {
+  it('throws named errors for a profile PVGIS cannot run and a system whose participant has no position', async () => {
     await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_runnable_here/);
     const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
     const device = await insert(db, 'devices', { organisation_id: org, participant_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });

@@ -275,10 +275,9 @@ $$;
 comment on function billing.invoices_of(uuid) is
   'The Ekwo invoices of a participant, by period: what a page or an agent lists without knowing Ekwo; the amounts are read from Ekwo by the id.';
 
--- When Ekwo OS runs elsewhere, the same gestures check the Ekwo id through
--- its API, the Ekwo instance being a source with the name of its key
--- (decision 0010). That path is the invoicing bridge of the contracts
--- module, which completes this function; until then it refuses by name.
+-- When Ekwo OS runs elsewhere, an Ekwo id would be checked through its API,
+-- the Ekwo instance being a source with the name of its key (decision 0010).
+-- This module does not reach another database, and refuses by name.
 create or replace function billing.verify_remote_invoice(p_source_code text, p_ekwo_invoice_id uuid)
 returns boolean
 language plpgsql
@@ -286,13 +285,13 @@ security invoker
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
-  raise exception 'ekwo_remote_not_supported: % (an Ekwo OS on another database is reached by the invoicing bridge of the contracts module)', p_source_code
+  raise exception 'ekwo_remote_not_supported: % (this module does not reach an Ekwo OS on another database)', p_source_code
     using errcode = 'feature_not_supported';
 end;
 $$;
 
 comment on function billing.verify_remote_invoice(text, uuid) is
-  'Whether an Ekwo OS reached through its API, named by its source, holds this invoice. Not supported yet: raises ekwo_remote_not_supported; the invoicing bridge of the contracts module completes it.';
+  'Whether an Ekwo OS reached through its API, named by its source, holds this invoice. This module does not reach another database: raises ekwo_remote_not_supported.';
 
 grant execute on function billing.link_company(uuid, uuid), billing.link_contact(uuid, uuid),
   billing.record_invoice(uuid, uuid, text, date, date, uuid, uuid), billing.invoices_of(uuid),
@@ -345,7 +344,7 @@ $$;
 comment on function billing.reference_ekwo() is
   'Adds the foreign keys from the Ekwo ids of the module to public.companies, public.contacts and public.documents when Ekwo OS shares the database; returns the keys it added. Run by the installation, again after Ekwo OS is installed.';
 
--- The rows whose Ekwo id is no longer in Ekwo OS, when it shares the
+-- The rows whose Ekwo id is not in Ekwo OS, when it shares the
 -- database: what `nexgen-os doctor` reports as billing_key_unlinked.
 create or replace function billing.unlinked_keys()
 returns table (table_name text, id uuid, ekwo_id uuid)

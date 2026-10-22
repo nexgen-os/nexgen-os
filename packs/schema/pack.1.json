@@ -290,7 +290,7 @@
         "source_code": { "$ref": "#/$defs/code", "description": "The source, declared in sources.json, the value was read from." },
         "reference": { "$ref": "#/$defs/text", "description": "Where in that source: the article, the table, the page." },
         "valid_from": { "$ref": "#/$defs/date" },
-        "valid_to": { "$ref": "#/$defs/date", "description": "The first day the value no longer holds, as everywhere in the model: a period is [valid_from, valid_to). The row that replaces it starts that day. Absent: it still holds." }
+        "valid_to": { "$ref": "#/$defs/date", "description": "The first day the value does not hold, as everywhere in the model: a period is [valid_from, valid_to). The row that replaces it starts that day. Absent: it still holds." }
       }
     }
   }

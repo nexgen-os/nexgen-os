@@ -116,7 +116,7 @@ export async function detachedModuleTables(db: SqlClient, schemas: string[]): Pr
 }
 
 /**
- * Attachments whose object no longer exists, counted by kind (decision
+ * Attachments whose object is gone, counted by kind (decision
  * 0044). An attachment is a row of a table with an `object_kind` and an
  * `object_id` column (or `subject_kind` and `subject_id`) — the core's
  * attributes, identifiers, documents and series, and the modules' tables
@@ -153,7 +153,7 @@ export async function orphanedAttachments(db: SqlClient): Promise<{ kind: string
 }
 
 /**
- * The rows of the `billing` module whose Ekwo id is no longer in Ekwo OS,
+ * The rows of the `billing` module whose Ekwo id is not in Ekwo OS,
  * when Ekwo OS shares the database (decision 0010). The doctor reads no
  * table of Ekwo itself: the module's `billing.unlinked_keys()` does, and
  * answers nothing when the module or Ekwo's tables are absent.
@@ -266,12 +266,12 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
     const of = orphans.filter((o) => o.kind === kind);
     problems.push({
       code: 'attachments_orphaned',
-      detail: `${kind}: ${of.map((o) => `${o.rows} in ${o.table_name}`).join(', ')} name a ${kind} that no longer exists`,
+      detail: `${kind}: ${of.map((o) => `${o.rows} in ${o.table_name}`).join(', ')} name a ${kind} that does not exist`,
     });
   }
 
   for (const k of await unlinkedBillingKeys(db)) {
-    problems.push({ code: 'billing_key_unlinked', detail: `${k.table_name} ${k.id}: Ekwo id ${k.ekwo_id} is no longer in Ekwo OS` });
+    problems.push({ code: 'billing_key_unlinked', detail: `${k.table_name} ${k.id}: Ekwo id ${k.ekwo_id} is not in Ekwo OS` });
   }
 
   const unpartitioned = await missingSeriesPartitions(db);

@@ -32,7 +32,7 @@ worse than one not cut.
    `packages/cli/package.json`, and `SCHEMA_VERSION` and `SCHEMA_MIN` in
    `packages/cli/src/version.ts`. `schemaVersion` is what this release's
    migrations bring a database to. Raise `schemaMin` only when the release
-   can no longer bring an older database forward; the installer then refuses
+   cannot bring an older database forward; the installer then refuses
    it with `database_too_old` and names the release to run first.
 
 4. **The modules and the packs.** A module that changes moves the `version`
@@ -73,23 +73,16 @@ worse than one not cut.
    run*. It is not in the CI: it costs money, and two releases installing
    into one shared project would test nothing.
 
-   **The last run:** `0.1.0`, 16 October 2026, on a throwaway Supabase
-   project in `eu-west-3` (Paris), Postgres 17.11, PostGIS 3.3.7, through
-   the session pooler (port 5432), Node 24. `0.1.0` is the first release,
-   so there was no earlier one to install first: the package was built,
-   packed (`npm pack -w packages/cli`) and installed from its tarball, as
-   npm will hand it to a user. On the empty project `doctor` named
-   `postgis_required` and `not_installed`, and `init --dry-run` refused
-   with `postgis_required`; after
-   `create extension if not exists postgis with schema extensions;`,
-   `init --packs fr,be` applied 26 steps (13 core, 5 module, 8 pack) in
-   five seconds; `doctor` then found no problem, and `init --dry-run` and
-   `migrate` had nothing to apply. The README's first dataset then loaded
-   once the schema `extensions`, where Supabase keeps PostGIS, was on the
-   search path. A session pooler string whose host is
-   not the project's (`aws-0-…` for a project on `aws-1-…`) is refused by
-   the pooler with `tenant/user … not found`: copy the string from the
-   project's *Connect* panel.
+   For a first release there is no earlier one to install first: build the
+   package, pack it (`npm pack -w packages/cli`) and install it from its
+   tarball, as npm will hand it to a user. Two things a real project shows
+   that PGlite does not: the examples load once the schema `extensions`,
+   where Supabase keeps PostGIS, is on the search path; and a session
+   pooler string whose host is not the project's (`aws-0-…` for a project
+   on `aws-1-…`) is refused by the pooler with `tenant/user … not found` —
+   copy the string from the project's *Connect* panel.
+
+   **The last run:** written here when the release is cut.
 
 ## Cutting it
 

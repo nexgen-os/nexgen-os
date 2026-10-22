@@ -1,8 +1,8 @@
 -- Nexgen OS — core: projects, the participants taking part in them, and the
 -- meters they carry.
 --
--- A project is what a person works on: an energy community, a portfolio, a
--- study, a construction site, a district plan, with the country whose rules
+-- A project is what a person works on: an energy community, a set of
+-- buildings, a study, a construction site, a district plan, with the country whose rules
 -- apply and a lifecycle.
 --
 -- A participant is the node of a project (decision 0043): an actor — a
@@ -40,8 +40,8 @@ create table projects (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   name             text not null,
-  -- What the project is: an energy community, a portfolio, a study, a
-  -- construction site, a district plan. Modules refine it.
+  -- What the project is: an energy community, a set of buildings, a
+  -- study, a construction site, a district plan. Modules refine it.
   kind             text not null default 'study',
   -- ISO 3166-1 alpha-2 of the country whose rules apply. Selects the packs.
   country          char(2) not null,
@@ -60,7 +60,7 @@ create table projects (
 );
 
 comment on table projects is
-  'What a person works on: an energy community, a portfolio, a study, a construction site, a district plan, with its country and its lifecycle (simulation, creation, active, inactive, archived). Its actors are participants.';
+  'What a person works on: an energy community, a set of buildings, a study, a construction site, a district plan, with its country and its lifecycle (simulation, creation, active, inactive, archived). Its actors are participants.';
 
 create index projects_geometry_idx on projects using gist (geometry);
 create trigger projects_normalize before insert or update of geometry on projects

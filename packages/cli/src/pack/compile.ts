@@ -3,7 +3,7 @@
  *
  * The SQL is a build artefact. The pack is the source; the seed is committed
  * so that the installer, `psql` or any other client applies a country without
- * this compiler, and `nexgen-os pack check` refuses a seed that is no longer
+ * this compiler, and `nexgen-os pack check` refuses a seed that is not
  * the exact output of its pack. Rows are sorted here, so the same pack always
  * compiles to the same bytes.
  *
@@ -15,7 +15,7 @@
  * and a `valid_from` differs from the one it holds (`value_edited`), and a
  * conflict only closes a period or corrects a citation. Nothing is deleted.
  *
- * The tables are those of the 0.2 core — `countries`, `regions`, `defaults`,
+ * The tables are those of the core — `countries`, `regions`, `defaults`,
  * beside `sources` and `id_schemes` — and the operator table of the `grid`
  * module. Literals are quoted here and nowhere else; a pack holds no code
  * (see executable.ts), and the compiler would not run it if it did.

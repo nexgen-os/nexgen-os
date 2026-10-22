@@ -9,8 +9,8 @@ is twenty-seven tables and one view. The participant is the node
 place, geolocated but not described, the meters and the devices behind
 them, and every module starts from it. Its ground, its buildings, floors,
 rooms and roof faces are the `building` module's
-([0008](decisions/0008-the-building-module-describes-what-is-built.md)); a device is not placed
-([0026](decisions/0026-a-device-belongs-to-its-participant.md)). A trade that
+([0008](decisions/0008-the-building-module-describes-what-is-built.md)); a device belongs to its
+participant ([0026](decisions/0026-a-device-belongs-to-its-participant.md)). A trade that
 needs more adds a module with its own schema, starting from one of these
 objects ([0042](decisions/0042-a-module-starts-from-an-object-of-the-core.md));
 a country adds a pack.
@@ -40,8 +40,8 @@ The hierarchy is the foreign keys, and nothing mirrors it
 attribute, an identifier, a document, a series — names its object by its
 kind and its id, the kind one of the six objects: `organisation`,
 `project`, `participant`, `meter`, `device`, `series`, checked by a plain
-`check (object_kind in (…))` as Ekwo OS attaches its files. There is no
-table of kinds. `object_organisation(kind, id)` reads an object's
+`check (object_kind in (…))` as Ekwo OS attaches its files.
+`object_organisation(kind, id)` reads an object's
 organisation in the table of its kind; `drop_attachments()`, after delete
 on each of those tables, takes away what was attached to the row.
 `participant_of(kind, id)` and `parameter_of(kind, id, …)` follow the
@@ -79,11 +79,11 @@ erDiagram
 
 ## On what
 
-- **projects** — what a person works on: an energy community, a
-  portfolio, a study, a construction site, a district plan (`kind`), with
+- **projects** — what a person works on: an energy community, a set of
+  buildings, a study, a construction site, a district plan (`kind`), with
   the country whose rules apply, a perimeter on the map, a status from
   `simulation` to `archived` and its dates. The allocation key of a
-  community, the installed power of a portfolio are attributes; the tasks of
+  community, the installed power of a set of buildings are attributes; the tasks of
   its works are the `tasks` module's.
 - **participants** — the node of a project
   ([0043](decisions/0043-the-participant-is-the-node.md)): an actor — a
@@ -197,8 +197,8 @@ Any other key is refused (`place_key_unknown`).
   ([0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
   Its participant, type (from `device_types`), catalogue product,
   manufacturer, model, rated power, unit count, status, installation and
-  removal dates. One device has as many series as it measures. It is not
-  placed: where it sits in a building is not described for now
+  removal dates. One device has as many series as it measures. Nothing
+  places it in a building
   ([0026](decisions/0026-a-device-belongs-to-its-participant.md)); what a file
   said about it is an attribute the module that read the file declares
   (`file_record` of `building`). `install_device` (with the nameplate of
@@ -293,8 +293,6 @@ optional extras).
   the world as it is; a planned device has the status `planned`.
 
 ## Attached to an object of the core
-
-## Attached to any object
 
 Every attachment names its object by its kind and its id (`object_kind`,
 `object_id`), the kind one of the six objects, and every gesture takes

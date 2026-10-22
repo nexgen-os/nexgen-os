@@ -65,20 +65,20 @@ describe('doctor', () => {
     }
   });
 
-  it('names, by kind, attachments whose object no longer exists', async () => {
+  it('names, by kind, attachments whose object is gone', async () => {
     const org = await organisation(db, 'Orphans');
-    const site = await participant(db, { organisation_id: org, name: 'Gone', country: 'ZZ' });
-    await db.query(`select nexgen.set_attribute('participant', $1, 'annual_consumption', '1200')`, [site]);
-    await db.query(`select nexgen.add_identifier('participant', $1, 'osm', 'way/7')`, [site]);
+    const home = await participant(db, { organisation_id: org, name: 'Gone', country: 'ZZ' });
+    await db.query(`select nexgen.set_attribute('participant', $1, 'annual_consumption', '1200')`, [home]);
+    await db.query(`select nexgen.add_identifier('participant', $1, 'osm', 'way/7')`, [home]);
     await db.exec('begin');
     try {
       // Deleted around its trigger, as a restore or a hand in the database would.
       await db.exec('set local session_replication_role = replica');
-      await db.query('delete from nexgen.participants where id = $1', [site]);
+      await db.query('delete from nexgen.participants where id = $1', [home]);
       await db.exec('set local session_replication_role = origin');
       const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
       expect(r.problems).toEqual([
-        { code: 'attachments_orphaned', detail: 'participant: 1 in nexgen.attributes, 1 in nexgen.external_ids name a participant that no longer exists' },
+        { code: 'attachments_orphaned', detail: 'participant: 1 in nexgen.attributes, 1 in nexgen.external_ids name a participant that does not exist' },
       ]);
     } finally {
       await db.exec('rollback');
@@ -155,8 +155,8 @@ describe('status and the command line', () => {
     await db.exec('begin');
     try {
       const org = await organisation(db, 'Partitions firm');
-      const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'ZZ', time_zone: 'UTC' });
-      const meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
+      const home = await participant(db, { organisation_id: org, name: 'Depot', country: 'ZZ', time_zone: 'UTC' });
+      const meter = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Meter', device_type: 'meter' });
       const series = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
       await db.query(`insert into series_values (series_id, at, value) values ($1, '2026-03-25T10:00:00Z', 1)`, [series]);
       expect((await doctor(client, await readCatalogue(repoRoot))).problems).toEqual([

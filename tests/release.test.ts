@@ -44,7 +44,7 @@ describe('what a release publishes', () => {
     }
   });
 
-  it('holds no range on one of its own packages that the repository no longer satisfies', () => {
+  it('holds no range on one of its own packages that the repository does not satisfy', () => {
     expect(staleRanges()).toEqual([]);
   });
 

@@ -11,7 +11,7 @@ const VIEWER = '00000000-0000-4000-8000-0000000000c1';
 let db: PGlite;
 let orgA: string;
 let orgB: string;
-let siteA: string;
+let homeA: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['building']);
@@ -19,8 +19,8 @@ beforeAll(async () => {
   orgB = await organisation(db, 'Firm B', USER_B);
   await db.query('insert into auth.users (id) values ($1)', [VIEWER]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'viewer')`, [orgA, VIEWER]);
-  siteA = await participant(db, { organisation_id: orgA, name: 'Site A', country: 'FR' });
-  await participant(db, { organisation_id: orgB, name: 'Site B', country: 'DE' });
+  homeA = await participant(db, { organisation_id: orgA, name: 'Hall A', country: 'FR' });
+  await participant(db, { organisation_id: orgB, name: 'Hall B', country: 'DE' });
   await db.query(
     `insert into modules (code, name, version, schema_name, requires_core_min) values ('pv', 'PV production', '0.1.0', 'pv', '0.1.0')`,
   );
@@ -34,8 +34,8 @@ describe('row level security', () => {
   it('shows each member the participants of their organisation only', async () => {
     const a = await asUser(db, USER_A, () => db.query<{ name: string }>('select name from participants'));
     const b = await asUser(db, USER_B, () => db.query<{ name: string }>('select name from participants'));
-    expect(a.rows.map((r) => r.name)).toEqual(['Site A']);
-    expect(b.rows.map((r) => r.name)).toEqual(['Site B']);
+    expect(a.rows.map((r) => r.name)).toEqual(['Hall A']);
+    expect(b.rows.map((r) => r.name)).toEqual(['Hall B']);
   });
 
   it('refuses a write in another organisation', async () => {
@@ -48,7 +48,7 @@ describe('row level security', () => {
 
   it('refuses a building of a participant of another organisation', async () => {
     await expect(
-      insert(db, 'building.buildings', { organisation_id: orgB, participant_id: siteA, name: 'Cross-border' }),
+      insert(db, 'building.buildings', { organisation_id: orgB, participant_id: homeA, name: 'Cross-border' }),
     ).rejects.toThrow(/parent_in_other_organisation/);
   });
 
@@ -57,7 +57,7 @@ describe('row level security', () => {
     expect(r.rows).toHaveLength(1);
     await expect(
       asUser(db, VIEWER, () =>
-        db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'annual_consumption', '12000')`, [siteA]),
+        db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'annual_consumption', '12000')`, [homeA]),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -110,20 +110,20 @@ describe('computation runs', () => {
   it('returns the same run for the same inputs and engine version', async () => {
     const inputs = { horizon: '2027', weather: 'tmy' };
     const first = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [homeA, inputs]),
     );
     const again = await asUser(db, USER_A, () =>
       one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [
-        siteA,
+        homeA,
         { weather: 'tmy', horizon: '2027' },
       ]),
     );
     const newer = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.2.0', $2, '{"kwh": 5410}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.2.0', $2, '{"kwh": 5410}') id`, [homeA, inputs]),
     );
     expect(again.id).toBe(first.id);
     expect(newer.id).not.toBe(first.id);
-    await expect(asUser(db, USER_B, () => db.query(`select record_run('pv.runs', 'participant', $1, '0.1.0', '{}', '{}')`, [siteA])))
+    await expect(asUser(db, USER_B, () => db.query(`select record_run('pv.runs', 'participant', $1, '0.1.0', '{}', '{}')`, [homeA])))
       .rejects.toThrow(/object_not_found/);
   });
 
@@ -135,8 +135,8 @@ describe('computation runs', () => {
   it('never changes the series a finished run computed', async () => {
     const run = await asUser(db, USER_A, () =>
       one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.3.0', '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
-        siteA,
-        JSON.stringify([{ key: 'production', object_kind: 'participant', object_id: siteA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
+        homeA,
+        JSON.stringify([{ key: 'production', object_kind: 'participant', object_id: homeA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
       ]),
     );
     const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
@@ -205,7 +205,7 @@ describe('what the core publishes', () => {
     expect(r.rows).toEqual([]);
   });
 
-  it('keeps no registry: an attachment names its object by kind and id, and goes with it', async () => {
+  it('attaches by kind and id: an attachment names its object, and goes with it', async () => {
     const r = await db.query(`select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
                                where n.nspname = 'nexgen' and c.relname in ('objects', 'object_kinds', 'object_parent_tables')`);
     expect(r.rows).toEqual([]);
@@ -219,8 +219,8 @@ describe('what the core publishes', () => {
 
   it('refuses by name an attachment to an object that is not found, of a kind that is not one of the six, or of another organisation', async () => {
     await expect(db.query(`select set_attribute('participant', gen_random_uuid(), 'annual_consumption', '1')`)).rejects.toThrow(/object_not_found/);
-    await expect(db.query(`select set_attribute('spaceship', $1, 'annual_consumption', '1')`, [siteA])).rejects.toThrow(/kind_unknown/);
-    await expect(asUser(db, USER_B, () => db.query(`select set_attribute('participant', $1, 'annual_consumption', '1')`, [siteA])))
+    await expect(db.query(`select set_attribute('spaceship', $1, 'annual_consumption', '1')`, [homeA])).rejects.toThrow(/kind_unknown/);
+    await expect(asUser(db, USER_B, () => db.query(`select set_attribute('participant', $1, 'annual_consumption', '1')`, [homeA])))
       .rejects.toThrow(/object_not_found/);
   });
 });

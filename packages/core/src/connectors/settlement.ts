@@ -1,6 +1,7 @@
 // The `settlement` request kind (packages/connectors/README.md): the contracts in force
-// over a period, each with its price signals in the shape the `contracts`
-// module keeps them and the series its volume is read from; back, the
+// over a period, each with its price signals in the shape the proposed
+// `contracts` module would keep them (modules/README.md) and the series its
+// volume is read from; back, the
 // settlement lines of each contract — the energy, the price and the amount
 // over each interval a price holds, who pays and who is paid. Any engine
 // that accepts `settlement` answers in this shape; how it matches energy
@@ -21,7 +22,7 @@ export const SETTLEMENT_EXAMPLE_ENGINE: Pick<EngineSpec, 'name' | 'install'> = {
   install: 'pip install -e packages/connectors/settlement-example, NEXGEN_ENGINE_SETTLEMENT_EXAMPLE="python3 -m nexgen_settlement_example"',
 };
 
-/** A price signal of a contract, as a row of `contracts.price_signals`: start included, end excluded, no end until further notice. */
+/** A price signal of a contract: start included, end excluded, no end until further notice. */
 export interface SettlementPriceSignal {
   kind: 'fixed' | 'indexed' | 'cap' | 'floor';
   starts_at: string;
@@ -45,10 +46,10 @@ export interface SettlementParty {
 }
 
 export interface SettlementContract {
-  /** The contract's id in the core. */
+  /** The contract's id, as the caller knows it. */
   id: string;
   name: string;
-  /** A code of `contracts.contract_types` (`supply`, `ppa_physical`…), with the way energy goes and whether it is delivered. */
+  /** A contract type (`supply`, `ppa_physical`…), with the way energy goes and whether it is delivered. */
   type: string;
   direction: 'offtake' | 'injection' | 'both';
   physical: boolean;

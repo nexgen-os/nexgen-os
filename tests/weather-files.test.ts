@@ -15,12 +15,12 @@ const valuesOf = (file: WeatherFile, quantity: string) => file.series.find((s) =
 describe('a weather file in the database', () => {
   let db: PGlite;
   let org: string;
-  let site: string;
+  let home: string;
 
   beforeAll(async () => {
     db = await freshDatabase(['solar']);
     org = await organisation(db, 'A cooperative', USER_A);
-    site = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+    home = await participant(db, { organisation_id: org, name: 'Hall', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
   });
 
   afterAll(async () => {
@@ -29,15 +29,15 @@ describe('a weather file in the database', () => {
 
   it('stores a typical year as simulated series named after its years, with their source, and replaces them on a second import', async () => {
     const file = readEpw(await fixture('pvgis-tmy-brussels-3-days.epw'), { utcOffsetHours: 0 });
-    const first = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: site }, file, { sourceCode: 'pvgis' });
+    const first = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: home }, file, { sourceCode: 'pvgis' });
     expect(first.series.map((s) => [s.quantity_code, s.inserted])).toEqual([['ghi', 72], ['dni', 72], ['dhi', 72], ['temperature', 72], ['wind_speed', 72]]);
-    const again = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: site }, file, { sourceCode: 'pvgis' });
+    const again = await importWeatherFile(db, { organisationId: org, objectKind: 'participant', objectId: home }, file, { sourceCode: 'pvgis' });
     expect(again.series.map((s) => s.seriesId)).toEqual(first.series.map((s) => s.seriesId));
 
     const stored = await one<{ n: number; kinds: string[]; names: string[]; sources: string[]; values: number }>(db, `
       select count(*)::int n, array_agg(distinct kind) kinds, array_agg(distinct name) names, array_agg(distinct source_code) sources,
              (select count(*)::int from series_values v where v.series_id in (select id from series where object_id = $1)) as values
-        from series where object_id = $1`, [site]);
+        from series where object_id = $1`, [home]);
     expect(stored).toEqual({ n: 5, kinds: ['simulated'], names: ['typical year 2005-2020'], sources: ['pvgis'], values: 360 });
 
     const day = await db.query<{ value: number; samples: number }>(`select value, samples from resample($1, '2020-06-21 00:00+00', '2020-06-22 00:00+00', '1 day', 'UTC')`, [first.series[0].seriesId]);
@@ -47,7 +47,7 @@ describe('a weather file in the database', () => {
 
   it('writes the series of a place back as an EPW file that reads the same', async () => {
     const file = readEpw(await fixture('pvgis-tmy-brussels-3-days.epw'), { utcOffsetHours: 0 });
-    const text = writeEpw(await exportWeatherYear(db, { objectId: site, sourceCode: 'pvgis', kind: 'simulated', name: 'typical year 2005-2020', year: 2020, location: file.location }));
+    const text = writeEpw(await exportWeatherYear(db, { objectId: home, sourceCode: 'pvgis', kind: 'simulated', name: 'typical year 2005-2020', year: 2020, location: file.location }));
     const back = readEpw(text);
     for (const s of file.series) expect(valuesOf(back, s.quantity_code)).toEqual(s.values);
   });

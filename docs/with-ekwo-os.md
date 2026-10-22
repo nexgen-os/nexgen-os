@@ -12,7 +12,7 @@ one transaction away. This page says how, and what each side owns.
 
 | | Nexgen OS | Ekwo OS |
 |---|---|---|
-| Schemas | `nexgen`, and one per module (`billing`, `grid`, `community`, `solar`, `tasks`, `weather`) | `public`, and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`) |
+| Schemas | `nexgen`, and one per module (`billing`, `building`, `community`, `consumption`, `grid`, `solar`, `tasks`, `weather`) | `public`, and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`) |
 | Installer | `npx nexgen-os init`, `migrate`, `doctor` | `npx ekwo-os init`, `migrate`, `doctor` |
 | History of what was applied | `nexgen.schema_migrations` | `supabase_migrations.schema_migrations` |
 | Rights | granted by name, in the migration that creates the object ([0037](decisions/0037-the-schema-grants-its-own-rights.md)) | the same rule (Ekwo OS 0003), and the surface of `public` closed to `anon` (Ekwo OS 0002) |
@@ -75,14 +75,12 @@ is installed second, the installation adds them with one statement:
 select billing.reference_ekwo();
 ```
 
-`nexgen-os doctor` names each row whose Ekwo id is no longer in Ekwo OS
+`nexgen-os doctor` names each row whose Ekwo id is not in Ekwo OS
 (`billing_key_unlinked`). When Ekwo OS runs elsewhere, the columns are plain
-references, and reaching Ekwo through its API, the Ekwo instance being a
-source with the name of its key, is the invoicing bridge of the `contracts`
-module (`billing.verify_remote_invoice()` raises
-`ekwo_remote_not_supported` until then).
+references, and the module does not reach it:
+`billing.verify_remote_invoice()` raises `ekwo_remote_not_supported`.
 
-A person is a member on each side separately: an owner of a Nexgen
+A person is a member on each side separately: an owner of a Nexgen OS
 organisation and of the Ekwo company it is reads both, each under its own
 row level security; a member of one side only sees nothing of the other.
 
@@ -98,7 +96,7 @@ orders. It asserts that:
 - each side creates the same objects whichever installs first, and no
   schema, relation, function or type is created by both;
 - `public` (and `supabase_migrations`) hold only Ekwo's objects, `nexgen` and
-  `billing` only Nexgen's;
+  `billing` only Nexgen OS's;
 - the second installation leaves every grant of the first as it was, Ekwo's
   revocations on `public` and its default privileges included, and each
   `doctor` reads the same before and after;

@@ -1,5 +1,5 @@
 // The series store at scale: weekly partitions, daily buckets cut in the
-// site's time zone across a daylight-saving change, a named refusal when
+// participant's time zone across a daylight-saving change, a named refusal when
 // the time zone is unknown, and access that goes through the series.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -14,8 +14,8 @@ beforeAll(async () => {
   db = await freshDatabase();
   org = await organisation(db, 'A utility', USER_A);
   await organisation(db, 'Another', USER_B);
-  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  meter = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Meter', device_type: 'meter' });
+  const home = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  meter = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Meter', device_type: 'meter' });
   energy = await insert(db, 'series', { organisation_id: org, object_kind: 'device', object_id: meter, quantity_code: 'offtake_energy', kind: 'measured', value_kind: 'interval', step: '15 minutes' });
   // Two weeks around the spring change (29 March 2026, 02:00 → 03:00 in Brussels), 1 kWh per quarter-hour.
   await db.query(
@@ -30,7 +30,7 @@ afterAll(async () => {
 });
 
 describe('the series store', () => {
-  it('cuts daily buckets in the site time zone, 92 quarter-hours on the short day', async () => {
+  it('cuts daily buckets in the time zone of the participant, 92 quarter-hours on the short day', async () => {
     const r = await db.query<{ bucket: Date; value: number; samples: number }>(
       `select bucket, value, samples from resample($1, '2026-03-28 00:00+01', '2026-03-31 00:00+02', '1 day')`,
       [energy],
@@ -64,9 +64,9 @@ describe('the series store', () => {
     expect(twice.n).toBe(4); // 02:00 on the 24th, the 26th, and twice on the 25th
   });
 
-  it('refuses a daily step for a site without a time zone, by name', async () => {
-    const site = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
-    const s = await insert(db, 'series', { organisation_id: org, object_kind: 'participant', object_id: site, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
+  it('refuses a daily step for a participant without a time zone, by name', async () => {
+    const home = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
+    const s = await insert(db, 'series', { organisation_id: org, object_kind: 'participant', object_id: home, quantity_code: 'power', kind: 'measured', value_kind: 'instant' });
     await expect(db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day')`, [s])).rejects.toThrow(/time_zone_required/);
     const r = await db.query(`select * from resample($1, '2026-01-01', '2026-01-02', '1 day', 'Europe/Brussels')`, [s]);
     expect(r.rows).toEqual([]);

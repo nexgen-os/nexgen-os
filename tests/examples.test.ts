@@ -7,7 +7,7 @@ import { freshDatabase, one, repoRoot } from './helpers/db.js';
 
 const EXPECTED: Record<string, { modules: string[]; kinds: Record<string, number>; series: number; runs: number }> = {
   '01-house-pv-battery.sql':   { modules: [], kinds: { organisation: 1, project: 1, participant: 1, meter: 1, device: 4 }, series: 4, runs: 0 },
-  '02-school-architecture.sql': { modules: ['building'], kinds: { organisation: 1, project: 1, participant: 1, building: 1, space: 7, device: 5 }, series: 13, runs: 0 },
+  '02-school.sql': { modules: ['building'], kinds: { organisation: 1, project: 1, participant: 1, building: 1, space: 7, device: 5 }, series: 13, runs: 0 },
   '03-energy-community.sql':   { modules: ['billing', 'community', 'grid'], kinds: { organisation: 1, project: 1, meter: 4, participant: 5, device: 1 }, series: 4, runs: 1 },
   '04-farm-solar.sql':         { modules: ['solar'], kinds: { organisation: 1, project: 1, participant: 1, meter: 2, device: 5 }, series: 0, runs: 3 },
   '05-district-open-data.sql': { modules: ['building'], kinds: { organisation: 1, project: 1, site: 8, building: 6, surface: 6, participant: 6 }, series: 0, runs: 0 },
@@ -18,7 +18,7 @@ const EXPECTED: Record<string, { modules: string[]; kinds: Record<string, number
 const dir = join(repoRoot, 'examples');
 
 // Every object of the core, and of the `building` module where it is
-// installed: there is no registry, each table is read in turn.
+// installed: each table is read in turn.
 const TABLES: Record<string, string> = {
   organisation: 'organisations', project: 'projects', participant: 'participants', meter: 'meters', device: 'devices',
   site: 'building.sites', building: 'building.buildings', space: 'building.spaces', surface: 'building.surfaces',

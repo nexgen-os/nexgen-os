@@ -9,7 +9,7 @@ import { USER_A, USER_B, asUser, freshDatabase, insert, one, organisation, parti
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let device: string;
 
 interface Parameter {
@@ -40,8 +40,8 @@ beforeAll(async () => {
                     ('pv_specific_yield_fallback', 'ZZ', null, '980', '2026-01-01', null, 'zz_statistics', 'yearbook 2025, table 4', 'pack:zz'),
                     ('pv_specific_yield_fallback', 'ZZ', 'ZZ-SO', '1150', '2020-01-01', null, 'zz_statistics', 'yearbook 2025, table 5', 'pack:zz'),
                     ('offpeak_hours', 'ZZ', null, null, null, null, 'zz_statistics', 'depends on the supply contract', 'pack:zz')`);
-  site = await participant(db, { organisation_id: org, name: 'Farm', country: 'ZZ', region: 'ZZ-NO' });
-  device = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Array', device_type: 'solar' });
+  home = await participant(db, { organisation_id: org, name: 'Farm', country: 'ZZ', region: 'ZZ-NO' });
+  device = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Array', device_type: 'solar' });
 });
 
 afterAll(async () => {
@@ -89,8 +89,8 @@ describe('parameter_of', () => {
   });
 
   it('reads the parents of the object nearest first, then the object itself', async () => {
-    await db.query(`select set_attribute('participant', $1, 'pv_specific_yield_fallback', '1020', null, 'zz_statistics', 'site survey')`, [site]);
-    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'participant', object_id: site, source_code: 'zz_statistics' });
+    await db.query(`select set_attribute('participant', $1, 'pv_specific_yield_fallback', '1020', null, 'zz_statistics', 'site survey')`, [home]);
+    expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1020, level: 'participant', object_id: home, source_code: 'zz_statistics' });
     await db.query(`select set_attribute('device', $1, 'pv_specific_yield_fallback', '1040', null, null, 'monitoring')`, [device]);
     expect(await parameterOf('device', device, 'pv_specific_yield_fallback')).toMatchObject({ value: 1040, level: 'object', object_id: device });
   });

@@ -1,7 +1,7 @@
 // The contract between the pack compiler and the core: the seed the
 // compiler wrote for its fixture pack (packages/cli, `pack build xa`) runs
 // on the real core and its `grid` module, twice without a change, and what
-// it wrote is what parameter_of() answers for a site of that country.
+// it wrote is what parameter_of() answers for a participant of that country.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -37,7 +37,7 @@ describe('a compiled pack on the core', () => {
     const south = await joinWithPlace(db, org, 'South farm', { country: 'XA', region: 'XA-S' });
     const north = await joinWithPlace(db, org, 'North farm', { country: 'XA', region: 'XA-N' });
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [south])).time_zone).toBe('Etc/GMT-1');
-    const p = async (site: string, property: string) => (await one<{ p: Record<string, unknown> }>(db, `select parameter_of('participant', $1, $2, '2026-06-01') p`, [site, property])).p;
+    const p = async (home: string, property: string) => (await one<{ p: Record<string, unknown> }>(db, `select parameter_of('participant', $1, $2, '2026-06-01') p`, [home, property])).p;
     expect(await p(south, 'sharing_max_distance_m')).toMatchObject({ value: 2000, level: 'region', source_code: 'xa_grid_code', reference: 'Article 31' });
     expect(await p(north, 'metering_step')).toMatchObject({ value: 'PT15M', level: 'country' });
     await expect(p(north, 'sharing_max_distance_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_m .* reached country XA/);

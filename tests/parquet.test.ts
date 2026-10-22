@@ -16,8 +16,8 @@ let series: string;
 beforeAll(async () => {
   db = await freshDatabase();
   const org = await organisation(db, 'A utility', USER_A);
-  const site = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
-  series = (await store(db, { object_kind: 'participant', object_id: site, quantity_code: 'offtake_energy', step: '15 minutes' }, [
+  const home = await participant(db, { organisation_id: org, name: 'Depot', country: 'BE', time_zone: 'Europe/Brussels' });
+  series = (await store(db, { object_kind: 'participant', object_id: home, quantity_code: 'offtake_energy', step: '15 minutes' }, [
     { at: '2026-05-04T08:00:00Z', value: 0.25 },
     { at: '2026-05-04T08:15:00Z', value: 0.5, quality: 1 },
     { at: '2026-05-04T08:30:00Z', value: 0, quality: 3 },

@@ -1,5 +1,5 @@
 // The soiling of a place (`soiling_loss`): a column of a PV array, an
-// attribute of its system or its site, read the nearest first, that
+// attribute of its system or its participant, read the nearest first, that
 // takes the place of a yield profile's own soiling loss. A profile that
 // folds soiling into one aggregate loss keeps it, and the run says so.
 import { readFile } from 'node:fs/promises';
@@ -37,7 +37,7 @@ describe('withSoiling', () => {
 
 let db: PGlite;
 let org: string;
-let site: string;
+let home: string;
 let system: string;
 let south: string;
 let east: string;
@@ -51,8 +51,8 @@ async function soiling(kind: string, objectId: string, value: number, source: st
 beforeAll(async () => {
   db = await freshDatabase(['solar']);
   org = await organisation(db, 'A cooperative', USER_A);
-  site = await participant(db, { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
-  system = await insert(db, 'devices', { organisation_id: org, participant_id: site, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
+  home = await participant(db, { organisation_id: org, name: 'Farm', country: 'BE', time_zone: 'Europe/Brussels', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
+  system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Barn PV', device_type: 'solar', rated_power_kw: 30 });
   await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 30)', [system]);
   south = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 180, 30, 'South', 'roof_parallel', 20) returning id`, [org, system])).rows[0].id;
   east = (await db.query<{ id: string }>(`insert into solar.pv_arrays (organisation_id, pv_system_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10) returning id`, [org, system])).rows[0].id;
@@ -65,9 +65,9 @@ afterAll(async () => {
 describe('solar.soiling_of', () => {
   it('is null while nobody says it, then the nearest value with where it was found', async () => {
     expect((await one<{ s: unknown }>(db, 'select solar.soiling_of($1) s', [south])).s).toBeNull();
-    await soiling('participant', site, 0.05, 'dust from the farmyard, survey of 2026-06');
-    const fromSite = (await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [south])).s;
-    expect(fromSite).toMatchObject({ value: 0.05, level: 'participant', object_id: site, reference: 'dust from the farmyard, survey of 2026-06' });
+    await soiling('participant', home, 0.05, 'dust from the farmyard, survey of 2026-06');
+    const fromHome = (await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [south])).s;
+    expect(fromHome).toMatchObject({ value: 0.05, level: 'participant', object_id: home, reference: 'dust from the farmyard, survey of 2026-06' });
     expect((await one<{ s: Record<string, unknown> }>(db, 'select solar.soiling_of($1) s', [system])).s).toMatchObject({ value: 0.05, level: 'participant' });
   });
 

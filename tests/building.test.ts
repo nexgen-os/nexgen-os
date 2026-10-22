@@ -2,8 +2,8 @@
 // participant, beside a core that keeps the participant and its place. The
 // ground of a block, the block on it, its floors and units, a roof face,
 // what describes them in their columns, a tenant of a project occupying a
-// unit; and what the module no longer does:
-// place a device or a PV array, which belong to their participant.
+// unit; and what the module does not do: place a device or a PV array,
+// which belong to their participant.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { detachedModuleTables } from '../packages/cli/src/doctor.js';

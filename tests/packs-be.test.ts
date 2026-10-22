@@ -1,7 +1,7 @@
 // The Belgian pack, compiled from packs/be by `nexgen-os pack build be`: who
 // the country is and its three regions, its identifier schemes, its regional
 // registers and the texts its values cite, its grid operators by region, and
-// the defaults a study of a Belgian site starts from, read through
+// the defaults a study of a Belgian participant starts from, read through
 // parameter_of(). The three regional address registers, kept as code in
 // the geocoder connectors, answer as geocoders of the core's shape on a recorded
 // answer, and the chain asks Brussels, Flanders and Wallonia in turn before
@@ -57,9 +57,9 @@ afterAll(async () => {
 });
 
 describe('the be pack', () => {
-  const p = async (site: string, property: string, at = '2026-10-20') =>
-    (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
-  const siteIn = async (org: string, region: string) =>
+  const p = async (home: string, property: string, at = '2026-10-20') =>
+    (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [home, property, at])).p;
+  const inRegion = async (org: string, region: string) =>
     joinWithPlace(db, org, `A participant in ${region}`, { country: 'BE', region });
 
   it('says who the country is: currency, languages, time zone and the three regions', async () => {
@@ -72,8 +72,8 @@ describe('the be pack', () => {
     // One level: a region has no parent, and parameter_of() goes from the region to the country.
     expect(await one<{ n: number }>(db, `select count(*)::int n from regions where country = 'BE' and parent is not null`)).toEqual({ n: 0 });
     const org = await organisation(db, 'Une commune', USER_A);
-    const site = await siteIn(org, 'BE-WAL');
-    expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [site])).time_zone).toBe('Europe/Brussels');
+    const home = await inRegion(org, 'BE-WAL');
+    expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [home])).time_zone).toBe('Europe/Brussels');
     await expect(joinWithPlace(db, org, 'Nowhere', { country: 'BE', region: 'BE-XXX' })).rejects.toThrow(/region_unknown: BE-XXX/);
   });
 
@@ -106,13 +106,13 @@ describe('the be pack', () => {
     const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:be' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['enterprise_number', 'icar_address', 'nis', 'urbis_building', 'vlaanderen_address', 'vlaanderen_building']);
     const org = await organisation(db, 'Een gemeente', USER_A);
-    const site = await participant(db, { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
-    // The municipality is an identifier of the site under the pack's scheme.
-    await db.query(`select add_identifier('participant', $1, 'nis', '44021')`, [site]);
-    await expect(db.query(`select add_identifier('participant', $1, 'nis', '4402')`, [site])).rejects.toThrow(/invalid_identifier/);
-    expect((await one<{ place: { identifiers: unknown[] } }>(db, 'select place_of($1) place', [site])).place.identifiers).toEqual([{ scheme: 'nis', value: '44021' }]);
-    expect(await insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
-    await expect(insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
+    const home = await participant(db, { organisation_id: org, name: 'Stadhuis', country: 'BE', region: 'BE-VLG' });
+    // The municipality is an identifier of the participant under the pack's scheme.
+    await db.query(`select add_identifier('participant', $1, 'nis', '44021')`, [home]);
+    await expect(db.query(`select add_identifier('participant', $1, 'nis', '4402')`, [home])).rejects.toThrow(/invalid_identifier/);
+    expect((await one<{ place: { identifiers: unknown[] } }>(db, 'select place_of($1) place', [home])).place.identifiers).toEqual([{ scheme: 'nis', value: '44021' }]);
+    expect(await insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '541448820000000017', scheme: 'gs1_gsrn' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '54144882000000001', scheme: 'gs1_gsrn' })).rejects.toThrow(/invalid_identifier/);
     const nis = await db.query<{ ok: boolean }>(
       `select v ~ (select pattern from id_schemes where code = 'nis') as ok from unnest(array['44021', '21004', '62063', '4402', '440210']) v`,
     );
@@ -130,15 +130,15 @@ describe('the be pack', () => {
 
   it('answers parameter_of() for a participant in each region: a regional value with its source, a country value, a yearly value by its date', async () => {
     const org = await organisation(db, 'Une coopérative', USER_A);
-    const flanders = await siteIn(org, 'BE-VLG');
-    const brussels = await siteIn(org, 'BE-BRU');
-    const wallonia = await siteIn(org, 'BE-WAL');
+    const flanders = await inRegion(org, 'BE-VLG');
+    const brussels = await inRegion(org, 'BE-BRU');
+    const wallonia = await inRegion(org, 'BE-WAL');
     expect(await p(flanders, 'metering_step')).toMatchObject({ value: 'PT15M', level: 'region', source_code: 'be_fluvius_quarter_hour' });
     expect(await p(brussels, 'metering_step')).toMatchObject({ value: 'PT15M', level: 'region', source_code: 'be_sibelga_consumption_history' });
     expect(await p(wallonia, 'metering_step')).toMatchObject({ value: 'PT15M', level: 'region', source_code: 'be_ores_smart_meter' });
-    for (const site of [flanders, brussels, wallonia]) {
-      expect(await p(site, 'bidding_zone')).toMatchObject({ value: '10YBE----------2', level: 'country', source_code: 'be_entsoe_eic_codes' });
-      expect(await p(site, 'vat_rate_electricity')).toMatchObject({ value: 0.06, level: 'country', valid_from: '2023-04-01' });
+    for (const home of [flanders, brussels, wallonia]) {
+      expect(await p(home, 'bidding_zone')).toMatchObject({ value: '10YBE----------2', level: 'country', source_code: 'be_entsoe_eic_codes' });
+      expect(await p(home, 'vat_rate_electricity')).toMatchObject({ value: 0.06, level: 'country', valid_from: '2023-04-01' });
     }
     expect(await p(brussels, 'energy_price_household', '2024-06-01')).toMatchObject({ value: 156.4, valid_from: '2024-01-01' });
     expect(await p(brussels, 'energy_price_household')).toMatchObject({ value: 154.1, valid_from: '2025-01-01' });

@@ -1,7 +1,7 @@
 // The French pack, compiled from packs/fr by `nexgen-os pack build fr`: who
 // the country is and its departments, its identifier schemes, its registers
 // and the texts its values cite, its grid operators, and the defaults a
-// study of a French site starts from, read through parameter_of(). The
+// study of a French participant starts from, read through parameter_of(). The
 // national address register, kept as code in the `ban` connector, answers as
 // a geocoder of the core's shape, first in the chain for a French search.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -62,9 +62,9 @@ describe('the fr pack', () => {
     const schemes = await db.query<{ code: string }>(`select code from id_schemes where published_by = 'pack:fr' order by code`);
     expect(schemes.rows.map((r) => r.code)).toEqual(['ban_address', 'insee', 'parcelle', 'prm', 'rnb_id', 'siren', 'siret']);
     const org = await organisation(db, 'Une régie', USER_A);
-    const site = await participant(db, { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
-    expect(await insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
-    await expect(insert(db, 'meters', { organisation_id: org, participant_id: site, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
+    const home = await participant(db, { organisation_id: org, name: 'Mairie', country: 'FR', region: 'FR-2A' });
+    expect(await insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '12345678901234', scheme: 'prm' })).toBeTruthy();
+    await expect(insert(db, 'meters', { organisation_id: org, participant_id: home, identifier: '1234', scheme: 'prm' })).rejects.toThrow(/invalid_identifier/);
     const corsica = await one<{ ok: boolean }>(db, `select '2A004' ~ pattern ok from id_schemes where code = 'insee'`);
     expect(corsica.ok).toBe(true);
   });
@@ -96,8 +96,8 @@ describe('the fr pack', () => {
     const org = await organisation(db, 'Une SCIC', USER_A);
     const brest = await joinWithPlace(db, org, 'Port de Brest', { country: 'FR', region: 'FR-29' });
     const ajaccio = await joinWithPlace(db, org, 'Port d\'Ajaccio', { country: 'FR', region: 'FR-2A' });
-    const p = async (site: string, property: string, at = '2026-10-20') =>
-      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [site, property, at])).p;
+    const p = async (home: string, property: string, at = '2026-10-20') =>
+      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, $3) p", [home, property, at])).p;
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT30M', level: 'country', source_code: 'fr_enedis_load_curve_collection' });
     expect(await p(brest, 'bidding_zone')).toMatchObject({ value: '10YFR-RTE------C', level: 'country' });
     await expect(p(ajaccio, 'bidding_zone')).rejects.toThrow(/parameter_not_decided: bidding_zone in FR-2A/);
@@ -121,8 +121,8 @@ describe('the fr pack', () => {
     await db.query(`insert into sources (code, name, kind, base_url, published_by) values ('test_regional_text', 'A text of a region, for this test', 'text', 'https://region.example/', 'test')`);
     await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values
                       ('pv_specific_yield_fallback', 'FR', 'FR-IDF', '1000', 'test_regional_text', 'decided by the region', 'test')`);
-    const p = async (site: string, property: string) =>
-      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, '2026-10-20') p", [site, property])).p;
+    const p = async (home: string, property: string) =>
+      (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, '2026-10-20') p", [home, property])).p;
     expect(await p(paris, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF', reference: 'decided by the region' });
     expect(await p(evry, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF' });
     await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values

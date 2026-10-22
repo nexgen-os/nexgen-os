@@ -239,12 +239,8 @@ and a new reading a new one. Named errors: `pv_system_not_found`,
 
 ## Not here yet
 
-- The run summary beyond the annual and specific yield (performance ratio,
-  P50 / P90), the IEC 61724-1 indicators, the `pvsyst_like` and
-  `pvsol_like` engines, and the format readers (PAN / OND, PVsyst and
-  PV\*SOL CSV). Weather files (EPW, TMY3) are read and written by
-  [`packages/formats/weather-files`](../../packages/formats/weather-files/README.md).
-- The run summary beyond the annual and specific yield (P50 / P90), the
-  `pvsyst_like` and
-  `pvsol_like` engines, and the format readers (EPW, PAN / OND, PVsyst and
-  PV\*SOL CSV).
+- The `pvsyst_like` and `pvsol_like` profiles, and the readers of PVsyst
+  and PV\*SOL result files. Weather files (EPW, TMY3) are read and written
+  by [`packages/formats/weather-files`](../../packages/formats/weather-files/README.md),
+  PAN and OND product files by
+  [`packages/formats/panond`](../../packages/formats/panond/README.md).

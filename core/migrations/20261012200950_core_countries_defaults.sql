@@ -17,8 +17,9 @@
 -- regions it is part of (`regions.parent`), then the country — and nothing
 -- else: device → participant → project → organisation → region → its
 -- parent region(s) → country. A value a region decides holds in every
--- region listed under it, without a copy. A module resolves its own kinds through them first
--- (a building through its spaces), then asks the core from the participant.
+-- region listed under it, without a copy. A module resolves its own objects
+-- first (a building through its spaces), then asks the core from the
+-- participant.
 -- There is no global level: a value nobody decided is refused by name
 -- (`parameter_missing`), never guessed.
 
