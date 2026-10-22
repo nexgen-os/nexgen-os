@@ -18,10 +18,10 @@ afterAll(async () => {
 // The validated list of the core: the six objects and what they need, and
 // nothing else (decision 0006). A new table of the core is a decision.
 const CORE_TABLES = [
-  'attributes', 'connectors', 'contacts', 'countries', 'defaults', 'device_directory', 'device_types', 'devices',
-  'documents', 'external_ids', 'forecast_values', 'id_schemes', 'meters', 'modules', 'organisation_members',
-  'organisations', 'participants', 'projects', 'property_defs', 'quantities', 'regions', 'schema_migrations',
-  'series', 'series_rollups', 'series_values', 'sources', 'units',
+  'attributes', 'connectors', 'contacts', 'countries', 'defaults', 'device_types', 'devices', 'documents',
+  'external_ids', 'forecast_values', 'id_schemes', 'meters', 'modules', 'organisation_members',
+  'organisations', 'participants', 'products', 'projects', 'property_defs', 'quantities', 'regions',
+  'schema_migrations', 'series', 'series_rollups', 'series_values', 'sources', 'units',
 ];
 
 describe('the nexgen schema', () => {

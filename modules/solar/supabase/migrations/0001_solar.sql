@@ -6,7 +6,7 @@
 -- modules with one orientation each (pvlib's Array, PVsyst's orientation,
 -- OpenSolar's module group, Orange Button's PVArray). The physics of a
 -- module or an inverter product is attached to its row of the core
--- `device_directory`, in pvlib's parameter names. An array carries its own
+-- `products`, in pvlib's parameter names. An array carries its own
 -- azimuth and tilt, and nothing else of where it is: the system belongs to
 -- a participant, whose point the yield reads (decision 0043). A far
 -- horizon belongs to a participant's place or to a PV system. A yield
@@ -91,7 +91,7 @@ call secure_table('solar.devices');
 -- ---------------------------------------------------------------------------
 --
 -- The identity of a product (manufacturer, model, unit power, datasheet,
--- price) is its row of `device_directory`; these tables add, with the same
+-- price) is its row of `products`; these tables add, with the same
 -- id, the model family and its parameters as one JSON object in pvlib's key
 -- names. pvlib infers its model from these keys, so a stored set describes
 -- itself; the keys pvlib infers from are required here.
@@ -113,7 +113,7 @@ call secure_table('solar.devices');
 -- source; it is read, never written.
 
 create table solar.module_products (
-  id               uuid primary key references device_directory(id) on delete cascade,
+  id               uuid primary key references products(id) on delete cascade,
   -- Copied from the product by trigger: null for a shared product.
   organisation_id  uuid references organisations(id) on delete cascade,
   model            text not null,
@@ -131,10 +131,10 @@ create table solar.module_products (
 );
 
 comment on table solar.module_products is
-  'The physics of a PV module product of device_directory, same id: a model family (pvsyst, cec, sapm, pvwatts) and its parameters in pvlib''s key names.';
+  'The physics of a PV module product of products, same id: a model family (pvsyst, cec, sapm, pvwatts) and its parameters in pvlib''s key names.';
 
 create table solar.inverter_products (
-  id               uuid primary key references device_directory(id) on delete cascade,
+  id               uuid primary key references products(id) on delete cascade,
   organisation_id  uuid references organisations(id) on delete cascade,
   model            text not null,
   parameters       jsonb not null,
@@ -150,7 +150,7 @@ create table solar.inverter_products (
 );
 
 comment on table solar.inverter_products is
-  'The physics of an inverter product of device_directory, same id: a model family (sandia, adr, pvwatts, ond) and its parameters in pvlib''s key names.';
+  'The physics of an inverter product of products, same id: a model family (sandia, adr, pvwatts, ond) and its parameters in pvlib''s key names.';
 
 -- BEFORE INSERT / UPDATE: the product exists, is of the device type named
 -- by tg_argv[0] (or a refinement of it), and lends its organisation.
@@ -160,9 +160,9 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  p device_directory%rowtype;
+  p products%rowtype;
 begin
-  select * into p from device_directory where id = new.id;
+  select * into p from products where id = new.id;
   if not found then
     raise exception 'product_not_found: %', new.id using errcode = 'foreign_key_violation';
   end if;
@@ -184,7 +184,7 @@ create trigger module_products_set_updated_at before update on solar.module_prod
 create trigger inverter_products_set_updated_at before update on solar.inverter_products
   for each row execute function set_updated_at();
 
--- Row level security as for device_directory: shared products (no
+-- Row level security as for products: shared products (no
 -- organisation) are read by everyone signed in and written by migrations,
 -- modules and packs; an organisation's products by its members.
 do $$
@@ -326,11 +326,11 @@ create table solar.pv_arrays (
   -- semi_integrated, insulated (integrated, no ventilation), floating,
   -- tracker.
   mounting             text,
-  module_product_id    uuid references device_directory(id) on delete set null,
+  module_product_id    uuid references products(id) on delete set null,
   module_count         integer,
   modules_per_string   integer,
   strings              integer,
-  inverter_product_id  uuid references device_directory(id) on delete set null,
+  inverter_product_id  uuid references products(id) on delete set null,
   inverter_count       integer,
   -- Ground reflectance seen by the array, 0 to 1.
   albedo               numeric(4, 3),
@@ -373,7 +373,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
   if new.kwp_dc is null and new.module_count is not null and new.module_product_id is not null then
-    new.kwp_dc := (select unit_power_kw * new.module_count from device_directory where id = new.module_product_id);
+    new.kwp_dc := (select unit_power_kw * new.module_count from products where id = new.module_product_id);
   end if;
   return new;
 end;

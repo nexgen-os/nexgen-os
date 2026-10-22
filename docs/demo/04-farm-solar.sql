@@ -25,11 +25,11 @@ insert into meters (id, organisation_id, participant_id, name, identifier, schem
   ('00000000-0000-4000-8000-000400000041', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Farm supply', '301000000000000987', 'gs1_gsrn', 'electricity', 'both'),
   ('00000000-0000-4000-8000-000400000042', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010', 'Field injection point', '301000000000000988', 'gs1_gsrn', 'electricity', 'injection');
 
-insert into device_directory (id, organisation_id, device_type, manufacturer, model_ref, unit_power_kw, unit_surface_m2, unit_price, currency) values
+insert into products (id, organisation_id, device_type, manufacturer, model_ref, unit_power_kw, unit_surface_m2, unit_price, currency) values
   ('00000000-0000-4000-8000-000400000090', null, 'solar', 'Longi', 'Hi-MO 6 545', 0.545, 2.56, null, null),
   ('00000000-0000-4000-8000-000400000091', '00000000-0000-4000-8000-000400000001', 'inverter', 'SMA', 'Sunny Tripower X 25', 25, null, 2890, 'EUR');
 
-insert into devices (id, organisation_id, participant_id, name, device_type, directory_id, manufacturer, model, rated_power_kw, unit_count, status, installation_date) values
+insert into devices (id, organisation_id, participant_id, name, device_type, product_id, manufacturer, model, rated_power_kw, unit_count, status, installation_date) values
   ('00000000-0000-4000-8000-000400000051', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010',
    'Barn roof array', 'solar', '00000000-0000-4000-8000-000400000090', 'Longi', 'Hi-MO 6 545', 99.19, 182, 'in_service', '2023-06-20'),
   ('00000000-0000-4000-8000-000400000052', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000010',

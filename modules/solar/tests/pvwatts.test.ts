@@ -296,7 +296,7 @@ describe('a pvwatts yield estimate', () => {
     system = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Roof PV', device_type: 'solar', rated_power_kw: 30 });
     await db.query('insert into solar.devices (id, kwp_dc) values ($1, 30)', [system]);
     // The south array's modules have PVWatts parameters; the east array's have none and are bifacial.
-    const product = await insert(db, 'device_directory', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
+    const product = await insert(db, 'products', { device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 400', unit_power_kw: 0.4, published_by: 'solar' });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvwatts', '{"pdc0": 400, "gamma_pdc": -0.0037}')`, [product]);
     await db.query(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, module_product_id, module_count) values ($1, $2, 180, 30, 'South', 'roof_parallel', $3, 50)`, [org, system, product]);
     await db.query(`insert into solar.pv_arrays (organisation_id, device_id, azimuth_deg, tilt_deg, name, mounting, kwp_dc, bifacial, created_at) values ($1, $2, 90, 30, 'East', 'roof_parallel', 10, true, now() + interval '1 second')`, [org, system]);

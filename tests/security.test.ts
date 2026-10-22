@@ -72,10 +72,10 @@ describe('row level security', () => {
 
   it('lets everyone signed in read the vocabularies and the shared catalogue', async () => {
     await db.query(
-      `insert into device_directory (device_type, manufacturer, model_ref, unit_power_kw, published_by) values ('solar', 'Acme', 'Sun 425', 0.425, 'energy')`,
+      `insert into products (device_type, manufacturer, model_ref, unit_power_kw, published_by) values ('solar', 'Acme', 'Sun 425', 0.425, 'energy')`,
     );
     const r = await asUser(db, USER_B, () =>
-      one<{ types: number; products: number }>(db, 'select (select count(*)::int from device_types) types, (select count(*)::int from device_directory) products'),
+      one<{ types: number; products: number }>(db, 'select (select count(*)::int from device_types) types, (select count(*)::int from products) products'),
     );
     expect(r.types).toBeGreaterThan(10);
     expect(r.products).toBe(1);

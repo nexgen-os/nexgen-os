@@ -31,10 +31,10 @@ beforeAll(async () => {
   pv = await insert(db, 'devices', {
     organisation_id: org, participant_id: home, name: 'PV system', device_type: 'solar', rated_power_kw: 5,
   });
-  moduleProduct = await insert(db, 'device_directory', {
+  moduleProduct = await insert(db, 'products', {
     device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 425', unit_power_kw: 0.425, published_by: 'solar',
   });
-  inverterProduct = await insert(db, 'device_directory', {
+  inverterProduct = await insert(db, 'products', {
     device_type: 'inverter', manufacturer: 'Acme', model_ref: 'Wave 5', unit_power_kw: 5, published_by: 'solar',
   });
 });
@@ -122,7 +122,7 @@ describe('the solar module', () => {
 });
 
 describe('product physics', () => {
-  it('attaches pvwatts parameters to a module and an inverter of the directory', async () => {
+  it('attaches pvwatts parameters to a module and an inverter of the catalogue', async () => {
     await db.query(
       `insert into solar.module_products (id, model, parameters, source_code) values ($1, 'pvwatts', '{"pdc0": 425, "gamma_pdc": -0.0034}', 'pvgis')`,
       [moduleProduct],
@@ -141,10 +141,10 @@ describe('product physics', () => {
   });
 
   it('refuses pvwatts parameters without pdc0, parameters that are not an object, and the wrong kind of product', async () => {
-    const other = await insert(db, 'device_directory', {
+    const other = await insert(db, 'products', {
       device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 430', unit_power_kw: 0.43, published_by: 'solar',
     });
-    const otherInverter = await insert(db, 'device_directory', {
+    const otherInverter = await insert(db, 'products', {
       device_type: 'inverter', manufacturer: 'Acme', model_ref: 'Wave 6', unit_power_kw: 6, published_by: 'solar',
     });
     await expect(
@@ -259,7 +259,7 @@ describe('row level security', () => {
   });
 
   it("keeps an organisation's own product physics to its members", async () => {
-    const own = await insert(db, 'device_directory', {
+    const own = await insert(db, 'products', {
       organisation_id: org, device_type: 'solar', manufacturer: 'Local', model_ref: 'Custom 400', unit_power_kw: 0.4,
     });
     await db.query(
@@ -269,7 +269,7 @@ describe('row level security', () => {
     const seen = await asUser(db, USER_B, () => db.query('select id from solar.module_products where id = $1', [own]));
     expect(seen.rows).toHaveLength(0);
     // Shared physics is written by migrations, modules and packs, not by a member.
-    const shared = await insert(db, 'device_directory', {
+    const shared = await insert(db, 'products', {
       device_type: 'solar', manufacturer: 'Acme', model_ref: 'Sun 440', unit_power_kw: 0.44, published_by: 'solar',
     });
     await expect(

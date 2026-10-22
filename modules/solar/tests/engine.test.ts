@@ -88,9 +88,9 @@ describe('a yield estimate computed by an engine', () => {
 
   it('sends an inverter known by its OND file as the Sandia model fitted on its curves, and records it with the estimate', async () => {
     const ond = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/ond-inverter-10kw.json`, 'utf8'));
-    const inverter = await insert(db, 'device_directory', { organisation_id: org, device_type: 'inverter', manufacturer: 'Example Power', model_ref: 'EP-10K', unit_power_kw: 10 });
+    const inverter = await insert(db, 'products', { organisation_id: org, device_type: 'inverter', manufacturer: 'Example Power', model_ref: 'EP-10K', unit_power_kw: 10 });
     await db.query(`insert into solar.inverter_products (id, model, parameters) values ($1, 'ond', $2)`, [inverter, JSON.stringify(ond)]);
-    const module = await insert(db, 'device_directory', { organisation_id: org, device_type: 'solar', manufacturer: 'Example Solar', model_ref: 'ES-M108-430', unit_power_kw: 0.43 });
+    const module = await insert(db, 'products', { organisation_id: org, device_type: 'solar', manufacturer: 'Example Solar', model_ref: 'ES-M108-430', unit_power_kw: 0.43 });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvsyst', $2)`, [module, JSON.stringify({ gamma_ref: 1, mu_gamma: -0.0002, I_L_ref: 13.90531675, I_o_ref: 9.1907963e-12, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 })]);
     const compute = (over: { deviceId: string }) => estimateYield(db, { ...over, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
     await db.query('update solar.pv_arrays set inverter_product_id = $1 where device_id = $2', [inverter, system]);

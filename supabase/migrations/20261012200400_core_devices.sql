@@ -19,10 +19,10 @@
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- device_directory — the products a device can be an instance of.
+-- products — the catalogue: what a device can be an instance of.
 -- ---------------------------------------------------------------------------
 
-create table device_directory (
+create table products (
   id                uuid primary key default gen_random_uuid(),
   -- Null: shared by every organisation (published by a module or a pack).
   organisation_id   uuid references organisations(id) on delete cascade,
@@ -39,27 +39,27 @@ create table device_directory (
   published_by      text not null default 'core',
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
-  constraint device_directory_currency check (currency is null or currency ~ '^[A-Z]{3}$'),
-  constraint device_directory_price_needs_currency check (unit_price is null or currency is not null)
+  constraint products_currency check (currency is null or currency ~ '^[A-Z]{3}$'),
+  constraint products_price_needs_currency check (unit_price is null or currency is not null)
 );
 
-comment on table device_directory is
+comment on table products is
   'Catalogue of products: manufacturer, model, unit power or capacity, price. Shared rows (organisation_id null) come from modules and packs; an organisation adds its own.';
 
-create unique index device_directory_one_model on device_directory (organisation_id, manufacturer, model_ref) nulls not distinct;
+create unique index products_one_model on products (organisation_id, manufacturer, model_ref) nulls not distinct;
 
-create trigger device_directory_set_updated_at
-  before update on device_directory
+create trigger products_set_updated_at
+  before update on products
   for each row execute function set_updated_at();
 
-alter table device_directory enable row level security;
-create policy device_directory_select on device_directory
+alter table products enable row level security;
+create policy products_select on products
   for select to authenticated using (organisation_id is null or can_read_organisation(organisation_id));
-create policy device_directory_write on device_directory
+create policy products_write on products
   for all to authenticated
   using (organisation_id is not null and can_write_organisation(organisation_id))
   with check (organisation_id is not null and can_write_organisation(organisation_id));
-grant select, insert, update, delete on device_directory to authenticated, service_role;
+grant select, insert, update, delete on products to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- devices
@@ -72,7 +72,7 @@ create table devices (
   participant_id    uuid not null references participants(id) on delete cascade,
   name              text not null,
   device_type       text not null references device_types(code),
-  directory_id      uuid references device_directory(id) on delete set null,
+  product_id        uuid references products(id) on delete set null,
   manufacturer      text,
   model             text,
   serial_number     text,
@@ -179,7 +179,7 @@ create or replace function install_device(
   p_participant_id  uuid,
   p_device_type     text,
   p_name            text,
-  p_directory_id    uuid default null,
+  p_product_id      uuid default null,
   p_rated_power_kw  numeric default null,
   p_installed_on    date default null,
   p_source_code     text default null,
@@ -195,7 +195,7 @@ as $$
 declare
   v_id uuid := gen_random_uuid();
   s    participants%rowtype;
-  p    device_directory%rowtype;
+  p    products%rowtype;
 begin
   select * into s from participants where id = p_participant_id;
   if not found then
@@ -204,17 +204,17 @@ begin
   if not exists (select 1 from device_types where code = p_device_type) then
     raise exception 'device_type_unknown: %', p_device_type using errcode = 'foreign_key_violation';
   end if;
-  if p_directory_id is not null then
-    select * into p from device_directory where id = p_directory_id;
+  if p_product_id is not null then
+    select * into p from products where id = p_product_id;
     if not found then
-      raise exception 'product_not_found: %', p_directory_id using errcode = 'no_data_found';
+      raise exception 'product_not_found: %', p_product_id using errcode = 'no_data_found';
     end if;
   end if;
   insert into devices (id, organisation_id, participant_id, name, device_type,
-                       directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date, source_code,
+                       product_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date, source_code,
                        status)
   values (v_id, s.organisation_id, p_participant_id,
-          p_name, p_device_type, p_directory_id,
+          p_name, p_device_type, p_product_id,
           coalesce(p.manufacturer, p_nameplate->>'manufacturer'), coalesce(p.model_ref, p_nameplate->>'model'), p_nameplate->>'serial_number',
           coalesce(p_rated_power_kw, p.unit_power_kw * p_unit_count), p_unit_count, p_installed_on, p_source_code,
           coalesce(p_status, case when p_installed_on is null or p_installed_on > current_date then 'planned' else 'in_service' end));
@@ -253,7 +253,7 @@ comment on function retire_device(uuid, date) is
 create or replace function replace_device(
   p_device_id      uuid,
   p_on             date default current_date,
-  p_directory_id   uuid default null,
+  p_product_id     uuid default null,
   p_name           text default null,
   p_serial_number  text default null
 )
@@ -264,7 +264,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   d     devices%rowtype;
-  p     device_directory%rowtype;
+  p     products%rowtype;
   v_id  uuid := gen_random_uuid();
 begin
   select * into d from devices where id = p_device_id;
@@ -274,14 +274,14 @@ begin
   if d.status = 'removed' then
     raise exception 'device_retired: % was removed on %', d.name, d.removal_date using errcode = 'check_violation';
   end if;
-  if p_directory_id is not null then
-    select * into p from device_directory where id = p_directory_id;
+  if p_product_id is not null then
+    select * into p from products where id = p_product_id;
   end if;
   insert into devices (id, organisation_id, participant_id, name, device_type,
-                       directory_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date,
+                       product_id, manufacturer, model, serial_number, rated_power_kw, unit_count, installation_date,
                        status, source_code)
   values (v_id, d.organisation_id, d.participant_id, coalesce(p_name, d.name),
-          d.device_type, coalesce(p_directory_id, d.directory_id), coalesce(p.manufacturer, d.manufacturer),
+          d.device_type, coalesce(p_product_id, d.product_id), coalesce(p.manufacturer, d.manufacturer),
           coalesce(p.model_ref, d.model), p_serial_number,
           coalesce(p.unit_power_kw * d.unit_count, d.rated_power_kw), d.unit_count, p_on,
           case when p_on > current_date then 'planned' else 'in_service' end, d.source_code);

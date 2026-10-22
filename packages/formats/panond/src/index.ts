@@ -20,7 +20,7 @@
 // the line between open and paid data runs on prices, never on physics.
 //
 // The library imports nothing, opens no connection and calls no network:
-// adding a product to a directory is an importer's job.
+// adding a product to the catalogue is an importer's job.
 //
 // SPDX-License-Identifier: MIT
 
@@ -147,7 +147,7 @@ export function profilePoints(block: PanOndValue | undefined): [number, number][
 // PAN: a PV module
 // ---------------------------------------------------------------------------
 
-/** A PAN file as a module of the directory with its PVsyst one-diode physics in pvlib's keys. */
+/** A PAN file as a module of the catalogue with its PVsyst one-diode physics in pvlib's keys. */
 export function readPan(text: string): ModuleFile {
   const pan = parsePanOnd(text);
   if (pan._type !== 'pvModule') throw new Error(`pan_unreadable: the file describes a ${pan._type}, not a pvModule`);
@@ -214,7 +214,7 @@ export function diodeCurrents(p: { isc: number; voc: number; rs: number; rsh: nu
 // OND: an inverter
 // ---------------------------------------------------------------------------
 
-/** An OND file as an inverter of the directory with its keys and efficiency curves. */
+/** An OND file as an inverter of the catalogue with its keys and efficiency curves. */
 export function readOnd(text: string): InverterFile {
   const ond = parsePanOnd(text);
   if (ond._type !== 'pvGInverter') throw new Error(`ond_unreadable: the file describes a ${ond._type}, not a pvGInverter`);

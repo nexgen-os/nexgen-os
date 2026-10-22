@@ -10,7 +10,7 @@ the importer of the `solar` module writes them.
 
 | File | Product, and its row in Nexgen OS | Notes |
 |---|---|---|
-| `Manufacturer`, `Model` | `device_directory.manufacturer`, `model_ref` | a product the directory already knows gains its physics |
+| `Manufacturer`, `Model` | `products.manufacturer`, `model_ref` | a product the catalogue already knows gains its physics |
 | PAN `PNom`, `Width` × `Height` | `unit_power_kw`, `unit_surface_m2` | |
 | OND `PNomConv` | `unit_power_kw` (AC) | |
 | PAN `Gamma`, `muGamma`, `RShunt`, `Rp_0`, `Rp_Exp`, `RSerie`, `muISC`, `NCelS` | `solar.module_products`, model `pvsyst`: `gamma_ref`, `mu_gamma`, `R_sh_ref`, `R_sh_0`, `R_sh_exp`, `R_s`, `alpha_sc` (A/°C), `cells_in_series` | pvlib's keys for `calcparams_pvsyst`; `EgRef` 1.121 eV for silicon |
@@ -29,11 +29,11 @@ await importProduct(db, module, { organisationId, sourceCode: null, fileName: 'm
 await importProduct(db, readOnd(ondText), { organisationId });
 ```
 
-What it never does: look a product up, write a directory, open a
+What it never does: look a product up, write a catalogue, open a
 connection. `importProduct()` of the `solar` module
 ([`modules/solar/src/products.ts`](../../../modules/solar/src/products.ts))
-adds the product to `device_directory`, or gives its physics to the one the
-directory already knows by manufacturer and model, and refuses physics
+adds the product to `products`, or gives its physics to the one the
+catalogue already knows by manufacturer and model, and refuses physics
 given twice (`already_imported`). A module imported this way runs as it is
 through the pvlib engine (`packages/connectors/pvlib`, DC model `pvsyst`) once an
 array names it.

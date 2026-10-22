@@ -24,7 +24,7 @@ erDiagram
   participants ||--o{ participants : "groups"
   participants ||--o{ meters : carries
   participants ||--o{ devices : "behind its meters"
-  device_directory ||--o{ devices : "instance of"
+  products ||--o{ devices : "instance of"
   devices ||--o{ series : "measures, is set"
   series ||--o{ series_values : values
   series ||--o{ forecast_values : issues
@@ -207,7 +207,7 @@ Any other key is refused (`place_key_unknown`).
   the old one is retired). A module derives the types
   it owns: `call derive_devices('solar.devices', 'solar')` makes a table
   with the same id, refused for any other type.
-- **device_directory** — products: manufacturer, model, unit power,
+- **products** — the catalogue: manufacturer, model, unit power,
   capacity, price. Shared rows (`organisation_id` null) come from modules and
   packs.
 
