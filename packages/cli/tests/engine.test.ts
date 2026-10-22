@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { emptyDatabase, freshDatabase, one, repoRoot, sqlClient } from '../../../tests/helpers/db.js';
-import { currentStepName, install, migrate, plan, readCatalogue, recordedSteps, type Catalogue, type Step } from '../src/index.js';
+import { install, migrate, plan, readCatalogue, type Catalogue, type Step } from '../src/index.js';
 
 const opened: PGlite[] = [];
 const temp: string[] = [];
@@ -31,7 +31,7 @@ const synthetic: Catalogue = {
     ['alpha', [step('modules/alpha/migrations/0001_alpha.sql', 'module:alpha')]],
     ['beta', [step('modules/beta/migrations/0001_beta.sql', 'module:beta'), step('modules/beta/migrations/0002_beta.sql', 'module:beta')]],
   ]),
-  packs: new Map([['xx', { code: 'xx', modules: ['beta'], steps: [step('packs/xx/seed/0001_xx.sql', 'pack:xx')] }]]),
+  packs: new Map([['xx', { code: 'xx', modules: ['beta'], steps: [step('core/seed/12_pack_xx.sql', 'pack:xx')] }]]),
 };
 
 describe('plan', () => {
@@ -140,14 +140,4 @@ describe('migrate', () => {
     expect((await migrate(sqlClient(db), { root })).applied).toEqual([]);
   });
 
-  it('reads the names a 0.1 installation recorded under supabase/ as the core/ names, and applies nothing again', async () => {
-    expect(currentStepName('supabase/migrations/1_a.sql')).toBe('core/migrations/1_a.sql');
-    expect(currentStepName('supabase/seed/10_pack_fr.sql')).toBe('core/seed/10_pack_fr.sql');
-    expect(currentStepName('modules/grid/migrations/0001_grid.sql')).toBe('modules/grid/migrations/0001_grid.sql');
-    const db = await track(freshDatabase(['grid']));
-    await db.exec(`update nexgen.schema_migrations set name = regexp_replace(name, '^core/', 'supabase/') where name like 'core/%'`);
-    const client = sqlClient(db);
-    expect([...(await recordedSteps(client)).keys()].filter((n) => n.startsWith('supabase/'))).toEqual([]);
-    expect((await migrate(client, { root: repoRoot })).applied).toEqual([]);
-  });
 });

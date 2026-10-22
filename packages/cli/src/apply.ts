@@ -8,7 +8,7 @@
  * it. A dry run opens one transaction around everything and rolls it back.
  */
 import { NexgenError } from './errors.js';
-import { currentStepName, plan, readCatalogue, readStep, type Catalogue, type Selection, type Step } from './catalogue.js';
+import { plan, readCatalogue, readStep, type Catalogue, type Selection, type Step } from './catalogue.js';
 import { transaction, type SqlClient } from './sql.js';
 import { checkFloor, databaseVersion } from './version.js';
 
@@ -31,12 +31,12 @@ export async function ensureHistory(db: SqlClient): Promise<void> {
   `);
 }
 
-/** What is recorded, by current name (see `RENAMED_STEPS`), with its scope. Empty when nothing is. */
+/** What is recorded, by name, with its scope. Empty when nothing is. */
 export async function recordedSteps(db: SqlClient): Promise<Map<string, string>> {
   const [t] = await db.query<{ exists: boolean }>(`select to_regclass('nexgen.schema_migrations') is not null as exists`);
   if (!t?.exists) return new Map();
   const rows = await db.query<{ name: string; scope: string }>('select name, scope from nexgen.schema_migrations order by name');
-  return new Map(rows.map((r) => [currentStepName(r.name), r.scope]));
+  return new Map(rows.map((r) => [r.name, r.scope]));
 }
 
 /**

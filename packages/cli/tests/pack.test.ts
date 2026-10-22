@@ -1,6 +1,6 @@
 // `nexgen-os pack build` and `pack check` on the fixture pack `xa`: files in,
 // one SQL file out, every refusal by name. No database.
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -158,16 +158,6 @@ describe('pack check', () => {
     ]);
   });
 
-  it('lists a hand-written pack of release 0.1 with --all and refuses to compile it by name', async () => {
-    const root = await checkout();
-    await mkdir(join(root, 'packs/xh/seed'), { recursive: true });
-    await writeFile(join(root, 'packs/xh/pack.json'), '{"country":"XH"}');
-    await writeFile(join(root, 'packs/xh/seed/0001_xh.sql'), 'select 1;\n');
-    const all = await checkPacks(root, { all: true });
-    expect(all.problems).toEqual([]);
-    expect(all.packs.map((p) => `${p.pack} ${p.state}`)).toEqual(['xa up_to_date', 'xh hand_written']);
-    expect(codes(await buildPacks(root, { pack: 'xh' }))).toEqual(['pack_hand_written']);
-  });
 });
 
 describe('pack build', () => {

@@ -81,9 +81,7 @@ identifiers, documents, series or a module's table about an object of the
 core whose object is gone, listed by kind, decision 0001).
 
 `pack build` and `pack check` refuse with `not_a_checkout` (no
-`packs/schema/pack.1.json` under the root), `unknown_pack` and
-`pack_hand_written` (a pack of release 0.1, whose rows are `seed/*.sql`),
-and name each problem of a pack: `pack_json_invalid`, `pack_schema_invalid`,
+`packs/schema/pack.1.json` under the root) and `unknown_pack`, and name each problem of a pack: `pack_json_invalid`, `pack_schema_invalid`,
 `pack_executable`, `default_without_unit`, `default_without_reference`,
 `section_missing`, `section_required`, `file_unlisted`, `country_mismatch`,
 `region_undeclared`, `region_foreign`, `time_zone_unknown`,

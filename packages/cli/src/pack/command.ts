@@ -8,9 +8,6 @@
  *                           write the checksum into pack.json
  *   pack check <cc>|--all   the same in memory, and refuse a seed or a
  *                           checksum that is not the output of its pack
- *
- * A pack of release 0.1, whose rows are `seed/*.sql` written by hand, is
- * listed by `--all` and left alone; asked for by name, it is refused.
  */
 import { existsSync } from 'node:fs';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
@@ -19,9 +16,9 @@ import type { Problem } from '../doctor.js';
 import { NexgenError } from '../errors.js';
 import { checkAcross, checkPack } from './check.js';
 import { compilePack } from './compile.js';
-import { SEED_DIR, isHandWritten, manifestWithChecksum, packFolders, readPack, readSchema, seedPath, type Pack } from './read.js';
+import { SEED_DIR, manifestWithChecksum, packFolders, readPack, readSchema, seedPath, type Pack } from './read.js';
 
-export type PackState = 'written' | 'unchanged' | 'up_to_date' | 'stale' | 'refused' | 'hand_written';
+export type PackState = 'written' | 'unchanged' | 'up_to_date' | 'stale' | 'refused';
 
 export interface PackLine {
   pack: string;
@@ -62,11 +59,6 @@ async function run(action: 'build' | 'check', root: string, selection: PackSelec
   const valid: Pack[] = [];
   const refusedBy = new Map<string, Problem[]>();
   for (const slug of slugs) {
-    if (await isHandWritten(root, slug)) {
-      report.packs.push({ pack: slug, state: 'hand_written' });
-      if (!selection.all) report.problems.push({ code: 'pack_hand_written', detail: `packs/${slug}: its rows are seed/*.sql written by hand; there is nothing to compile` });
-      continue;
-    }
     const reading = await readPack(root, slug, schema);
     const problems = [...reading.problems, ...(reading.pack ? checkPack(reading.pack) : [])];
     if (reading.pack && problems.length === 0) valid.push(reading.pack);

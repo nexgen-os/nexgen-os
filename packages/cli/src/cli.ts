@@ -133,7 +133,6 @@ const PACK_STATES: Record<PackReport['packs'][number]['state'], string> = {
   up_to_date: 'the output of its pack',
   stale: 'not the output of its pack',
   refused: 'refused',
-  hand_written: 'seed/*.sql written by hand, not compiled',
 };
 
 function printPacks(out: (line: string) => void, r: PackReport): void {

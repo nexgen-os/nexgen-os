@@ -4,8 +4,8 @@
  * The core's migrations, then the core's seed, then each module asked for
  * (its migrations in order), then each pack asked for (its seed in order).
  * A pack's seed is the file `nexgen-os pack build` compiles beside the
- * core's, `core/seed/<n>_pack_<cc>.sql`, or, for a pack of release 0.1,
- * its own `packs/<cc>/seed/*.sql`; a compiled seed is never part of the core.
+ * core's, `core/seed/<n>_pack_<cc>.sql`; a compiled seed is never part of
+ * the core.
  * Every file is a step with a scope and a name — its path in the release —
  * which is what `schema_migrations` records. `plan()` is pure: given what
  * ships, what is asked and what is recorded, it says what to apply.
@@ -21,19 +21,6 @@ export interface Step {
   name: string;
   /** `core`, `module:<code>` or `pack:<country code>`. */
   scope: string;
-}
-
-/**
- * Installations of release 0.1 recorded the core under `supabase/`. The
- * files moved to `core/` without changing; a recorded name is read through
- * this map, so that `doctor` and `migrate` see the same step under either.
- */
-export const RENAMED_STEPS: ReadonlyArray<readonly [RegExp, string]> = [[/^supabase\/(migrations|seed)\//, 'core/$1/']];
-
-/** The name a step has in this release, whichever name an installation recorded. */
-export function currentStepName(name: string): string {
-  for (const [from, to] of RENAMED_STEPS) if (from.test(name)) return name.replace(from, to);
-  return name;
 }
 
 export interface Pack {
@@ -86,8 +73,7 @@ export async function readCatalogue(root: string = defaultRoot()): Promise<Catal
   }
   const packs = new Map<string, Pack>();
   for (const code of await folders(root, 'packs')) {
-    const compiled = seeds.filter((s) => packSeed(s) === code).map((s) => ({ ...s, scope: `pack:${code}` }));
-    const steps = [...(await sqlSteps(root, `packs/${code}/seed`, `pack:${code}`)), ...compiled];
+    const steps = seeds.filter((s) => packSeed(s) === code).map((s) => ({ ...s, scope: `pack:${code}` }));
     if (steps.length === 0) continue;
     const manifest = join(root, 'packs', code, 'pack.json');
     const json = existsSync(manifest) ? (JSON.parse(await readFile(manifest, 'utf8')) as { modules?: string[] }) : {};

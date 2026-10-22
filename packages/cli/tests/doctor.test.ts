@@ -88,7 +88,7 @@ describe('doctor', () => {
   });
 
   it('names a step recorded as missing and a module without its row', async () => {
-    await db.exec(`begin; delete from nexgen.schema_migrations where name = 'packs/fr/seed/0001_fr.sql'; delete from nexgen.modules where code = 'grid';`);
+    await db.exec(`begin; delete from nexgen.modules where code = 'grid';`);
     try {
       const codes = (await doctor(sqlClient(db), await readCatalogue(repoRoot))).problems.map((p) => p.code);
       expect(codes).toEqual(['module_unregistered']);

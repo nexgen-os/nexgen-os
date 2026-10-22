@@ -3,7 +3,7 @@ export type { SqlClient, ConnectOptions } from './sql.js';
 export { connect, transaction } from './sql.js';
 export { PACKAGE_VERSION, SCHEMA_MIN, SCHEMA_VERSION, checkFloor, compareVersions, databaseVersion } from './version.js';
 export type { Catalogue, Pack, Plan, Selection, Step } from './catalogue.js';
-export { RENAMED_STEPS, currentStepName, defaultRoot, installedScopes, plan, readCatalogue } from './catalogue.js';
+export { defaultRoot, installedScopes, plan, readCatalogue } from './catalogue.js';
 export type { InstallOptions, InstallReport } from './apply.js';
 export { POSTGIS_LINE, applyPlan, applyStep, ensureHistory, install, migrate, postgisVersion, recordedSteps } from './apply.js';
 export type { DoctorReport, Problem, StatusReport } from './doctor.js';

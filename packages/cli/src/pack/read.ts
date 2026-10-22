@@ -160,15 +160,6 @@ export async function packFolders(root: string): Promise<string[]> {
   return entries.filter((e) => e.isDirectory() && /^[a-z]{2}$/.test(e.name)).map((e) => e.name).sort();
 }
 
-/**
- * A pack of release 0.1, written by hand as `seed/*.sql` rather than
- * compiled. It is listed and left alone until it is rewritten as JSON.
- */
-export async function isHandWritten(root: string, slug: string): Promise<boolean> {
-  const dir = join(root, 'packs', slug, 'seed');
-  return existsSync(dir) && (await readdir(dir)).some((f) => f.endsWith('.sql'));
-}
-
 /** `core/seed/12_pack_xa.sql`, relative to the checkout. */
 export function seedPath(manifest: Pick<Manifest, 'seed_sequence' | 'country'>): string {
   return `${SEED_DIR}/${manifest.seed_sequence}_pack_${manifest.country.toLowerCase()}.sql`;

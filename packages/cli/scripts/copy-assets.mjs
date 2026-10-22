@@ -19,10 +19,7 @@ const copy = (rel) => {
 copy('core/migrations');
 copy('core/seed');
 for (const m of readdirSync(join(repo, 'modules'))) copy(`modules/${m}/migrations`);
-for (const p of readdirSync(join(repo, 'packs'))) {
-  copy(`packs/${p}/seed`);
-  copy(`packs/${p}/pack.json`);
-}
+for (const p of readdirSync(join(repo, 'packs'))) copy(`packs/${p}/pack.json`);
 // The package is AGPL-3.0 like the core: npm ships a LICENSE found at the package root.
 copyFileSync(join(repo, 'LICENSE'), join(pkg, 'LICENSE'));
 console.log(`assets copied to ${out}`);
