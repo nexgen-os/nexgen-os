@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="320" viewBox="0 0 800 320" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="t">
+  <title id="t">Yield by month in 2023 of a 3.825 kWp PV system in Sevilla: 2023-01 456.3 kWh, 2023-02 470.8 kWh, 2023-03 556.5 kWh, 2023-04 616.6 kWh, 2023-05 570.8 kWh, 2023-06 565 kWh, 2023-07 627.6 kWh, 2023-08 601.2 kWh, 2023-09 516 kWh, 2023-10 426.9 kWh, 2023-11 401.6 kWh, 2023-12 395 kWh.</title>
+  <rect width="800" height="320" rx="12" fill="#fcfcfb"/>
+  <text x="56" y="30" font-size="15" font-weight="600" fill="#0b0b0b">Yield by month, 2023 — 3.825 kWp in Sevilla, azimuth 180° from north, tilt 30°</text>
+  <text x="56" y="48" font-size="12" fill="#52514e">6,204 kWh in the year, 1,622 kWh/kWp</text>
+  <line x1="56" y1="240.0" x2="784" y2="240.0" stroke="#e4e3df" stroke-width="1"/>
+  <text x="48" y="244.0" text-anchor="end" font-size="11" fill="#8a8984">0</text>
+  <line x1="56" y1="201.0" x2="784" y2="201.0" stroke="#e4e3df" stroke-width="1"/>
+  <text x="48" y="205.0" text-anchor="end" font-size="11" fill="#8a8984">200</text>
+  <line x1="56" y1="162.0" x2="784" y2="162.0" stroke="#e4e3df" stroke-width="1"/>
+  <text x="48" y="166.0" text-anchor="end" font-size="11" fill="#8a8984">400</text>
+  <line x1="56" y1="123.0" x2="784" y2="123.0" stroke="#e4e3df" stroke-width="1"/>
+  <text x="48" y="127.0" text-anchor="end" font-size="11" fill="#8a8984">600</text>
+  <line x1="56" y1="84.0" x2="784" y2="84.0" stroke="#e4e3df" stroke-width="1"/>
+  <text x="48" y="88.0" text-anchor="end" font-size="11" fill="#8a8984">800</text>
+  <text x="48" y="66" text-anchor="end" font-size="11" fill="#8a8984">kWh</text>
+  <path d="M74.3 240 V155.0 Q74.3 151.0 78.3 151.0 H94.3 Q98.3 151.0 98.3 155.0 V240 Z" fill="#2a78d6"><title>2023-01: 456.3 kWh</title></path>
+  <text x="86.3" y="256" text-anchor="middle" font-size="11" fill="#52514e">Jan</text>
+  <path d="M135.0 240 V152.2 Q135.0 148.2 139.0 148.2 H155.0 Q159.0 148.2 159.0 152.2 V240 Z" fill="#2a78d6"><title>2023-02: 470.8 kWh</title></path>
+  <text x="147.0" y="256" text-anchor="middle" font-size="11" fill="#52514e">Feb</text>
+  <path d="M195.7 240 V135.5 Q195.7 131.5 199.7 131.5 H215.7 Q219.7 131.5 219.7 135.5 V240 Z" fill="#2a78d6"><title>2023-03: 556.5 kWh</title></path>
+  <text x="207.7" y="256" text-anchor="middle" font-size="11" fill="#52514e">Mar</text>
+  <path d="M256.3 240 V123.8 Q256.3 119.8 260.3 119.8 H276.3 Q280.3 119.8 280.3 123.8 V240 Z" fill="#2a78d6"><title>2023-04: 616.6 kWh</title></path>
+  <text x="268.3" y="256" text-anchor="middle" font-size="11" fill="#52514e">Apr</text>
+  <path d="M317.0 240 V132.7 Q317.0 128.7 321.0 128.7 H337.0 Q341.0 128.7 341.0 132.7 V240 Z" fill="#2a78d6"><title>2023-05: 570.8 kWh</title></path>
+  <text x="329.0" y="256" text-anchor="middle" font-size="11" fill="#52514e">May</text>
+  <path d="M377.7 240 V133.8 Q377.7 129.8 381.7 129.8 H397.7 Q401.7 129.8 401.7 133.8 V240 Z" fill="#2a78d6"><title>2023-06: 565 kWh</title></path>
+  <text x="389.7" y="256" text-anchor="middle" font-size="11" fill="#52514e">Jun</text>
+  <path d="M438.3 240 V121.6 Q438.3 117.6 442.3 117.6 H458.3 Q462.3 117.6 462.3 121.6 V240 Z" fill="#2a78d6"><title>2023-07: 627.6 kWh</title></path>
+  <text x="450.3" y="256" text-anchor="middle" font-size="11" fill="#52514e">Jul</text>
+  <text x="450.3" y="111.6" text-anchor="middle" font-size="11" fill="#0b0b0b">628</text>
+  <path d="M499.0 240 V126.8 Q499.0 122.8 503.0 122.8 H519.0 Q523.0 122.8 523.0 126.8 V240 Z" fill="#2a78d6"><title>2023-08: 601.2 kWh</title></path>
+  <text x="511.0" y="256" text-anchor="middle" font-size="11" fill="#52514e">Aug</text>
+  <path d="M559.7 240 V143.4 Q559.7 139.4 563.7 139.4 H579.7 Q583.7 139.4 583.7 143.4 V240 Z" fill="#2a78d6"><title>2023-09: 516 kWh</title></path>
+  <text x="571.7" y="256" text-anchor="middle" font-size="11" fill="#52514e">Sep</text>
+  <path d="M620.3 240 V160.8 Q620.3 156.8 624.3 156.8 H640.3 Q644.3 156.8 644.3 160.8 V240 Z" fill="#2a78d6"><title>2023-10: 426.9 kWh</title></path>
+  <text x="632.3" y="256" text-anchor="middle" font-size="11" fill="#52514e">Oct</text>
+  <path d="M681.0 240 V165.7 Q681.0 161.7 685.0 161.7 H701.0 Q705.0 161.7 705.0 165.7 V240 Z" fill="#2a78d6"><title>2023-11: 401.6 kWh</title></path>
+  <text x="693.0" y="256" text-anchor="middle" font-size="11" fill="#52514e">Nov</text>
+  <path d="M741.7 240 V167.0 Q741.7 163.0 745.7 163.0 H761.7 Q765.7 163.0 765.7 167.0 V240 Z" fill="#2a78d6"><title>2023-12: 395 kWh</title></path>
+  <text x="753.7" y="256" text-anchor="middle" font-size="11" fill="#52514e">Dec</text>
+  <text x="753.7" y="157.0" text-anchor="middle" font-size="11" fill="#0b0b0b">395</text>
+  <line x1="56" y1="240" x2="784" y2="240" stroke="#8a8984" stroke-width="1"/>
+  <text x="56" y="290" font-size="11" fill="#8a8984">An estimate of the solar module, computed by pvgis-5.3+solar-0.3.0, months in UTC.</text>
+  <text x="56" y="306" font-size="11" fill="#8a8984">Irradiance PVGIS-SARAH3, weather ERA5, horizon DEM-calculated.</text>
+</svg>

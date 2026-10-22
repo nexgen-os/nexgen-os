@@ -27,6 +27,8 @@ the energy shared in a community, in a database you own. Every figure
 says which weather, period, models and losses it was computed with, so
 that a lender, a reviewer or a client can check it.
 
+![The yield by month in 2023 of the 3.825 kWp PV system of example 01, from 395 kWh in December to 628 kWh in July, 6,204 kWh in the year; an estimate of the solar module computed by PVGIS 5.3](docs/images/monthly-yield.svg)
+
 - **A yield with its provenance**: PVGIS (no key), PVWatts built in, or
   pvlib through its connector; P50 and the exceedance levels asked for,
   IEC 61724-1 indicators, an ordered loss chain, a far horizon and the
@@ -73,6 +75,8 @@ Six objects, in the order a page walks them — the organisation, the
 project it works on, the participants taking part in it, the meters they
 carry, the devices behind those meters, the series they produce — and
 what is attached to them, in the schema `nexgen`. In plain words:
+
+![The six objects of the core: an organisation works on projects, participants take part in a project, a participant carries meters and has devices, meters and devices have series](docs/images/model.svg)
 
 - **the organisation** owns the data and has members;
 - **the project** is what a person works on — a community, a set of buildings, a study, a district plan;

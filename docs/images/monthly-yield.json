@@ -1,0 +1,83 @@
+{
+  "computedWith": "the yield of example 01 by the solar module (pvgis_like), as docs/demo/yield.ts computes it, on 2026-10-22",
+  "participant": {
+    "name": "Calle del Ejemplo 14",
+    "city": "Sevilla",
+    "country": "ES"
+  },
+  "system": {
+    "deviceId": "00000000-0000-4000-8000-000100000051",
+    "kwp": 3.825,
+    "arrays": [
+      {
+        "name": "South roof",
+        "azimuthDeg": 180,
+        "tiltDeg": 30
+      }
+    ]
+  },
+  "year": 2023,
+  "annualKwh": 6204.26056,
+  "kwhPerKwp": 1622.028905,
+  "months": [
+    {
+      "month": "2023-01",
+      "kwh": 456.3
+    },
+    {
+      "month": "2023-02",
+      "kwh": 470.8
+    },
+    {
+      "month": "2023-03",
+      "kwh": 556.5
+    },
+    {
+      "month": "2023-04",
+      "kwh": 616.6
+    },
+    {
+      "month": "2023-05",
+      "kwh": 570.8
+    },
+    {
+      "month": "2023-06",
+      "kwh": 565
+    },
+    {
+      "month": "2023-07",
+      "kwh": 627.6
+    },
+    {
+      "month": "2023-08",
+      "kwh": 601.2
+    },
+    {
+      "month": "2023-09",
+      "kwh": 516
+    },
+    {
+      "month": "2023-10",
+      "kwh": 426.9
+    },
+    {
+      "month": "2023-11",
+      "kwh": 401.6
+    },
+    {
+      "month": "2023-12",
+      "kwh": 395
+    }
+  ],
+  "provenance": "pvgis-5.3+solar-0.3.0",
+  "weather": {
+    "years": {
+      "to": 2023,
+      "from": 2023
+    },
+    "source": "pvgis",
+    "horizon": "DEM-calculated",
+    "meteo_db": "ERA5",
+    "radiation_db": "PVGIS-SARAH3"
+  }
+}

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="210" viewBox="0 0 800 210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="t">
+  <title id="t">The model in one screen: an organisation works on projects; participants take part in a project; a participant carries meters and has devices behind them; meters and devices have series.</title>
+  <defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#8a8984"/></marker></defs>
+  <rect width="800" height="210" rx="12" fill="#fcfcfb"/>
+  <rect x="16" y="79" width="128" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="80" y="102" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Organisation</text>
+  <text x="80" y="119" text-anchor="middle" font-size="11" fill="#52514e">owns the data</text>
+  <rect x="214" y="79" width="128" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="278" y="102" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Project</text>
+  <text x="278" y="119" text-anchor="middle" font-size="11" fill="#52514e">a community, a study</text>
+  <rect x="412" y="79" width="128" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="476" y="102" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Participant</text>
+  <text x="476" y="119" text-anchor="middle" font-size="11" fill="#52514e">the node, its place</text>
+  <rect x="586" y="24" width="128" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="650" y="47" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Meter</text>
+  <text x="650" y="64" text-anchor="middle" font-size="11" fill="#52514e">its connection point</text>
+  <rect x="586" y="134" width="128" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="650" y="157" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Device</text>
+  <text x="650" y="174" text-anchor="middle" font-size="11" fill="#52514e">behind the meter</text>
+  <path d="M146 105 L212 105" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+  <text x="179" y="95" text-anchor="middle" font-size="11" fill="#8a8984">works on</text>
+  <path d="M344 105 L410 105" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+  <text x="377" y="95" text-anchor="middle" font-size="11" fill="#8a8984">takes part</text>
+  <path d="M542 96 L584 56" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+  <text x="548" y="64" text-anchor="middle" font-size="11" fill="#8a8984">carries</text>
+  <path d="M542 114 L584 154" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+  <text x="552" y="150" text-anchor="middle" font-size="11" fill="#8a8984">has</text>
+  <rect x="736" y="79" width="56" height="52" rx="8" fill="#ffffff" stroke="#e4e3df" stroke-width="1.5"/>
+  <text x="764" y="110" text-anchor="middle" font-size="14" font-weight="600" fill="#0b0b0b">Series</text>
+  <path d="M714 50 C 726 50, 730 80, 736 92" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+  <path d="M714 160 C 726 160, 730 130, 736 118" stroke="#8a8984" stroke-width="1.5" fill="none" marker-end="url(#head)"/>
+</svg>
