@@ -36,7 +36,7 @@ const participantOf = (built: boolean, kind: string, id: string) =>
     ? `case when ${kind} in ('site', 'building', 'space', 'surface') then building.participant_of(${kind}, ${id}) else participant_of(${kind}, ${id}) end`
     : `participant_of(${kind}, ${id})`;
 /** Every run of every module that keeps them. */
-const everyRun = async (db: Awaited<ReturnType<typeof freshDatabase>>): Promise<string> => {
+const everyCalculation = async (db: Awaited<ReturnType<typeof freshDatabase>>): Promise<string> => {
   const tables = (await db.query<{ t: string }>(`select schema_name || '.runs' t from modules where to_regclass(schema_name || '.runs') is not null`)).rows;
   return tables.length ? tables.map((t) => `select id from ${t.t}`).join(' union all ') : 'select null::uuid id where false';
 };
@@ -63,7 +63,7 @@ describe('the examples', () => {
         // project; a participant is its own.
         const counts = await one<{ series: number; values: number; runs: number; orphans: number }>(
           db,
-          `with o as (${objects}), r as (${await everyRun(db)})
+          `with o as (${objects}), r as (${await everyCalculation(db)})
            select (select count(*)::int from series) series,
                   (select count(*)::int from series_values) values,
                   (select count(*)::int from r) runs,

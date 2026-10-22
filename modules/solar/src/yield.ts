@@ -1,4 +1,4 @@
-// A PV yield as a run that says what it was computed from (decision 0012).
+// A PV yield as an estimate that says what it was computed from (decision 0012).
 //
 // Two profiles run here. `pvgis_like` is the cheapest one to verify: PVGIS
 // itself does the computation (its irradiance, its DEM horizon, its one
@@ -9,16 +9,16 @@
 // chosen month by month in the participant's local calendar, and optionally an
 // annual anchored on PVGIS.
 //
-// Either way the run records the system, the arrays, the weather and its
+// Either way the estimate records the system, the arrays, the weather and its
 // period, the models and losses, and the conventions the series are written
 // in. The hourly energy lands as a `simulated` series on the PV system, the
-// air temperature on its participant; the run keeps the summary. Engines run
+// air temperature on its participant; the estimate keeps the summary. Engines run
 // outside Postgres; the database holds the parameters, the series and the
-// run.
+// estimate.
 //
 // With an external engine (decision 0013), the profile and the engine are
 // two axes: the profile chooses the weather, the models and the losses, the
-// engine computes. The run builds the engine's `pv_yield` request from the
+// engine computes. The estimate builds the engine's `pv_yield` request from the
 // same system, arrays and profile, reads the weather through the same
 // connector, and stores what the engine answers as it comes.
 
@@ -72,13 +72,13 @@ export interface YieldRequest {
   /**
    * An external engine that computes the profile (`pvlib`): its name, and
    * the command that starts it unless `NEXGEN_ENGINE_<NAME>` gives it. The
-   * profile is then required; any profile whose models the engine has runs.
+   * profile is then required; any profile whose models the engine has is computed.
    */
   engine?: Pick<EngineSpec, 'name' | 'command' | 'timeoutMs'>;
 }
 
 export interface YieldResult {
-  runId: string;
+  estimateId: string;
   seriesId: string;
   annualKwh: number;
   kwhPerKwp: number;
@@ -89,7 +89,7 @@ export interface YieldResult {
 
 type PvgisClient = ReturnType<typeof pvgis>;
 
-/** The connectors a run reads; each defaults to the open one. */
+/** The connectors an estimate reads; each defaults to the open one. */
 export interface YieldClients {
   pvgis?: PvgisClient;
   weather?: WeatherProvider;
@@ -179,21 +179,21 @@ const PVGIS_MOUNTING: Record<string, PvgisSystem['mounting']> = {
   insulated: 'building',
 };
 
-export async function runYield(db: Db, request: YieldRequest, clients: YieldClients | PvgisClient = {}): Promise<YieldResult> {
+export async function estimateYield(db: Db, request: YieldRequest, clients: YieldClients | PvgisClient = {}): Promise<YieldResult> {
   // A PVGIS client alone is what the `pvgis_like` profile needs.
   const given: YieldClients = 'hourly' in clients ? { pvgis: clients } : clients;
-  if (request.engine && !request.profileCode) throw new Error('profile_required: a run with an engine names the yield profile the engine computes');
+  if (request.engine && !request.profileCode) throw new Error('profile_required: an estimate with an engine names the yield profile the engine computes');
   const profileCode = request.profileCode ?? 'pvgis_like';
   if (!request.engine && profileCode !== 'pvgis_like' && profileCode !== 'pvwatts') {
-    throw new Error(`profile_not_runnable_here: ${profileCode} needs an engine; pvgis_like runs through PVGIS, pvwatts here`);
+    throw new Error(`profile_not_computable_here: ${profileCode} needs an engine; pvgis_like runs through PVGIS, pvwatts here`);
   }
   if (!(request.years.from <= request.years.to)) throw new Error(`years_reversed: ${request.years.from} to ${request.years.to}`);
   // `pvwatts` and the engines cut days and months in the participant's local calendar.
   const context = await loadContext(db, request.pvSystemId, profileCode, profileCode === 'pvwatts' || request.engine !== undefined, request.years);
-  if (request.engine) return runWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
+  if (request.engine) return estimateWithEngine(db, request, profileCode, context, given.weather ?? openMeteo());
   return profileCode === 'pvgis_like'
-    ? runPvgisLike(db, request, context, given.pvgis ?? pvgis())
-    : runPvwatts(db, request, context, given.weather ?? openMeteo(), given.pvgis ?? pvgis());
+    ? estimatePvgisLike(db, request, context, given.pvgis ?? pvgis())
+    : estimatePvwatts(db, request, context, given.weather ?? openMeteo(), given.pvgis ?? pvgis());
 }
 
 /** The system, its position, its arrays (or one for the whole system) and the profile, checked. */
@@ -231,7 +231,7 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
          from solar.pv_arrays a
          left join solar.module_products m on m.id = a.module_product_id
          left join solar.inverter_products i on i.id = a.inverter_product_id
-        where a.pv_system_id = $1 and a.scenario_id is null
+        where a.pv_system_id = $1 and a.variant_id is null
         order by a.name, a.id`,
       [pvSystemId],
     )
@@ -273,7 +273,7 @@ function lossesOf(profile: ProfileRow, a: PvArray): { code: string; pct: number 
   return withSoiling(profile.losses, a.soiling?.value ?? null).losses;
 }
 
-/** What a run records of an array's soiling: the place's, where it was found, and whether it was applied. */
+/** What an estimate records of an array's soiling: the place's, where it was found, and whether it was applied. */
 function soilingInput(profile: ProfileRow, a: PvArray): Record<string, unknown> {
   if (!a.soiling) return {};
   const { applied } = withSoiling(profile.losses, a.soiling.value);
@@ -286,7 +286,7 @@ function soilingInput(profile: ProfileRow, a: PvArray): Record<string, unknown> 
   };
 }
 
-/** The days of weather a run reads for whole local years: one day more on each side, the values outside cut later. */
+/** The days of weather an estimate reads for whole local years: one day more on each side, the values outside cut later. */
 function weatherPeriod(years: { from: number; to: number }): { from: string; to: string } {
   return { from: `${years.from - 1}-12-31`, to: `${years.to + 1}-01-01` };
 }
@@ -303,7 +303,7 @@ function pvgisSpec(a: PvArray, systemLossPct: number): PvgisSystem {
   return { kwp: a.kwp, azimuth_deg: a.azimuth_deg, tilt_deg: a.tilt_deg, mounting: PVGIS_MOUNTING[a.mounting] ?? 'building', system_loss_pct: systemLossPct };
 }
 
-async function runPvgisLike(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, client: PvgisClient): Promise<YieldResult> {
+async function estimatePvgisLike(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, client: PvgisClient): Promise<YieldResult> {
   // PVGIS takes one aggregate loss per array.
   const perArray = [];
   for (const a of arrays) {
@@ -322,7 +322,7 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
   const nYears = request.years.to - request.years.from + 1;
   const annualKwh = round(energy.values.reduce((s, v) => s + v.value, 0) / nYears);
   const radiationDb = perArray[0].answer.meta.radiation_db;
-  const { runId, results } = await recordRun(
+  const { estimateId, results } = await recordEstimate(
     db,
     ENGINE_VERSION,
     request.pvSystemId,
@@ -339,10 +339,10 @@ async function runPvgisLike(db: Db, request: YieldRequest, { system, where, prof
     owned,
     (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp }),
   );
-  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
+  return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb };
 }
 
-async function runPvwatts(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider, reference: PvgisClient): Promise<YieldResult> {
+async function estimatePvwatts(db: Db, request: YieldRequest, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider, reference: PvgisClient): Promise<YieldResult> {
   if (!weather.history) throw new Error(`weather_without_history: ${weather.source_code} gives no past weather`);
   if (profile.temperature_model !== 'faiman') throw new Error(`temperature_model_not_runnable_here: ${profile.temperature_model}; this engine has Faiman`);
   const u0 = Number(profile.temperature_params.u0);
@@ -416,7 +416,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
   const annualKwh = round(annual);
   const modelledTotal = perArray.reduce((s, x) => s + x.modelled, 0);
   const anchoredTotal = perArray.reduce((s, x) => s + (x.anchoring?.annual_kwh ?? 0), 0);
-  const { runId, results } = await recordRun(
+  const { estimateId, results } = await recordEstimate(
     db,
     PVWATTS_ENGINE_VERSION,
     request.pvSystemId,
@@ -474,7 +474,7 @@ async function runPvwatts(db: Db, request: YieldRequest, { system, where, profil
     owned,
     (ids) => ({ series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, typical_months: months, years_covered: yearsCovered }),
   );
-  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+  return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }
 
 /** The engine's module and layout for an array: its module product's physics, or the PVWatts DC model on its power and γ. */
@@ -524,7 +524,7 @@ function engineInverter(arrays: PvArray[]): PvYieldRequest['inverter'] {
   return { model, parameters };
 }
 
-async function runWithEngine(db: Db, request: YieldRequest, profileCode: string, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider): Promise<YieldResult> {
+async function estimateWithEngine(db: Db, request: YieldRequest, profileCode: string, { system, where, profile, arrays, kwp }: Context, weather: WeatherProvider): Promise<YieldResult> {
   if (!weather.history) throw new Error(`weather_without_history: ${weather.source_code} gives no past weather`);
   const spec: EngineSpec = { ...(request.engine!.name === PVLIB_ENGINE.name ? PVLIB_ENGINE : {}), ...request.engine! };
   const described = await describeEngine(spec);
@@ -594,7 +594,7 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
   const annualKwh = round(covered.annual);
-  const { runId, results } = await recordRun(
+  const { estimateId, results } = await recordEstimate(
     db,
     described.version,
     request.pvSystemId,
@@ -627,10 +627,10 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
       return { series_id: ids.production, annual_kwh: annualKwh, kwh_per_kwp: round(annualKwh / kwp), kwp, years_covered: covered.yearsCovered, array_series: perArray };
     },
   );
-  return { runId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
+  return { estimateId, seriesId: results.series_id as string, annualKwh, kwhPerKwp: round(annualKwh / kwp), kwp, radiationDb: WEATHER_MODEL.toUpperCase() };
 }
 
-/** A series a run computed, under the key its results name it by. */
+/** A series an estimate computed, under the key its results name it by. */
 interface OwnedSeries {
   key: string;
   objectKind: string;
@@ -643,36 +643,36 @@ interface OwnedSeries {
 }
 
 /**
- * Records a run with the series it owns: the run of the same identity when
+ * Records an estimate with the series it owns: the estimate of the same identity when
  * it is already there, untouched; else a new one, whose series are written
- * with its id before it is final, so that no later run ever overwrites them.
+ * with its id before it is final, so that no later estimate ever overwrites them.
  */
-async function recordRun(
+async function recordEstimate(
   db: Db,
   engineVersion: string,
   subjectId: string,
   inputs: unknown,
   owned: OwnedSeries[],
   results: (seriesIds: Record<string, string>) => Record<string, unknown>,
-): Promise<{ runId: string; results: Record<string, unknown> }> {
-  const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('solar.runs', 'device', $2, $1, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
+): Promise<{ estimateId: string; results: Record<string, unknown> }> {
+  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
+    `select calculation_id, finished from start_calculation('solar.estimates', 'device', $2, $1, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
   if (started.finished) {
-    const done = await db.query<{ results: Record<string, unknown> }>('select results from solar.runs where id = $1', [started.run_id]);
-    return { runId: started.run_id, results: done.rows[0].results };
+    const done = await db.query<{ results: Record<string, unknown> }>('select results from solar.estimates where id = $1', [started.calculation_id]);
+    return { estimateId: started.calculation_id, results: done.rows[0].results };
   }
   const ids: Record<string, string> = {};
   // An engine says the unit of its values; `store()` converts them to the quantity's.
   for (const o of owned) {
     const stored = await store(db, {
       object_kind: o.objectKind, object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
-      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, source: `solar.runs:${started.run_id}`,
+      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, source: `solar.estimates:${started.calculation_id}`,
     }, o.series.values, { unit: o.unit ?? null });
     ids[o.key] = stored.seriesId;
   }
   const final = results(ids);
-  await db.query(`select finish_run('solar.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(final)]);
-  return { runId: started.run_id, results: final };
+  await db.query(`select finish_calculation('solar.estimates', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(final)]);
+  return { estimateId: started.calculation_id, results: final };
 }
 
 /** Values of several series added up, instant by instant. */

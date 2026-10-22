@@ -178,7 +178,7 @@ export function faimanCellTemperature(poa: number, airTemperature: number, windS
  * multiply (PVsyst's loss diagram, PVWatts's own combination of its loss
  * categories). A negative percentage is a gain. A loss without a value
  * throws a named error (`loss_without_value`): the profile leaves it to a
- * model this engine does not have, or to the run.
+ * model this engine does not have, or to the estimate.
  */
 export function remainingAfterLosses(losses: { code: string; pct: number | null }[]): number {
   return losses.reduce((factor, l) => {

@@ -30,7 +30,7 @@ export interface SeriesIdentity {
   step?: string | null;
   source_code?: string | null;
   name?: string | null;
-  /** A free note of where the values come from; a run names itself here, `<module>.runs:<run id>`. */
+  /** A free note of where the values come from; a calculation of a module names itself here, `<module>.<table>:<id>`. */
   source?: string | null;
   device_id?: string | null;
   external_ref?: string | null;

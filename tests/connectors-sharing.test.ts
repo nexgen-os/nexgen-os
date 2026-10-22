@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { SHARING_EXAMPLE_ENGINE, describeEngine, runEngine, type EnergySharingRequest, type EnergySharingResult, type EngineSpec } from '@nexgen-os/core';
-import { runSharing } from '../modules/community/src/sharing.js';
+import { settleSharing } from '../modules/community/src/sharing.js';
 import { USER_B, asUser, freshDatabase, one, organisation, repoRoot } from './helpers/db.js';
 
 const PROJECT = '00000000-0000-4000-8000-000300000020';
@@ -105,7 +105,7 @@ describe('energy sharing in a project, as a run', () => {
   });
 
   it.skipIf(!installed)('hands the participants\' metered offtake and injection to the engine and stores its answer on each participant', async () => {
-    const r = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
+    const r = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
     expect(r.engine).toBe('sharing_example 0.3.0');
     // Four participants behind a meter; the group's meters are its members'.
     expect(Object.keys(r.series).sort()).toEqual(['00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000053', PLANT]);
@@ -128,15 +128,15 @@ describe('energy sharing in a project, as a run', () => {
     expect(r.sharedKwh).toBeCloseTo(given.reduce((a, b) => a + b, 0), 3);
 
     const series = await one<{ kind: string; object_id: string; source: string }>(db, 'select kind, object_id, source from series where id = $1', [r.series[VAN_DIJK].shared_offtake_energy]);
-    expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, source: `community.runs:${r.runId}` });
+    expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, source: `community.settlements:${r.settlementId}` });
   });
 
   it.skipIf(!installed)('is a run that names its engine, its key, its period and the series it read; the same inputs give the same run', async () => {
-    const first = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    const again = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
+    const first = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
+    const again = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
     expect(again).toEqual(first);
     const run = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select engine_version, project_id, inputs, results from community.runs where id = $1', [first.runId],
+      db, 'select engine_version, project_id, inputs, results from community.settlements where id = $1', [first.settlementId],
     );
     expect(run).toMatchObject({ engine_version: 'sharing_example 0.3.0', project_id: PROJECT });
     expect(run.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.3.0', contract: 1 });
@@ -150,42 +150,42 @@ describe('energy sharing in a project, as a run', () => {
     expect(run.results.meta.key).toEqual({ method: 'proportional', basis: 'offtake' });
     // A finished run's series take no more values.
     await expect(db.query(`select store($1, array['2026-05-02T00:00:00Z']::timestamptz[], array[1]::float8[])`, [first.series[PLANT].injection_energy]))
-      .rejects.toThrow(/run_is_final/);
+      .rejects.toThrow(/calculation_is_final/);
   });
 
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
     await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
-    const r = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.runs where id = $1', [r.runId]);
+    const r = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
+    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.settlements where id = $1', [r.settlementId]);
     expect(run.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
     await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
       .rejects.toThrow(/allocation_share/);
   });
 
   it.skipIf(!installed)('refuses a period its meters do not cover, and passes on the engine\'s own refusals', async () => {
-    await expect(runSharing(db, { projectId: PROJECT, from: '2026-05-31T21:00:00Z', to: '2026-06-01T01:00:00Z', step: '15 minutes', engine: spec }))
+    await expect(settleSharing(db, { projectId: PROJECT, from: '2026-05-31T21:00:00Z', to: '2026-06-01T01:00:00Z', step: '15 minutes', engine: spec }))
       .rejects.toThrow(/^series_incomplete: offtake_energy of .* misses 12 of 16 steps/);
-    await expect(runSharing(db, { projectId: PROJECT, ...day, rules: { max_hours: 1100 }, engine: spec })).rejects.toThrow(/^rule_unknown: max_hours/);
+    await expect(settleSharing(db, { projectId: PROJECT, ...day, rules: { max_hours: 1100 }, engine: spec })).rejects.toThrow(/^rule_unknown: max_hours/);
   });
 
   it('refuses what it cannot hand to an engine, before starting one', async () => {
-    await expect(runSharing(db, { projectId: VAN_DIJK, ...day, engine: spec })).rejects.toThrow(/^project_not_found/);
-    await expect(runSharing(db, { projectId: PROJECT, ...day, from: '2026-05-02T00:07:00Z', engine: spec })).rejects.toThrow(/^period_misaligned/);
-    await expect(runSharing(db, { projectId: PROJECT, from: '2025-05-02T00:00:00Z', to: '2025-05-03T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_required/);
-    await expect(runSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_outside_period/);
-    await expect(runSharing(db, { projectId: PROJECT, ...day, engine: fake })).rejects.toThrow(/^engine_kind_unsupported: fake accepts echo, pv_yield, not energy_sharing$/);
+    await expect(settleSharing(db, { projectId: VAN_DIJK, ...day, engine: spec })).rejects.toThrow(/^project_not_found/);
+    await expect(settleSharing(db, { projectId: PROJECT, ...day, from: '2026-05-02T00:07:00Z', engine: spec })).rejects.toThrow(/^period_misaligned/);
+    await expect(settleSharing(db, { projectId: PROJECT, from: '2025-05-02T00:00:00Z', to: '2025-05-03T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_required/);
+    await expect(settleSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_outside_period/);
+    await expect(settleSharing(db, { projectId: PROJECT, ...day, engine: fake })).rejects.toThrow(/^engine_kind_unsupported: fake accepts echo, pv_yield, not energy_sharing$/);
     await db.query(
       `insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values ('project', $1, 'allocation_key', '{"method": "fixed", "parameters": {}}', '2027-01-01T00:00:00+01:00', 'general assembly 2026')`,
       [PROJECT],
     );
-    await expect(runSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_changes_in_period/);
+    await expect(settleSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_changes_in_period/);
   });
 
   it('keeps the key and the run to the organisation of the project', async () => {
     await organisation(db, 'Another cooperative', USER_B);
     await asUser(db, USER_B, async () => {
       expect((await db.query(`select id from attributes where property_code = 'allocation_key'`)).rows).toEqual([]);
-      await expect(runSharing(db, { projectId: PROJECT, ...day, engine: spec })).rejects.toThrow(/^project_not_found/);
+      await expect(settleSharing(db, { projectId: PROJECT, ...day, engine: spec })).rejects.toThrow(/^project_not_found/);
     });
   });
 });

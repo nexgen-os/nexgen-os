@@ -190,19 +190,19 @@ describe('horizons', () => {
 
 describe('design variants', () => {
   it('keeps the variants of a participant\'s PV in the module, one on top of another, and counts their arrays only in them', async () => {
-    const a = (await one<{ id: string }>(db, `select solar.create_scenario($1, 'A west array') id`, [home])).id;
-    const b = (await one<{ id: string }>(db, `select solar.create_scenario($1, 'A west array and a carport', $2) id`, [home, a])).id;
-    expect((await one<{ parent: string }>(db, 'select parent_id parent from solar.scenarios where id = $1', [b])).parent).toBe(a);
+    const a = (await one<{ id: string }>(db, `select solar.create_variant($1, 'A west array') id`, [home])).id;
+    const b = (await one<{ id: string }>(db, `select solar.create_variant($1, 'A west array and a carport', $2) id`, [home, a])).id;
+    expect((await one<{ parent: string }>(db, 'select parent_id parent from solar.variants where id = $1', [b])).parent).toBe(a);
     const before = Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp);
     await insert(db, 'solar.pv_arrays', {
-      organisation_id: org, pv_system_id: pv, name: 'Carport', mounting: 'open_rack', azimuth_deg: 180, tilt_deg: 10, kwp_dc: 2, scenario_id: b,
+      organisation_id: org, pv_system_id: pv, name: 'Carport', mounting: 'open_rack', azimuth_deg: 180, tilt_deg: 10, kwp_dc: 2, variant_id: b,
     });
     expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1) kwp', [pv])).kwp)).toBe(before);
     expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1, $2) kwp', [pv, b])).kwp)).toBe(before + 2);
     expect(Number((await one<{ kwp: string }>(db, 'select solar.system_kwp($1, $2) kwp', [pv, a])).kwp)).toBe(before);
     const other = await participant(db, { organisation_id: org, name: 'Neighbour', country: 'BE' });
-    await expect(db.query(`select solar.create_scenario($1, 'Borrowed', $2)`, [other, a])).rejects.toThrow(/scenario_not_found/);
-    await db.query(`delete from solar.pv_arrays where scenario_id = $1`, [b]);
+    await expect(db.query(`select solar.create_variant($1, 'Borrowed', $2)`, [other, a])).rejects.toThrow(/variant_not_found/);
+    await db.query(`delete from solar.pv_arrays where variant_id = $1`, [b]);
   });
 });
 

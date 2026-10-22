@@ -30,7 +30,7 @@ three forms and no other:
   carries the subtype's name (`solar.pv_systems`);
 - **a secondary table**, with a foreign key to a core object:
   `solar.pv_arrays` belongs to a PV system, `building.sites` and
-  `building.buildings` belong to a participant, `solar.runs` to the PV
+  `building.buildings` belong to a participant, `solar.estimates` to the PV
   system it computed — objects of the module, described in their own
   columns — or, for a table about an object of the core of any kind, a kind
   column checked on the six words of the core beside the object's id:

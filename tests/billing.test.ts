@@ -78,13 +78,13 @@ describe('billing without Ekwo OS', () => {
     await asUser(db, USER_A, () => record([buyer, id, 'purchase', '2026-05-01', '2026-05-31', seller, run]));
     const rows = await asUser(db, USER_A, () =>
       db.query<Record<string, unknown>>(
-        `select id, organisation_id, participant_id, counterparty_participant_id, kind, period_from::text, period_to::text, run_id
+        `select id, organisation_id, participant_id, counterparty_participant_id, kind, period_from::text, period_to::text, settlement_id
            from billing.invoices_of($1)`,
         [buyer],
       ),
     );
     expect(rows.rows).toEqual([
-      { id, organisation_id: org, participant_id: buyer, counterparty_participant_id: seller, kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', run_id: run },
+      { id, organisation_id: org, participant_id: buyer, counterparty_participant_id: seller, kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', settlement_id: run },
     ]);
     expect((await asUser(db, USER_B, () => db.query('select * from billing.invoices'))).rows).toEqual([]);
   });
@@ -94,7 +94,7 @@ describe('billing without Ekwo OS', () => {
       `select column_name from information_schema.columns where table_schema = 'billing' and table_name = 'invoices' order by ordinal_position`,
     );
     expect(columns.rows.map((c) => c.column_name)).toEqual([
-      'id', 'organisation_id', 'participant_id', 'counterparty_participant_id', 'kind', 'period_from', 'period_to', 'run_id', 'created_at',
+      'id', 'organisation_id', 'participant_id', 'counterparty_participant_id', 'kind', 'period_from', 'period_to', 'settlement_id', 'created_at',
     ]);
   });
 
@@ -153,7 +153,7 @@ describe('the energy community of example 3', () => {
            from billing.invoices_of('00000000-0000-4000-8000-000300000051') i
            join participants p on p.id = i.participant_id
            join participants c on c.id = i.counterparty_participant_id
-           join community.runs r on r.id = i.run_id`,
+           join community.settlements r on r.id = i.settlement_id`,
       );
       expect(bills.rows).toEqual([
         { id: '22222222-2222-4222-8222-222222222201', participant: 'Logistiek A', counterparty: 'Roof plant', kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', project_id: '00000000-0000-4000-8000-000300000020' },

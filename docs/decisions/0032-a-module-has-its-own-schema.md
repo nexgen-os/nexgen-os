@@ -27,7 +27,7 @@ adds a column to a core table.
 
 **A module reads the core freely and writes it through its functions.** A
 figure is a run of the module, written by the core's gesture
-(`record_run('<module>.runs', …)`, [0004](0004-a-figure-is-a-run.md)); any other write goes through
+(`record_calculation('<module>.runs', …)`, [0004](0004-a-figure-is-a-run.md)); any other write goes through
 the gesture that carries its rule
 ([0018](0018-one-function-per-gesture.md)). A module may publish vocabulary
 rows, marked as published by it.

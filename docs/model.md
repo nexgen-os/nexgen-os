@@ -224,7 +224,7 @@ Any other key is refused (`place_key_unknown`).
   adds. One series per identity — object, quantity, kind, source code,
   source, name — found or created by `series_ensure()`, which refuses
   another value kind or step by name. A simulated series names its run or
-  its source (`series_run_required`).
+  its source (`series_calculation_required`).
 - **series_values** — the values, in the unit of the quantity, dated at the
   start of their interval in UTC, with a quality code checked by the column
   (0 measured, 1 estimated, 2 substituted, 3 missing; 100 and up for a
@@ -247,11 +247,11 @@ identity (created through `series_ensure()`), the values converted from
 `unit` to the quantity's (`series_unit_mismatch`), a null stored missing,
 instants on the series' step (`series_step_mismatch`), a forecast with its
 issue time (`issued_at_required`), the series of a finished run never
-written again (`run_is_final`). A value equal to the one stored is left as
+written again (`calculation_is_final`). A value equal to the one stored is left as
 it is, so a second import of the same file changes nothing. Every write
 computes again the rollups of the hours it touched; **series_latest** is a
 view, the last value of each series that is not missing. The connectors (`storeSeries()`), the
-format libraries, the modules, `record_run()` and the Python client all
+format libraries, the modules, `record_calculation()` and the Python client all
 call it.
 
 **Aggregates are derived.** **series_rollups** holds hourly (UTC) and daily
@@ -279,16 +279,16 @@ Python in `packages/python` (rows by default; Arrow, pandas and Polars as
 optional extras).
 
 - **runs** — a computation is a run of the module that computes it, kept
-  in that module's `runs` table (`solar.runs`, `consumption.runs`,
-  `community.runs`), its subject a foreign key to an object of the core:
+  in that module's `runs` table (`solar.estimates`, `consumption.estimates`,
+  `community.settlements`), its subject a foreign key to an object of the core:
   inputs, engine version, results ([0004](decisions/0004-a-figure-is-a-run.md),
   [0004](decisions/0004-a-figure-is-a-run.md)). The core keeps the one
-  gesture: `record_run('<module>.runs', kind, id, engine_version, inputs,
-  results, series)` (or `start_run()` then `finish_run()`) writes it with
+  gesture: `record_calculation('<module>.runs', kind, id, engine_version, inputs,
+  results, series)` (or `start_calculation()` then `finish_calculation()`) writes it with
   the series it computed, whose `source` names it; the same identity gives
   the same run, a finished run and its series never change
-  (`run_is_final()`), and two runs never share a series.
-- **design variants** are the `solar` module's (`solar.scenarios`): the
+  (`calculation_is_final()`), and two runs never share a series.
+- **design variants** are the `solar` module's (`solar.variants`): the
   arrays and horizons of a variant of a participant's PV. The core holds
   the world as it is; a planned device has the status `planned`.
 
@@ -365,7 +365,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, and the shares an engine computes, as its `runs` |
 | `building` | `building` | the physical description of the place of a participant: `profiles` (the uses of a building or a place), `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree, with the participant that occupies one) and `surfaces` (roof faces, facades, ground areas), each described in its columns, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
-| `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`scenarios`) and the `runs` that computed yields, performance and exceedance |
+| `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `runs` that computed yields, performance and exceedance |
 | `consumption` | `consumption` | load profiles, activity hours and the `runs` that reconstructed a curve |
 | `weather`, `tasks` | their own | weather models, points and which participants read them; tasks as data |
 

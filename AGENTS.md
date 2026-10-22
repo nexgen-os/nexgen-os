@@ -72,7 +72,7 @@ Four things only you do here:
   weather or readings through a connector (`packages/connectors/`), each of
   which writes the provenance for you;
 - **run**: a computation of a module, which lands as a run of that module
-  (`solar.runs`, `consumption.runs`, `community.runs`) with its inputs and
+  (`solar.estimates`, `consumption.estimates`, `community.settlements`) with its inputs and
   its engine version; the same inputs give the same figure, and a finished
   run never changes.
 
@@ -104,7 +104,7 @@ Four things only you do here:
    (`packages/formats/cityjson`), a roof face with its azimuth and tilt; a PV system and its arrays, each with its own
    orientation; the geocoder for an address.
 4. **Compute as a run**: a yield through `modules/solar/src/yield.ts` with a
-   named profile, kept in `solar.runs`; read it back with
+   named profile, kept in `solar.estimates`; read it back with
    `resample(series, from, to, step)`.
 5. **Show, then let the person decide**: what you attached, what the run
    read, what it did not model (`DISCLAIMER.md`). Nothing you did needs

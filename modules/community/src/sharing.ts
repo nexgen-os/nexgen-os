@@ -1,4 +1,4 @@
-// Energy sharing in a project, computed by an engine and recorded as a run.
+// Energy sharing in a project, computed by an engine and recorded as a settlement.
 //
 // The module reads, it does not share: it gathers the participants of a
 // project taking part over the period, the offtake and injection metered
@@ -9,7 +9,7 @@
 // kind (packages/core/src/connectors/sharing.ts) and stores what the engine
 // answers — for each participant, what it received from the sharing and
 // gave to it, and what is left for its supplier and the grid — as
-// simulated series of the run, on the participant.
+// simulated series of the settlement, on the participant.
 //
 // Conventions: every stamp dates the start of its step, in UTC; energy in
 // kWh per step. A participant with no series of a direction (a producer's
@@ -31,7 +31,7 @@ import {
   type SharingParticipant,
 } from '@nexgen-os/core';
 
-export interface SharingRunRequest {
+export interface SettlementRequest {
   projectId: string;
   /** The period, `[from, to)`, as instants; `from` on the grid of `step`. */
   from: string;
@@ -43,9 +43,9 @@ export interface SharingRunRequest {
   engine: EngineSpec;
 }
 
-export interface SharingRunResult {
-  runId: string;
-  /** What the engine said it is: the string the run records. */
+export interface SettlementResult {
+  settlementId: string;
+  /** What the engine said it is: the string the settlement records. */
   engine: string;
   sharedKwh: number;
   /** For each participant, the series of each output. */
@@ -70,7 +70,7 @@ interface ParticipantRow {
 
 const iso = (at: string | Date) => new Date(at).toISOString().replace('.000Z', 'Z');
 
-export async function runSharing(db: Db, request: SharingRunRequest): Promise<SharingRunResult> {
+export async function settleSharing(db: Db, request: SettlementRequest): Promise<SettlementResult> {
   const project = (await db.query<{ id: string }>('select id from projects where id = $1', [request.projectId])).rows[0];
   if (!project) throw new Error(`project_not_found: ${request.projectId}`);
 
@@ -163,14 +163,14 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
     conventions: { time: 'interval start, UTC', energy: 'kWh per step', missing_direction: 'zeros' },
   };
 
-  // The run of these inputs and this engine: the finished one when it exists, the engine is not started again.
-  const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('community.runs', 'project', $2, $1, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
+  // The settlement of these inputs and this engine: the finished one when it exists, the engine is not started again.
+  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
+    `select calculation_id, finished from start_calculation('community.settlements', 'project', $2, $1, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
     const done = (await db.query<{ results: { totals: Record<string, number>; participants: { id: string; series: Record<string, string> }[] } }>(
-      'select results from community.runs where id = $1', [started.run_id])).rows[0].results;
-    return { runId: started.run_id, engine: described.version, sharedKwh: Number(done.totals?.shared_energy ?? 0), series: Object.fromEntries(done.participants.map((p) => [p.id, p.series])) };
+      'select results from community.settlements where id = $1', [started.calculation_id])).rows[0].results;
+    return { settlementId: started.calculation_id, engine: described.version, sharedKwh: Number(done.totals?.shared_energy ?? 0), series: Object.fromEntries(done.participants.map((p) => [p.id, p.series])) };
   }
 
   const engineRequest: EnergySharingRequest = {
@@ -192,7 +192,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
         throw new Error(`engine_contract_mismatch: ${request.engine.name} answered no ${quantity} on the grid for participant ${p.name}`);
       }
       const { seriesId } = await store(db, {
-        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, source: `community.runs:${started.run_id}`,
+        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, source: `community.settlements:${started.calculation_id}`,
       }, s.values, { unit: s.unit ?? null });
       stored[p.id][quantity] = seriesId;
     }
@@ -203,6 +203,6 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
     meta: answer.result.meta,
     participants: participants.map((p) => ({ id: p.id, totals: answer.result.participants.find((r) => r.id === p.id)!.totals, series: stored[p.id] })),
   };
-  await db.query(`select finish_run('community.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(results)]);
-  return { runId: started.run_id, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
+  await db.query(`select finish_calculation('community.settlements', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(results)]);
+  return { settlementId: started.calculation_id, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
 }

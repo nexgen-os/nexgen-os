@@ -12,7 +12,7 @@
 
 import { pathToFileURL } from 'node:url';
 import type { Db } from '@nexgen-os/core';
-import { runYield, type YieldClients, type YieldResult } from '../modules/solar/src/yield.js';
+import { estimateYield, type YieldClients, type YieldResult } from '../modules/solar/src/yield.js';
 import { connect } from '../packages/cli/src/sql.js';
 
 export interface MonthOfYield {
@@ -28,7 +28,7 @@ export async function yieldOfSystem(
   year: number,
   clients?: YieldClients,
 ): Promise<{ result: YieldResult; months: MonthOfYield[] }> {
-  const result = await runYield(db, { pvSystemId, years: { from: year, to: year } }, clients);
+  const result = await estimateYield(db, { pvSystemId, years: { from: year, to: year } }, clients);
   const { rows } = await db.query<{ month: string; kwh: number }>(
     `select to_char(bucket at time zone 'UTC', 'YYYY-MM') as month, round(value::numeric, 1)::float8 as kwh
        from resample($1, $2::timestamptz, $3::timestamptz, '1 month', 'UTC')
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     await client.exec('set search_path = nexgen, public, extensions');
     const db: Db = { query: async <T>(sql: string, params?: unknown[]) => ({ rows: await client.query<T>(sql, params) }) };
     const { result, months } = await yieldOfSystem(db, pvSystemId, year);
-    console.log(`run ${result.runId}: ${Math.round(result.annualKwh)} kWh in ${year}, ${Math.round(result.kwhPerKwp)} kWh/kWp on ${result.kwp} kWp (${result.radiationDb})`);
+    console.log(`run ${result.estimateId}: ${Math.round(result.annualKwh)} kWh in ${year}, ${Math.round(result.kwhPerKwp)} kWh/kWp on ${result.kwp} kWp (${result.radiationDb})`);
     for (const { month, kwh } of months) console.log(`  ${month}  ${kwh} kWh`);
   } finally {
     await client.close();

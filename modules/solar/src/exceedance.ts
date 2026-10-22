@@ -1,6 +1,6 @@
-// P50 and P90 of a yield run: the energy a year exceeds with a probability.
+// P50 and P90 of a yield estimate: the energy a year exceeds with a probability.
 //
-// A yield run on real years gives one total per year. Their mean is the
+// A yield estimate on real years gives one total per year. Their mean is the
 // P50; their spread from one year to the next is the interannual
 // variability, the one component of the uncertainty the weather itself
 // measures. The others — the irradiance dataset, the transposition, the
@@ -12,8 +12,8 @@
 //   σ = √(σ_interannual² / horizon + Σ σ_i²),   P_x = P50 · (1 − z_x · σ)
 //
 // with `horizon` the number of years the figure is for (1: any one year;
-// 10: the mean of ten years, whose weather varies less). The result is a run
-// of the `solar` module that names the yield run, the yearly totals and every
+// 10: the mean of ten years, whose weather varies less). The result is an estimate
+// of the `solar` module that names the yield estimate, the yearly totals and every
 // component, so that anyone can redo it.
 
 import type { Db } from '@nexgen-os/core';
@@ -22,8 +22,8 @@ import { annualTotals } from './pvwatts.js';
 export const EXCEEDANCE_ENGINE_VERSION = 'solar-exceedance-0.3.0';
 
 export interface ExceedanceRequest {
-  /** A yield run of the `solar` module on real years. */
-  yieldRunId: string;
+  /** A yield estimate of the `solar` module on real years. */
+  yieldEstimateId: string;
   /** The components the years do not measure, each a standard deviation in percent of the P50. */
   uncertainties?: { code: string; pct: number }[];
   /** The probabilities of exceedance asked for, in percent. Default 75, 90, 99. */
@@ -33,7 +33,7 @@ export interface ExceedanceRequest {
 }
 
 export interface ExceedanceResult {
-  runId: string;
+  estimateId: string;
   p50_kwh: number;
   /** `{ "90": kWh, … }`. */
   exceedance_kwh: Record<string, number>;
@@ -43,23 +43,23 @@ export interface ExceedanceResult {
 }
 
 /**
- * Named errors: `run_not_found`, `real_years_required` (a typical year, or
+ * Named errors: `estimate_not_found`, `real_years_required` (a typical year, or
  * fewer than two complete years), `time_zone_required`.
  */
 export async function exceedance(db: Db, request: ExceedanceRequest): Promise<ExceedanceResult> {
-  const run = (
+  const estimate = (
     await db.query<{ id: string; device_id: string; inputs: { weather?: { years?: { from: number; to: number } } }; results: { series_id?: string; typical_months?: unknown } }>(
-      `select id, device_id, inputs, results from solar.runs where id = $1`,
-      [request.yieldRunId],
+      `select id, device_id, inputs, results from solar.estimates where id = $1`,
+      [request.yieldEstimateId],
     )
   ).rows[0];
-  const years = run?.inputs.weather?.years;
-  if (!run || !run.results.series_id || !years) throw new Error(`run_not_found: ${request.yieldRunId} is not a yield run`);
-  if (run.results.typical_months) throw new Error('real_years_required: the run gives one typical year; P50 and P90 need a run on real years');
+  const years = estimate?.inputs.weather?.years;
+  if (!estimate || !estimate.results.series_id || !years) throw new Error(`estimate_not_found: ${request.yieldEstimateId} is not a yield estimate`);
+  if (estimate.results.typical_months) throw new Error('real_years_required: the estimate gives one typical year; P50 and P90 need an estimate on real years');
 
-  const seriesId = run.results.series_id;
+  const seriesId = estimate.results.series_id;
   const tz = (await db.query<{ tz: string | null }>('select series_time_zone($1) tz', [seriesId])).rows[0]?.tz;
-  if (!tz) throw new Error('time_zone_required: the years of the run are cut in the participant\'s time zone');
+  if (!tz) throw new Error('time_zone_required: the years of the estimate are cut in the participant\'s time zone');
   const values = (
     await db.query<{ bucket: string | Date; value: number }>(
       `select bucket, value from resample($1, ($2::text || '-01-01')::timestamp at time zone $4, ($3::text || '-01-01')::timestamp at time zone $4, '1 hour')`,
@@ -67,7 +67,7 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
     )
   ).rows.map((r) => ({ at: new Date(r.bucket).toISOString(), value: r.value }));
   const totals = annualTotals(values, tz, years);
-  if (totals.length < 2) throw new Error(`real_years_required: ${totals.length} complete year in the run; the spread needs two or more`);
+  if (totals.length < 2) throw new Error(`real_years_required: ${totals.length} complete year in the estimate; the spread needs two or more`);
 
   const horizon = request.horizonYears ?? 1;
   if (!(horizon >= 1)) throw new Error('horizon_invalid: the horizon is one year or more');
@@ -83,7 +83,7 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
   const total = Math.sqrt(overHorizon ** 2 + uncertainties.reduce((s, u) => s + (u.pct / 100) ** 2, 0));
   const exceedanceKwh = Object.fromEntries(probabilities.map((p) => [String(p), round(p50 * (1 - normalQuantile(p / 100) * total), 3)]));
 
-  const result: Omit<ExceedanceResult, 'runId'> = {
+  const result: Omit<ExceedanceResult, 'estimateId'> = {
     p50_kwh: round(p50, 3),
     exceedance_kwh: exceedanceKwh,
     sigma: { interannual: round(interannual, 6), interannual_over_horizon: round(overHorizon, 6), total: round(total, 6) },
@@ -91,19 +91,19 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
   };
   const inputs = {
     kind: 'exceedance',
-    yield_run_id: run.id,
+    yield_estimate_id: estimate.id,
     series_id: seriesId,
     years: result.years,
     uncertainties,
     probabilities,
     horizon_years: horizon,
-    method: 'normal distribution of the annual energy; interannual variability from the years of the run (sample standard deviation), divided by the square root of the horizon; the named components added in quadrature',
+    method: 'normal distribution of the annual energy; interannual variability from the years of the estimate (sample standard deviation), divided by the square root of the horizon; the named components added in quadrature',
   };
   const recorded = await db.query<{ id: string }>(
-    `select record_run('solar.runs', 'device', $2, $1, $3::jsonb, $4::jsonb) id`,
-    [EXCEEDANCE_ENGINE_VERSION, run.device_id, JSON.stringify(inputs), JSON.stringify(result)],
+    `select record_calculation('solar.estimates', 'device', $2, $1, $3::jsonb, $4::jsonb) id`,
+    [EXCEEDANCE_ENGINE_VERSION, estimate.device_id, JSON.stringify(inputs), JSON.stringify(result)],
   );
-  return { runId: recorded.rows[0].id, ...result };
+  return { estimateId: recorded.rows[0].id, ...result };
 }
 
 /**

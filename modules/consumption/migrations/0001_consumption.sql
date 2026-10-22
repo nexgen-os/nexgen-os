@@ -8,10 +8,10 @@
 -- hours of a participant — and reads the curve of a participant whichever way it is
 -- known (`consumption.curve()`).
 --
--- A reconstruction is a run of this module (`consumption.runs`,
+-- A reconstruction is an estimate of this module (`consumption.estimates`,
 -- `modules/consumption/src/curve.ts`): its curve is a `simulated` series of
--- the core on the participant the run is about, with the source of the
--- energy it was scaled to, and the run named in its source.
+-- the core on the participant the estimate is about, with the source of the
+-- energy it was scaled to, and the estimate named in its source.
 --
 -- A load profile says which use it describes, by the code the `building`
 -- module gives that use (`building.profiles`) when it is installed. The
@@ -156,10 +156,10 @@ create trigger activity_hours_attach
 call secure_table('consumption.activity_hours');
 
 -- ---------------------------------------------------------------------------
--- runs — what the module computed (decision 0004).
+-- estimates — what the module computed (decision 0004).
 -- ---------------------------------------------------------------------------
 
-create table consumption.runs (
+create table consumption.estimates (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- The participant whose consumption was reconstructed.
@@ -169,21 +169,21 @@ create table consumption.runs (
   -- sha256 of the table, engine version and inputs: the identity of a result.
   inputs_hash      text not null,
   results          jsonb,
-  status           text not null default 'running',
+  status           text not null default 'started',
   started_at       timestamptz not null default now(),
   finished_at      timestamptz,
-  constraint runs_status check (status in ('running', 'succeeded')),
-  constraint runs_finished check ((status = 'running') = (finished_at is null))
+  constraint estimates_status check (status in ('started', 'finished')),
+  constraint estimates_finished check ((status = 'started') = (finished_at is null))
 );
 
-comment on table consumption.runs is
-  'The consumption curves the module reconstructed for a participant: inputs, engine version, results; the series a run wrote name it in their source. Immutable once finished; same inputs + same engine = same run.';
+comment on table consumption.estimates is
+  'The consumption curves the module reconstructed for a participant: inputs, engine version, results; the series an estimate wrote name it in their source. Immutable once finished; same inputs + same engine = same estimate.';
 
-create unique index runs_one_success_per_input on consumption.runs (organisation_id, inputs_hash) where status = 'succeeded';
-create index runs_participant_id_idx on consumption.runs (participant_id);
-create trigger runs_is_final before update on consumption.runs
-  for each row execute function run_is_final();
-call secure_table('consumption.runs');
+create unique index estimates_one_per_input on consumption.estimates (organisation_id, inputs_hash) where status = 'finished';
+create index estimates_participant_id_idx on consumption.estimates (participant_id);
+create trigger estimates_is_final before update on consumption.estimates
+  for each row execute function calculation_is_final();
+call secure_table('consumption.estimates');
 
 
 -- ---------------------------------------------------------------------------
@@ -204,12 +204,12 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
   select se.id
     from series se
-    left join consumption.runs r on se.source = 'consumption.runs:' || r.id
+    left join consumption.estimates e on se.source = 'consumption.estimates:' || e.id
    where se.quantity_code = 'consumption_energy'
      and (se.object_id = p_participant_id or participant_of(se.object_kind, se.object_id) = p_participant_id)
-     and (se.kind = 'measured' or (se.kind = 'simulated' and r.status = 'succeeded'))
+     and (se.kind = 'measured' or (se.kind = 'simulated' and e.status = 'finished'))
      and exists (select 1 from series_values v where v.series_id = se.id and v.at >= p_from and v.at < p_to and v.quality <> 3)
-   order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, r.finished_at desc nulls last, se.created_at desc
+   order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, e.finished_at desc nulls last, se.created_at desc
    limit 1;
 $$;
 
@@ -239,4 +239,4 @@ grant execute on function consumption.curve(uuid, timestamptz, timestamptz, inte
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('consumption', 'Consumption', '0.3.0', 'consumption', '0.3.0',
-        'The consumption curve of a participant: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as a run, and the curve read measured first.');
+        'The consumption curve of a participant: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as an estimate, and the curve read measured first.');

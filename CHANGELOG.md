@@ -60,8 +60,8 @@ version `0.3.0`, schema floor `0.3.0`.
   cascade, `parameter_of()`
   ([0002](docs/decisions/0002-standards-as-vocabulary-mappings.md),
   [0021](docs/decisions/0021-one-cascade-of-defaults.md)).
-- The gesture every module's runs share: `record_run()`, `start_run()`,
-  `finish_run()`, `run_hash()`, `run_is_final()`
+- The gesture every module's runs share: `record_calculation()`, `start_calculation()`,
+  `finish_calculation()`, `calculation_hash()`, `calculation_is_final()`
   ([0004](docs/decisions/0004-a-figure-is-a-run.md)).
 - Sources and an organisation's connectors, naming their secret
   ([0011](docs/decisions/0011-external-data.md)); row level security on

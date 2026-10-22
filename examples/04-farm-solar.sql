@@ -53,7 +53,7 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 
 -- The orientation each estimate assumed: the barn roof faces south-south-east
 -- at 15°, the ground array south on flat ground, the carport south at 10°.
-select record_run('solar.runs', 'device', d.id, 'pvgis-5.3+solar-0.3.0',
+select record_calculation('solar.estimates', 'device', d.id, 'pvgis-5.3+solar-0.3.0',
   jsonb_build_object('source', 'pvgis', 'peak_kw', d.rated_power_kw, 'tilt', o.tilt_deg, 'azimuth', o.azimuth_deg, 'loss_pct', 14),
   jsonb_build_object('annual_kwh', round(d.rated_power_kw * o.specific_yield)))
   from devices d
@@ -65,7 +65,7 @@ select record_run('solar.runs', 'device', d.id, 'pvgis-5.3+solar-0.3.0',
 -- Queries a page would run
 -- The arrays, the orientation their estimate assumed and what they are expected to give:
 --   select d.name, r.inputs->>'azimuth' azimuth, r.inputs->>'tilt' tilt, d.rated_power_kw, d.status, r.results->>'annual_kwh' annual_kwh
---     from devices d left join solar.runs r on r.device_id = d.id
+--     from devices d left join solar.estimates r on r.device_id = d.id
 --    where d.device_type = 'solar' and d.organisation_id = '00000000-0000-4000-8000-000400000001' order by d.name;
 -- The meters the farm's devices are behind:
 --   select m.name from meters m where m.id in (select meter_id from participant_meters('00000000-0000-4000-8000-000400000010')) order by 1;

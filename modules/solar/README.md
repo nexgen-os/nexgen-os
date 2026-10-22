@@ -5,9 +5,9 @@ Decision [0012](../../docs/decisions/0012-a-yield-says-what-it-was-computed-from
 A PV yield is comparable with a PVsyst, PV\*SOL or PVGIS result only when it
 says which weather, which period, which time convention, which models and
 which losses it was computed with. This module holds those inputs as data.
-Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is a
-run of this module, kept in `solar.runs` and written through the core's
-gesture, `record_run('solar.runs', …)`
+Engines (pvlib, PVGIS, SAM) run outside Postgres; what they compute is an
+estimate, kept in `solar.estimates` and written through the core's
+gesture, `record_calculation('solar.estimates', …)`
 ([0004](../../docs/decisions/0004-a-figure-is-a-run.md)).
 
 ## Conventions
@@ -26,14 +26,14 @@ gesture, `record_run('solar.runs', …)`
 | `solar.pv_systems` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
 | `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `device_directory` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `device_directory`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
-| `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and scenario, with its source |
-| `solar.scenarios` | a design variant of a participant's PV, on top of another one when it has a parent (`solar.create_scenario()`): the arrays and horizons with a scenario exist only in it and the scenarios built on it |
-| `solar.runs` | what the module computed for a PV system — a yield, IEC 61724-1 indicators, an exceedance: inputs, engine version, results; the series a run wrote name it in their source (`solar.runs:<id>`) and hang on the system, an array's told apart by its name |
+| `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and variant, with its source |
+| `solar.variants` | a design variant of a participant's PV, on top of another one when it has a parent (`solar.create_variant()`): the arrays and horizons with a variant exist only in it and the variants built on it |
+| `solar.estimates` | what the module computed for a PV system — a yield, IEC 61724-1 indicators, an exceedance: inputs, engine version, results; the series an estimate wrote name it in their source (`solar.estimates:<id>`) and hang on the system, an array's told apart by its name |
 | `solar.yield_profiles` | named modelling choices: decomposition, transposition, incidence, temperature model and parameters, spectral, ordered losses, clipping. A vocabulary, read by everyone signed in |
 
-`solar.system_kwp(system, scenario?)` gives the DC power of a system: the sum
-of its arrays (those of reality, and those of the scenario and the
-scenarios it builds on), or its own `kwp_dc` when it has none.
+`solar.system_kwp(system, variant?)` gives the DC power of a system: the sum
+of its arrays (those of reality, and those of the variant and the
+variants it builds on), or its own `kwp_dc` when it has none.
 
 ## Soiling of a place
 
@@ -46,16 +46,16 @@ its participant, attached like any other with its source and its period.
 answers for its system: the system's, its participant's, its organisation's, its
 pack's; null when nobody says it.
 
-A yield run reads it for each array at the start of the first year asked
+A yield estimate reads it for each array at the start of the first year asked
 and puts it in place of the profile's own `soiling` loss, at its rank: it
 replaces the 2 % of `pvsyst_like` and fills the null of `pvsol_like`. A
 profile that folds soiling into one aggregate loss (`system` of
 `pvgis_like` and `pvwatts`) keeps that loss whole, so that soiling is never
-counted twice; the run records, per array, the soiling found, where it was
+counted twice; the estimate records, per array, the soiling found, where it was
 found, and `applied: false` with the reason. An engine request carries one
 list of losses: arrays whose soiling differs throw a named error
 (`losses_differ_between_arrays`); say the soiling on the system or the participant
-for an engine run. A fraction outside [0, 1) throws `soiling_out_of_range`.
+for an engine estimate. A fraction outside [0, 1) throws `soiling_out_of_range`.
 
 ## The parameters of a study, and where they live here
 
@@ -64,22 +64,22 @@ losses, and where it is held in this module:
 
 | Parameter | Here | Read by |
 |---|---|---|
-| tilt, azimuth | `solar.pv_arrays` (degrees clockwise from north) | every run |
+| tilt, azimuth | `solar.pv_arrays` (degrees clockwise from north) | every estimate |
 | mounting | `solar.pv_arrays.mounting` | PVGIS (`building` / `free`), engines (temperature parameters) |
 | far horizon | `solar.horizons` | not yet in the hourly shape (PVGIS's own reaches the annual through anchoring) |
-| ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its run says the array's albedo is not applied |
-| bifacial modules | `solar.pv_arrays.bifacial` | recorded `not modelled` by every run: no rear-side gain is applied |
-| soiling | `soiling_loss` on the array, the system or the participant | every run, in place of the profile's `soiling` loss |
-| mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every run |
+| ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its estimate says the array's albedo is not applied |
+| bifacial modules | `solar.pv_arrays.bifacial` | recorded `not modelled` by every estimate: no rear-side gain is applied |
+| soiling | `soiling_loss` on the array, the system or the participant | every estimate, in place of the profile's `soiling` loss |
+| mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every estimate |
 | temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
-| degradation | `solar.pv_systems.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to a run |
+| degradation | `solar.pv_systems.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to an estimate |
 
 ## Yield profiles shipped
 
 | Code | Imitates | Choices |
 |---|---|---|
 | `pvgis_like` | PVGIS PVcalc | SARAH / ERA5 components, Muneer, DEM horizon, Faiman 26.9 / 6.2, `system` 14 %, no clipping |
-| `pvwatts` | PVWatts v8, as `runYield` runs it | transposition by the weather source (Open-Meteo's `global_tilted_irradiance`), Faiman 25 / 6.84, PVWatts DC model, `system` 14 %; no inverter model, no clipping |
+| `pvwatts` | PVWatts v8, as `estimateYield` computes it | transposition by the weather source (Open-Meteo's `global_tilted_irradiance`), Faiman 25 / 6.84, PVWatts DC model, `system` 14 %; no inverter model, no clipping |
 | `pvsyst_like` | PVsyst 8 | transposition not verified (null), Uc 29 / Uv 0, losses in the loss-diagram order: iam, soiling 2, lid 2, module_quality −0.75, mismatch 2, dc_wiring 1.5, ac_wiring 1, availability 0 (usual starting values, not verified defaults) |
 | `pvsol_like` | PV\*SOL premium 2026 | Hofmann, Hay-Davies, ΔT per mounting (22 / 29 / 32 / 43 / 20 K), losses without values (PV\*SOL's defaults not verified) |
 
@@ -87,15 +87,15 @@ Each row's `description` says which values are published defaults and
 which were not verified; a column naming a model nobody runs or nobody
 verified is null.
 
-## Yield runs
+## Yield estimates
 
-`runYield(db, request, clients)` (`yield.ts`) runs two of the profiles. Both
+`estimateYield(db, request, clients)` (`yield.ts`) computes two of the profiles. Both
 store the hourly energy as a `simulated` `production_energy` series on the
 PV system (kWh per hour, dated at the start of the hour, UTC), the air
-temperature at its participant's place, and a run (`solar.runs`) whose inputs
+temperature at its participant's place, and an estimate (`solar.estimates`) whose inputs
 say which weather, which period, which arrays, which models and losses, and
-which conventions it was computed with. Two runs on the same roof are
-compared by reading their `solar.runs.inputs` side by side.
+which conventions it was computed with. Two estimates on the same roof are
+compared by reading their `solar.estimates.inputs` side by side.
 
 The request: `pvSystemId`, `years` (`from`, `to`, whole calendar years),
 `profileCode` (`pvgis_like` unless given). The arrays are the system's
@@ -137,62 +137,62 @@ read with one day more on each side, then cut at the local new year.
    covering less than 95 % of the month is no candidate; the most recent
    year wins a tie). The months are chosen once for the system, so every
    array reads the same days. The year is laid on the local calendar of
-   `years.to` (the run's `calendar_year`), 29 February left out, 8,760
+   `years.to` (the estimate's `calendar_year`), 29 February left out, 8,760
    values: an hour the chosen month lacks takes the multi-year mean of that
-   hour (`hours_from_mean` in the run), and an hour no year has throws a
+   hour (`hours_from_mean` in the estimate), and an hour no year has throws a
    named error (`period_not_covered`). The year is then scaled to the mean
    annual total over the years used. It is stored in a series of its own,
    named `typical year <from>-<to>`, apart from the real years.
    **Real years** (`typicalYear: false`): the series as it is; the annual
    is the mean over the years covered, a year counting when at least 95 %
-   of its hours have a value. The run records `years_covered`; when no
+   of its hours have a value. The estimate records `years_covered`; when no
    year is covered, a named error (`period_not_covered`).
 6. **Anchor** (`anchor: 'pvgis'`): each array's annual is brought to PVGIS's
    `PVcalc` yearly yield for the same array (same orientation, mounting and
    total loss) by one factor applied to every hour. The factors, PVGIS's
-   radiation database and the system's factor are in the run.
+   radiation database and the system's factor are in the estimate.
 
-What `pvwatts` does not model, and says so in the run: inverter efficiency
+What `pvwatts` does not model, and says so in the estimate: inverter efficiency
 and clipping, incidence angle and spectral losses, the far horizon in the
 hourly shape (PVGIS's horizon only reaches the annual, through the
 anchoring), and the rear side of a bifacial array: no gain is applied, and
-the run records `bifacial: 'not modelled'` for each bifacial array.
+the estimate records `bifacial: 'not modelled'` for each bifacial array.
 
-## Yield runs computed by an engine
+## Yield estimates computed by an engine
 
 A profile and an engine are two axes. The profile chooses the weather,
 the models and the losses; the engine computes them. With `engine: { name:
 'pvlib', command? }` (decision [0013](../../docs/decisions/0013-a-program-connector-reads-one-request.md),
-[`packages/connectors/pvlib`](../../packages/connectors/pvlib/README.md)), `runYield` runs any
+[`packages/connectors/pvlib`](../../packages/connectors/pvlib/README.md)), `estimateYield` computes any
 profile whose models the engine has, and needs `profileCode`
 (`profile_required` otherwise) and the participant's time zone:
 
 | Read from | Sent to the engine |
 |---|---|
-| the system, its arrays and their products (the same rows as the other runs) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several); an `ond` product as the Sandia model fitted on its efficiency curves as pvlib's `fit_sandia` does ([`inverter.ts`](src/inverter.ts)), recorded in the run's inputs with `fitted_from: 'ond'`; a Sandia, ADR or OND inverter needs module products whose model gives the DC voltage (`inverter_needs_voltage` on the PVWatts DC model) |
+| the system, its arrays and their products (the same rows as the other estimates) | each array's orientation, mounting and albedo; its module product's model and parameters with `modules_per_string` and `strings` (`array_without_layout` when a `cec`, `pvsyst` or `sapm` product has no count), or the PVWatts DC model on the array's power and γ (as `pvwatts`); the arrays' one inverter product, or `no_loss` when none is named (`inverters_differ` when they name several); an `ond` product as the Sandia model fitted on its efficiency curves as pvlib's `fit_sandia` does ([`inverter.ts`](src/inverter.ts)), recorded in the estimate's inputs with `fitted_from: 'ond'`; a Sandia, ADR or OND inverter needs module products whose model gives the DC voltage (`inverter_needs_voltage` on the PVWatts DC model) |
 | the profile | decomposition, transposition, incidence (`iam_model`, `no_loss` when null), spectral, temperature model and parameters, the ordered losses as fractions |
 | the weather connector (Open-Meteo's ERA5 archive), the years in the participant's local calendar | a profile with a transposition: `ghi`, `dni`, `dhi` once for the participant (`ghi` alone when it names a decomposition); without one: each array's `poa_irradiance`, as `pvwatts` reads it; temperature and wind speed |
 
 What the engine answers is stored as it comes, in series named
 `<engine> <from>-<to>`: `production_energy` on the system,
 `poa_irradiance` and `module_temperature` on each array (on the system for
-a system without arrays). The run's `engine_version` is the engine's string
+a system without arrays). The estimate's `engine_version` is the engine's string
 from `describe` (`pvlib 0.16.1`); its inputs keep the profile, the engine
 with its dependencies, the weather read and the models as the engine
 resolved them (`model`); its results the annual (the mean over the years
 covered, as for real years), the specific yield and the series. The typical
 year and the anchoring on PVGIS belong to `pvwatts` and are not applied to
-an engine's run.
+an engine's estimate.
 
-## P50 and P90 of a yield run
+## P50 and P90 of a yield estimate
 
-`exceedance(db, { yieldRunId, uncertainties?, probabilities?, horizonYears? })`
-([`exceedance.ts`](src/exceedance.ts)) reads a yield run on real years — an
-engine run or `pvwatts` with `typicalYear: false` — and gives the energy a
+`exceedance(db, { yieldEstimateId, uncertainties?, probabilities?, horizonYears? })`
+([`exceedance.ts`](src/exceedance.ts)) reads a yield estimate on real years — an
+engine estimate or `pvwatts` with `typicalYear: false` — and gives the energy a
 year exceeds with each probability asked (75, 90 and 99 % by default):
 
-- the yearly totals of the run's `production_energy`, in the participant's local
-  standard time, a year counting with 95 % of its hours (as the runs count
+- the yearly totals of the estimate's `production_energy`, in the participant's local
+  standard time, a year counting with 95 % of its hours (as the estimates count
   them); their mean is the P50;
 - the interannual variability, their sample standard deviation relative to
   the P50, divided by √`horizonYears` (1: any one year; 10: the mean of ten);
@@ -201,9 +201,9 @@ year exceeds with each probability asked (75, 90 and 99 % by default):
   standard deviations in percent and added in quadrature;
 - `P_x = P50 · (1 − z_x · σ)`, the annual energy taken as normal.
 
-The result is a run of `solar` (`solar-exceedance-0.3.0`) naming the yield
-run, the yearly totals, the components and the horizon. Named errors:
-`run_not_found`, `real_years_required` (a typical year, or fewer than two
+The result is an estimate of `solar` (`solar-exceedance-0.3.0`) naming the yield
+estimate, the yearly totals, the components and the horizon. Named errors:
+`estimate_not_found`, `real_years_required` (a typical year, or fewer than two
 complete years), `time_zone_required`, `probability_invalid`,
 `uncertainty_invalid`, `horizon_invalid`.
 
@@ -215,7 +215,7 @@ Production power and energy and the generic `irradiance` are the core's.
 
 ## Performance against the measurement
 
-`performanceIndicators(db, { pvSystemId, from, to, yieldRunId? })`
+`performanceIndicators(db, { pvSystemId, from, to, yieldEstimateId? })`
 ([`performance.ts`](src/performance.ts)) gives the indicators of IEC 61724-1
 for whole days in the participant's time zone, in total and by month:
 
@@ -224,18 +224,18 @@ for whole days in the participant's time zone, in total and by month:
 | final yield `final_yield_h` | measured `production_energy` of the system ÷ its `kwp_dc` |
 | reference yield `reference_yield_h` | in-plane irradiation ÷ 1 kW/m² |
 | performance ratio | final ÷ reference yield |
-| energy performance index | measured ÷ expected energy, the expected energy being the yield run's `production_energy` (with `yieldRunId`) |
+| energy performance index | measured ÷ expected energy, the expected energy being the yield estimate's `production_energy` (with `yieldEstimateId`) |
 
 Only the hours where every series read has a value count, and their number
 is given: a missing reading is never a dark hour. The in-plane irradiance is
 a `measured` `poa_irradiance` on the system, or on its one array; without
-a sensor, the yield run's simulated irradiance of each array, weighted by
-power, and the answer says `irradiance: 'simulated'`. The result is a run
+a sensor, the yield estimate's simulated irradiance of each array, weighted by
+power, and the answer says `irradiance: 'simulated'`. The result is an estimate
 of `solar` (`solar-iec61724-0.3.0`) whose inputs name each series read with
-its number of hours and its total, so the same readings give the same run
+its number of hours and its total, so the same readings give the same estimate
 and a new reading a new one. Named errors: `pv_system_not_found`,
 `time_zone_required`, `series_not_found`, `irradiance_required`,
-`run_not_of_system`, `period_not_covered`.
+`estimate_not_of_system`, `period_not_covered`.
 
 ## Not here yet
 

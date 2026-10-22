@@ -68,7 +68,7 @@ describe('store()', () => {
     await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', value_kind: 'interval', step: '1 hour' }, one_)).rejects.toThrow(/series_value_kind_mismatch/);
     await expect(store(db, s, [...one_, ...one_])).rejects.toThrow(/values_duplicated/);
     await expect(store(db, s, [{ at: '2026-05-04T09:00:00Z', value: 1, quality: 42 }])).rejects.toThrow(/quality_unknown/);
-    await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', kind: 'simulated', value_kind: 'instant' }, one_)).rejects.toThrow(/series_run_required/);
+    await expect(store(db, { object_kind: 'device', object_id: meter, quantity_code: 'power', kind: 'simulated', value_kind: 'instant' }, one_)).rejects.toThrow(/series_calculation_required/);
     await expect(store(db, s, one_, { issuedAt: '2026-05-04T00:00:00Z' })).rejects.toThrow(/not_a_forecast/);
   });
 

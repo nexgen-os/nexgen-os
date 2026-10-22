@@ -1,5 +1,5 @@
 // The consumption curve of a participant, reconstructed: an energy spread over its
-// period by a load profile, recorded as a run.
+// period by a load profile, recorded as an estimate.
 //
 // A bill says how much a participant consumed between two dates; an annual
 // consumption says how much in a year. Neither says when. A load profile
@@ -143,7 +143,7 @@ export function spreadEnergy(kwh: number, slots: WeightedSlot[]): SeriesPoint[] 
 }
 
 // ---------------------------------------------------------------------------
-// The run
+// The estimate
 // ---------------------------------------------------------------------------
 
 export interface ReconstructionRequest {
@@ -162,7 +162,7 @@ export interface ReconstructionRequest {
 }
 
 export interface ReconstructionResult {
-  runId: string;
+  estimateId: string;
   seriesId: string;
   kwh: number;
   step: string;
@@ -209,24 +209,24 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
     conventions: { time: 'interval start, UTC', energy: 'kWh per slot', days: 'local days of the participant, daylight-saving time included', holidays: 'not modelled' },
   };
 
-  // The run of these inputs: the finished one when it exists, else a new
+  // The estimate of these inputs: the finished one when it exists, else a new
   // one whose series is written before it is final.
-  const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('consumption.runs', 'participant', $2, $1, $3::jsonb)`,
+  const started = (await db.query<{ calculation_id: string; finished: boolean }>(
+    `select calculation_id, finished from start_calculation('consumption.estimates', 'participant', $2, $1, $3::jsonb)`,
     [CONSUMPTION_ENGINE_VERSION, request.participantId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
-    const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from consumption.runs where id = $1', [started.run_id])).rows[0];
-    return { runId: started.run_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
+    const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from consumption.estimates where id = $1', [started.calculation_id])).rows[0];
+    return { estimateId: started.calculation_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
   }
   const { seriesId } = await store(db, {
     object_kind: 'participant', object_id: request.participantId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
-    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, source: `consumption.runs:${started.run_id}`,
+    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, source: `consumption.estimates:${started.calculation_id}`,
   }, values);
   const kwh = round(values.reduce((sum, v) => sum + v.value, 0));
   const results = { series_id: seriesId, kwh, step, slots: values.length };
-  await db.query(`select finish_run('consumption.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(results)]);
-  return { runId: started.run_id, seriesId, kwh, step, slots: values.length };
+  await db.query(`select finish_calculation('consumption.estimates', $1, $2::jsonb)`, [started.calculation_id, JSON.stringify(results)]);
+  return { estimateId: started.calculation_id, seriesId, kwh, step, slots: values.length };
 }
 
 /** The participant's annual consumption at the start of the first local day, for a period of one year. */

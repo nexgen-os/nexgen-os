@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { pvgis } from '@nexgen-os/pvgis';
 import type { Fetch } from '@nexgen-os/core';
-import { runYield } from '../modules/solar/src/yield.js';
+import { estimateYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 
 let db: PGlite;
@@ -38,7 +38,7 @@ describe('a pvgis_like yield run', () => {
       asked.push(url);
       return { ok: true, status: 200, json: async () => recorded };
     };
-    const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
+    const result = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
 
     expect(asked).toHaveLength(2);
     const params = asked.map((u) => Object.fromEntries(new URL(u).searchParams)).sort((a, b) => Number(b.peakpower) - Number(a.peakpower));
@@ -60,8 +60,8 @@ describe('a pvgis_like yield run', () => {
     );
     expect(series).toEqual({ kind: 'simulated', source: 'pvgis', n: 48, max: Math.round(0.35008 * 2 * 1e6) / 1e6 });
 
-    const run = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.runs where id = $1', [result.runId]);
-    expect(run.status).toBe('succeeded');
+    const run = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(run.status).toBe('finished');
     expect(run.inputs).toMatchObject({
       profile: 'pvgis_like',
       weather: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', years: { from: 2023, to: 2023 } },
@@ -73,10 +73,10 @@ describe('a pvgis_like yield run', () => {
   });
 
   it('throws named errors for a profile PVGIS cannot run and a system whose participant has no position', async () => {
-    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_runnable_here/);
+    await expect(estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like' })).rejects.toThrow(/profile_not_computable_here/);
     const nowhere = await participant(db, { organisation_id: org, name: 'Nowhere', country: 'BE' });
     const device = await insert(db, 'devices', { organisation_id: org, participant_id: nowhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
-    await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/participant_without_position/);
+    await expect(estimateYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 } })).rejects.toThrow(/participant_without_position/);
   });
 });

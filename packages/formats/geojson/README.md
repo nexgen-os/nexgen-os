@@ -49,8 +49,9 @@ const open = await exportGeoJson(db, { projectId }, { open: true });    // what 
 
 Every feature also carries its `attributes` (read by `attributes_of()` at
 the moment asked) and its `external_ids` — an object of the core only has
-them — and the `runs` every installed module computed on it (`<module>.runs`):
-module, engine version, inputs hash, finish time and results, exactly as
+them — and the `calculations` every installed module computed on it (each
+module's table of them, `solar.estimates`, `community.settlements`…):
+module, table, engine version, inputs hash, finish time and results, exactly as
 the module kept them. The export computes nothing.
 
 - Coordinates: WGS 84 longitude, latitude and height in metres, seven
@@ -74,7 +75,7 @@ consultation, an open-data catalogue:
   (`sources.redistributable = false`) is withheld, with everything on it;
   a participant placed by such a source keeps its address and loses its shape;
 - attributes and identifiers from such a source go;
-- the runs stay: a study shown to the public is its figures beside its
+- the calculations stay: a study shown to the public is its figures beside its
   places.
 
 Whoever publishes still reads the document first: names of participants and

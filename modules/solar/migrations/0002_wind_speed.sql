@@ -2,7 +2,7 @@
 --
 -- The cell temperature of a module depends on the wind that cools it
 -- (Faiman: Tcell = Tair + G / (U0 + U1 · v)). The core has no wind speed
--- quantity, so the module publishes the one its yield runs read: the wind
+-- quantity, so the module publishes the one its yield estimates read: the wind
 -- at 10 m above ground, as weather sources give it.
 
 set search_path = nexgen, public, extensions;

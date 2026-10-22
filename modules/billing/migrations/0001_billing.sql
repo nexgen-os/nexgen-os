@@ -97,10 +97,10 @@ create table billing.invoices (
   -- The first and the last day the invoice covers.
   period_from                 date not null,
   period_to                   date not null,
-  -- The settlement run the amounts came from, by its id in the runs of the
-  -- module that computed it (`community.runs` for a sharing); a module
-  -- never names another module's table, so this is a plain id.
-  run_id                      uuid,
+  -- The settlement the amounts came from, by its id in the table of the
+  -- module that computed it (`community.settlements` for a sharing); a
+  -- module never names another module's table, so this is a plain id.
+  settlement_id                   uuid,
   created_at                  timestamptz not null default now(),
   constraint invoices_kind check (kind in ('sale', 'purchase')),
   constraint invoices_period check (period_to >= period_from),
@@ -108,11 +108,11 @@ create table billing.invoices (
 );
 
 comment on table billing.invoices is
-  'One row per Ekwo invoice issued for or to a participant of the core: the Ekwo id, the participant, the counterparty participant of a bill inside a community, sale or purchase, the period and the settlement run. No amount, currency, status or line: Ekwo holds them.';
+  'One row per Ekwo invoice issued for or to a participant of the core: the Ekwo id, the participant, the counterparty participant of a bill inside a community, sale or purchase, the period and the settlement. No amount, currency, status or line: Ekwo holds them.';
 
 create index invoices_participant_idx on billing.invoices (participant_id, period_from);
 create index invoices_counterparty_idx on billing.invoices (counterparty_participant_id) where counterparty_participant_id is not null;
-create index invoices_run_idx on billing.invoices (run_id) where run_id is not null;
+create index invoices_settlement_idx on billing.invoices (settlement_id) where settlement_id is not null;
 create index invoices_organisation_idx on billing.invoices (organisation_id);
 
 -- The checks of parent_check() on the participant and the counterparty: an
@@ -229,7 +229,7 @@ create or replace function billing.record_invoice(
   p_period_from                 date,
   p_period_to                   date,
   p_counterparty_participant_id uuid default null,
-  p_run_id                      uuid default null
+  p_settlement_id               uuid default null
 )
 returns uuid
 language plpgsql
@@ -250,8 +250,8 @@ begin
     raise exception 'ekwo_invoice_not_found: %', p_ekwo_invoice_id using errcode = 'foreign_key_violation';
   end if;
   begin
-    insert into billing.invoices (id, participant_id, counterparty_participant_id, kind, period_from, period_to, run_id)
-    values (p_ekwo_invoice_id, p_participant_id, p_counterparty_participant_id, p_kind, p_period_from, p_period_to, p_run_id);
+    insert into billing.invoices (id, participant_id, counterparty_participant_id, kind, period_from, period_to, settlement_id)
+    values (p_ekwo_invoice_id, p_participant_id, p_counterparty_participant_id, p_kind, p_period_from, p_period_to, p_settlement_id);
   exception when unique_violation then
     raise exception 'invoice_already_recorded: %', p_ekwo_invoice_id using errcode = 'unique_violation';
   end;
@@ -260,7 +260,7 @@ end;
 $$;
 
 comment on function billing.record_invoice(uuid, uuid, text, date, date, uuid, uuid) is
-  'Records that an Ekwo invoice was issued for or to a participant, over a period, from a settlement run; returns its Ekwo id. Refuses participant_not_found, participant_contact_missing (a billed participant names its contact), invoice_already_recorded and, when Ekwo OS shares the database, ekwo_invoice_not_found. Issuing the invoice is not this function''s.';
+  'Records that an Ekwo invoice was issued for or to a participant, over a period, from a settlement; returns its Ekwo id. Refuses participant_not_found, participant_contact_missing (a billed participant names its contact), invoice_already_recorded and, when Ekwo OS shares the database, ekwo_invoice_not_found. Issuing the invoice is not this function''s.';
 
 create or replace function billing.invoices_of(p_participant_id uuid)
 returns setof billing.invoices

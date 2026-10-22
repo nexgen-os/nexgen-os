@@ -24,26 +24,26 @@ the finality of its series are one rule.
 ## Decision
 
 **A figure is the result of a run, and a run is a row of the module that
-computes it**: `solar.runs`, `consumption.runs`, `community.runs`. Each has
+computes it**: `solar.estimates`, `consumption.estimates`, `community.settlements`. Each has
 one shape: its subject as a foreign key to an object of the core named in
 the module's words (`device_id` for a PV system, `participant_id`,
 `project_id`), the engine version, the inputs, their hash, the results, a
-status (`running`, `succeeded`) and its dates. A design variant is the
+status (`started`, `finished`) and its dates. A design variant is the
 module's too: the `solar` module keeps the variants of a participant's PV
-(`solar.scenarios`), and the core holds the world as it is.
+(`solar.variants`), and the core holds the world as it is.
 
-**The core keeps the gesture, and no table.** `start_run()`,
-`finish_run()` and `record_run()` take the module's runs table as their
-first argument and the subject by its kind and id; `run_hash()` is the
+**The core keeps the gesture, and no table.** `start_calculation()`,
+`finish_calculation()` and `record_calculation()` take the module's runs table as their
+first argument and the subject by its kind and id; `calculation_hash()` is the
 identity of a result, the hash of the runs table, the engine version and
 the inputs;
-`run_is_final()` is the trigger every runs table puts on itself. The same
+`calculation_is_final()` is the trigger every runs table puts on itself. The same
 inputs to the same engine version find the same run, in whichever module,
 and recording it again returns it.
 
 **A run owns the series it writes.** A series a run wrote names it in its
 source (`<module>.runs:<run id>`). Its values are written while the run
-runs and never after (`run_is_final`, checked by `store()` and by the
+runs and never after (`calculation_is_final`, checked by `store()` and by the
 trigger of the values), and two runs never share a series, the source
 being part of a series' identity; two runs of the same study are two sets
 of series, side by side.

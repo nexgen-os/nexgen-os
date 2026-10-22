@@ -143,7 +143,7 @@ describe('a curve reconstructed from a bill', () => {
     const series = await one<{ object_id: string; kind: string; quantity_code: string; step: string; source: string }>(
       db, 'select object_id, kind, quantity_code, step::text, source from series where id = $1', [r.seriesId],
     );
-    expect(series).toEqual({ object_id: BLOCK, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', source: `consumption.runs:${r.runId}` });
+    expect(series).toEqual({ object_id: BLOCK, kind: 'simulated', quantity_code: 'consumption_energy', step: '01:00:00', source: `consumption.estimates:${r.estimateId}` });
 
     const values = await db.query<{ at: Date; value: number }>('select at, value from series_values where series_id = $1 order by at', [r.seriesId]);
     // Thursday 15 January: 10:00 open, 03:00 closed.
@@ -158,9 +158,9 @@ describe('a curve reconstructed from a bill', () => {
     const request = { participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours', energy: { kwh: 41_850, source: 'electricity bill January 2026' } };
     const first = await reconstructConsumption(db, request);
     const again = await reconstructConsumption(db, request);
-    expect(again.runId).toBe(first.runId);
+    expect(again.estimateId).toBe(first.estimateId);
     const run = await one<{ participant_id: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
-      db, 'select participant_id, engine_version, inputs, results from consumption.runs where id = $1', [first.runId],
+      db, 'select participant_id, engine_version, inputs, results from consumption.estimates where id = $1', [first.estimateId],
     );
     expect(run.participant_id).toBe(BLOCK);
     expect(run.engine_version).toBe('consumption-curve-0.3.0');
@@ -199,7 +199,7 @@ describe('a curve on quarter-hours', () => {
     // Five weekdays carry the energy, the weekend nothing: 1 kWh a quarter-hour.
     const v = await one<{ value: number }>(db, `select value from series_values where series_id = $1 and at = '2026-03-02T10:00:00Z'`, [r.seriesId]);
     expect(v.value).toBeCloseTo(1, 9);
-    await expect(store(db, r.seriesId, [{ at: '2026-03-02T10:00:00Z', value: 2 }])).rejects.toThrow(/run_is_final/);
+    await expect(store(db, r.seriesId, [{ at: '2026-03-02T10:00:00Z', value: 2 }])).rejects.toThrow(/calculation_is_final/);
   });
 });
 

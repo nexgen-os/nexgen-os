@@ -32,7 +32,7 @@ import {
   typicalYear,
   withinLocalYears,
 } from '../modules/solar/src/pvwatts.js';
-import { runYield } from '../modules/solar/src/yield.js';
+import { estimateYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, participant } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
 
@@ -313,7 +313,7 @@ describe('a pvwatts yield run', () => {
   };
 
   it('reads the weather per array for the local years, adds the energies, stores a typical year anchored on PVGIS and records everything it used', async () => {
-    const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, anchor: 'pvgis' }, clients());
+    const result = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, anchor: 'pvgis' }, clients());
 
     // One weather request and one PVGIS yearly per array; a day more on each side, for Brussels' year starts at 23:00 UTC.
     expect(weatherAsked.map((u) => [new URL(u).searchParams.get('azimuth'), new URL(u).searchParams.get('start_date'), new URL(u).searchParams.get('end_date')])).toEqual([['-90', '2022-12-31', '2024-01-02'], ['0', '2022-12-31', '2024-01-02']]);
@@ -343,7 +343,7 @@ describe('a pvwatts yield run', () => {
     const temperature = await one<{ n: number }>(db, `select count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.object_id = $1 and s.quantity_code = 'temperature'`, [home]);
     expect(temperature.n).toBe(8760);
 
-    const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.runs where id = $1', [result.runId]);
+    const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.estimates where id = $1', [result.estimateId]);
     expect(run.engine_version).toBe('solar-pvwatts-0.3.0');
     expect(run.inputs).toMatchObject({
       profile: 'pvwatts',
@@ -370,10 +370,10 @@ describe('a pvwatts yield run', () => {
   });
 
   it('keeps the real years as they are when asked, in a series apart from the typical year', async () => {
-    const typical = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
-    const real = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
+    const typical = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
+    const real = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
     expect(real.seriesId).not.toBe(typical.seriesId);
-    const run = await one<{ inputs: Record<string, any>; results: Record<string, any> }>(db, 'select inputs, results from solar.runs where id = $1', [real.runId]);
+    const run = await one<{ inputs: Record<string, any>; results: Record<string, any> }>(db, 'select inputs, results from solar.estimates where id = $1', [real.estimateId]);
     expect(run.inputs.typical_year).toBeNull();
     expect(run.inputs.anchoring).toEqual({ source: 'none' });
     expect(run.inputs.years_covered).toEqual([2023]);
@@ -384,33 +384,33 @@ describe('a pvwatts yield run', () => {
   });
 
   it('real years divide by the years covered: the last 30 days missing leave 2023 out', async () => {
-    const whole2022 = await runYield(db, { pvSystemId: system, years: { from: 2022, to: 2022 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
-    const twoYears = await runYield(db, { pvSystemId: system, years: { from: 2022, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z'));
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.runs where id = $1', [twoYears.runId]);
+    const whole2022 = await estimateYield(db, { pvSystemId: system, years: { from: 2022, to: 2022 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients());
+    const twoYears = await estimateYield(db, { pvSystemId: system, years: { from: 2022, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z'));
+    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.estimates where id = $1', [twoYears.estimateId]);
     expect(run.inputs.years_covered).toEqual([2022]);
     expect(twoYears.annualKwh).toBeCloseTo(whole2022.annualKwh, 6);
     await expect(
-      runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z')),
+      estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, typicalYear: false }, clients('2023-12-01T22:00:00Z')),
     ).rejects.toThrow(/period_not_covered/);
   });
 
   it('throws named errors for an array whose γ nobody gives, a γ out of its bounds, and a participant without a time zone', async () => {
-    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, clients())).rejects.toThrow(/gamma_unknown: array East/);
-    await expect(runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: 0.0035 }, clients())).rejects.toThrow(/gamma_out_of_range: 0.0035/);
+    await expect(estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts' }, clients())).rejects.toThrow(/gamma_unknown: array East/);
+    await expect(estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: 0.0035 }, clients())).rejects.toThrow(/gamma_out_of_range: 0.0035/);
     const somewhere = await participant(db, { organisation_id: org, name: 'Somewhere', country: 'BE', geometry: { type: 'Point', coordinates: [4.35, 50.85] } });
     const device = await insert(db, 'devices', { organisation_id: org, participant_id: somewhere, name: 'PV', device_type: 'solar', rated_power_kw: 5 });
     await db.query('insert into solar.pv_systems (id, kwp_dc) values ($1, 5)', [device]);
-    await expect(runYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients())).rejects.toThrow(/time_zone_required/);
+    await expect(estimateYield(db, { pvSystemId: device, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients())).rejects.toThrow(/time_zone_required/);
   });
 
   it('runs the same roof through pvgis_like and pvwatts: two runs, two sources, the difference written in their inputs', async () => {
     const seriescalc = await fixture('pvgis-seriescalc-brussels-2023-48h.json');
-    const viaPvgis = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch: answering(seriescalc) }));
-    const viaPvwatts = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
+    const viaPvgis = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch: answering(seriescalc) }));
+    const viaPvwatts = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035 }, clients());
 
-    const runs = await db.query<{ id: string; engine_version: string; inputs: Record<string, any> }>('select id, engine_version, inputs from solar.runs where id = any($1) order by engine_version', [[viaPvgis.runId, viaPvwatts.runId]]);
+    const runs = await db.query<{ id: string; engine_version: string; inputs: Record<string, any> }>('select id, engine_version, inputs from solar.estimates where id = any($1) order by engine_version', [[viaPvgis.estimateId, viaPvwatts.estimateId]]);
     const [pvgisLike, pvwatts] = runs.rows;
-    expect(pvgisLike.id).toBe(viaPvgis.runId);
+    expect(pvgisLike.id).toBe(viaPvgis.estimateId);
     expect([pvgisLike.inputs.profile, pvwatts.inputs.profile]).toEqual(['pvgis_like', 'pvwatts']);
     expect([pvgisLike.inputs.weather.source, pvwatts.inputs.weather.source]).toEqual(['pvgis', 'open_meteo']);
     // What the irradiance is: PVGIS's satellite database against a reanalysis.

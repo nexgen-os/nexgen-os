@@ -1,4 +1,4 @@
-// An inverter described by its PVsyst OND file, as a model an engine runs.
+// An inverter described by its PVsyst OND file, as a model an engine estimates.
 //
 // An OND file gives the inverter's efficiency as curves of AC output against
 // DC input, usually at three DC voltages (`ProfilPIOV1…3` at `VNomEff`), else
@@ -6,8 +6,8 @@
 // is fitted on those curves exactly as pvlib's `inverter.fit_sandia` fits it
 // on a CEC test report: at each voltage a quadratic of AC against DC power,
 // the DC power that gives the rated AC power and the one that gives none,
-// then a line of each against the voltage. The fit is computed when a run
-// needs it and recorded with the run; the product keeps the file's curves.
+// then a line of each against the voltage. The fit is computed when an estimate
+// needs it and recorded with the estimate; the product keeps the file's curves.
 
 /** The parameters of the Sandia inverter model, in pvlib's keys. */
 export interface SandiaInverter {

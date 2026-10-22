@@ -68,7 +68,7 @@ is in [core/README.md](core/README.md); the diagram and the rules are in
    aggregates; clients never resample, convert or fill.
 4. **Deterministic core, operable by an agent.** Nothing in the core calls a
    model; a module keeps what it computes as its runs, written through
-   `record_run('<module>.runs', …)`: same inputs, same engine, same run. On top of it, an AI agent works as a user of the
+   `record_calculation('<module>.runs', …)`: same inputs, same engine, same run. On top of it, an AI agent works as a user of the
    model — the same tables, the same rights, the same refusals by name — so
    that describing and studying a place can be delegated without the data
    leaving its owner ([AGENTS.md](AGENTS.md)).
@@ -172,7 +172,7 @@ From the house loaded above, in a clone of this repository (`npm ci` once):
 
    ```sql
    select engine_version, inputs->'weather', inputs->'arrays', results
-     from solar.runs where device_id = '00000000-0000-4000-8000-000100000051'
+     from solar.estimates where device_id = '00000000-0000-4000-8000-000100000051'
     order by started_at desc limit 1;
    ```
 

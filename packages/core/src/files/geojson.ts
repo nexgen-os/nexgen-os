@@ -7,7 +7,8 @@
  * `building` module is installed — their ground, their buildings, their
  * roof faces, facades and ground areas, each a feature with its
  * columns, its attributes (`attributes_of()`), the identifiers it is known
- * by and the runs the modules computed on it (each module's `runs`), so
+ * by and the figures the modules computed on it (each module's table of
+ * calculations: `solar.estimates`, `community.settlements`…), so
  * that a figure can be shown beside the places it is about. Coordinates are WGS 84 longitude, latitude and
  * height in metres, polygons wound as RFC 7946 asks. Every source the
  * export draws on is listed with its licence and attribution.
@@ -19,10 +20,12 @@
 import { writeGeoJson, type Feature, type FeatureCollection, type Geometry } from '@nexgen-os/geojson';
 import type { Db } from '../db.js';
 
-/** A run a module computed on the object, as its `<module>.runs` table holds it. */
-export interface RunSummary {
+/** A figure a module computed on the object, as its table of calculations holds it. */
+export interface CalculationSummary {
   id: string;
   module: string;
+  /** The module's table it is kept in, e.g. `estimates`, `settlements`. */
+  table: string;
   engine_version: string;
   inputs_hash: string;
   finished_at: string;
@@ -38,7 +41,7 @@ export interface FeatureProperties {
   attributes: Record<string, unknown>;
   /** Identifiers the object is known by elsewhere, scheme by scheme. */
   external_ids: { scheme: string; value: string }[];
-  runs: RunSummary[];
+  calculations: CalculationSummary[];
   [column: string]: unknown;
 }
 
@@ -74,8 +77,8 @@ export interface GeoJsonExportOptions {
   at?: Date | string;
   /** The export for the public: see the head of this file. Default: false. */
   open?: boolean;
-  /** The runs the modules computed on each object. Default: true. */
-  runs?: boolean;
+  /** The figures the modules computed on each object. Default: true. */
+  calculations?: boolean;
 }
 
 /** Decimal places of the coordinates: 1 cm of longitude or latitude. */
@@ -100,10 +103,11 @@ interface Attachments {
   closed_properties: string[] | null;
 }
 
-interface RunRow {
+interface CalculationRow {
   subject_id: string;
   id: string;
   module_code: string;
+  table_name: string;
   engine_version: string;
   inputs_hash: string;
   finished_at: Date | string;
@@ -216,38 +220,45 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   );
   const attached = new Map(attachments.rows.map((a) => [a.id, a]));
 
-  // The runs of every installed module that keeps them (`<module>.runs`),
-  // on an object of the core by its foreign key.
-  const runs = new Map<string, RunSummary[]>();
-  if (options.runs ?? true) {
-    const tables = await db.query<{ module_code: string; schema_name: string; subject: string }>(
-      `select m.code module_code, m.schema_name, c.column_name subject
-         from modules m join information_schema.columns c on c.table_schema = m.schema_name and c.table_name = 'runs'
+  // The calculations of every installed module, in each table its
+  // calculation_is_final() trigger marks as one, on an object of the core by
+  // its foreign key.
+  const calculations = new Map<string, CalculationSummary[]>();
+  if (options.calculations ?? true) {
+    const tables = await db.query<{ module_code: string; schema_name: string; table_name: string; subject: string }>(
+      `select distinct m.code module_code, m.schema_name, cl.relname::text table_name, c.column_name::text subject
+         from modules m
+         join pg_namespace n on n.nspname = m.schema_name
+         join pg_class cl on cl.relnamespace = n.oid
+         join pg_trigger tg on tg.tgrelid = cl.oid
+         join pg_proc p on p.oid = tg.tgfoid and p.proname = 'calculation_is_final'
+         join information_schema.columns c on c.table_schema = m.schema_name and c.table_name = cl.relname
         where c.column_name in ('project_id', 'participant_id', 'device_id', 'meter_id')
-        order by m.code`,
+        order by 1, 3`,
     );
-    const rows: RunRow[] = [];
+    const rows: CalculationRow[] = [];
     for (const t of tables.rows) {
-      const found = await db.query<RunRow>(
-        `select r.${t.subject} subject_id, r.id, $2::text module_code, r.engine_version, r.inputs_hash, r.finished_at, r.results
-           from ${t.schema_name}.runs r
-          where r.${t.subject} = any($1::uuid[]) and r.status = 'succeeded'`,
-        [ids, t.module_code],
+      const found = await db.query<CalculationRow>(
+        `select c.${t.subject} subject_id, c.id, $2::text module_code, $3::text table_name, c.engine_version, c.inputs_hash, c.finished_at, c.results
+           from ${t.schema_name}.${t.table_name} c
+          where c.${t.subject} = any($1::uuid[]) and c.status = 'finished'`,
+        [ids, t.module_code, t.table_name],
       );
       rows.push(...found.rows);
     }
     rows.sort((p, q) => new Date(p.finished_at).getTime() - new Date(q.finished_at).getTime() || p.id.localeCompare(q.id));
     for (const r of rows) {
-      const list = runs.get(r.subject_id) ?? [];
+      const list = calculations.get(r.subject_id) ?? [];
       list.push({
         id: r.id,
         module: r.module_code,
+        table: r.table_name,
         engine_version: r.engine_version,
         inputs_hash: r.inputs_hash,
         finished_at: new Date(r.finished_at).toISOString(),
         results: r.results,
       });
-      runs.set(r.subject_id, list);
+      calculations.set(r.subject_id, list);
     }
   }
 
@@ -297,7 +308,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
       ...(kind === 'participant' ? { location_source_code: source_code } : kind === 'site' || kind === 'building' || kind === 'surface' ? { source_code } : {}),
       attributes,
       external_ids: externalIds.map(({ scheme, value }) => ({ scheme, value })),
-      runs: runs.get(id) ?? [],
+      calculations: calculations.get(id) ?? [],
     };
     features.push({ type: 'Feature', id, geometry: shape, properties });
   }

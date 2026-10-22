@@ -8,8 +8,8 @@ The project and the participants taking part in it are the core's: `projects`,
 [0042](../../docs/decisions/0042-a-module-starts-from-an-object-of-the-core.md)).
 This module starts from them and adds what an energy community does with
 them: share the energy some participants produce among the others. It adds
-no table; it publishes the vocabulary sharing reads and writes (0002) and
-the function that runs it.
+one table, its settlements; it publishes the vocabulary sharing reads and
+writes (0002) and the function that computes it.
 
 ## Energy sharing
 
@@ -22,27 +22,27 @@ The module keeps the model and an engine shares:
   and its source (the general assembly that voted it); what a key reads
   about a participant is the participant's attribute (`allocation_share`,
   0 to 1; `allocation_rank`, 1 first);
-- `runSharing()` (`src/sharing.ts`) reads the participants taking part over
+- `settleSharing()` (`src/sharing.ts`) reads the participants taking part over
   a period, groups left out, the `offtake_energy` and `injection_energy`
   metered behind each one (its meters through `participant_meters()`)
   resampled on one grid of steps, and hands them with the key, the
   participants' attributes and the caller's `rules` to an engine of the
   `energy_sharing` kind ([packages/connectors/README.md](../../packages/connectors/README.md#programs-in-any-language));
-- the answer is a run of this module on the project (`community.runs`),
+- the answer is a settlement of this module on the project (`community.settlements`),
   its engine and version recorded: for each participant, `shared_offtake_energy`,
   `shared_injection_energy` and what is left of its `offtake_energy` and
-  `injection_energy`, as `simulated` series of the run, final with it. The
-  same inputs and the same engine give the same run, without starting the
+  `injection_energy`, as `simulated` series of the settlement, final with it. The
+  same inputs and the same engine give the same settlement, without starting the
   engine again.
 
 ```ts
-import { runSharing } from './src/sharing.js';
+import { settleSharing } from './src/sharing.js';
 
-await runSharing(db, {
+await settleSharing(db, {
   projectId, from: '2026-05-01T22:00:00Z', to: '2026-05-02T22:00:00Z', step: '15 minutes',
   engine: { name: 'sharing_example' }, // started from NEXGEN_ENGINE_SHARING_EXAMPLE
 });
-// { runId, engine: 'sharing_example 0.3.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } } }
+// { settlementId, engine: 'sharing_example 0.3.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } } }
 ```
 
 Refusals before an engine starts: `project_not_found`, `period_empty`,

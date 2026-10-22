@@ -6,7 +6,7 @@
 -- (PVsyst's loss diagram, PV*SOL's) or folds it into one aggregate loss
 -- (PVGIS, PVWatts); the place says its own value on the array
 -- (`pv_arrays.soiling_loss`), or as an attribute of the PV system or of its
--- participant, with its source and its period, and a yield run reads it the
+-- participant, with its source and its period, and a yield estimate reads it the
 -- nearest first: the array's own, then what `parameter_of()` answers for
 -- its system, a device of the core.
 

@@ -9,7 +9,7 @@ import type { Fetch } from '@nexgen-os/core';
 import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis } from '@nexgen-os/pvgis';
 import { remainingAfterLosses, withSoiling } from '../modules/solar/src/pvwatts.js';
-import { runYield } from '../modules/solar/src/yield.js';
+import { estimateYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 import { syntheticArchive } from './helpers/weather.js';
 
@@ -86,20 +86,20 @@ describe('a yield run with the soiling of the place', () => {
       asked.push(url);
       return { ok: true, status: 200, json: async () => recorded };
     };
-    const result = await runYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
+    const result = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
     expect(asked.map((u) => new URL(u).searchParams.get('loss'))).toEqual(['14', '14']);
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.runs where id = $1', [result.runId]);
+    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
     expect(run.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
     expect(run.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'participant', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
   });
 
   it('sends the place\'s soiling to an engine in place of the profile\'s (pvsyst_like), and records it', async () => {
-    const result = await runYield(
+    const result = await estimateYield(
       db,
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
     );
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.runs where id = $1', [result.runId]);
+    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
     expect(run.inputs.losses.find((l) => l.code === 'soiling')).toEqual({ code: 'soiling', pct: 5 });
     expect(run.inputs.losses.map((l) => l.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
     expect(run.inputs.arrays.map((a) => a.soiling)).toEqual([
@@ -110,7 +110,7 @@ describe('a yield run with the soiling of the place', () => {
 
   it('refuses an engine run whose arrays have different soiling: the request carries one list of losses', async () => {
     await soiling('pv_array', south, 0.01, 'cleaned every spring');
-    await expect(runYield(
+    await expect(estimateYield(
       db,
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },

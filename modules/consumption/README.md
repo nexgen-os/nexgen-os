@@ -9,8 +9,8 @@ activity hours; **typical**, from an annual consumption and a load profile.
 This module holds what the last two need and reads the curve of a participant
 whichever way it is known. A load profile says which use it describes, by
 the code the `building` module gives that use (`building.profiles`) when it
-is installed. A reconstruction is a run of this module, kept in
-`consumption.runs`.
+is installed. A reconstruction is an estimate of this module, kept in
+`consumption.estimates`.
 
 ## What it adds to the core
 
@@ -19,7 +19,7 @@ is installed. A reconstruction is a run of this module, kept in
 | `consumption.load_profiles` | how energy spreads over the slots of a day (24, 48 or 96), the day types of a week (`weekday`, `saturday`, `sunday`) and the months of a year: by `day_shapes` given as weights, or by `activity_hours`, a slot weighing 1 while the participant is open and `closed_ratio` while it is closed. Optional `monthly_factors`, the use it describes, its source. A vocabulary: read by everyone signed in, written by migrations, modules and the installation (`service_role`). The module ships `flat`; a standard profile a grid operator publishes is added with its source. |
 | `consumption.activity_hours` | when a participant or a project is open, day of the week by day of the week (ISO, 1 Monday), in the local wall-clock time of its participant (`24:00` closes at midnight; two rows for a break), over a period of dates, with its source. Of the organisation of what is open, under row level security. |
 
-## A curve reconstructed, as a run
+## A curve reconstructed, as an estimate
 
 ```ts
 import { reconstructConsumption } from './src/curve.js';
@@ -28,7 +28,7 @@ await reconstructConsumption(db, {
   siteId, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours',
   energy: { kwh: 41850, source: 'electricity bill January 2026', documentId },
 });
-// { runId, seriesId, kwh: 41850, step: '60 minutes', slots: 744 }
+// { estimateId, seriesId, kwh: 41850, step: '60 minutes', slots: 744 }
 ```
 
 Each slot of the period, cut in the participant's local days, is weighed by the
@@ -39,11 +39,11 @@ the participant's `annual_consumption` attribute is spread over a period that
 must then be one year (`energy_required` otherwise).
 
 The curve is a `simulated` `consumption_energy` series of the participant that
-names the run in its source (`consumption.runs:<id>`), dated at the start of each slot in
-UTC, written through `store()` while the run runs and final once it is
-finished. The run keeps the profile as it was read, the activity hours,
+names the estimate in its source (`consumption.estimates:<id>`), dated at the start of each slot in
+UTC, written through `store()` before the estimate finishes and final once it is
+finished. The estimate keeps the profile as it was read, the activity hours,
 the energy and its source, the period and the time zone: the same inputs
-give the same run.
+give the same estimate.
 
 Days are the participant's local days, daylight-saving time included, since a
 timetable is read on the wall clock: the spring day has one hour less, the

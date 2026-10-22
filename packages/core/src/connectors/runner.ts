@@ -2,7 +2,7 @@
 //
 // A program connector is a program in any language that reads one request
 // as JSON on stdin and answers one result as JSON on stdout; stderr is its
-// log. It is the engine of the runs it computes, and the contract names it
+// log. It is the engine of the figures it computes, and the contract names it
 // by that word (`engine`, `NEXGEN_ENGINE_<NAME>`, the `engine_*` refusals). The
 // runner sends the envelope, waits for the answer, checks the contract and
 // turns every failure into a named error. It never reads the database and
@@ -30,7 +30,7 @@ export interface EngineSpec {
 }
 
 export interface EngineAnswer<TResult> {
-  /** What the engine says it is, e.g. `pvlib 0.16.1`: the string a run records. */
+  /** What the engine says it is, e.g. `pvlib 0.16.1`: the string a calculation records. */
   version: string;
   result: TResult;
   /** The engine's own log, then its stderr lines. */

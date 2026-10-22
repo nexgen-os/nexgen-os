@@ -7,16 +7,17 @@
 -- participant (a fixed share, a rank) is an attribute of the participant.
 -- Nothing here interprets a key: an engine of the `energy_sharing` kind
 -- does (packages/connectors/README.md, decision 0013), and its answer comes back as a
--- run of this module (`community.runs`) whose series are on the participants
+-- settlement (`community.settlements`): the sharing of a project over a
+-- period, for all its participants, whose series are on the participants
 -- (`modules/community/src/sharing.ts`).
 
 set search_path = nexgen, public, extensions;
 
 -- ---------------------------------------------------------------------------
--- runs — what the module computed (decision 0004).
+-- settlements — what the module computed (decision 0004).
 -- ---------------------------------------------------------------------------
 
-create table community.runs (
+create table community.settlements (
   id               uuid primary key default gen_random_uuid(),
   organisation_id  uuid not null references organisations(id) on delete cascade,
   -- The project whose energy was shared.
@@ -26,21 +27,21 @@ create table community.runs (
   -- sha256 of the table, engine version and inputs: the identity of a result.
   inputs_hash      text not null,
   results          jsonb,
-  status           text not null default 'running',
+  status           text not null default 'started',
   started_at       timestamptz not null default now(),
   finished_at      timestamptz,
-  constraint runs_status check (status in ('running', 'succeeded')),
-  constraint runs_finished check ((status = 'running') = (finished_at is null))
+  constraint settlements_status check (status in ('started', 'finished')),
+  constraint settlements_finished check ((status = 'started') = (finished_at is null))
 );
 
-comment on table community.runs is
-  'The sharings the module computed for a project: inputs, engine version, results; the series a run wrote name it in their source. Immutable once finished; same inputs + same engine = same run.';
+comment on table community.settlements is
+  'The settlements of a project: the sharing of its energy over a period among all its participants, with inputs, engine version and results; the series a settlement wrote name it in their source. Immutable once finished; same inputs + same engine = same settlement.';
 
-create unique index runs_one_success_per_input on community.runs (organisation_id, inputs_hash) where status = 'succeeded';
-create index runs_project_id_idx on community.runs (project_id);
-create trigger runs_is_final before update on community.runs
-  for each row execute function run_is_final();
-call secure_table('community.runs');
+create unique index settlements_one_per_input on community.settlements (organisation_id, inputs_hash) where status = 'finished';
+create index settlements_project_id_idx on community.settlements (project_id);
+create trigger settlements_is_final before update on community.settlements
+  for each row execute function calculation_is_final();
+call secure_table('community.settlements');
 
 
 insert into property_defs (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
@@ -63,5 +64,5 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind, descr
    'The part of a participant''s injection shared with the other participants of its project.', 'community');
 
 update modules set version = '0.3.0',
-       description = 'Energy sharing among the participants of a project of the core: the allocation key of the project and what it reads about each participant, as attributes, and the shares an engine computes, recorded as runs.'
+       description = 'Energy sharing among the participants of a project of the core: the allocation key of the project and what it reads about each participant, as attributes, and the shares an engine computes, recorded as settlements.'
  where code = 'community';
