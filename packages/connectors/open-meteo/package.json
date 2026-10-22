@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/open-meteo",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Open-Meteo weather forecast and ERA5 history as a Nexgen OS weather connector.",
   "license": "MIT",
   "repository": {
@@ -32,6 +32,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/core": "^0.1.0"
+    "@nexgen-os/core": "^0.3.0"
   }
 }

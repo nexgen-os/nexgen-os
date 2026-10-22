@@ -1,6 +1,6 @@
 {
   "name": "nexgen-os",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Install and operate Nexgen OS on your own Supabase project: npx nexgen-os init.",
   "keywords": [
     "supabase",

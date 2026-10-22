@@ -359,5 +359,5 @@ grant execute on function weather.cell_of(geometry, numeric), weather.source_for
 grant execute on function weather.points_set_cell() to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('weather', 'Weather', '0.1.0', 'weather', '0.1.0',
+values ('weather', 'Weather', '0.3.0', 'weather', '0.3.0',
         'Weather points participants are linked to, weather models as sources, and the model each participant reads, resolved from its attribute, its organisation, the pack and the coverage.');

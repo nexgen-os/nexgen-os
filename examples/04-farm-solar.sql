@@ -53,7 +53,7 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 
 -- The orientation each estimate assumed: the barn roof faces south-south-east
 -- at 15°, the ground array south on flat ground, the carport south at 10°.
-select record_run('solar.runs', 'device', d.id, 'pvgis-5.3+core-0.1.0',
+select record_run('solar.runs', 'device', d.id, 'pvgis-5.3+solar-0.3.0',
   jsonb_build_object('source', 'pvgis', 'peak_kw', d.rated_power_kw, 'tilt', o.tilt_deg, 'azimuth', o.azimuth_deg, 'loss_pct', 14),
   jsonb_build_object('annual_kwh', round(d.rated_power_kw * o.specific_yield)))
   from devices d

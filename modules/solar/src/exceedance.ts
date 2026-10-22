@@ -19,7 +19,7 @@
 import type { Db } from '@nexgen-os/core';
 import { annualTotals } from './pvwatts.js';
 
-export const EXCEEDANCE_ENGINE_VERSION = 'solar-exceedance-0.1.0';
+export const EXCEEDANCE_ENGINE_VERSION = 'solar-exceedance-0.3.0';
 
 export interface ExceedanceRequest {
   /** A yield run of the `solar` module on real years. */

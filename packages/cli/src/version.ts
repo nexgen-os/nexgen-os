@@ -10,7 +10,7 @@
 import { NexgenError } from './errors.js';
 import type { SqlClient } from './sql.js';
 
-export const PACKAGE_VERSION = '0.1.0';
+export const PACKAGE_VERSION = '0.3.0';
 export const SCHEMA_VERSION = '0.3.0';
 export const SCHEMA_MIN = '0.3.0';
 

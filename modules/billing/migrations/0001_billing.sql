@@ -377,5 +377,5 @@ grant execute on function billing.unlinked_keys() to service_role;
 select billing.reference_ekwo();
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('billing', 'Billing', '0.2.0', 'billing', '0.3.0',
+values ('billing', 'Billing', '0.3.0', 'billing', '0.3.0',
         'The bridge to the invoicing side: the Ekwo company an organisation is, the Ekwo contact a contact is and how it is reached, and the Ekwo invoices issued for or to a participant.');

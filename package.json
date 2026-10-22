@@ -1,8 +1,8 @@
 {
   "name": "nexgen-os-monorepo",
-  "version": "0.0.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "An open foundation for describing places, buildings and the things in them — in 3D, over time — so that energy, architecture and compliance tools can share one model.",
+  "description": "An open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "engines": {

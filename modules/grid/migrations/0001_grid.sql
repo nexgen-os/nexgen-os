@@ -126,5 +126,5 @@ comment on function grid.connect_to_operator(uuid, text, text) is
 grant execute on function grid.connect_to_operator(uuid, text, text) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('grid', 'Grid', '0.2.0', 'grid', '0.3.0',
+values ('grid', 'Grid', '0.3.0', 'grid', '0.3.0',
         'The grid side of a connection point of the core: the operators who run the grid, written by the country packs, and for each meter the operator that runs it and the voltage level it is connected at.');

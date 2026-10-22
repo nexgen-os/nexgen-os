@@ -369,5 +369,5 @@ comment on function tasks.progress(uuid, date) is
 grant execute on function tasks.progress(uuid, date) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('tasks', 'Tasks', '0.1.0', 'tasks', '0.2.0',
+values ('tasks', 'Tasks', '0.3.0', 'tasks', '0.3.0',
         'What has to be done on a project and where it stands: phases from study to decommissioning, roles, task templates per country and kind of project, the tasks of a project planned from them, and the progress of a participant or a project on a day.');

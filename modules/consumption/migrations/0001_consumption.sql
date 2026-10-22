@@ -238,5 +238,5 @@ grant execute on function consumption.curve_series(uuid, timestamptz, timestampt
 grant execute on function consumption.curve(uuid, timestamptz, timestamptz, interval) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('consumption', 'Consumption', '0.1.0', 'consumption', '0.2.0',
+values ('consumption', 'Consumption', '0.3.0', 'consumption', '0.3.0',
         'The consumption curve of a participant: load profiles as data, activity hours, a curve reconstructed from a bill or an annual consumption as a run, and the curve read measured first.');

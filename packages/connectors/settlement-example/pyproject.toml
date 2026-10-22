@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nexgen-settlement-example"
-version = "0.1.0"
+version = "0.3.0"
 description = "An example settlement engine for Nexgen OS: one request as JSON on stdin, one result as JSON on stdout. Copy it and replace the price."
 license = { text = "MIT" }
 requires-python = ">=3.9"

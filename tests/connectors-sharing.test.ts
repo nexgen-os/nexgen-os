@@ -46,13 +46,13 @@ const changed = (f: (r: EnergySharingRequest) => void): EnergySharingRequest => 
 
 describe.skipIf(!installed)(`the example sharing engine${skipped}`, () => {
   it('describes itself: pure Python, the energy_sharing kind', () => {
-    expect(installed).toMatchObject({ engine: 'sharing_example', version: 'sharing_example 0.1.0', kinds: ['energy_sharing'] });
+    expect(installed).toMatchObject({ engine: 'sharing_example', version: 'sharing_example 0.3.0', kinds: ['energy_sharing'] });
     expect(Object.keys(installed!.dependencies)).toEqual(['nexgen_sharing_example', 'python']);
   });
 
   it('shares a day of three participants in proportion to offtake, as written by hand', async () => {
     const { version, result } = await share(fixture.request);
-    expect(version).toBe('sharing_example 0.1.0');
+    expect(version).toBe('sharing_example 0.3.0');
     expect(result.totals).toEqual(fixture.expected.totals);
     for (const p of result.participants) expect(p.totals).toEqual(fixture.expected.participants[p.id]);
     for (const [at, byParticipant] of Object.entries(fixture.expected.steps)) {
@@ -106,7 +106,7 @@ describe('energy sharing in a project, as a run', () => {
 
   it.skipIf(!installed)('hands the participants\' metered offtake and injection to the engine and stores its answer on each participant', async () => {
     const r = await runSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    expect(r.engine).toBe('sharing_example 0.1.0');
+    expect(r.engine).toBe('sharing_example 0.3.0');
     // Four participants behind a meter; the group's meters are its members'.
     expect(Object.keys(r.series).sort()).toEqual(['00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000053', PLANT]);
     expect(r.series[GROUP]).toBeUndefined();
@@ -138,8 +138,8 @@ describe('energy sharing in a project, as a run', () => {
     const run = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
       db, 'select engine_version, project_id, inputs, results from community.runs where id = $1', [first.runId],
     );
-    expect(run).toMatchObject({ engine_version: 'sharing_example 0.1.0', project_id: PROJECT });
-    expect(run.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.1.0', contract: 1 });
+    expect(run).toMatchObject({ engine_version: 'sharing_example 0.3.0', project_id: PROJECT });
+    expect(run.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.3.0', contract: 1 });
     expect(run.inputs.key).toEqual({
       method: 'proportional', parameters: {}, valid_from: '2025-12-31T23:00:00Z', valid_to: '2026-12-31T23:00:00Z', source: 'general assembly 2025', source_code: null,
     });

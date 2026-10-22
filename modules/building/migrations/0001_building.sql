@@ -23,7 +23,7 @@
 -- attachments of the core name the six objects of the core only. Each
 -- belongs to a participant through its foreign keys, which
 -- `building.participant_of()` follows. Where a device sits among them is
--- not described for now (decision 0026): a device belongs to its
+-- not described (decision 0026): a device belongs to its
 -- participant, behind its meters. Geometry follows the core's
 -- frame (decision 0003): WGS 84, three-dimensional, through
 -- `to_core_geometry()`.
@@ -35,7 +35,7 @@ grant usage on schema building to authenticated, service_role;
 
 -- Registered first: what it publishes is published under its code.
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('building', 'Building', '0.1.0', 'building', '0.3.0',
+values ('building', 'Building', '0.3.0', 'building', '0.3.0',
         'The physical description of the place of a participant: its ground, its buildings, their floors, rooms, zones and units, roof faces, facades and ground areas with their orientation, and which of them a participant occupies.');
 
 -- ---------------------------------------------------------------------------

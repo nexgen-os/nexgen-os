@@ -78,7 +78,7 @@ its readings at both ends, as `modules/solar/src/pvwatts.ts` does.
     { "quantity_code": "production_energy", "value_kind": "interval", "step": "1 hour", "unit": "kWh", "values": [...] },
     { "quantity_code": "poa_irradiance", "unit": "W/m²", "array": "South", ... },
     { "quantity_code": "module_temperature", "unit": "°C", "array": "South", ... } ],
-  "meta": { "pvlib": "0.16.1", "engine": "nexgen_pvlib 0.1.0",
+  "meta": { "pvlib": "0.16.1", "engine": "nexgen_pvlib 0.3.0",
             "models": { "dc": "pvwatts", "ac": "pvwatts", "decomposition": "none: dni and dhi given", "transposition": "haydavies",
                         "aoi": "physical", "spectral": "no_loss", "temperature": "faiman",
                         "losses": { "remaining_fraction": 0.9653, "applied_to": "dc, in order", "list": [...] } },

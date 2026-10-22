@@ -42,7 +42,7 @@ await runSharing(db, {
   projectId, from: '2026-05-01T22:00:00Z', to: '2026-05-02T22:00:00Z', step: '15 minutes',
   engine: { name: 'sharing_example' }, // started from NEXGEN_ENGINE_SHARING_EXAMPLE
 });
-// { runId, engine: 'sharing_example 0.1.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } } }
+// { runId, engine: 'sharing_example 0.3.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } } }
 ```
 
 Refusals before an engine starts: `project_not_found`, `period_empty`,

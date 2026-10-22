@@ -25,7 +25,7 @@
 
 import { offsetAt, store, type Db, type SeriesPoint } from '@nexgen-os/core';
 
-export const CONSUMPTION_ENGINE_VERSION = 'consumption-curve-0.1.0';
+export const CONSUMPTION_ENGINE_VERSION = 'consumption-curve-0.3.0';
 
 const MINUTE_MS = 60_000;
 const DAY_MINUTES = 1440;

@@ -18,7 +18,7 @@
 
 import type { Db } from '@nexgen-os/core';
 
-export const PERFORMANCE_ENGINE_VERSION = 'solar-iec61724-0.1.0';
+export const PERFORMANCE_ENGINE_VERSION = 'solar-iec61724-0.3.0';
 const G_REF_W_M2 = 1000;
 
 export interface PerformanceRequest {

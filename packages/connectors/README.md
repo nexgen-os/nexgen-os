@@ -138,7 +138,7 @@ the request kinds it accepts:
 
 ```json
 { "engine": "pvlib", "version": "pvlib 0.16.1", "contract": 1,
-  "result": { "dependencies": { "nexgen_pvlib": "0.1.0", "python": "3.14.7", "pvlib": "0.16.1", "pandas": "3.0.6", "numpy": "2.5.4", "scipy": "1.18.1" },
+  "result": { "dependencies": { "nexgen_pvlib": "0.3.0", "python": "3.14.7", "pvlib": "0.16.1", "pandas": "3.0.6", "numpy": "2.5.4", "scipy": "1.18.1" },
               "kinds": ["pv_yield"] }, "log": [] }
 ```
 

@@ -163,7 +163,7 @@ describe('a curve reconstructed from a bill', () => {
       db, 'select participant_id, engine_version, inputs, results from consumption.runs where id = $1', [first.runId],
     );
     expect(run.participant_id).toBe(BLOCK);
-    expect(run.engine_version).toBe('consumption-curve-0.1.0');
+    expect(run.engine_version).toBe('consumption-curve-0.3.0');
     expect(run.inputs.profile).toMatchObject({ code: 'office_hours', method: 'activity_hours', closed_ratio: 0.25 });
     expect(run.inputs.activity_hours).toHaveLength(5);
     expect(run.inputs.activity_hours[0]).toEqual({ weekday: 1, opens: '07:00:00', closes: '19:00:00', valid_from: null, valid_to: null });

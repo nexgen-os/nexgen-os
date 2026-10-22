@@ -600,5 +600,5 @@ grant execute on function solar.system_kwp(uuid, uuid), solar.horizon_profile_va
   to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('solar', 'Solar', '0.1.0', 'solar', '0.2.0',
+values ('solar', 'Solar', '0.3.0', 'solar', '0.3.0',
         'PV systems and arrays, module and inverter product physics, horizons, named yield profiles and design variants: what a PV yield is computed from, and the runs that computed it.');

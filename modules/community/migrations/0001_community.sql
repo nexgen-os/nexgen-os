@@ -16,5 +16,5 @@ create schema community;
 grant usage on schema community to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('community', 'Community', '0.1.0', 'community', '0.3.0',
+values ('community', 'Community', '0.3.0', 'community', '0.3.0',
         'The energy community on top of the projects and participants of the core.');

@@ -5,4 +5,4 @@ from .errors import NexgenError
 from .frames import Rows
 
 __all__ = ["Bucket", "ForecastValue", "Gap", "Nexgen", "NexgenError", "Reading", "Rows", "SeriesReading", "Stored"]
-__version__ = "0.1.0"
+__version__ = "0.3.0"

@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/ifc",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "IFC4 and IFC2x3 buildings, storeys, spaces, roof faces and equipment read into plain shapes, placed in their reference system. No database.",
   "license": "MIT",
   "repository": {

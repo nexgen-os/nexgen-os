@@ -66,7 +66,7 @@ describe('the be pack', () => {
     const be = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version from countries where code = 'BE'`);
     expect(be).toEqual({ name: 'Belgium', currency: 'EUR', languages: ['nl', 'fr', 'de'], time_zones: ['Europe/Brussels'], region_level: 'region',
-      municipality_scheme: 'nis', pack_version: '0.2.0' });
+      municipality_scheme: 'nis', pack_version: '0.3.0' });
     const regions = await db.query<{ code: string }>(`select code from regions where country = 'BE' order by code`);
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
     // One level: a region has no parent, and parameter_of() goes from the region to the country.
@@ -161,7 +161,7 @@ describe('the be pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'be' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'be', version: '0.2.0', file: 'core/seed/11_pack_be.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'be', version: '0.3.0', file: 'core/seed/11_pack_be.sql', state: 'up_to_date' }]);
   });
 });
 

@@ -50,8 +50,8 @@ import {
 } from './pvwatts.js';
 import { sandiaFromOnd } from './inverter.js';
 
-export const ENGINE_VERSION = 'pvgis-5.3+solar-0.1.0';
-export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.1.0';
+export const ENGINE_VERSION = 'pvgis-5.3+solar-0.3.0';
+export const PVWATTS_ENGINE_VERSION = 'solar-pvwatts-0.3.0';
 
 /** The Open-Meteo dataset the `pvwatts` profile reads: ERA5 alone, not Open-Meteo's blend of reanalyses. */
 const WEATHER_MODEL = 'era5';

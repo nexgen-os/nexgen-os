@@ -201,7 +201,7 @@ year exceeds with each probability asked (75, 90 and 99 % by default):
   standard deviations in percent and added in quadrature;
 - `P_x = P50 · (1 − z_x · σ)`, the annual energy taken as normal.
 
-The result is a run of `solar` (`solar-exceedance-0.1.0`) naming the yield
+The result is a run of `solar` (`solar-exceedance-0.3.0`) naming the yield
 run, the yearly totals, the components and the horizon. Named errors:
 `run_not_found`, `real_years_required` (a typical year, or fewer than two
 complete years), `time_zone_required`, `probability_invalid`,
@@ -231,7 +231,7 @@ is given: a missing reading is never a dark hour. The in-plane irradiance is
 a `measured` `poa_irradiance` on the system, or on its one array; without
 a sensor, the yield run's simulated irradiance of each array, weighted by
 power, and the answer says `irradiance: 'simulated'`. The result is a run
-of `solar` (`solar-iec61724-0.1.0`) whose inputs name each series read with
+of `solar` (`solar-iec61724-0.3.0`) whose inputs name each series read with
 its number of hours and its total, so the same readings give the same run
 and a new reading a new one. Named errors: `pv_system_not_found`,
 `time_zone_required`, `series_not_found`, `irradiance_required`,

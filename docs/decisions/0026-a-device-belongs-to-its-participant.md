@@ -21,8 +21,9 @@ CityGML, Brick and Home Assistant alike.
 `devices.participant_id`, behind that participant's meters; no table of the
 core or of a module says in which building, room or on which roof face it
 sits. What a file says about it — the building and the room an IFC model
-contains it in, the area of a Home Assistant device, a position — travels
-in its `metadata`, as the file said it. What a device measures is a series
+contains it in, the area of a Home Assistant device, a position — is kept
+as the device's `file_record` attribute, which the `building` module
+declares, as the file said it. What a device measures is a series
 of the device ([0022](0022-the-instrument-is-a-device-the-point-is-the-series.md),
 [0029](0029-a-series-belongs-to-an-object.md)).
 

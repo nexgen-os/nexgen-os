@@ -3,7 +3,7 @@
 The values Belgium decides that a function of the model reads, compiled by
 `nexgen-os pack build be` into
 [`core/seed/11_pack_be.sql`](../../core/seed/11_pack_be.sql).
-Version 0.2.0, certification `community`: checked by the toolchain, read by
+Version 0.3.0, certification `community`: checked by the toolchain, read by
 no Belgian professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.
 

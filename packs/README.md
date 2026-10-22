@@ -72,5 +72,5 @@ professional of the country read it, written with the day in `pack.json`.
 
 | Pack | State |
 |---|---|
-| [`be`](be/README.md) | 0.2.0, `community`: compiled into `core/seed/11_pack_be.sql` |
-| [`fr`](fr/README.md) | 0.2.0, `community`: compiled into `core/seed/10_pack_fr.sql` |
+| [`be`](be/README.md) | 0.3.0, `community`: compiled into `core/seed/11_pack_be.sql` |
+| [`fr`](fr/README.md) | 0.3.0, `community`: compiled into `core/seed/10_pack_fr.sql` |

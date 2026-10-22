@@ -45,7 +45,7 @@ describe('the fr pack', () => {
     const fr = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones[1] tz, region_level, municipality_scheme, pack_version from countries where code = 'FR'`);
     expect(fr).toEqual({ name: 'France', currency: 'EUR', languages: ['fr'], tz: 'Europe/Paris', region_level: 'department',
-      municipality_scheme: 'insee', pack_version: '0.2.0' });
+      municipality_scheme: 'insee', pack_version: '0.3.0' });
     const departments = await one<{ n: number; regions: number }>(db,
       `select count(*) filter (where parent is not null or code ~ '^FR-97')::int n, count(*) filter (where parent is null and code !~ '^FR-97')::int regions from regions where country = 'FR'`);
     expect(departments).toEqual({ n: 103, regions: 13 });
@@ -144,7 +144,7 @@ describe('the fr pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'fr' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'fr', version: '0.2.0', file: 'core/seed/10_pack_fr.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'fr', version: '0.3.0', file: 'core/seed/10_pack_fr.sql', state: 'up_to_date' }]);
   });
 
   it('reads the national address register with house-number precision and the department as region', async () => {

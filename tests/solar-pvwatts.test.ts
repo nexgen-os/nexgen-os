@@ -344,7 +344,7 @@ describe('a pvwatts yield run', () => {
     expect(temperature.n).toBe(8760);
 
     const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.runs where id = $1', [result.runId]);
-    expect(run.engine_version).toBe('solar-pvwatts-0.1.0');
+    expect(run.engine_version).toBe('solar-pvwatts-0.3.0');
     expect(run.inputs).toMatchObject({
       profile: 'pvwatts',
       weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, period: { from: '2022-12-31', to: '2024-01-01' }, time_zone: 'Europe/Brussels' },
@@ -358,7 +358,7 @@ describe('a pvwatts yield run', () => {
       remaining_fraction: 0.86,
       typical_year: { months: Array(12).fill(2023), hours_from_mean: 0, rescale_factor: 1, calendar_year: 2023, leap_hours_left_out: 0 },
       anchoring: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', annual_kwh: 2 * pvgisAnnual },
-      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the time zone of the participant" },
+      conventions: { azimuth: 'degrees clockwise from true north', time: 'interval start, UTC', days: "local standard time of the participant's time zone" },
     });
     // A monofacial array says nothing about a rear side.
     expect(run.inputs.arrays[1]).not.toHaveProperty('bifacial');

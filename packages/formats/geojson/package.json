@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/geojson",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "GeoJSON (RFC 7946) features written as a FeatureCollection with its bounding box, and read back with what could not be read reported. No database, no dependency.",
   "license": "MIT",
   "repository": {

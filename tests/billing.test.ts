@@ -63,7 +63,7 @@ afterAll(async () => {
 
 describe('billing without Ekwo OS', () => {
   it('registers the module and adds no foreign key to Ekwo', async () => {
-    expect((await one<{ v: string }>(db, `select version v from modules where code = 'billing'`)).v).toBe('0.2.0');
+    expect((await one<{ v: string }>(db, `select version v from modules where code = 'billing'`)).v).toBe('0.3.0');
     const keys = await db.query<{ conname: string }>(
       `select conname from pg_constraint c join pg_namespace n on n.oid = c.connamespace
          join pg_class f on f.oid = c.confrelid join pg_namespace fn on fn.oid = f.relnamespace

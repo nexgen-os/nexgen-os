@@ -32,13 +32,13 @@ const changed = (f: (r: SettlementRequest) => void): SettlementRequest => {
 
 describe.skipIf(!installed)(`the example settlement engine${skipped}`, () => {
   it('describes itself: pure Python, the settlement kind', () => {
-    expect(installed).toMatchObject({ engine: 'settlement_example', version: 'settlement_example 0.1.0', kinds: ['settlement'] });
+    expect(installed).toMatchObject({ engine: 'settlement_example', version: 'settlement_example 0.3.0', kinds: ['settlement'] });
     expect(Object.keys(installed!.dependencies)).toEqual(['nexgen_settlement_example', 'python']);
   });
 
   it('settles six hours of a supply, a surplus sale and a PPA, as worked out by hand', async () => {
     const { version, result } = await settle(fixture.request);
-    expect(version).toBe('settlement_example 0.1.0');
+    expect(version).toBe('settlement_example 0.3.0');
     expect(result.lines.map(({ seller, buyer, ...line }) => line)).toEqual(fixture.expected.lines);
     expect(result.contracts).toEqual(fixture.expected.contracts);
     expect(result.meta).toEqual({ volume: "each contract's own series, counted once", price: 'fixed', rounding: 'six decimals, no currency\'s minor unit', rules: {} });
