@@ -34,11 +34,11 @@ insert into projects (id, organisation_id, name, kind, country, status, start_da
 
 -- The participants carry their place: three warehouses as consumers, a
 -- roof plant as producer, each with the company that answers for it.
-insert into participants (id, organisation_id, project_id, name, role, contact_id, status, join_date, country, street, postal_code, city, profile) values
-  ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Van Dijk Logistiek', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 12', '3087 BM', 'Rotterdam', 'warehouse'),
-  ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Maas Koeltransport', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 14', '3087 BM', 'Rotterdam', 'warehouse'),
-  ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Rijnmond Verpakkingen', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01', 'NL', 'Waalhaven Oostzijde 16', '3087 BM', 'Rotterdam', 'warehouse'),
-  ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Roof plant', 'producer', null, 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 20', '3087 BM', 'Rotterdam', 'plant');
+insert into participants (id, organisation_id, project_id, name, role, contact_id, status, join_date, country, street, postal_code, city) values
+  ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Van Dijk Logistiek', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 12', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Maas Koeltransport', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 14', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Rijnmond Verpakkingen', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01', 'NL', 'Waalhaven Oostzijde 16', '3087 BM', 'Rotterdam'),
+  ('00000000-0000-4000-8000-000300000054', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Roof plant', 'producer', null, 'active', '2025-01-01', 'NL', 'Waalhaven Oostzijde 20', '3087 BM', 'Rotterdam');
 
 -- Each participant carries its connection point.
 insert into meters (id, organisation_id, participant_id, identifier, scheme, resource, direction, valid_from) values
@@ -57,8 +57,8 @@ insert into participants (id, organisation_id, project_id, name, status) values
 update participants set parent_id = '00000000-0000-4000-8000-000300000055'
  where id in ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000052');
 
-insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, rated_power_kw, unit_count, installation_date, tags) values
-  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000054', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15', '{solar,electric}');
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, rated_power_kw, unit_count, installation_date) values
+  ('00000000-0000-4000-8000-000300000060', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000054', 'Hall C roof array', 'solar', 'Canadian Solar', 248, 560, '2024-11-15');
 
 -- A month of quarter-hour offtake per consumer, and of injection by the plant.
 insert into series (id, organisation_id, object_kind, object_id, quantity_code, kind, value_kind, step, source)
@@ -87,7 +87,7 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 
 -- The month's settlement, computed in the community module: the lines
 -- of who received how much, and at which price.
-select record_run('community', 'settlement-0.1.0', 'project', '00000000-0000-4000-8000-000300000020', null,
+select record_run('community.runs', 'project', '00000000-0000-4000-8000-000300000020', 'settlement-0.1.0',
   '{"period": "2026-05", "allocation": "proportional", "price_eur_mwh": 95}',
   '{"shared_kwh": 18420, "lines": [
      {"participant": "00000000-0000-4000-8000-000300000051", "kwh": 7210, "eur": 684.95},
@@ -100,7 +100,7 @@ select record_run('community', 'settlement-0.1.0', 'project', '00000000-0000-400
 -- Ekwo's, read by that id.
 select billing.record_invoice('00000000-0000-4000-8000-000300000051', '22222222-2222-4222-8222-222222222201', 'purchase',
   '2026-05-01', '2026-05-31', '00000000-0000-4000-8000-000300000054',
-  (select id from runs where module_code = 'community' and subject_id = '00000000-0000-4000-8000-000300000020'));
+  (select id from community.runs where project_id = '00000000-0000-4000-8000-000300000020'));
 
 -- Queries a page would run
 -- The community as a table:

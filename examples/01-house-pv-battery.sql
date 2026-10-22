@@ -4,10 +4,12 @@
 -- house at its address, its point on the map — and the connection point;
 -- behind the meter, its devices: a PV system, an inverter and a smart meter whose
 -- readings are series, a day of quarter-hour production, a drone video and
--- the permit as documents, a battery in a scenario, and a production
--- estimate recorded as a run with the orientation it assumed. The house as
--- a building, its roof faces and its energy label are a physical
--- description, the `building` module's (examples 02, 05, 06, 07).
+-- the permit as documents, a planned battery, and the monthly production
+-- PVGIS published for the orientation it assumed, as a series of that
+-- source. A yield computed in the installation is a run of the `solar`
+-- module (example 04). The house as a building, its roof faces and its
+-- energy label are a physical description, the `building` module's
+-- (examples 02, 05, 06, 07).
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000100000001', 'The Moreno family');
@@ -15,27 +17,23 @@ insert into organisations (id, name) values
 insert into projects (id, organisation_id, name, kind, country, status) values
   ('00000000-0000-4000-8000-000100000005', '00000000-0000-4000-8000-000100000001', 'Solar for the house', 'study', 'ES', 'active');
 
-insert into participants (id, organisation_id, project_id, name, role, country, street, postal_code, city, profile, geometry) values
+insert into participants (id, organisation_id, project_id, name, role, country, street, postal_code, city, geometry) values
   ('00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000005',
-   'Calle Betis 14', 'prosumer', 'ES', 'Calle Betis 14', '41010', 'Sevilla', 'residential',
+   'Calle Betis 14', 'prosumer', 'ES', 'Calle Betis 14', '41010', 'Sevilla',
    ST_GeomFromText('POLYGON((-5.9962 37.3845, -5.9959 37.3845, -5.9959 37.3848, -5.9962 37.3848, -5.9962 37.3845))', 4326));
 
 insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000100000040', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010', 'Supply point', '843000000000000123', 'gs1_gsrn', 'electricity', 'both');
 
-insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, unit_count, installation_date, tags) values
+-- The PV system, its inverter and the smart meter: all three devices are
+-- the participant's, behind its meter.
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, unit_count, installation_date) values
   ('00000000-0000-4000-8000-000100000051', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
-   'PV system', 'solar', 'Trina', 'Vertex S 425', 3.825, 9, '2024-05-10', '{solar,electric}'),
+   'PV system', 'solar', 'Trina', 'Vertex S 425', 3.825, 9, '2024-05-10'),
   ('00000000-0000-4000-8000-000100000052', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
-   'Inverter', 'inverter', 'Huawei', 'SUN2000-4KTL', 4, 1, '2024-05-10', '{electric}'),
+   'Inverter', 'inverter', 'Huawei', 'SUN2000-4KTL', 4, 1, '2024-05-10'),
   ('00000000-0000-4000-8000-000100000053', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
-   'Smart meter', 'meter', 'Sagemcom', 'T211', null, 1, '2020-02-01', '{electric}');
-
--- The PV system feeds the inverter, which feeds the connection point; all
--- three devices are the participant's, behind its meter.
-insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
-  ('device', '00000000-0000-4000-8000-000100000051', 'feeds', 'device', '00000000-0000-4000-8000-000100000052'),
-  ('device', '00000000-0000-4000-8000-000100000052', 'feeds', 'meter',  '00000000-0000-4000-8000-000100000040');
+   'Smart meter', 'meter', 'Sagemcom', 'T211', null, 1, '2020-02-01');
 
 -- The instruments are devices, the points they read are series: what is
 -- observed (the PV system, the connection point), by which device, and
@@ -71,27 +69,26 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
   ('participant', '00000000-0000-4000-8000-000100000010', 'Building permit 1998', 'permit', 's3://nexgen-os-examples/house/permit-1998.pdf', 'application/pdf', 'town hall', null),
   ('device', '00000000-0000-4000-8000-000100000051', 'Module datasheet', 'datasheet', 'https://static.trinasolar.com/vertex-s-425.pdf', 'application/pdf', 'manufacturer', null);
 
--- A variant: add a battery. Only visible in the scenario.
-insert into scenarios (id, organisation_id, name, description) values
-  ('00000000-0000-4000-8000-000100000080', '00000000-0000-4000-8000-000100000001', 'Add a 10 kWh battery', 'Store the midday surplus for the evening.');
-
-insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, status, scenario_id) values
+-- A battery the family plans: a device of its own, planned until it is
+-- installed, with the efficiency its datasheet gives.
+insert into devices (id, organisation_id, participant_id, name, device_type, manufacturer, model, rated_power_kw, status) values
   ('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
-   'Battery', 'battery', 'BYD', 'HVS 10.2', 5, 'planned', '00000000-0000-4000-8000-000100000080');
+   'Battery', 'battery', 'BYD', 'HVS 10.2', 5, 'planned');
 
-insert into attributes (object_kind, object_id, property_code, value, scenario_id, source) values
-  ('device', '00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', '00000000-0000-4000-8000-000100000080', 'datasheet');
+insert into attributes (object_kind, object_id, property_code, value, source) values
+  ('device', '00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', 'datasheet');
 
--- An estimate from PVGIS, recorded as a run of the solar module, with the
--- orientation of the modules it assumed: south, 30° (an array of the
--- `solar` module carries its own azimuth and tilt).
-insert into modules (code, name, version, schema_name, requires_core_min) values
-  ('solar', 'Solar', '0.1.0', 'solar', '0.1.0')
-on conflict (code) do nothing;
+-- The monthly production PVGIS published for the PV system, south, 30°,
+-- 14 % of losses: a simulated series whose source is PVGIS, with what it
+-- assumed in its metadata.
+insert into series (id, organisation_id, object_kind, object_id, quantity_code, kind, value_kind, step, source_code, name, metadata) values
+  ('00000000-0000-4000-8000-000100000074', '00000000-0000-4000-8000-000100000001', 'device', '00000000-0000-4000-8000-000100000051',
+   'production_energy', 'simulated', 'interval', '1 mon', 'pvgis', 'PVGIS estimate',
+   '{"peak_kw": 3.825, "tilt": 30, "azimuth": 180, "loss_pct": 14}');
 
-select record_run('solar', 'pvgis-5.3+core-0.1.0', 'device', '00000000-0000-4000-8000-000100000051', null,
-  '{"source": "pvgis", "peak_kw": 3.825, "tilt": 30, "azimuth": 180, "loss_pct": 14}',
-  '{"annual_kwh": 6120, "monthly_kwh": [330, 390, 520, 580, 650, 690, 720, 680, 560, 450, 330, 300]}');
+select store('00000000-0000-4000-8000-000100000074',
+             array(select make_timestamptz(2026, m, 1, 0, 0, 0, 'Europe/Madrid') from generate_series(1, 12) m),
+             array[330, 390, 520, 580, 650, 690, 720, 680, 560, 450, 330, 300]::float8[]);
 
 -- Queries a page would run
 -- The house as a card:
@@ -99,7 +96,7 @@ select record_run('solar', 'pvgis-5.3+core-0.1.0', 'device', '00000000-0000-4000
 --    where p.id = '00000000-0000-4000-8000-000100000010';
 -- What is behind the meter:
 --   select m.identifier, d.name from meters m join devices d on d.participant_id = m.participant_id
---    where m.participant_id = '00000000-0000-4000-8000-000100000010' and d.scenario_id is null;
+--    where m.participant_id = '00000000-0000-4000-8000-000100000010' and d.status <> 'planned';
 -- Hourly production on the sunny day:
 --   select * from resample('00000000-0000-4000-8000-000100000071', '2026-06-21', '2026-06-22', '1 hour');
 -- Daily offtake from the register:
@@ -107,8 +104,8 @@ select record_run('solar', 'pvgis-5.3+core-0.1.0', 'device', '00000000-0000-4000
 --     from resample('00000000-0000-4000-8000-000100000072', '2026-06-01', '2026-07-01', '1 day');
 -- What the smart meter reads, and where:
 --   select s.quantity_code, s.external_ref from series s where s.device_id = '00000000-0000-4000-8000-000100000053';
--- What the scenario adds:
---   select name, device_type, status from devices where scenario_id = '00000000-0000-4000-8000-000100000080';
+-- What is planned:
+--   select name, device_type, status from devices where status = 'planned';
 
 -- Daily readings are cut in the participant's time zone.
 update participants set time_zone = 'Europe/Madrid' where organisation_id = '00000000-0000-4000-8000-000100000001';

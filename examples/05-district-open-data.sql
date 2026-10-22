@@ -4,9 +4,9 @@
 -- A city's district plan with its perimeter, six participants each with
 -- its plot (the ground the `building` module describes) and its building
 -- whose footprints arrive in UTM zone 28N from OpenStreetMap, heights from
--- a height model, buildings known by their OpenStreetMap ids, one plot split
--- in two, a tall building shading a neighbour's roof, and the queries that
--- find what is inside the perimeter.
+-- a height model, buildings known by their OpenStreetMap ids and floors,
+-- one plot split in two by the cadastre, and the queries that find what is
+-- inside the perimeter.
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000500000001', 'Ville de Dakar — urbanisme');
@@ -16,9 +16,9 @@ insert into projects (id, organisation_id, name, kind, country, status, geometry
    ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326));
 
 -- Every plot takes part in the plan through the participant whose it is.
-insert into participants (id, organisation_id, project_id, name, role, status, country, city, profile)
+insert into participants (id, organisation_id, project_id, name, role, status, country, city)
 select ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000020',
-       'Plot ' || i, 'prosumer', 'simulation', 'SN', 'Dakar', 'mixed'
+       'Plot ' || i, 'prosumer', 'simulation', 'SN', 'Dakar'
   from generate_series(1, 6) i;
 
 -- Six plots and their buildings, footprints in EPSG:32628, straight from the open-data importer.
@@ -26,25 +26,14 @@ insert into building.sites (id, organisation_id, participant_id, name)
 select ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, 'Plot ' || i
   from generate_series(1, 6) i;
 
-insert into building.buildings (id, organisation_id, participant_id, site_id, name, profile, footprint, height_m, source_code)
+-- Each building with its OpenStreetMap way and the number of floors it
+-- gives (building:levels), the source of the row.
+insert into building.buildings (id, organisation_id, participant_id, site_id, name, profile, footprint, height_m, floors_above_ground, source_code, global_id)
 select ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, '00000000-0000-4000-8000-000500000001',
        ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, ('00000000-0000-4000-8000-0005000000' || (30 + i))::uuid,
        'Building ' || i, case when i in (2, 5) then 'office' else 'mixed' end,
        ST_SetSRID(ST_MakeEnvelope(236100 + 120 * i, 1630400, 236100 + 120 * i + 20, 1630415), 32628),
-       6 + 3 * (i % 4), 'openstreetmap'
-  from generate_series(1, 6) i;
-
--- The number of floors OpenStreetMap gives (building:levels), with its source.
-insert into attributes (object_kind, object_id, property_code, value, source_code, source)
-select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floors_above_ground', to_jsonb(2 + (i % 4)), 'openstreetmap', 'building:levels'
-  from generate_series(1, 6) i;
-
-insert into external_ids (object_kind, object_id, scheme, value)
-select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'osm', 'way/' || (987650000 + i)
-  from generate_series(1, 6) i;
-
-insert into attributes (object_kind, object_id, property_code, value, source_code, source)
-select 'building', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'floor_area', to_jsonb(300 * (2 + (i % 4))), 'openstreetmap', 'footprint × floors'
+       6 + 3 * (i % 4), 2 + (i % 4), 'openstreetmap', 'way/' || (987650000 + i)
   from generate_series(1, 6) i;
 
 -- Heights come from the Copernicus height model, noted as such.
@@ -56,28 +45,21 @@ insert into building.surfaces (id, organisation_id, building_id, name, kind, azi
 select ('00000000-0000-4000-8000-0005000000' || (50 + i))::uuid, '00000000-0000-4000-8000-000500000001', ('00000000-0000-4000-8000-0005000000' || (40 + i))::uuid, 'Roof ' || i, 'roof', 180, 0
   from generate_series(1, 6) i;
 
--- Building 3 is the tall one; it shades the roof of building 2.
-insert into links (subject_kind, subject_id, type_code, object_kind, object_id) values
-  ('building', '00000000-0000-4000-8000-000500000043', 'shades', 'surface', '00000000-0000-4000-8000-000500000052');
-
 -- Plot 6 was split in two by the cadastre this year: two new grounds of
--- its participant, and a split_into link from the old plot to each.
-insert into building.sites (id, organisation_id, participant_id, name) values
-  ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6a'),
-  ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6b');
-select split_object('site', '00000000-0000-4000-8000-000500000036',
-                    array['00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000038']::uuid[], '2026-02-01');
+-- its participant, with what the cadastre says of where they come from.
+insert into building.sites (id, organisation_id, participant_id, name, metadata) values
+  ('00000000-0000-4000-8000-000500000037', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6a',
+   '{"cadastre": {"split_from": "Plot 6", "on": "2026-02-01"}}'),
+  ('00000000-0000-4000-8000-000500000038', '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000066', 'Plot 6b',
+   '{"cadastre": {"split_from": "Plot 6", "on": "2026-02-01"}}');
 
 -- Queries a page would run
 -- Buildings inside the perimeter, with their roof area:
 --   select b.name, b.height_m, area_m2(b.footprint) roof_m2
 --     from building.buildings b, projects p
 --    where p.id = '00000000-0000-4000-8000-000500000020' and ST_Within(ST_Force2D(b.footprint), ST_Force2D(p.geometry)) order by b.name;
--- Which roofs are shaded:
---   select s.name, b.name shaded_by from links l join building.surfaces s on s.id = l.object_id join building.buildings b on b.id = l.subject_id where l.type_code = 'shades';
 -- What plot 6 became:
---   select s.name, l.valid_from from links l join building.sites s on s.id = l.object_id
---    where l.type_code = 'split_into' and l.subject_id = '00000000-0000-4000-8000-000500000036';
+--   select name, metadata->'cadastre'->>'on' since from building.sites where metadata->'cadastre'->>'split_from' = 'Plot 6';
 
 -- Daily readings are cut in the participant's time zone.
 update participants set time_zone = 'Africa/Dakar' where organisation_id = '00000000-0000-4000-8000-000500000001';
