@@ -27,14 +27,19 @@ export async function organisationOfParticipant(db: Db, participantId: string): 
 }
 
 /**
- * Refuses `already_imported` when one of the identifiers already names an
- * object of the organisation: a file is imported once
+ * Refuses `already_imported` when one of the identifiers a file gives
+ * already names a building, a space or a surface of the organisation
+ * (`global_id`): a file is imported once
  * ([0036](../../../docs/decisions/0036-a-file-is-imported-once.md)).
  */
-export async function refuseKnown(db: Db, organisationId: string, scheme: string, values: string[], label: string): Promise<void> {
+export async function refuseKnown(db: Db, organisationId: string, values: string[], label: string): Promise<void> {
   const known = await db.query<{ value: string; object_id: string }>(
-    `select value, object_id from external_ids where organisation_id = $1 and scheme = $2 and value = any($3::text[]) order by value limit 1`,
-    [organisationId, scheme, values],
+    `select global_id value, id object_id from (
+        select id, global_id from building.buildings where organisation_id = $1
+        union all select id, global_id from building.spaces where organisation_id = $1
+        union all select id, global_id from building.surfaces where organisation_id = $1) o
+      where global_id = any($2::text[]) order by global_id limit 1`,
+    [organisationId, values],
   );
   if (known.rows.length) throw new Error(`already_imported: ${label} ${known.rows[0].value} is object ${known.rows[0].object_id} of this organisation`);
 }
@@ -59,7 +64,7 @@ export const round = (n: number, digits: number) => Math.round(n * 10 ** digits)
  */
 export async function addFace(
   db: Db,
-  face: { buildingId: string; kind: 'roof' | 'facade'; name: string; rings: Point[][]; crs: Crs; sourceCode: string; metadata: Record<string, unknown> },
+  face: { buildingId: string; kind: 'roof' | 'facade'; name: string; rings: Point[][]; crs: Crs; sourceCode: string; metadata: Record<string, unknown>; globalId?: string | null },
 ): Promise<string | null> {
   const ring = face.rings[0];
   const { normal, tilt } = orientation(ring);
@@ -72,22 +77,13 @@ export async function addFace(
                         case when $7::boolean then round(degrees(ST_Azimuth(
                           ${toWgs84('ST_MakePoint($8, $9)', 5, 6)}::geography,
                           ${toWgs84('ST_MakePoint($10, $11)', 5, 6)}::geography))::numeric, 2) end,
-                        $12, $13, $14) id`,
+                        $12, $13, $14, $15) id`,
     [
       face.buildingId, face.kind, face.name, polygonWkt(face.rings), face.crs.srid, face.crs.proj,
       sloped, centre[0], centre[1], centre[0] + (10 * normal[0]) / (horizontal || 1), centre[1] + (10 * normal[1]) / (horizontal || 1),
-      round(tilt, 2), face.sourceCode, JSON.stringify(face.metadata),
+      round(tilt, 2), face.sourceCode, JSON.stringify(face.metadata), face.globalId ?? null,
     ],
   );
   return r.rows[0].id;
 }
 
-/** An attribute read from a file, with the file as its source, through `set_attribute()`. */
-export async function attributeFromFile(db: Db, kind: string, objectId: string, property: string, value: unknown, sourceCode: string, scenarioId: string | null): Promise<void> {
-  await db.query(`select set_attribute($1, $2, $3, $4::jsonb, null, $5, null, $6)`, [kind, objectId, property, JSON.stringify(value), sourceCode, scenarioId]);
-}
-
-/** An identifier an object is known by in a file, through `add_identifier()`. */
-export async function identifierFromFile(db: Db, kind: string, objectId: string, scheme: string, value: string): Promise<void> {
-  await db.query(`select add_identifier($1, $2, $3, $4)`, [kind, objectId, scheme, value]);
-}

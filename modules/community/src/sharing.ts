@@ -92,7 +92,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
       `select value, valid_from, valid_to, source, source_code,
               (valid_from is null or valid_from <= $2::timestamptz) and (valid_to is null or valid_to >= $3::timestamptz) covers
          from attributes
-        where object_id = $1 and property_code = 'allocation_key' and scenario_id is null
+        where object_id = $1 and property_code = 'allocation_key'
           and (valid_from is null or valid_from < $3::timestamptz) and (valid_to is null or valid_to > $2::timestamptz)
         order by valid_from nulls first`,
       [request.projectId, from, to],
@@ -115,7 +115,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
     await db.query<ParticipantRow>(
       `select p.id, p.name, p.role, attributes_of(p.id, $2::timestamptz) attributes
          from participants p
-        where p.project_id = $1 and p.country is not null and p.scenario_id is null
+        where p.project_id = $1 and p.country is not null
           and (p.join_date is null or p.join_date < $3::timestamptz) and (p.leave_date is null or p.leave_date >= $2::timestamptz)
         order by p.name, p.id`,
       [request.projectId, from, to],
@@ -132,7 +132,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
       const ids = (
         await db.query<{ id: string }>(
           `select id from series
-            where quantity_code = $2 and kind = 'measured' and scenario_id is null
+            where quantity_code = $2 and kind = 'measured'
               and (object_id = $1 or object_id in (select meter_id from participant_meters($1)))
             order by id`,
           [p.id, quantity],
@@ -165,11 +165,11 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
 
   // The run of these inputs and this engine: the finished one when it exists, the engine is not started again.
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('community', $1, 'project', $2, null, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
+    `select run_id, finished from start_run('community.runs', 'project', $2, $1, $3::jsonb)`, [described.version, request.projectId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
     const done = (await db.query<{ results: { totals: Record<string, number>; participants: { id: string; series: Record<string, string> }[] } }>(
-      'select results from runs where id = $1', [started.run_id])).rows[0].results;
+      'select results from community.runs where id = $1', [started.run_id])).rows[0].results;
     return { runId: started.run_id, engine: described.version, sharedKwh: Number(done.totals?.shared_energy ?? 0), series: Object.fromEntries(done.participants.map((p) => [p.id, p.series])) };
   }
 
@@ -192,7 +192,7 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
         throw new Error(`engine_contract_mismatch: ${request.engine.name} answered no ${quantity} on the grid for participant ${p.name}`);
       }
       const { seriesId } = await store(db, {
-        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, run_id: started.run_id,
+        object_kind: 'participant', object_id: p.id, quantity_code: quantity, kind: 'simulated', value_kind: 'interval', step: request.step, source: `community.runs:${started.run_id}`,
       }, s.values, { unit: s.unit ?? null });
       stored[p.id][quantity] = seriesId;
     }
@@ -203,6 +203,6 @@ export async function runSharing(db: Db, request: SharingRunRequest): Promise<Sh
     meta: answer.result.meta,
     participants: participants.map((p) => ({ id: p.id, totals: answer.result.participants.find((r) => r.id === p.id)!.totals, series: stored[p.id] })),
   };
-  await db.query('select finish_run($1, $2::jsonb)', [started.run_id, JSON.stringify(results)]);
+  await db.query(`select finish_run('community.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(results)]);
   return { runId: started.run_id, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
 }

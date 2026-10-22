@@ -231,8 +231,8 @@ async function loadContext(db: Db, pvSystemId: string, profileCode: string, need
          from solar.pv_arrays a
          left join solar.module_products m on m.id = a.module_product_id
          left join solar.inverter_products i on i.id = a.inverter_product_id
-        where a.pv_system_id = $1
-        order by a.created_at, a.id`,
+        where a.pv_system_id = $1 and a.scenario_id is null
+        order by a.name, a.id`,
       [pvSystemId],
     )
   ).rows;
@@ -585,11 +585,11 @@ async function runWithEngine(db: Db, request: YieldRequest, profileCode: string,
   for (const s of answered.filter((x) => x.array !== undefined)) {
     const a = arrays.find((x) => x.name === s.array);
     if (!a) throw new Error(`engine_contract_mismatch: ${spec.name} answered a series for an array the request does not have: ${s.array}`);
-    // An array described without its own row: its series hang on the system,
-    // told apart by the array's name.
+    // The series of an array hang on its system, a device of the core, told
+    // apart by the array's name; the results say which array each is.
     const key = `array ${a.name}: ${s.quantity_code}`;
     arrayKeys.push({ array: a.name, quantity: s.quantity_code, key });
-    owned.push({ key, objectKind: a.id ? 'pv_array' : 'device', objectId: a.id ?? request.pvSystemId, sourceCode: weather.source_code, name: a.id ? name : `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
+    owned.push({ key, objectKind: 'device', objectId: request.pvSystemId, sourceCode: weather.source_code, name: `${name} ${a.name}`, series: s, unit: engineUnit(s.unit) });
   }
 
   const covered = meanAnnualOverCoveredYears(energy.values, timeZone, years);
@@ -656,9 +656,9 @@ async function recordRun(
   results: (seriesIds: Record<string, string>) => Record<string, unknown>,
 ): Promise<{ runId: string; results: Record<string, unknown> }> {
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('solar', $1, 'device', $2, null, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
+    `select run_id, finished from start_run('solar.runs', 'device', $2, $1, $3::jsonb)`, [engineVersion, subjectId, JSON.stringify(inputs)])).rows[0];
   if (started.finished) {
-    const done = await db.query<{ results: Record<string, unknown> }>('select results from runs where id = $1', [started.run_id]);
+    const done = await db.query<{ results: Record<string, unknown> }>('select results from solar.runs where id = $1', [started.run_id]);
     return { runId: started.run_id, results: done.rows[0].results };
   }
   const ids: Record<string, string> = {};
@@ -666,12 +666,12 @@ async function recordRun(
   for (const o of owned) {
     const stored = await store(db, {
       object_kind: o.objectKind, object_id: o.objectId, quantity_code: o.series.quantity_code, kind: 'simulated', value_kind: o.series.value_kind,
-      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, run_id: started.run_id,
+      step: o.series.step, source_code: o.sourceCode, name: o.name ?? null, source: `solar.runs:${started.run_id}`,
     }, o.series.values, { unit: o.unit ?? null });
     ids[o.key] = stored.seriesId;
   }
   const final = results(ids);
-  await db.query(`select finish_run($1, $2::jsonb)`, [started.run_id, JSON.stringify(final)]);
+  await db.query(`select finish_run('solar.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(final)]);
   return { runId: started.run_id, results: final };
 }
 

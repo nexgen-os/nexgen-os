@@ -9,9 +9,9 @@
  *                         unioned, at its lowest point, in WGS 84; its
  *                         height measured, else from its lowest to its
  *                         highest point
- *   storeys, year       → `set_attribute()`: `floors_above_ground`,
+ *   storeys, year       → the building's `floors_above_ground`,
  *                         `floors_below_ground`, `year_built`
- *   CityObject id       → `add_identifier()`, scheme `cityjson`
+ *   CityObject id       → the building's `global_id`
  *   roof and wall faces → `building.add_surface()`, kind `roof` or `facade`, with
  *                         azimuth (true north) and tilt
  *
@@ -22,13 +22,11 @@
  */
 import type { CityBuilding, CityModel, Point as CityPoint } from '@nexgen-os/cityjson';
 import type { Db } from '@nexgen-os/core';
-import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfParticipant, refuseKnown, round } from './faces.js';
+import { addFace, checkSrid, organisationOfParticipant, refuseKnown, round } from './faces.js';
 
 export interface CityJsonTarget {
   /** The participant whose buildings they are. */
   participantId: string;
-  /** A scenario the buildings belong to; the participant's by default. */
-  scenarioId?: string | null;
 }
 
 export interface CityJsonImportOptions {
@@ -61,8 +59,7 @@ const SURFACE_KINDS: Record<string, 'roof' | 'facade'> = {
 export async function importCityJson(db: Db, target: CityJsonTarget, model: CityModel, options: CityJsonImportOptions): Promise<CityJsonImport> {
   await checkSrid(db, model.srid);
   const organisationId = await organisationOfParticipant(db, target.participantId);
-  await refuseKnown(db, organisationId, 'cityjson', model.buildings.map((b) => b.id), 'CityObject');
-  const scenarioId = target.scenarioId ?? null;
+  await refuseKnown(db, organisationId, model.buildings.map((b) => b.id), 'CityObject');
   const result: CityJsonImport = { buildings: [], surfaces: 0, skipped: [...(model.skipped ?? [])] };
   const crs = { srid: model.srid, proj: null };
 
@@ -75,26 +72,23 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
                 (select case when g.u is null then null else
                           ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($4, 0)), $5), 4326) end
                    from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($3::text[]) w) g),
-                $4, $6, $7, $8, $9, $10) id`,
+                $4, $6, $7, $8, $9, p_global_id => $10) id`,
       [
         target.participantId, b.name ?? b.id, b.footprint.map(planWkt), elevation, model.srid, height,
         options.profile ?? null, options.sourceCode,
         JSON.stringify({ cityjson: { id: b.id, parts: b.parts ?? [], lods: b.lods ?? [], attributes: b.attributes } }),
-        scenarioId,
+        b.id,
       ],
     );
     const buildingId = building.rows[0].id;
     result.buildings.push({ id: buildingId, cityObjectId: b.id });
 
-    // Floors and year, as the file says them: attributes with their source.
-    for (const [property, value] of [
-      ['floors_above_ground', b.storeysAboveGround],
-      ['floors_below_ground', b.storeysBelowGround],
-      ['year_built', b.yearOfConstruction],
-    ] as const) {
-      if (value !== null) await attributeFromFile(db, 'building', buildingId, property, Math.round(value), options.sourceCode, scenarioId);
-    }
-    await identifierFromFile(db, 'building', buildingId, 'cityjson', b.id);
+    // Floors and year, as the file says them, with the building's source.
+    const whole = (value: number | null) => (value === null ? null : Math.round(value));
+    await db.query(
+      'update building.buildings set floors_above_ground = $2, floors_below_ground = $3, year_built = $4 where id = $1',
+      [buildingId, whole(b.storeysAboveGround), whole(b.storeysBelowGround), whole(b.yearOfConstruction)],
+    );
 
     let n = 0;
     for (const s of b.surfaces) {
@@ -127,9 +121,11 @@ interface BuildingRow {
   id: string;
   name: string;
   height_m: string | null;
-  attributes: { floors_above_ground?: number; floors_below_ground?: number; year_built?: number };
+  floors_above_ground: number | null;
+  floors_below_ground: number | null;
+  year_built: number | null;
   metadata: { cityjson?: { id?: string; attributes?: Record<string, unknown> } };
-  city_id: string | null;
+  global_id: string | null;
   srid: number;
   footprint: string | null;
   volume: string[] | null;
@@ -156,20 +152,19 @@ const polygonsOf = (geojson: string): CityPoint[][][] => {
  * The buildings of a participant as a CityJSON model, for `writeCityJson()`: a
  * LoD 1 solid from the footprint and height (`building.building_volume()`), the
  * roof and wall surfaces with their semantics, the CityGML attributes from
- * the columns and the attributes, the file's own attributes back from
+ * the columns, the file's own attributes back from
  * `metadata.cityjson`. Refuses `nothing_to_export` for a participant
  * without a building.
  */
 export async function exportCityJson(db: Db, where: { participantId: string }, options: CityJsonExportOptions = {}): Promise<CityModel> {
   const buildings = await db.query<BuildingRow>(
     `with s as (select coalesce($2::int, (select metric_srid(ST_Collect(footprint)) from building.buildings where participant_id = $1)) srid)
-     select b.id, b.name, b.height_m, attributes_of(b.id) attributes, b.metadata,
-            (select value from external_ids e where e.object_kind = 'building' and e.object_id = b.id and e.scheme = 'cityjson' limit 1) city_id,
+     select b.id, b.name, b.height_m, b.floors_above_ground, b.floors_below_ground, b.year_built, b.metadata, b.global_id,
             s.srid,
             ST_AsGeoJSON(ST_Transform(b.footprint, s.srid)) footprint,
             (select array_agg(ST_AsGeoJSON(ST_Transform(d.geom, s.srid))) from ST_Dump(building.building_volume(b.id)) d) volume
        from building.buildings b, s
-      where b.participant_id = $1 and b.scenario_id is null
+      where b.participant_id = $1
       order by b.created_at, b.id`,
     [where.participantId, options.srid ?? null],
   );
@@ -178,7 +173,7 @@ export async function exportCityJson(db: Db, where: { participantId: string }, o
   const surfaces = await db.query<SurfaceRow>(
     `select f.building_id, f.name, f.kind, f.metadata, ST_AsGeoJSON(ST_Transform(f.geometry, $2::int)) geometry
        from building.surfaces f join building.buildings b on b.id = f.building_id
-      where b.participant_id = $1 and f.scenario_id is null and f.geometry is not null
+      where b.participant_id = $1 and f.geometry is not null
       order by f.created_at, f.id`,
     [where.participantId, srid],
   );
@@ -186,14 +181,14 @@ export async function exportCityJson(db: Db, where: { participantId: string }, o
   return {
     srid,
     buildings: buildings.rows.map((b): CityBuilding => {
-      const id = b.city_id ?? b.metadata.cityjson?.id ?? b.id;
+      const id = b.global_id ?? b.metadata.cityjson?.id ?? b.id;
       return {
         id,
         name: b.name !== id ? b.name : null,
         measuredHeight: b.height_m !== null ? Number(b.height_m) : null,
-        storeysAboveGround: b.attributes.floors_above_ground ?? null,
-        storeysBelowGround: b.attributes.floors_below_ground ?? null,
-        yearOfConstruction: b.attributes.year_built ?? null,
+        storeysAboveGround: b.floors_above_ground,
+        storeysBelowGround: b.floors_below_ground,
+        yearOfConstruction: b.year_built,
         attributes: { ...(b.metadata.cityjson?.attributes ?? {}) },
         footprint: b.footprint ? polygonsOf(b.footprint) : [],
         solid: (b.volume ?? []).map(polygonOf),

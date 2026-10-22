@@ -159,7 +159,6 @@ export interface ReconstructionRequest {
    * period must then be one year.
    */
   energy?: { kwh: number; sourceCode?: string | null; source?: string | null; documentId?: string | null };
-  scenarioId?: string | null;
 }
 
 export interface ReconstructionResult {
@@ -182,7 +181,6 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
     )
   ).rows[0];
   if (!profile) throw new Error(`load_profile_unknown: ${request.profileCode}`);
-  const scenarioId = request.scenarioId ?? null;
 
   let hours: OpeningHours[] = [];
   if (profile.method === 'activity_hours') {
@@ -190,16 +188,16 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
       await db.query<OpeningHours>(
         `select weekday, opens::text opens, closes::text closes, valid_from::text valid_from, valid_to::text valid_to
            from consumption.activity_hours
-          where object_id = $1 and (scenario_id is null or scenario_id = $4)
+          where object_id = $1
             and (valid_from is null or valid_from < $3::date) and (valid_to is null or valid_to > $2::date)
           order by weekday, opens, closes, valid_from nulls first`,
-        [request.participantId, request.from, request.to, scenarioId],
+        [request.participantId, request.from, request.to],
       )
     ).rows;
     if (hours.length === 0) throw new Error(`activity_hours_required: ${profile.code} spreads energy by activity hours and the participant has none over ${request.from} to ${request.to}`);
   }
 
-  const energy = request.energy ?? (await annualConsumption(db, request, place.time_zone, scenarioId));
+  const energy = request.energy ?? (await annualConsumption(db, request, place.time_zone));
   const values = spreadEnergy(energy.kwh, slotWeights(profile, request.from, request.to, place.time_zone, hours));
   const step = `${DAY_MINUTES / profile.slots_per_day} minutes`;
 
@@ -214,32 +212,32 @@ export async function reconstructConsumption(db: Db, request: ReconstructionRequ
   // The run of these inputs: the finished one when it exists, else a new
   // one whose series is written before it is final.
   const started = (await db.query<{ run_id: string; finished: boolean }>(
-    `select run_id, finished from start_run('consumption', $1, 'participant', $2, $3, $4::jsonb)`,
-    [CONSUMPTION_ENGINE_VERSION, request.participantId, scenarioId, JSON.stringify(inputs)],
+    `select run_id, finished from start_run('consumption.runs', 'participant', $2, $1, $3::jsonb)`,
+    [CONSUMPTION_ENGINE_VERSION, request.participantId, JSON.stringify(inputs)],
   )).rows[0];
   if (started.finished) {
-    const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from runs where id = $1', [started.run_id])).rows[0];
+    const done = (await db.query<{ results: ReconstructionResult & { series_id: string } }>('select results from consumption.runs where id = $1', [started.run_id])).rows[0];
     return { runId: started.run_id, seriesId: done.results.series_id, kwh: done.results.kwh, step: done.results.step, slots: done.results.slots };
   }
   const { seriesId } = await store(db, {
     object_kind: 'participant', object_id: request.participantId, quantity_code: 'consumption_energy', kind: 'simulated', value_kind: 'interval', step,
-    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, scenario_id: scenarioId, run_id: started.run_id,
+    source_code: energy.sourceCode ?? null, name: `${profile.code} ${request.from} to ${request.to}`, source: `consumption.runs:${started.run_id}`,
   }, values);
   const kwh = round(values.reduce((sum, v) => sum + v.value, 0));
   const results = { series_id: seriesId, kwh, step, slots: values.length };
-  await db.query('select finish_run($1, $2::jsonb)', [started.run_id, JSON.stringify(results)]);
+  await db.query(`select finish_run('consumption.runs', $1, $2::jsonb)`, [started.run_id, JSON.stringify(results)]);
   return { runId: started.run_id, seriesId, kwh, step, slots: values.length };
 }
 
 /** The participant's annual consumption at the start of the first local day, for a period of one year. */
-async function annualConsumption(db: Db, request: ReconstructionRequest, timeZone: string, scenarioId: string | null): Promise<NonNullable<ReconstructionRequest['energy']>> {
+async function annualConsumption(db: Db, request: ReconstructionRequest, timeZone: string): Promise<NonNullable<ReconstructionRequest['energy']>> {
   const first = new Date(dayNumber(request.from) * DAY_MINUTES * MINUTE_MS);
   const yearLater = new Date(Date.UTC(first.getUTCFullYear() + 1, first.getUTCMonth(), first.getUTCDate())).toISOString().slice(0, 10);
   if (request.to !== yearLater) {
     throw new Error(`energy_required: ${request.from} to ${request.to} is not one year; give the energy of the period`);
   }
   const row = (
-    await db.query<{ kwh: string | null }>(`select attributes_of($1, ($2::date)::timestamp at time zone $4, $3) ->> 'annual_consumption' kwh`, [request.participantId, request.from, scenarioId, timeZone])
+    await db.query<{ kwh: string | null }>(`select attributes_of($1, ($2::date)::timestamp at time zone $3) ->> 'annual_consumption' kwh`, [request.participantId, request.from, timeZone])
   ).rows[0];
   if (row?.kwh === null || row?.kwh === undefined) {
     throw new Error('energy_required: the participant has no annual_consumption on the first day of the period; give the energy of the period');

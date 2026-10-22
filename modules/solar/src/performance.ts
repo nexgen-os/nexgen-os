@@ -96,24 +96,23 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
 
   let run: { id: string; results: { series_id?: string; array_series?: Record<string, Record<string, string>> } } | undefined;
   if (request.yieldRunId) {
-    run = (await db.query<typeof run & object>(`select id, results from runs where id = $1 and subject_kind = 'device' and subject_id = $2 and module_code = 'solar'`, [request.yieldRunId, request.pvSystemId])).rows[0];
+    run = (await db.query<typeof run & object>(`select id, results from solar.runs where id = $1 and device_id = $2`, [request.yieldRunId, request.pvSystemId])).rows[0];
     if (!run) throw new Error(`run_not_of_system: ${request.yieldRunId} is not a yield run of this PV system`);
   }
 
-  // The plane's irradiance: a sensor on the system, else on its one array, else the run's arrays weighted by power.
+  // The plane's irradiance: a sensor on the system, else the run's arrays weighted by power.
   const sensors = (
-    await db.query<{ id: string; on_system: boolean }>(
-      `select s.id, s.object_id = $1 on_system from series s
-        where s.quantity_code = 'poa_irradiance' and s.kind = 'measured'
-          and (s.object_id = $1 or s.object_id in (select id from solar.pv_arrays where pv_system_id = $1))
-        order by (s.object_id = $1) desc, s.created_at, s.id`,
+    await db.query<{ id: string }>(
+      `select s.id from series s
+        where s.quantity_code = 'poa_irradiance' and s.kind = 'measured' and s.object_kind = 'device' and s.object_id = $1
+        order by s.created_at, s.id`,
       [request.pvSystemId],
     )
   ).rows;
   let irradiance: Map<number, number>;
   let irradianceInputs: unknown;
   let source: PerformanceResult['irradiance'];
-  if (sensors.length > 0 && (sensors[0].on_system || sensors.length === 1)) {
+  if (sensors.length > 0) {
     const sensor = await read(sensors[0].id);
     irradiance = sensor.values;
     irradianceInputs = { source: 'measured', series: [fingerprint(sensor)] };
@@ -130,7 +129,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     irradianceInputs = { source: 'simulated', run_id: run.id, series: weighted.map((w) => ({ ...fingerprint(w.read), kwp: w.kwp })) };
     source = 'simulated';
   } else {
-    throw new Error('irradiance_required: no in-plane irradiance sensor on the system or its one array, and no yield run to read it from');
+    throw new Error('irradiance_required: no in-plane irradiance sensor on the system, and no yield run to read it from');
   }
 
   const expected = run?.results.series_id ? await read(run.results.series_id) : null;
@@ -186,7 +185,7 @@ export async function performanceIndicators(db: Db, request: PerformanceRequest)
     },
   };
   const recorded = await db.query<{ id: string }>(
-    `select record_run('solar', $1, 'device', $2, null, $3::jsonb, $4::jsonb) id`,
+    `select record_run('solar.runs', 'device', $2, $1, $3::jsonb, $4::jsonb) id`,
     [PERFORMANCE_ENGINE_VERSION, request.pvSystemId, JSON.stringify(inputs), JSON.stringify({ irradiance: source, total, months })],
   );
   return { runId: recorded.rows[0].id, irradiance: source, total, months };

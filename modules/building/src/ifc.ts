@@ -10,30 +10,30 @@
  *                         coordinates, when the participant had no position
  *                         or a coarser one
  *   building            → `building.add_building()`: its footprint in WGS 84, its
- *                         elevation and height; its year (`set_attribute()`)
+ *                         elevation and height; its year (`year_built`)
  *   storey, space       → `building.add_space()`, kinds floor and room; a room's
- *                         area as the attribute `floor_area`
+ *                         area (`floor_area_m2`)
  *   roof face           → `building.add_surface()`, kind roof, azimuth (true north)
  *                         and tilt
  *   product             → `install_device()`, when a device type names its
  *                         IFC class (`device_types.ifc_class`), under the
  *                         participant; its building, room and position stay
- *                         in its metadata (a device is not placed, decision
- *                         0026)
- *   GlobalId            → `add_identifier()`, scheme `ifc_guid`
+ *                         in its `file_record` attribute (a device is not
+ *                         placed, decision 0026)
+ *   GlobalId            → the `global_id` of a building, a space or a roof
+ *                         face; `add_identifier()`, scheme `ifc_guid`, for a
+ *                         device
  *
  * Every row has the source the caller names, and what the file says that
  * no column holds travels in `metadata.ifc`.
  */
 import type { Georeference, IfcModel, IfcRoom, FootprintSource } from '@nexgen-os/ifc';
 import type { Db } from '@nexgen-os/core';
-import { addFace, attributeFromFile, checkSrid, identifierFromFile, organisationOfParticipant, refuseKnown, toWgs84, type Crs } from './faces.js';
+import { addFace, checkSrid, organisationOfParticipant, refuseKnown, toWgs84, type Crs } from './faces.js';
 
 export interface IfcTarget {
   /** The participant whose building it is. */
   participantId: string;
-  /** A scenario the building belongs to; the participant's by default. */
-  scenarioId?: string | null;
 }
 
 export interface IfcImportOptions {
@@ -71,8 +71,7 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
   const { georeference: g } = model;
   if (g.srid !== null) await checkSrid(db, g.srid);
   const organisationId = await organisationOfParticipant(db, target.participantId);
-  await refuseKnown(db, organisationId, 'ifc_guid', model.buildings.map((b) => b.globalId), 'IfcBuilding');
-  const scenarioId = target.scenarioId ?? null;
+  await refuseKnown(db, organisationId, model.buildings.map((b) => b.globalId), 'IfcBuilding');
   const crs: Crs = { srid: g.srid, proj: g.proj };
   const precision = PRECISION[g.kind];
   const result: IfcImport = {
@@ -134,17 +133,16 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
                            from (select ST_Union(case when $11::boolean then ST_Buffer(ST_GeomFromText(w), 0.05, 'join=mitre')
                                                       else ST_SnapToGrid(ST_GeomFromText(w), 0.001) end) u
                                    from unnest($3::text[]) w) x) g),
-                $4, $7, $8, $9, $10, $12) id`,
+                $4, $7, $8, $9, $10, p_global_id => $12) id`,
       [
         target.participantId, b.name, b.footprint.pieces.map(planWkt), b.elevation, crs.srid, crs.proj,
-        b.height, options.profile ?? null, options.sourceCode, JSON.stringify(metadata), b.footprint.source === 'walls', scenarioId,
+        b.height, options.profile ?? null, options.sourceCode, JSON.stringify(metadata), b.footprint.source === 'walls', b.globalId,
       ],
     );
     const id = row.rows[0].id;
-    await identifierFromFile(db, 'building', id, 'ifc_guid', b.globalId);
     // The year the file says the building was built, when it reads as a year.
     if (b.yearOfConstruction !== null && b.yearOfConstruction >= 1000 && b.yearOfConstruction <= 2200) {
-      await attributeFromFile(db, 'building', id, 'year_built', Math.round(b.yearOfConstruction), options.sourceCode, scenarioId);
+      await db.query('update building.buildings set year_built = $2 where id = $1', [id, Math.round(b.yearOfConstruction)]);
     }
     result.buildings.push({ id, globalId: b.globalId, footprint: b.footprint.source });
     buildingRows.set(b.globalId, id);
@@ -152,23 +150,19 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
 
     const addRoom = async (room: IfcRoom, floorId: string | null) => {
       const space = await db.query<{ id: string }>(
-        `select building.add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6) id`,
-        [id, room.name, floorId, room.height, options.sourceCode, JSON.stringify({ ifc: room.description })],
+        `select building.add_space($1, 'room', $2, $3, null, null, null, $4, $5, $6, $7) id`,
+        [id, room.name, floorId, room.height, options.sourceCode, JSON.stringify({ ifc: room.description }), room.globalId ?? null],
       );
       const spaceId = space.rows[0].id;
-      if (room.area !== null) await attributeFromFile(db, 'space', spaceId, 'floor_area', room.area, options.sourceCode, scenarioId);
-      if (room.globalId) {
-        await identifierFromFile(db, 'space', spaceId, 'ifc_guid', room.globalId);
-        roomRows.set(room.globalId, spaceId);
-      }
+      if (room.area !== null) await db.query('update building.spaces set floor_area_m2 = $2 where id = $1', [spaceId, room.area]);
+      if (room.globalId) roomRows.set(room.globalId, spaceId);
       result.counts.spaces += 1;
     };
     for (const f of b.floors) {
       const floor = await db.query<{ id: string }>(
-        `select building.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7) id`,
-        [id, f.name, f.level, f.elevation, f.height, options.sourceCode, JSON.stringify({ ifc: f.description })],
+        `select building.add_space($1, 'floor', $2, null, $3, null, $4, $5, $6, $7, $8) id`,
+        [id, f.name, f.level, f.elevation, f.height, options.sourceCode, JSON.stringify({ ifc: f.description }), f.globalId ?? null],
       );
-      if (f.globalId) await identifierFromFile(db, 'space', floor.rows[0].id, 'ifc_guid', f.globalId);
       result.counts.floors += 1;
       for (const room of f.rooms) await addRoom(room, floor.rows[0].id);
     }
@@ -177,12 +171,12 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     for (const roof of b.roofs) {
       const surface = await addFace(db, {
         buildingId: id, kind: 'roof', name: roof.name, rings: roof.rings, crs, sourceCode: options.sourceCode, metadata: { ifc: roof.description },
+        globalId: roof.globalId ?? null,
       });
       if (!surface) {
         skip(roof.description.entity, 'no roof face in its geometry');
         continue;
       }
-      if (roof.globalId) await identifierFromFile(db, 'surface', surface, 'ifc_guid', roof.globalId);
       result.counts.roofs += 1;
     }
   }
@@ -222,13 +216,15 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
     }
     // Where the file puts it is kept as the file says it: a device is not placed.
     const device = await db.query<{ id: string }>(
-      `select install_device($1, $2, $3,
-                p_source_code => $4, p_scenario_id => $5, p_nameplate => $6, p_metadata => $7, p_status => 'in_service') id`,
+      `select install_device($1, $2, $3, p_source_code => $4, p_nameplate => $5, p_status => 'in_service') id`,
       [
-        target.participantId, deviceType, p.name,
-        options.sourceCode, scenarioId,
+        target.participantId, deviceType, p.name, options.sourceCode,
         JSON.stringify({ manufacturer: p.manufacturer, model: p.model, serial_number: p.serialNumber }),
-        JSON.stringify({ ifc: {
+      ],
+    );
+    await db.query(`select set_attribute('device', $1, 'file_record', $2::jsonb, null, $3)`, [
+      device.rows[0].id,
+      JSON.stringify({ ifc: {
           ...p.description, header: model.header,
           placement: {
             building: (p.building && buildingRows.get(p.building)) || null,
@@ -237,9 +233,9 @@ export async function importIfc(db: Db, target: IfcTarget, model: IfcModel, opti
             crs: g.crs,
           },
         } }),
-      ],
-    );
-    if (p.globalId) await identifierFromFile(db, 'device', device.rows[0].id, 'ifc_guid', p.globalId);
+      options.sourceCode,
+    ]);
+    if (p.globalId) await db.query(`select add_identifier('device', $1, 'ifc_guid', $2)`, [device.rows[0].id, p.globalId]);
     result.counts.devices += 1;
   }
   result.skipped.sort((p, q) => p.entity.localeCompare(q.entity) || p.reason.localeCompare(q.reason));

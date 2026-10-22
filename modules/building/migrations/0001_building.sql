@@ -715,6 +715,20 @@ $$;
 comment on function building.building_of(text, uuid) is
   'The building an object (its kind and id) is in or on — itself, a space, a surface. Null when it is in none.';
 
+-- ---------------------------------------------------------------------------
+-- What a file says of a device it describes.
+-- ---------------------------------------------------------------------------
+
+-- A device read from a building's file (an IFC model, a Home Assistant
+-- home) keeps what the file says of it that no column holds — its key, its
+-- room, its position, its description — so that an export gives it back as
+-- it came. A device is not placed (decision 0026): this is the file's word,
+-- not a placement.
+insert into property_defs (code, name, description, datatype, applies_to, published_by) values
+  ('file_record', 'File record',
+   'What the file a device was read from says of it that no column holds, by format: {"ifc": {…}} or {"ha": {…}}.',
+   'json', '{device}', 'building');
+
 grant execute on function building.footprint_volume(geometry, numeric, numeric), building.surface_orientation(geometry),
   building.building_volume(uuid), building.participant_of(text, uuid), building.places_of(text, uuid),
   building.building_of(text, uuid),
