@@ -150,9 +150,9 @@ create table tasks.tasks (
   id                      uuid primary key default gen_random_uuid(),
   organisation_id         uuid not null references organisations(id) on delete cascade,
   -- What the task is about, by its kind and its id: a project, a
-  -- participant, a building, a surface, a device. Its organisation is the subject's
+  -- participant, a meter, a device. Its organisation is the subject's
   -- (`attach`), and it goes with its subject (`drop_attachments`).
-  subject_kind            text not null references kinds(kind),
+  subject_kind            text not null,
   subject_id              uuid not null,
   phase                   text not null references tasks.phases(code),
   -- The role that carries it, and the contact who holds that role here.
@@ -173,10 +173,9 @@ create table tasks.tasks (
   source_ref              text,
   template_id             uuid references tasks.templates(id) on delete set null,
   notes                   text,
-  tags                    text[] not null default '{}',
-  scenario_id             uuid references scenarios(id) on delete cascade,
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now(),
+  constraint tasks_subject_kind check (subject_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
   constraint tasks_name_not_blank check (btrim(name) <> ''),
   constraint tasks_status check (status in ('planned', 'in_progress', 'done', 'blocked', 'cancelled')),
   constraint tasks_source check (source in ('template', 'manual', 'action')),
@@ -187,29 +186,24 @@ create table tasks.tasks (
   -- before it is done.
   constraint tasks_started check (status not in ('in_progress', 'done') or actual_start is not null),
   constraint tasks_done check ((status = 'done') = (actual_end is not null)),
-  constraint tasks_not_own_dependency check (depends_on is distinct from id),
-  constraint tasks_tags_known check (tags_known(tags))
+  constraint tasks_not_own_dependency check (depends_on is distinct from id)
 );
 
 comment on table tasks.tasks is
-  'A task on a project, a participant, a building, a surface or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action). An object: photos, reports and certificates attach to it.';
+  'A task on a project, a participant, a meter or a device: its phase, the role that carries it and the contact who holds it, planned and actual dates, status, the task it waits for and where it comes from (a template, a hand, an action).';
 
 create index tasks_subject_idx on tasks.tasks (subject_kind, subject_id);
 create index tasks_phase_idx on tasks.tasks (phase);
 create index tasks_role_idx on tasks.tasks (role);
--- A template is applied once to a subject, in the world as it is or in a scenario.
-create unique index tasks_template_once on tasks.tasks (subject_kind, subject_id, template_id, coalesce(scenario_id, '00000000-0000-0000-0000-000000000000'::uuid))
+-- A template is applied once to a subject.
+create unique index tasks_template_once on tasks.tasks (subject_kind, subject_id, template_id)
   where template_id is not null;
-create trigger tasks_attach before insert or update of subject_kind, subject_id, scenario_id on tasks.tasks
+create trigger tasks_attach before insert or update of subject_kind, subject_id on tasks.tasks
   for each row execute function attach('subject');
 create trigger tasks_set_updated_at before update on tasks.tasks
   for each row execute function set_updated_at();
 create index tasks_organisation_idx on tasks.tasks (organisation_id);
-create trigger tasks_drop_attachments after delete on tasks.tasks
-  for each row execute function drop_attachments('task');
 call secure_table('tasks.tasks');
-
-insert into kinds (kind, table_name, published_by) values ('task', 'tasks.tasks', 'tasks');
 
 -- The contact who holds a task and the task it waits for are of its organisation.
 create or replace function tasks.tasks_check()
@@ -246,7 +240,7 @@ create trigger tasks_check
 -- nothing is decided in the dark. Dependencies between templates become
 -- dependencies between the tasks created. Calling it again creates nothing
 -- twice. It writes under the caller's row level security.
-create or replace function tasks.plan(p_project_id uuid, p_scenario_id uuid default null)
+create or replace function tasks.plan(p_project_id uuid)
 returns jsonb
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -275,8 +269,7 @@ begin
      order by tp.position, tp.code
   loop
     if exists (select 1 from tasks.tasks x
-                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id
-                  and x.scenario_id is not distinct from p_scenario_id) then
+                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id) then
       v_existing := v_existing + 1;
       continue;
     end if;
@@ -307,8 +300,8 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id, scenario_id)
-    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
+    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
+    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id);
     v_created := v_created + 1;
   end loop;
 
@@ -318,42 +311,35 @@ begin
     from tasks.templates tp
     join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
     join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
-                      and d.scenario_id is not distinct from p_scenario_id
    where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
-     and x.scenario_id is not distinct from p_scenario_id
      and x.depends_on is null;
 
   return jsonb_build_object('project_id', p_project_id, 'created', v_created, 'existing', v_existing, 'skipped', v_skipped);
 end;
 $$;
 
-comment on function tasks.plan(uuid, uuid) is
+comment on function tasks.plan(uuid) is
   'Creates the tasks of a project from the templates that match its country, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
 
-grant execute on function tasks.plan(uuid, uuid) to authenticated, service_role;
+grant execute on function tasks.plan(uuid) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- progress — where a project stands on a day.
 -- ---------------------------------------------------------------------------
 
 -- The tasks of a participant (on the participant or anything of it) or of
--- a project (on the project or on the participants taking part in it), in the world as it is or
--- in a scenario, summed up on a given day: how many by status, the share
+-- a project (on the project or on the participants taking part in it),
+-- summed up on a given day: how many by status, the share
 -- done among those not cancelled, those late (planned to end before the
 -- day and not done), and the phase of the earliest task still open. The
 -- day is always given: the same call gives the same answer.
-create or replace function tasks.progress(p_object_id uuid, p_on date, p_scenario_id uuid default null)
+create or replace function tasks.progress(p_object_id uuid, p_on date)
 returns jsonb
 language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  with recursive chain as (
-    select s.id, s.parent_id from scenarios s where s.id = p_scenario_id
-    union all
-    select s.id, s.parent_id from scenarios s join chain on s.id = chain.parent_id
-  ),
-  nodes as (
+  with nodes as (
     select p_object_id as id
     union
     select p.id from participants p where p.project_id = p_object_id
@@ -362,8 +348,7 @@ as $$
     select m.*, ph.position
       from tasks.tasks m
       join tasks.phases ph on ph.code = m.phase
-     where (m.scenario_id is null or m.scenario_id in (select id from chain))
-       and (m.subject_id = p_object_id or participant_of(m.subject_kind, m.subject_id) in (select id from nodes))
+     where (m.subject_id = p_object_id or participant_of(m.subject_kind, m.subject_id) in (select id from nodes))
   )
   select jsonb_build_object(
     'on', p_on,
@@ -378,10 +363,10 @@ as $$
   from m;
 $$;
 
-comment on function tasks.progress(uuid, date, uuid) is
+comment on function tasks.progress(uuid, date) is
   'Where a participant or a project stands on a day: tasks by status, share done, the late ones, the current phase. Reads under the caller''s row level security.';
 
-grant execute on function tasks.progress(uuid, date, uuid) to authenticated, service_role;
+grant execute on function tasks.progress(uuid, date) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('tasks', 'Tasks', '0.1.0', 'tasks', '0.2.0',

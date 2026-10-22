@@ -7,10 +7,41 @@
 -- participant (a fixed share, a rank) is an attribute of the participant.
 -- Nothing here interprets a key: an engine of the `energy_sharing` kind
 -- does (packages/connectors/README.md, decision 0013), and its answer comes back as a
--- run of this module whose series are on the participants
+-- run of this module (`community.runs`) whose series are on the participants
 -- (`modules/community/src/sharing.ts`).
 
 set search_path = nexgen, public, extensions;
+
+-- ---------------------------------------------------------------------------
+-- runs — what the module computed (decision 0004).
+-- ---------------------------------------------------------------------------
+
+create table community.runs (
+  id               uuid primary key default gen_random_uuid(),
+  organisation_id  uuid not null references organisations(id) on delete cascade,
+  -- The project whose energy was shared.
+  project_id       uuid not null references projects(id) on delete cascade,
+  engine_version   text not null,
+  inputs           jsonb not null,
+  -- sha256 of the table, engine version and inputs: the identity of a result.
+  inputs_hash      text not null,
+  results          jsonb,
+  status           text not null default 'running',
+  started_at       timestamptz not null default now(),
+  finished_at      timestamptz,
+  constraint runs_status check (status in ('running', 'succeeded')),
+  constraint runs_finished check ((status = 'running') = (finished_at is null))
+);
+
+comment on table community.runs is
+  'The sharings the module computed for a project: inputs, engine version, results; the series a run wrote name it in their source. Immutable once finished; same inputs + same engine = same run.';
+
+create unique index runs_one_success_per_input on community.runs (organisation_id, inputs_hash) where status = 'succeeded';
+create index runs_project_id_idx on community.runs (project_id);
+create trigger runs_is_final before update on community.runs
+  for each row execute function run_is_final();
+call secure_table('community.runs');
+
 
 insert into property_defs (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
   ('allocation_key', 'Allocation key',

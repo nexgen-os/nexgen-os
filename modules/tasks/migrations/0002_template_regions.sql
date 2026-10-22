@@ -15,7 +15,7 @@ alter table tasks.templates add column regions text[] not null default '{}';
 comment on column tasks.templates.regions is
   'The ISO 3166-2 regions of the country the template holds in; empty: the whole country.';
 
-create or replace function tasks.plan(p_project_id uuid, p_scenario_id uuid default null)
+create or replace function tasks.plan(p_project_id uuid)
 returns jsonb
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
@@ -50,8 +50,7 @@ begin
      order by tp.position, tp.code
   loop
     if exists (select 1 from tasks.tasks x
-                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id
-                  and x.scenario_id is not distinct from p_scenario_id) then
+                where x.subject_kind = 'project' and x.subject_id = p_project_id and x.template_id = t.id) then
       v_existing := v_existing + 1;
       continue;
     end if;
@@ -93,8 +92,8 @@ begin
       end if;
     end if;
 
-    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id, scenario_id)
-    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id, p_scenario_id);
+    insert into tasks.tasks (organisation_id, subject_kind, subject_id, phase, role, name, notes, source, template_id)
+    values (v_org, 'project', p_project_id, t.phase, t.role, t.name, t.description, 'template', t.id);
     v_created := v_created + 1;
   end loop;
 
@@ -104,16 +103,14 @@ begin
     from tasks.templates tp
     join tasks.templates dt on dt.published_by = tp.published_by and dt.code = tp.depends_on_code
     join tasks.tasks d on d.template_id = dt.id and d.subject_kind = 'project' and d.subject_id = p_project_id
-                      and d.scenario_id is not distinct from p_scenario_id
    where x.template_id = tp.id and x.subject_kind = 'project' and x.subject_id = p_project_id
-     and x.scenario_id is not distinct from p_scenario_id
      and x.depends_on is null;
 
   return jsonb_build_object('project_id', p_project_id, 'created', v_created, 'existing', v_existing, 'skipped', v_skipped);
 end;
 $$;
 
-comment on function tasks.plan(uuid, uuid) is
+comment on function tasks.plan(uuid) is
   'Creates the tasks of a project from the templates that match its country, the regions of its participants, its kind and its attributes, once; says what it created, what already was there and what it could not decide. Writes under the caller''s row level security.';
 
-grant execute on function tasks.plan(uuid, uuid) to authenticated, service_role;
+grant execute on function tasks.plan(uuid) to authenticated, service_role;

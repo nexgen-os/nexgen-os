@@ -6,9 +6,9 @@
 -- connection point each participant carries (`meters`). What an energy community adds is how it
 -- shares energy among its participants: the allocation key of the project
 -- and what that key reads about each participant, as attributes, and the
--- shares an engine computes, as runs of this module (0002). The schema holds
--- no table today; it is created so that the module has a home of its own,
--- and the row below registers the module (modules/README.md, rule 6).
+-- shares an engine computes, as runs of this module (0002). The schema is
+-- created here so that the module has a home of its own, and the row below
+-- registers the module (modules/README.md, rule 6).
 
 set search_path = nexgen, public, extensions;
 

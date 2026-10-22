@@ -9,19 +9,22 @@
 -- building, floor or unit a participant occupies when it shares one. The
 -- territory of CityGML and of the spatial structure of IFC.
 --
+--   building.profiles     what a building or a place is used for
 --   building.sites        the ground of a participant: a parcel, an area, a use
---   building.buildings    a footprint, an elevation, a height
---   building.spaces       floors, rooms, zones and units of a building, one tree
---   building.surfaces     roof faces, facades, ground areas, carports
+--   building.buildings    a footprint, an elevation, a height, its year,
+--                         its floors, its energy label
+--   building.spaces       floors, rooms, zones and units of a building, one
+--                         tree, with the participant that occupies one
+--   building.surfaces     roof faces, facades, ground areas, carports, with
+--                         their material and thermal transmittance
 --
--- Sites, buildings, spaces and surfaces are kinds of object, published in
--- `kinds`: attributes, identifiers, links, documents and series name them
--- by kind and id as they name any object of the core, and
--- `participant_of()` asks this module's `building.participant_of()` whose
--- they are. Where a device sits among them is not described for now
--- (decision 0026): a device belongs to its participant, behind its meters.
--- `building.parameter_of()` resolves a parameter through what is built
--- before asking the core from the participant. Geometry follows the core's
+-- What describes them is their columns, with the source they came from and
+-- the identifier their file or register gives them (`global_id`): the
+-- attachments of the core name the six objects of the core only. Each
+-- belongs to a participant through its foreign keys, which
+-- `building.participant_of()` follows. Where a device sits among them is
+-- not described for now (decision 0026): a device belongs to its
+-- participant, behind its meters. Geometry follows the core's
 -- frame (decision 0003): WGS 84, three-dimensional, through
 -- `to_core_geometry()`.
 
@@ -30,16 +33,52 @@ set search_path = nexgen, public, extensions;
 create schema building;
 grant usage on schema building to authenticated, service_role;
 
--- Registered first: the kinds it publishes are published under its code.
+-- Registered first: what it publishes is published under its code.
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('building', 'Building', '0.1.0', 'building', '0.3.0',
         'The physical description of the place of a participant: its ground, its buildings, their floors, rooms, zones and units, roof faces, facades and ground areas with their orientation, and which of them a participant occupies.');
 
-insert into kinds (kind, table_name, published_by) values
-  ('site',     'building.sites',     'building'),
-  ('building', 'building.buildings', 'building'),
-  ('space',    'building.spaces',    'building'),
-  ('surface',  'building.surfaces',  'building');
+-- ---------------------------------------------------------------------------
+-- profiles — what a building or a place is used for.
+-- ---------------------------------------------------------------------------
+
+create table building.profiles (
+  code             text primary key,
+  name             text not null,
+  description      text,
+  -- building: a use of a building (office, school, dwelling); place: a use of
+  -- a place without a building to speak of (a field, a car park, a plant).
+  applies_to       text not null default 'building',
+  ifc_occupancy    text,
+  citygml_function text,
+  published_by     text not null default 'building',
+  constraint profiles_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
+  constraint profiles_applies_to check (applies_to in ('building', 'place'))
+);
+
+comment on table building.profiles is
+  'The use of a building or a place: residential, office, school, factory, farm, car park… A pack or a module adds its own rows.';
+
+alter table building.profiles enable row level security;
+create policy profiles_read on building.profiles for select to authenticated using (true);
+grant select on building.profiles to authenticated;
+grant select, insert, update, delete on building.profiles to service_role;
+
+insert into building.profiles (code, name, applies_to, ifc_occupancy, citygml_function, description) values
+  ('residential', 'Residential',        'building', 'Residential',  'residential', 'Dwellings: a house, a flat, a block.'),
+  ('office',      'Office',             'building', 'Office',       'office',      'Office space.'),
+  ('school',      'School',             'building', 'Education',    'school',      'A school, a nursery, a training centre.'),
+  ('retail',      'Retail',             'building', 'Retail',       'retail',      'A shop, a supermarket.'),
+  ('industrial',  'Industrial',         'building', 'Industrial',   'industry',    'A factory, a workshop.'),
+  ('warehouse',   'Warehouse',          'building', 'Storage',      'warehouse',   'A storage or logistics hall.'),
+  ('agricultural','Agricultural',       'building', 'Agricultural', 'agriculture', 'A barn, a stable, a greenhouse.'),
+  ('public',      'Public building',    'building', 'Public',       'public',      'A town hall, a library, a sports hall.'),
+  ('healthcare',  'Healthcare',         'building', 'Healthcare',   'hospital',    'A hospital, a care home.'),
+  ('hospitality', 'Hospitality',        'building', 'Hotel',        'hotel',       'A hotel, a restaurant.'),
+  ('mixed',       'Mixed use',          'building', 'Mixed',        'mixed',       'Several uses in one building.'),
+  ('plant',       'Production site',    'place',    null,           'industry',    'A place whose purpose is a plant: a PV field, a wind farm.'),
+  ('car_park',    'Car park',           'place',    null,           'parking',     'An open car park.'),
+  ('land',        'Land',               'place',    null,           'agriculture', 'A field, a meadow, a wood.');
 
 -- Vertical faces of a footprint between two heights, plus floor and roof:
 -- the level-of-detail 1 block. Derived, never stored.
@@ -156,17 +195,16 @@ create table building.sites (
   -- (`area_m2(geometry)` measures the outline).
   area_m2          numeric(14, 2),
   -- What the ground is used for, when it is not a building's use.
-  profile          text references profiles(code),
+  profile          text references building.profiles(code),
   source_code      text references sources(code),
+  -- The identifier its register gives it: a cadastral parcel.
+  global_id        text,
   metadata         jsonb not null default '{}',
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint sites_name_not_blank check (btrim(name) <> ''),
   constraint sites_area_positive check (area_m2 is null or area_m2 >= 0),
-  constraint sites_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint sites_tags_known check (tags_known(tags))
+  constraint sites_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3))
 );
 
 comment on table building.sites is
@@ -176,13 +214,11 @@ create index sites_participant_idx on building.sites (participant_id);
 create index sites_geometry_idx on building.sites using gist (geometry);
 create trigger sites_normalize before insert or update of geometry on building.sites
   for each row execute function normalize_geometry('geometry');
-create trigger sites_participant_id_check before insert or update of participant_id, scenario_id on building.sites
+create trigger sites_participant_id_check before insert or update of participant_id on building.sites
   for each row execute function parent_check('participant_id', 'participants');
 create trigger sites_set_updated_at before update on building.sites
   for each row execute function set_updated_at();
 create index sites_organisation_idx on building.sites (organisation_id);
-create trigger sites_drop_attachments after delete on building.sites
-  for each row execute function drop_attachments('site');
 call secure_table('building.sites');
 
 -- ---------------------------------------------------------------------------
@@ -197,28 +233,39 @@ create table building.buildings (
   participant_id       uuid not null references participants(id) on delete cascade,
   site_id              uuid references building.sites(id) on delete set null,
   name                 text not null,
-  profile              text references profiles(code),
+  profile              text references building.profiles(code),
   -- The outline on the ground. With elevation and height it gives the
   -- level-of-detail 1 block (`building_volume`).
   footprint            geometry,
   elevation_m          numeric(9, 3),
   height_m             numeric(9, 3),
+  -- What a register, a model or an audit says of it (CityGML Building,
+  -- IFC Pset_BuildingCommon): the year of construction, the number of
+  -- floors above and below ground, the gross floor area in m², the energy
+  -- label. Described floors are spaces.
+  year_built           integer,
+  floors_above_ground  integer,
+  floors_below_ground  integer,
+  floor_area_m2        numeric(14, 2),
+  energy_label         text,
   -- Where the description comes from (a cadastre, a 3D city model, a
-  -- survey), and what that source said beyond these columns. The year of
-  -- construction and the number of floors are attributes, with their
-  -- period and their source; described floors are spaces.
+  -- survey), the identifier it gives the building (a CityJSON object id,
+  -- an IFC GlobalId, an OpenStreetMap element), and what that source said
+  -- beyond these columns.
   source_code          text references sources(code),
+  global_id            text,
   metadata             jsonb not null default '{}',
   status               text not null default 'in_service',
-  tags                 text[] not null default '{}',
-  scenario_id          uuid references scenarios(id) on delete cascade,
   created_at           timestamptz not null default now(),
   updated_at           timestamptz not null default now(),
   constraint buildings_name_not_blank check (btrim(name) <> ''),
   constraint buildings_height_positive check (height_m is null or height_m >= 0),
   constraint buildings_status check (status in ('planned', 'under_construction', 'in_service', 'out_of_service', 'demolished')),
   constraint buildings_footprint_core check (footprint is null or (ST_SRID(footprint) = 4326 and ST_NDims(footprint) = 3)),
-  constraint buildings_tags_known check (tags_known(tags))
+  constraint buildings_year_built check (year_built is null or year_built between 1000 and 2200),
+  constraint buildings_floors_positive check (coalesce(floors_above_ground, 0) >= 0 and coalesce(floors_below_ground, 0) >= 0),
+  constraint buildings_floor_area_positive check (floor_area_m2 is null or floor_area_m2 >= 0),
+  constraint buildings_energy_label check (energy_label is null or energy_label in ('A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'))
 );
 
 comment on table building.buildings is
@@ -229,9 +276,9 @@ create index buildings_site_idx on building.buildings (site_id);
 create index buildings_footprint_idx on building.buildings using gist (footprint);
 create trigger buildings_normalize before insert or update of footprint on building.buildings
   for each row execute function normalize_geometry('footprint');
-create trigger buildings_participant_id_check before insert or update of participant_id, scenario_id on building.buildings
+create trigger buildings_participant_id_check before insert or update of participant_id on building.buildings
   for each row execute function parent_check('participant_id', 'participants');
-create trigger buildings_site_id_check before insert or update of site_id, scenario_id on building.buildings
+create trigger buildings_site_id_check before insert or update of site_id on building.buildings
   for each row execute function parent_check('site_id', 'building.sites');
 
 -- The ground a building stands on is its participant's.
@@ -256,8 +303,6 @@ create trigger buildings_check before insert or update of site_id, participant_i
 create trigger buildings_set_updated_at before update on building.buildings
   for each row execute function set_updated_at();
 create index buildings_organisation_idx on building.buildings (organisation_id);
-create trigger buildings_drop_attachments after delete on building.buildings
-  for each row execute function drop_attachments('building');
 call secure_table('building.buildings');
 
 create or replace function building.building_volume(p_building_id uuid)
@@ -293,12 +338,16 @@ create table building.spaces (
   level            integer,
   elevation_m      numeric(9, 3),
   height_m         numeric(9, 3),
-  -- Plan outline, when known.
+  -- Plan outline, when known, and the gross floor area in m².
   geometry         geometry,
+  floor_area_m2    numeric(14, 2),
+  -- The participant of a project that occupies it (a tenant, a resident,
+  -- an owner who lives there): a unit or a floor of a shared building.
+  occupant_id      uuid references participants(id) on delete set null,
   source_code      text references sources(code),
+  -- The identifier its file gives it: an IFC GlobalId.
+  global_id        text,
   metadata         jsonb not null default '{}',
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint spaces_name_not_blank check (btrim(name) <> ''),
@@ -308,13 +357,13 @@ create table building.spaces (
   constraint spaces_not_own_parent check (parent_id is distinct from id),
   constraint spaces_height_positive check (height_m is null or height_m >= 0),
   constraint spaces_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint spaces_tags_known check (tags_known(tags))
+  constraint spaces_floor_area_positive check (floor_area_m2 is null or floor_area_m2 >= 0)
 );
 
 comment on table building.spaces is
-  'The spatial structure inside a building, one tree: floors (IfcBuildingStorey, CityGML Storey), rooms (IfcSpace, CityGML BuildingRoom, Brick Room), zones and units. A participant occupies one (occupies); a series observes one.';
+  'The spatial structure inside a building, one tree: floors (IfcBuildingStorey, CityGML Storey), rooms (IfcSpace, CityGML BuildingRoom, Brick Room), zones and units, with the participant that occupies one.';
 
-create unique index spaces_one_floor_per_level on building.spaces (building_id, level, scenario_id) nulls not distinct where kind = 'floor';
+create unique index spaces_one_floor_per_level on building.spaces (building_id, level) where kind = 'floor';
 create index spaces_building_idx on building.spaces (building_id);
 create index spaces_parent_idx on building.spaces (parent_id);
 create index spaces_geometry_idx on building.spaces using gist (geometry);
@@ -358,15 +407,16 @@ comment on function building.spaces_check() is
 
 create trigger spaces_check before insert or update of parent_id, building_id on building.spaces
   for each row execute function building.spaces_check();
-create trigger spaces_parent_id_check before insert or update of parent_id, scenario_id on building.spaces
+create trigger spaces_parent_id_check before insert or update of parent_id on building.spaces
   for each row execute function parent_check('parent_id', 'building.spaces');
-create trigger spaces_building_id_check before insert or update of building_id, scenario_id on building.spaces
+create trigger spaces_building_id_check before insert or update of building_id on building.spaces
   for each row execute function parent_check('building_id', 'building.buildings');
+create trigger spaces_occupant_id_check before insert or update of occupant_id on building.spaces
+  for each row execute function parent_check('occupant_id', 'participants');
 create trigger spaces_set_updated_at before update on building.spaces
   for each row execute function set_updated_at();
 create index spaces_organisation_idx on building.spaces (organisation_id);
-create trigger spaces_drop_attachments after delete on building.spaces
-  for each row execute function drop_attachments('space');
+create index spaces_occupant_idx on building.spaces (occupant_id);
 call secure_table('building.spaces');
 
 -- ---------------------------------------------------------------------------
@@ -385,13 +435,20 @@ create table building.surfaces (
   -- The face itself, as a 3D polygon when it is known, or its plan outline.
   geometry         geometry,
   -- Orientation in degrees: azimuth clockwise from true north (180 = facing
-  -- south), tilt from horizontal (0 = flat). The material is an attribute.
+  -- south), tilt from horizontal (0 = flat).
   azimuth_deg      numeric(6, 2),
   tilt_deg         numeric(5, 2),
+  -- What a survey or an audit says of it (IFC Qto_RoofBaseQuantities,
+  -- Pset_WallCommon): its area in m² when measured, its material, its
+  -- thermal transmittance in W/(m²·K), whether it faces outside.
+  area_m2          numeric(14, 2),
+  material         text,
+  u_value          numeric(8, 3),
+  is_external      boolean,
   source_code      text references sources(code),
+  -- The identifier its file gives it: an IFC GlobalId.
+  global_id        text,
   metadata         jsonb not null default '{}',
-  tags             text[] not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint surfaces_name_not_blank check (btrim(name) <> ''),
@@ -400,7 +457,8 @@ create table building.surfaces (
   constraint surfaces_azimuth_range check (azimuth_deg is null or (azimuth_deg >= 0 and azimuth_deg < 360)),
   constraint surfaces_tilt_range check (tilt_deg is null or (tilt_deg >= 0 and tilt_deg <= 180)),
   constraint surfaces_geometry_core check (geometry is null or (ST_SRID(geometry) = 4326 and ST_NDims(geometry) = 3)),
-  constraint surfaces_tags_known check (tags_known(tags))
+  constraint surfaces_area_positive check (area_m2 is null or area_m2 >= 0),
+  constraint surfaces_u_value_positive check (u_value is null or u_value >= 0)
 );
 
 comment on table building.surfaces is
@@ -411,15 +469,13 @@ create index surfaces_site_idx on building.surfaces (site_id);
 create index surfaces_geometry_idx on building.surfaces using gist (geometry);
 create trigger surfaces_normalize before insert or update of geometry on building.surfaces
   for each row execute function normalize_geometry('geometry');
-create trigger surfaces_building_id_check before insert or update of building_id, scenario_id on building.surfaces
+create trigger surfaces_building_id_check before insert or update of building_id on building.surfaces
   for each row execute function parent_check('building_id', 'building.buildings');
-create trigger surfaces_site_id_check before insert or update of site_id, scenario_id on building.surfaces
+create trigger surfaces_site_id_check before insert or update of site_id on building.surfaces
   for each row execute function parent_check('site_id', 'building.sites');
 create trigger surfaces_set_updated_at before update on building.surfaces
   for each row execute function set_updated_at();
 create index surfaces_organisation_idx on building.surfaces (organisation_id);
-create trigger surfaces_drop_attachments after delete on building.surfaces
-  for each row execute function drop_attachments('surface');
 call secure_table('building.surfaces');
 
 create or replace function building.add_site(
@@ -444,9 +500,9 @@ begin
   if not found then
     raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
-  insert into building.sites (id, organisation_id, participant_id, name, geometry, area_m2, profile, source_code, metadata, scenario_id)
+  insert into building.sites (id, organisation_id, participant_id, name, geometry, area_m2, profile, source_code, metadata)
   values (v_id, p.organisation_id, p_participant_id, p_name, p_geometry, p_area_m2, p_profile, p_source_code,
-          coalesce(p_metadata, '{}'), p.scenario_id);
+          coalesce(p_metadata, '{}'));
   return v_id;
 end;
 $$;
@@ -463,8 +519,8 @@ create or replace function building.add_building(
   p_profile        text default null,
   p_source_code    text default null,
   p_metadata       jsonb default '{}',
-  p_scenario_id    uuid default null,
-  p_site_id        uuid default null
+  p_site_id        uuid default null,
+  p_global_id      text default null
 )
 returns uuid
 language plpgsql
@@ -479,15 +535,15 @@ begin
   if not found then
     raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
   end if;
-  insert into building.buildings (id, organisation_id, participant_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, metadata, scenario_id)
+  insert into building.buildings (id, organisation_id, participant_id, site_id, name, footprint, elevation_m, height_m, profile, source_code, metadata, global_id)
   values (v_id, p.organisation_id, p_participant_id, p_site_id, p_name, p_footprint, p_elevation_m, p_height_m, p_profile, p_source_code,
-          coalesce(p_metadata, '{}'), coalesce(p_scenario_id, p.scenario_id));
+          coalesce(p_metadata, '{}'), p_global_id);
   return v_id;
 end;
 $$;
 
-comment on function building.add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid, uuid) is
-  'Describes a building of a participant, on its ground when a site is named, in the participant''s organisation and scenario, or in the scenario given (a variant that adds a building to a place as it is). The metadata carry what the file it was read from says and no column holds. Refuses participant_not_found, building_site_of_other_participant, invalid_geometry. Returns its id.';
+comment on function building.add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid, text) is
+  'Describes a building of a participant, on its ground when a site is named, with the identifier its source gives it. The metadata carry what the file it was read from says and no column holds. Refuses participant_not_found, building_site_of_other_participant, invalid_geometry. Returns its id.';
 
 create or replace function building.add_space(
   p_building_id  uuid,
@@ -499,7 +555,8 @@ create or replace function building.add_space(
   p_elevation_m  numeric default null,
   p_height_m     numeric default null,
   p_source_code  text default null,
-  p_metadata     jsonb default '{}'
+  p_metadata     jsonb default '{}',
+  p_global_id    text default null
 )
 returns uuid
 language plpgsql
@@ -515,14 +572,14 @@ begin
     raise exception 'building_not_found: %', p_building_id using errcode = 'no_data_found';
   end if;
   insert into building.spaces (id, organisation_id, building_id, parent_id, kind, name, level, geometry, elevation_m, height_m,
-                      source_code, metadata, scenario_id)
+                      source_code, metadata, global_id)
   values (v_id, b.organisation_id, p_building_id, p_parent_id, p_kind, p_name, p_level, p_geometry, p_elevation_m, p_height_m,
-          p_source_code, coalesce(p_metadata, '{}'), b.scenario_id);
+          p_source_code, coalesce(p_metadata, '{}'), p_global_id);
   return v_id;
 end;
 $$;
 
-comment on function building.add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb) is
+comment on function building.add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb, text) is
   'Describes a floor, a room, a zone or a unit of a building, under another space when a parent is given, with the source it came from and the metadata of its file. Refuses space_outside_building, space_cycle. Returns its id.';
 
 -- A roof face, a facade, a ground area, a carport. Without an orientation
@@ -535,7 +592,8 @@ create or replace function building.add_surface(
   p_azimuth_deg  numeric default null,
   p_tilt_deg     numeric default null,
   p_source_code  text default null,
-  p_metadata     jsonb default '{}'
+  p_metadata     jsonb default '{}',
+  p_global_id    text default null
 )
 returns uuid
 language plpgsql
@@ -548,9 +606,9 @@ declare
   g       geometry := to_core_geometry(p_geometry);
   derived record;
 begin
-  select 'building' as kind, b.organisation_id, b.scenario_id into host from building.buildings b where b.id = p_host_id;
+  select 'building' as kind, b.organisation_id into host from building.buildings b where b.id = p_host_id;
   if not found then
-    select 'site' as kind, s.organisation_id, s.scenario_id into host from building.sites s where s.id = p_host_id;
+    select 'site' as kind, s.organisation_id into host from building.sites s where s.id = p_host_id;
   end if;
   if host.kind is null then
     raise exception 'surface_host_kind: a surface is on a building or on the ground (a site)' using errcode = 'check_violation';
@@ -563,24 +621,23 @@ begin
     p_azimuth_deg := derived.azimuth_deg;
     p_tilt_deg := derived.tilt_deg;
   end if;
-  insert into building.surfaces (id, organisation_id, building_id, site_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata, scenario_id)
+  insert into building.surfaces (id, organisation_id, building_id, site_id, name, kind, geometry, azimuth_deg, tilt_deg, source_code, metadata, global_id)
   values (v_id, host.organisation_id,
           case when host.kind = 'building' then p_host_id end, case when host.kind = 'site' then p_host_id end,
-          p_name, p_kind, g, p_azimuth_deg, p_tilt_deg, p_source_code, coalesce(p_metadata, '{}'), host.scenario_id);
+          p_name, p_kind, g, p_azimuth_deg, p_tilt_deg, p_source_code, coalesce(p_metadata, '{}'), p_global_id);
   return v_id;
 end;
 $$;
 
-comment on function building.add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb) is
-  'Describes a roof face, a facade, a ground area or a carport on a building or on the ground of a participant (a site), in its host''s scenario; a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
+comment on function building.add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb, text) is
+  'Describes a roof face, a facade, a ground area or a carport on a building or on the ground of a participant (a site); a roof or facade without an orientation takes the one of its 3D polygon. Refuses surface_host_kind, orientation_unknown, invalid_geometry. Returns its id.';
 
 -- ---------------------------------------------------------------------------
 -- Whose an object is, and what is built above it.
 -- ---------------------------------------------------------------------------
 
 -- The participant of a site, a building, a space or a surface, through
--- their foreign keys. `participant_of()` of the core hands this module its
--- own kinds.
+-- their foreign keys.
 create or replace function building.participant_of(p_kind text, p_id uuid)
 returns uuid
 language sql
@@ -598,7 +655,7 @@ as $$
 $$;
 
 comment on function building.participant_of(text, uuid) is
-  'The participant a site, a building, a space or a surface belongs to, through their foreign keys; what participant_of() of the core answers for the kinds of this module.';
+  'The participant a site, a building, a space or a surface belongs to, through their foreign keys.';
 
 -- What is built above an object, nearest first: for a space, the spaces
 -- holding it, its building and its ground; for a surface, its building and
@@ -658,85 +715,11 @@ $$;
 comment on function building.building_of(text, uuid) is
   'The building an object (its kind and id) is in or on — itself, a space, a surface. Null when it is in none.';
 
--- A parameter resolved through what is built: the object's own attribute,
--- then the places above it nearest first (building.places_of), then what
--- the core answers from its participant, where the participant's own value
--- is the participant's level. An object of the core goes to the core.
-create or replace function building.parameter_of(
-  p_kind          text,
-  p_id            uuid,
-  p_property_code text,
-  p_at            timestamptz default now(),
-  p_scenario_id   uuid default null
-)
-returns jsonb
-language plpgsql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-declare
-  a    attributes%rowtype;
-  anc  record;
-  r    jsonb;
-begin
-  if not exists (select 1 from property_defs where code = p_property_code) then
-    raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
-  end if;
-  perform object_organisation(p_kind, p_id);
-  a := attribute_at(p_id, p_property_code, p_at, p_scenario_id);
-  if a.id is not null then
-    return jsonb_build_object('value', a.value, 'level', 'object', 'object_id', p_id,
-                              'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
-  end if;
-  for anc in select * from building.places_of(p_kind, p_id) loop
-    a := attribute_at(anc.object_id, p_property_code, p_at, p_scenario_id);
-    if a.id is not null then
-      return jsonb_build_object('value', a.value, 'level', anc.kind, 'object_id', anc.object_id,
-                                'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
-    end if;
-  end loop;
-  if p_kind not in ('site', 'building', 'space', 'surface') then
-    return parameter_of(p_kind, p_id, p_property_code, p_at, p_scenario_id);
-  end if;
-  r := parameter_of('participant', building.participant_of(p_kind, p_id), p_property_code, p_at, p_scenario_id);
-  if r->>'level' = 'object' then
-    r := r || jsonb_build_object('level', 'participant');
-  end if;
-  return r;
-end;
-$$;
-
-comment on function building.parameter_of(text, uuid, text, timestamptz, uuid) is
-  'The value of a parameter for an object, through what is built: its own attribute, the spaces, building and ground above it nearest first, then the core''s parameter_of() from its participant (an object of the core goes straight to the core).';
-
--- ---------------------------------------------------------------------------
--- Link types: who occupies what.
--- ---------------------------------------------------------------------------
-
-insert into link_types (code, name, inverse_name, subject_kinds, object_kinds, brick_relation, ifc_relation, description, published_by) values
-  ('occupies',  'occupies',      'is occupied by', '{organisation,participant}', '{building,space}',              null, 'IfcRelOccupiesSpaces',
-   'The building, floor or unit a participant of a project occupies (a tenant, a resident, an owner who lives there), for a period.', 'building');
-
--- ---------------------------------------------------------------------------
--- Properties of a building and of its surfaces.
--- ---------------------------------------------------------------------------
-
-insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to, ifc_pset, ifc_property, published_by) values
-  ('floor_area',           'Gross floor area',      'number',  'area',    0,    null, null,                 '{building,space}', 'Qto_BuildingBaseQuantities', 'GrossFloorArea',       'building'),
-  ('energy_label',         'Energy label',          'text',    null,      null, null, '{A+,A,B,C,D,E,F,G}', '{building}',       null,                         null,                   'building'),
-  ('year_built',           'Year of construction',  'integer', null,      1000, 2200, null,                 '{building}',       'Pset_BuildingCommon',        'YearOfConstruction',   'building'),
-  ('floors_above_ground',  'Floors above ground',   'integer', null,      0,    null, null,                 '{building}',       'Pset_BuildingCommon',        'NumberOfStoreys',      'building'),
-  ('floors_below_ground',  'Floors below ground',   'integer', null,      0,    null, null,                 '{building}',       null,                         null,                   'building'),
-  ('roof_area',            'Roof area',             'number',  'area',    0,    null, null,                 '{surface}',        'Qto_RoofBaseQuantities',     'GrossArea',            'building'),
-  ('material',             'Material',              'text',    null,      null, null, null,                 '{surface}',        'Pset_MaterialCommon',        'Name',                 'building'),
-  ('u_value',              'Thermal transmittance', 'number',  'u_value', 0,    null, null,                 '{surface}',        'Pset_WallCommon',            'ThermalTransmittance', 'building'),
-  ('is_external',          'Is external',           'boolean', null,      null, null, null,                 '{surface}',        'Pset_WallCommon',            'IsExternal',           'building');
-
 grant execute on function building.footprint_volume(geometry, numeric, numeric), building.surface_orientation(geometry),
   building.building_volume(uuid), building.participant_of(text, uuid), building.places_of(text, uuid),
-  building.building_of(text, uuid), building.parameter_of(text, uuid, text, timestamptz, uuid),
+  building.building_of(text, uuid),
   building.add_site(uuid, text, geometry, numeric, text, text, jsonb),
-  building.add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid, uuid),
-  building.add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb),
-  building.add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb)
+  building.add_building(uuid, text, geometry, numeric, numeric, text, text, jsonb, uuid, text),
+  building.add_space(uuid, text, text, uuid, integer, geometry, numeric, numeric, text, jsonb, text),
+  building.add_surface(uuid, text, text, geometry, numeric, numeric, text, jsonb, text)
   to authenticated, service_role;

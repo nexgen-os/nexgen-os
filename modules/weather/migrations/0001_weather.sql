@@ -9,15 +9,19 @@
 --            resolution, and on which grid
 --   rules    what a pack or an installation decides for a country or a
 --            region
---   points   the grid cell or the station a participant reads; the weather
---            series hang on the point, once, whatever the number of
---            participants in it
+--   points   the grid cell or the station a participant reads; its
+--            weather series are stored once, whatever the number of
+--            participants in it, as series of the organisation named by
+--            the point (`series.name` the point's name, `external_ref` its
+--            id, `source_code` its model)
+--   participant_points   which point each participant reads, a row per
+--            participant and point
 --
--- A participant is linked to its point through the core `links` table
--- (`weather_from`), and may pin a model through the attribute
--- `weather_source`. `weather.source_for()` resolves the model for one participant
--- and one purpose; `weather.point_for()` finds or creates the point. The
--- database calls no weather API: connectors write the series on the points.
+-- A participant may pin a model through the attribute `weather_source`.
+-- `weather.source_for()` resolves the model for one participant and one
+-- purpose; `weather.point_for()` finds or creates the point and says the
+-- participant reads it. The database calls no weather API: connectors write
+-- the series of the points.
 
 set search_path = nexgen, public, extensions;
 
@@ -114,7 +118,6 @@ create table weather.points (
   -- What the model said about the point beyond these columns: its own
   -- elevation, the station's identifier, the grid's name.
   metadata         jsonb not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   constraint points_name_not_blank check (btrim(name) <> ''),
@@ -123,22 +126,41 @@ create table weather.points (
 );
 
 comment on table weather.points is
-  'A grid cell or a station of a weather model that participants read. Weather series hang on it once, whatever the number of participants linked to it (weather_from).';
+  'A grid cell or a station of a weather model that participants read (participant_points). Its weather series are stored once, as series of the organisation named by the point, whatever the number of participants that read it.';
 
 -- One point per cell of a model in an organisation.
 create unique index points_one_per_cell on weather.points
-  (organisation_id, source_code, cell_lon, cell_lat, scenario_id) nulls not distinct;
+  (organisation_id, source_code, cell_lon, cell_lat);
 create index points_geometry_idx on weather.points using gist (geometry);
 create trigger weather_points_normalize before insert or update of geometry on weather.points
   for each row execute function normalize_geometry('geometry');
 create trigger points_set_updated_at before update on weather.points
   for each row execute function set_updated_at();
 create index points_organisation_idx on weather.points (organisation_id);
-create trigger points_drop_attachments after delete on weather.points
-  for each row execute function drop_attachments('weather_point');
 call secure_table('weather.points');
 
-insert into kinds (kind, table_name, published_by) values ('weather_point', 'weather.points', 'weather');
+-- ---------------------------------------------------------------------------
+-- participant_points — which point each participant reads.
+-- ---------------------------------------------------------------------------
+
+create table weather.participant_points (
+  participant_id   uuid not null references participants(id) on delete cascade,
+  point_id         uuid not null references weather.points(id) on delete cascade,
+  organisation_id  uuid not null references organisations(id) on delete cascade,
+  created_at       timestamptz not null default now(),
+  primary key (participant_id, point_id)
+);
+
+comment on table weather.participant_points is
+  'The weather point (grid cell or station) a participant reads its weather from, one row per participant and point.';
+
+create index participant_points_point_idx on weather.participant_points (point_id);
+create trigger participant_points_participant_id_check before insert or update of participant_id on weather.participant_points
+  for each row execute function parent_check('participant_id', 'participants');
+create trigger participant_points_point_id_check before insert or update of point_id on weather.participant_points
+  for each row execute function parent_check('point_id', 'weather.points');
+call secure_table('weather.participant_points');
+
 
 -- The cell of a position for a model: longitude and latitude rounded to the
 -- model's grid, or exact when the model has none (a station).
@@ -189,10 +211,6 @@ insert into weather.models (source_code, purposes, resolution_m, grid_deg, prior
   -- Open-Meteo: ERA5 and national models blended, history and forecast.
   ('open_meteo', '{irradiance,temperature,wind,history,forecast}',     1000, 0.01, 20, 'weather');
 
-insert into link_types (code, name, inverse_name, description, subject_kinds, object_kinds, published_by) values
-  ('weather_from', 'reads its weather from', 'gives the weather of',
-   'The weather point (grid cell or station) a participant reads its weather from.', '{participant}', '{weather_point}', 'weather');
-
 insert into property_defs (code, name, description, datatype, applies_to, published_by) values
   ('weather_source', 'Weather source',
    'The weather model (a source code of weather.models) a participant or a project reads, pinned against the rules and the defaults.',
@@ -219,7 +237,7 @@ begin
   end if;
 
   -- (a) The participant's own choice, when that model serves the purpose.
-  pinned := attributes_of(p_participant_id, now(), s.scenario_id) ->> 'weather_source';
+  pinned := attributes_of(p_participant_id, now()) ->> 'weather_source';
   if pinned is not null then
     select m.source_code into found_code
       from weather.models m
@@ -308,13 +326,11 @@ begin
   end if;
   c := weather.cell_of(position, m.grid_deg);
 
-  -- Points belong to reality: a participant of a scenario reads the same weather.
   select p.id into point_id
     from weather.points p
    where p.organisation_id = s.organisation_id
      and p.source_code = m.source_code
-     and p.cell_lon = c[1] and p.cell_lat = c[2]
-     and p.scenario_id is null;
+     and p.cell_lon = c[1] and p.cell_lat = c[2];
 
   if point_id is null then
     insert into weather.points (organisation_id, name, source_code, geometry, resolution_m)
@@ -327,22 +343,16 @@ begin
     returning id into point_id;
   end if;
 
-  if not exists (
-    select 1 from links l
-     where l.subject_kind = 'participant' and l.subject_id = p_participant_id and l.type_code = 'weather_from'
-       and l.object_kind = 'weather_point' and l.object_id = point_id
-       and (l.valid_to is null or l.valid_to > now())
-  ) then
-    insert into links (subject_kind, subject_id, type_code, object_kind, object_id, scenario_id)
-    values ('participant', p_participant_id, 'weather_from', 'weather_point', point_id, s.scenario_id);
-  end if;
+  insert into weather.participant_points (participant_id, point_id, organisation_id)
+  values (p_participant_id, point_id, s.organisation_id)
+  on conflict do nothing;
 
   return point_id;
 end;
 $$;
 
 comment on function weather.point_for(uuid, text) is
-  'The weather point a participant reads for a model: the organisation''s point in the model''s cell of the participant''s position, created when missing, with the weather_from link. Named error participant_without_position when the participant has no geometry.';
+  'The weather point a participant reads for a model: the organisation''s point in the model''s cell of the participant''s position, created when missing, and records that the participant reads it (participant_points). Named error participant_without_position when the participant has no geometry.';
 
 grant execute on function weather.cell_of(geometry, numeric), weather.source_for(uuid, text), weather.point_for(uuid, text)
   to authenticated, service_role;

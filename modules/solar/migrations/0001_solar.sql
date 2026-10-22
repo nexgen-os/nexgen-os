@@ -9,16 +9,22 @@
 -- `device_directory`, in pvlib's parameter names. An array carries its own
 -- azimuth and tilt, and nothing else of where it is: the system belongs to
 -- a participant, whose point the yield reads (decision 0045). A far
--- horizon belongs to a participant's place or to a surface the `building`
--- module describes. A yield profile is a named set of modelling choices
--- with an ordered list of losses, so that a run says what it was computed
--- with.
+-- horizon belongs to a participant's place or to a PV system. A yield
+-- profile is a named set of modelling choices with an ordered list of
+-- losses, so that a run says what it was computed with.
+--
+-- A design variant of a participant's PV — another array, another tilt —
+-- is a scenario of this module (`solar.scenarios`): the arrays and the
+-- horizons of a scenario exist only in it, and a yield computed in it says
+-- so in its inputs. What the module computes is a run of this module
+-- (`solar.runs`, decision 0004): its inputs, its engine and its results,
+-- and the series it wrote.
 --
 -- Conventions, everywhere in this schema: azimuth in degrees clockwise from
 -- true north (180 = facing south), tilt in degrees from horizontal (0 =
 -- flat). Every reader converts from the convention of its tool on the way
 -- in. Engines (pvlib, PVGIS, SAM) run outside Postgres; their results come
--- back through `record_run()`.
+-- back through `record_run('solar.runs', …)`.
 
 set search_path = nexgen, public, extensions;
 
@@ -199,6 +205,114 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
+-- scenarios — the variants of a participant's PV design.
+-- ---------------------------------------------------------------------------
+
+create table solar.scenarios (
+  id               uuid primary key default gen_random_uuid(),
+  organisation_id  uuid not null references organisations(id) on delete cascade,
+  -- The participant whose PV the variant redesigns.
+  participant_id   uuid not null references participants(id) on delete cascade,
+  -- A scenario may build on another one (variant B of the extension).
+  parent_id        uuid references solar.scenarios(id) on delete restrict,
+  name             text not null,
+  description      text,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  constraint scenarios_name_not_blank check (btrim(name) <> ''),
+  constraint scenarios_not_own_parent check (parent_id is distinct from id)
+);
+
+comment on table solar.scenarios is
+  'A design variant of the PV of a participant: arrays and horizons with a scenario exist only in it (and in the scenarios built on it), those without one exist in reality.';
+
+create index scenarios_participant_idx on solar.scenarios (participant_id);
+create index scenarios_organisation_idx on solar.scenarios (organisation_id);
+create trigger scenarios_participant_id_check before insert or update of participant_id on solar.scenarios
+  for each row execute function parent_check('participant_id', 'participants');
+create trigger scenarios_parent_id_check before insert or update of parent_id on solar.scenarios
+  for each row execute function parent_check('parent_id', 'solar.scenarios');
+create trigger scenarios_set_updated_at before update on solar.scenarios
+  for each row execute function set_updated_at();
+call secure_table('solar.scenarios');
+
+-- A scenario and the scenarios it builds on, nearest first.
+create or replace function solar.scenario_chain(p_scenario_id uuid)
+returns table (scenario_id uuid, rank integer)
+language sql
+stable
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+  with recursive chain as (
+    select s.id, s.parent_id, 1 as rank from solar.scenarios s where s.id = p_scenario_id
+    union all
+    select s.id, s.parent_id, chain.rank + 1 from solar.scenarios s join chain on s.id = chain.parent_id
+  )
+  select id, rank from chain;
+$$;
+
+comment on function solar.scenario_chain(uuid) is
+  'A scenario and the scenarios it builds on, nearest first; nothing for reality (null).';
+
+create or replace function solar.create_scenario(p_participant_id uuid, p_name text, p_parent_id uuid default null, p_description text default null)
+returns uuid
+language plpgsql
+security invoker
+set search_path = nexgen, public, extensions, pg_temp
+as $$
+declare
+  v_id  uuid := gen_random_uuid();
+  p     participants%rowtype;
+begin
+  select * into p from participants where id = p_participant_id;
+  if not found then
+    raise exception 'participant_not_found: %', p_participant_id using errcode = 'no_data_found';
+  end if;
+  if p_parent_id is not null and not exists (select 1 from solar.scenarios where id = p_parent_id and participant_id = p_participant_id) then
+    raise exception 'scenario_not_found: %', p_parent_id using errcode = 'no_data_found';
+  end if;
+  insert into solar.scenarios (id, organisation_id, participant_id, parent_id, name, description)
+  values (v_id, p.organisation_id, p_participant_id, p_parent_id, p_name, p_description);
+  return v_id;
+end;
+$$;
+
+comment on function solar.create_scenario(uuid, text, uuid, text) is
+  'Creates a design variant of the PV of a participant, on top of another of its variants when a parent is given. Refuses participant_not_found, scenario_not_found. Returns its id.';
+
+-- ---------------------------------------------------------------------------
+-- runs — what the module computed (decision 0004).
+-- ---------------------------------------------------------------------------
+
+create table solar.runs (
+  id               uuid primary key default gen_random_uuid(),
+  organisation_id  uuid not null references organisations(id) on delete cascade,
+  -- The PV system the yield, the performance or the exceedance is of.
+  device_id        uuid not null references devices(id) on delete cascade,
+  engine_version   text not null,
+  -- What it read: the weather, the period, the profile, the scenario, the
+  -- arrays, the parameters and the level each came from.
+  inputs           jsonb not null,
+  -- sha256 of the table, engine version and inputs: the identity of a result.
+  inputs_hash      text not null,
+  results          jsonb,
+  status           text not null default 'running',
+  started_at       timestamptz not null default now(),
+  finished_at      timestamptz,
+  constraint runs_status check (status in ('running', 'succeeded')),
+  constraint runs_finished check ((status = 'running') = (finished_at is null))
+);
+
+comment on table solar.runs is
+  'The yields, performance indicators and exceedances the module computed for a PV system: inputs, engine version, results; the series a run wrote name it in their source. Immutable once finished; same inputs + same engine = same run.';
+
+create unique index runs_one_success_per_input on solar.runs (organisation_id, inputs_hash) where status = 'succeeded';
+create index runs_device_idx on solar.runs (device_id);
+create trigger runs_is_final before update on solar.runs
+  for each row execute function run_is_final();
+call secure_table('solar.runs');
+
+-- ---------------------------------------------------------------------------
 -- pv_arrays — one group of modules with one orientation.
 -- ---------------------------------------------------------------------------
 
@@ -229,8 +343,11 @@ create table solar.pv_arrays (
   -- Peak DC power. Computed from the module product's unit power and the
   -- module count when not given.
   kwp_dc               numeric(12, 3),
+  -- The fraction of the light dirt takes from this array over a year,
+  -- when the place says it for the array itself (`solar.soiling_of()`).
+  soiling_loss         numeric(5, 4),
   metadata             jsonb not null default '{}',
-  scenario_id          uuid references scenarios(id) on delete cascade,
+  scenario_id          uuid references solar.scenarios(id) on delete cascade,
   created_at           timestamptz not null default now(),
   updated_at           timestamptz not null default now(),
   constraint pv_arrays_name_not_blank check (btrim(name) <> ''),
@@ -243,7 +360,8 @@ create table solar.pv_arrays (
   constraint pv_arrays_strings_add_up check (
     module_count is null or modules_per_string is null or strings is null or module_count = modules_per_string * strings),
   constraint pv_arrays_albedo_range check (albedo is null or (albedo >= 0 and albedo <= 1)),
-  constraint pv_arrays_kwp_positive check (kwp_dc is null or kwp_dc >= 0)
+  constraint pv_arrays_kwp_positive check (kwp_dc is null or kwp_dc >= 0),
+  constraint pv_arrays_soiling_range check (soiling_loss is null or (soiling_loss >= 0 and soiling_loss <= 1))
 );
 
 comment on table solar.pv_arrays is
@@ -269,34 +387,15 @@ $$;
 create trigger pv_arrays_fill before insert or update on solar.pv_arrays
   for each row execute function solar.pv_arrays_fill();
 -- The system of an array is a device of the core: the parent check reads
--- its organisation and its scenario there.
-create trigger pv_arrays_pv_system_id_check before insert or update of pv_system_id, scenario_id on solar.pv_arrays
+-- its organisation there.
+create trigger pv_arrays_pv_system_id_check before insert or update of pv_system_id on solar.pv_arrays
   for each row execute function parent_check('pv_system_id', 'devices');
+create trigger pv_arrays_scenario_id_check before insert or update of scenario_id on solar.pv_arrays
+  for each row execute function parent_check('scenario_id', 'solar.scenarios');
 create trigger pv_arrays_set_updated_at before update on solar.pv_arrays
   for each row execute function set_updated_at();
 create index pv_arrays_organisation_idx on solar.pv_arrays (organisation_id);
-create trigger pv_arrays_drop_attachments after delete on solar.pv_arrays
-  for each row execute function drop_attachments('pv_array');
 call secure_table('solar.pv_arrays');
-
-insert into kinds (kind, table_name, published_by) values ('pv_array', 'solar.pv_arrays', 'solar');
-
--- The participant of a PV array: its system's, a device of the core.
--- `participant_of()` of the core hands this module its kind.
-create or replace function solar.participant_of(p_kind text, p_id uuid)
-returns uuid
-language sql
-stable
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-  select d.participant_id from solar.pv_arrays a join devices d on d.id = a.pv_system_id
-   where p_kind = 'pv_array' and a.id = p_id;
-$$;
-
-comment on function solar.participant_of(text, uuid) is
-  'The participant a PV array belongs to: its system''s. What participant_of() of the core answers for the kind of this module.';
-
-grant execute on function solar.participant_of(text, uuid) to authenticated, service_role;
 
 -- DC power of a system: the sum of its arrays, or its own figure when it
 -- has none. In a scenario, the arrays of reality and of the scenario and
@@ -307,15 +406,10 @@ language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  with recursive chain as (
-    select s.id, s.parent_id from scenarios s where s.id = p_scenario_id
-    union all
-    select s.id, s.parent_id from scenarios s join chain on s.id = chain.parent_id
-  )
   select coalesce(
     (select sum(a.kwp_dc) from solar.pv_arrays a
       where a.pv_system_id = p_system_id
-        and (a.scenario_id is null or a.scenario_id in (select id from chain))),
+        and (a.scenario_id is null or a.scenario_id in (select scenario_id from solar.scenario_chain(p_scenario_id)))),
     (select kwp_dc from solar.pv_systems where id = p_system_id)
   );
 $$;
@@ -324,7 +418,7 @@ comment on function solar.system_kwp(uuid, uuid) is
   'Peak DC power of a PV system in kWp: the sum of its arrays, or the system''s own kwp_dc when it has no array.';
 
 -- ---------------------------------------------------------------------------
--- horizons — the far horizon of a participant's place or of a surface.
+-- horizons — the far horizon of a participant's place or of a PV system.
 -- ---------------------------------------------------------------------------
 
 -- A profile is a non-empty array of [azimuth_deg, elevation_deg] pairs:
@@ -352,44 +446,29 @@ create table solar.horizons (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from the object by trigger (`attach`).
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A participant (its place) or a surface, by its kind and its id.
-  object_kind      text not null references kinds(kind),
+  -- A participant (its place) or a PV system (a device), by its kind and its id.
+  object_kind      text not null,
   object_id        uuid not null,
   profile          jsonb not null,
   -- Where it comes from: PVGIS's elevation model, a survey, a PVsyst or
   -- Meteonorm file.
   source_code      text references sources(code),
   metadata         jsonb not null default '{}',
-  scenario_id      uuid references scenarios(id) on delete cascade,
+  scenario_id      uuid references solar.scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
+  constraint horizons_object_kind check (object_kind in ('participant', 'device')),
   constraint horizons_profile_not_empty check (case when jsonb_typeof(profile) = 'array' then jsonb_array_length(profile) > 0 else false end),
   constraint horizons_profile_pairs check (solar.horizon_profile_valid(profile))
 );
 
 comment on table solar.horizons is
-  'The far horizon of a participant''s place or of a surface: [azimuth_deg, elevation_deg] pairs, azimuth clockwise from true north. One per object and scenario; every yield run on it reads it.';
+  'The far horizon of a participant''s place or of a PV system: [azimuth_deg, elevation_deg] pairs, azimuth clockwise from true north. One per object and scenario; every yield run on it reads it.';
 
 create unique index horizons_one_per_object on solar.horizons (object_kind, object_id, scenario_id) nulls not distinct;
 
-create or replace function solar.horizons_check()
-returns trigger
-language plpgsql
-set search_path = nexgen, public, extensions, pg_temp
-as $$
-begin
-  if new.object_kind not in ('participant', 'surface') then
-    raise exception 'horizon_on_participant_or_surface_only' using errcode = 'check_violation';
-  end if;
-  return new;
-end;
-$$;
-
--- Triggers fire in name order: attach first, then the kind check.
 create trigger horizons_attach before insert or update on solar.horizons
   for each row execute function attach('object');
-create trigger horizons_check before insert or update of object_kind, object_id on solar.horizons
-  for each row execute function solar.horizons_check();
 create trigger horizons_set_updated_at before update on solar.horizons
   for each row execute function set_updated_at();
 create index horizons_organisation_idx on solar.horizons (organisation_id);
@@ -516,9 +595,10 @@ insert into quantities (code, name, unit, aggregation, qudt_quantity_kind, descr
   ('poa_irradiance',     'Plane-of-array irradiance',    'W-PER-M2', 'mean', 'Irradiance',  'Total irradiance on the plane of a PV array.', 'solar'),
   ('module_temperature', 'Module temperature',           'DEG_C',    'mean', 'Temperature', 'Temperature of a PV module (cell temperature when modelled).', 'solar');
 
-grant execute on function solar.system_kwp(uuid, uuid), solar.horizon_profile_valid(jsonb), solar.losses_valid(jsonb)
+grant execute on function solar.system_kwp(uuid, uuid), solar.horizon_profile_valid(jsonb), solar.losses_valid(jsonb),
+  solar.scenario_chain(uuid), solar.create_scenario(uuid, text, uuid, text)
   to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('solar', 'Solar', '0.1.0', 'solar', '0.2.0',
-        'PV systems and arrays, module and inverter product physics, horizons and named yield profiles: what a PV yield is computed from.');
+        'PV systems and arrays, module and inverter product physics, horizons, named yield profiles and design variants: what a PV yield is computed from, and the runs that computed it.');

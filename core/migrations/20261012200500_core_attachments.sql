@@ -21,18 +21,25 @@
 
 set search_path = nexgen, public, extensions;
 
--- Copies the organisation of the object its kind and id name.
+-- Copies the organisation of the object named by the pair tg_argv[0] names
+-- (`object` for object_kind / object_id, the default; `subject` for
+-- subject_kind / subject_id, as a task names what it is about).
 create or replace function attach()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  org  uuid := object_organisation(new.object_kind, new.object_id);
+  side  text := coalesce(tg_argv[0], 'object');
+  k     text;
+  oid   uuid;
+  org   uuid;
 begin
+  execute format('select ($1).%I, ($1).%I', side || '_kind', side || '_id') into k, oid using new;
+  org := object_organisation(k, oid);
   -- A row that says its organisation says the object's.
   if new.organisation_id is not null and new.organisation_id <> org then
-    raise exception 'object_in_other_organisation: % %', new.object_kind, new.object_id using errcode = 'check_violation';
+    raise exception 'object_in_other_organisation: % %', k, oid using errcode = 'check_violation';
   end if;
   new.organisation_id := org;
   return new;

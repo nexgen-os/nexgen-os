@@ -97,8 +97,10 @@ create table billing.invoices (
   -- The first and the last day the invoice covers.
   period_from                 date not null,
   period_to                   date not null,
-  -- The settlement run the amounts came from.
-  run_id                      uuid references runs(id) on delete set null,
+  -- The settlement run the amounts came from, by its id in the runs of the
+  -- module that computed it (`community.runs` for a sharing); a module
+  -- never names another module's table, so this is a plain id.
+  run_id                      uuid,
   created_at                  timestamptz not null default now(),
   constraint invoices_kind check (kind in ('sale', 'purchase')),
   constraint invoices_period check (period_to >= period_from),
@@ -113,10 +115,9 @@ create index invoices_counterparty_idx on billing.invoices (counterparty_partici
 create index invoices_run_idx on billing.invoices (run_id) where run_id is not null;
 create index invoices_organisation_idx on billing.invoices (organisation_id);
 
--- The checks of parent_check() on the participant, the counterparty and the
--- run: an invoice row is not a kind of object and has no scenario,
--- so it copies the organisation of the participant and refuses a parent of
--- another organisation or one that exists only in a scenario.
+-- The checks of parent_check() on the participant and the counterparty: an
+-- invoice row copies the organisation of the participant and refuses a
+-- counterparty of another organisation.
 create or replace function billing.invoices_check()
 returns trigger
 language plpgsql
@@ -124,37 +125,27 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
   v_organisation uuid;
-  v_scenario     uuid;
 begin
-  select p.organisation_id, p.scenario_id into v_organisation, v_scenario from participants p where p.id = new.participant_id;
+  select p.organisation_id into v_organisation from participants p where p.id = new.participant_id;
   if v_organisation is null then
     raise exception 'participant_not_found: %', new.participant_id using errcode = 'foreign_key_violation';
   end if;
-  if v_scenario is not null then
-    raise exception 'parent_in_other_scenario: participant_id' using errcode = 'check_violation';
-  end if;
   new.organisation_id := v_organisation;
   if new.counterparty_participant_id is not null then
-    select p.organisation_id, p.scenario_id into v_organisation, v_scenario from participants p where p.id = new.counterparty_participant_id;
+    select p.organisation_id into v_organisation from participants p where p.id = new.counterparty_participant_id;
     if v_organisation is null then
       raise exception 'participant_not_found: %', new.counterparty_participant_id using errcode = 'foreign_key_violation';
     end if;
     if v_organisation <> new.organisation_id then
       raise exception 'parent_in_other_organisation: counterparty_participant_id' using errcode = 'check_violation';
     end if;
-    if v_scenario is not null then
-      raise exception 'parent_in_other_scenario: counterparty_participant_id' using errcode = 'check_violation';
-    end if;
-  end if;
-  if new.run_id is not null and (select r.organisation_id from runs r where r.id = new.run_id) is distinct from new.organisation_id then
-    raise exception 'parent_in_other_organisation: run_id' using errcode = 'check_violation';
   end if;
   return new;
 end;
 $$;
 
 comment on function billing.invoices_check() is
-  'BEFORE INSERT / UPDATE on billing.invoices: copies the organisation of the participant (participant_not_found); the counterparty and the run are of the same organisation, and neither participant exists only in a scenario.';
+  'BEFORE INSERT / UPDATE on billing.invoices: copies the organisation of the participant (participant_not_found); the counterparty is of the same organisation.';
 
 create trigger invoices_check before insert or update on billing.invoices
   for each row execute function billing.invoices_check();

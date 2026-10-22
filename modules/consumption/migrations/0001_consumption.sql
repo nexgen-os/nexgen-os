@@ -8,13 +8,14 @@
 -- hours of a participant — and reads the curve of a participant whichever way it is
 -- known (`consumption.curve()`).
 --
--- A reconstruction is a run of this module (`modules/consumption/src/curve.ts`):
--- its curve is a `simulated` series of the core on the participant the run is
--- about, with the source of the energy it was scaled to.
+-- A reconstruction is a run of this module (`consumption.runs`,
+-- `modules/consumption/src/curve.ts`): its curve is a `simulated` series of
+-- the core on the participant the run is about, with the source of the
+-- energy it was scaled to, and the run named in its source.
 --
--- What a building or a place is used for is the core's vocabulary
--- (`profiles`); a load profile says which use it describes. The module
--- ships `flat`; an installation adds its own, each with its source.
+-- A load profile says which use it describes, by the code the `building`
+-- module gives that use (`building.profiles`) when it is installed. The
+-- module ships `flat`; an installation adds its own, each with its source.
 
 set search_path = nexgen, public, extensions;
 
@@ -28,8 +29,9 @@ grant usage on schema consumption to authenticated, service_role;
 create table consumption.load_profiles (
   code             text primary key,
   name             text not null,
-  -- The use it describes (an office, a school, a dwelling); null for any.
-  use_code         text references profiles(code),
+  -- The use it describes (an office, a school, a dwelling), by the code
+  -- of `building.profiles`; null for any.
+  use_code         text,
   -- day_shapes: the weight of each slot of the day, by day type, as given;
   -- activity_hours: a slot weighs 1 while the participant is open, `closed_ratio`
   -- while it is closed, pro rata of the part of the slot that is open.
@@ -119,8 +121,8 @@ create table consumption.activity_hours (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from what is open by `attach()`.
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  -- A participant, a building, a space: what is open, by its kind and its id.
-  object_kind      text not null references kinds(kind),
+  -- A participant, a project: what is open, by its kind and its id.
+  object_kind      text not null,
   object_id        uuid not null,
   -- ISO day of the week, 1 Monday to 7 Sunday.
   weekday          smallint not null,
@@ -134,15 +136,15 @@ create table consumption.activity_hours (
   valid_to         date,
   source_code      text references sources(code),
   source           text,
-  scenario_id      uuid references scenarios(id) on delete cascade,
   created_at       timestamptz not null default now(),
+  constraint activity_hours_object_kind check (object_kind in ('organisation', 'project', 'participant', 'meter', 'device', 'series')),
   constraint activity_hours_weekday check (weekday between 1 and 7),
   constraint activity_hours_order check (closes > opens),
   constraint activity_hours_period check (valid_to is null or valid_from is null or valid_to > valid_from)
 );
 
 comment on table consumption.activity_hours is
-  'When a participant, a building or a space is open, day of the week by day of the week, in the local time of its participant, over a period: what a reconstruction by activity hours reads.';
+  'When a participant or a project is open, day of the week by day of the week, in the local time of its participant, over a period: what a reconstruction by activity hours reads.';
 
 create index activity_hours_object_idx on consumption.activity_hours (object_kind, object_id);
 create index activity_hours_organisation_idx on consumption.activity_hours (organisation_id);
@@ -154,16 +156,47 @@ create trigger activity_hours_attach
 call secure_table('consumption.activity_hours');
 
 -- ---------------------------------------------------------------------------
+-- runs — what the module computed (decision 0004).
+-- ---------------------------------------------------------------------------
+
+create table consumption.runs (
+  id               uuid primary key default gen_random_uuid(),
+  organisation_id  uuid not null references organisations(id) on delete cascade,
+  -- The participant whose consumption was reconstructed.
+  participant_id   uuid not null references participants(id) on delete cascade,
+  engine_version   text not null,
+  inputs           jsonb not null,
+  -- sha256 of the table, engine version and inputs: the identity of a result.
+  inputs_hash      text not null,
+  results          jsonb,
+  status           text not null default 'running',
+  started_at       timestamptz not null default now(),
+  finished_at      timestamptz,
+  constraint runs_status check (status in ('running', 'succeeded')),
+  constraint runs_finished check ((status = 'running') = (finished_at is null))
+);
+
+comment on table consumption.runs is
+  'The consumption curves the module reconstructed for a participant: inputs, engine version, results; the series a run wrote name it in their source. Immutable once finished; same inputs + same engine = same run.';
+
+create unique index runs_one_success_per_input on consumption.runs (organisation_id, inputs_hash) where status = 'succeeded';
+create index runs_participant_id_idx on consumption.runs (participant_id);
+create trigger runs_is_final before update on consumption.runs
+  for each row execute function run_is_final();
+call secure_table('consumption.runs');
+
+
+-- ---------------------------------------------------------------------------
 -- curve — the consumption of a participant, whichever way it is known.
 -- ---------------------------------------------------------------------------
 
 -- The series a participant's consumption is read from over a period: of all the
 -- `consumption_energy` series of the participant or of anything of it holding
 -- values in the period, a measured one before a reconstruction of this
--- module, the one on the participant itself before those of a meter, a device
--- or a building of it, then the latest. Null when there is none. Reads under the
+-- module, the one on the participant itself before those of a meter or a
+-- device of it, then the latest. Null when there is none. Reads under the
 -- caller's row level security.
-create or replace function consumption.curve_series(p_participant_id uuid, p_from timestamptz, p_to timestamptz, p_scenario_id uuid default null)
+create or replace function consumption.curve_series(p_participant_id uuid, p_from timestamptz, p_to timestamptz)
 returns uuid
 language sql
 stable
@@ -171,23 +204,22 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
   select se.id
     from series se
-    left join runs r on r.id = se.run_id
+    left join consumption.runs r on se.source = 'consumption.runs:' || r.id
    where se.quantity_code = 'consumption_energy'
      and (se.object_id = p_participant_id or participant_of(se.object_kind, se.object_id) = p_participant_id)
-     and se.scenario_id is not distinct from p_scenario_id
-     and (se.kind = 'measured' or (se.kind = 'simulated' and r.module_code = 'consumption' and r.status = 'succeeded'))
+     and (se.kind = 'measured' or (se.kind = 'simulated' and r.status = 'succeeded'))
      and exists (select 1 from series_values v where v.series_id = se.id and v.at >= p_from and v.at < p_to and v.quality <> 3)
    order by se.kind = 'measured' desc, se.object_id = p_participant_id desc, r.finished_at desc nulls last, se.created_at desc
    limit 1;
 $$;
 
-comment on function consumption.curve_series(uuid, timestamptz, timestamptz, uuid) is
-  'The series the consumption of a participant is read from over a period: measured first, the one on the participant itself before those of a meter, a device or a building of it, otherwise the latest reconstruction of this module holding values in the period.';
+comment on function consumption.curve_series(uuid, timestamptz, timestamptz) is
+  'The series the consumption of a participant is read from over a period: measured first, the one on the participant itself before those of a meter or a device of it, otherwise the latest reconstruction of this module holding values in the period.';
 
 -- The consumption of a participant over a period, on a step, as `resample()` gives
 -- it, with the series it was read from and whether it was measured or
 -- simulated. Nothing when the participant has no consumption series.
-create or replace function consumption.curve(p_participant_id uuid, p_from timestamptz, p_to timestamptz, p_step interval, p_scenario_id uuid default null)
+create or replace function consumption.curve(p_participant_id uuid, p_from timestamptz, p_to timestamptz, p_step interval)
 returns table (bucket timestamptz, value double precision, series_id uuid, kind text)
 language sql
 stable
@@ -196,14 +228,14 @@ as $$
   select r.bucket, r.value, se.id, se.kind
     from series se
     cross join lateral resample(se.id, p_from, p_to, p_step) r
-   where se.id = consumption.curve_series(p_participant_id, p_from, p_to, p_scenario_id);
+   where se.id = consumption.curve_series(p_participant_id, p_from, p_to);
 $$;
 
-comment on function consumption.curve(uuid, timestamptz, timestamptz, interval, uuid) is
+comment on function consumption.curve(uuid, timestamptz, timestamptz, interval) is
   'The consumption of a participant over a period on a step, measured when it is, reconstructed otherwise, with the series read and its kind.';
 
-grant execute on function consumption.curve_series(uuid, timestamptz, timestamptz, uuid) to authenticated, service_role;
-grant execute on function consumption.curve(uuid, timestamptz, timestamptz, interval, uuid) to authenticated, service_role;
+grant execute on function consumption.curve_series(uuid, timestamptz, timestamptz) to authenticated, service_role;
+grant execute on function consumption.curve(uuid, timestamptz, timestamptz, interval) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
 values ('consumption', 'Consumption', '0.1.0', 'consumption', '0.2.0',

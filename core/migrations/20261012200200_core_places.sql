@@ -90,23 +90,36 @@ comment on function parent_check() is
   'Trigger of a foreign key to a parent (its column, then the parent''s table): the parent is in the same organisation.';
 
 -- AFTER DELETE on the table of a kind, tg_argv[0] being the kind: what was
--- attached to the row goes with it, in the four tables that attach.
+-- attached to the row goes with it. An attachment is a table with an
+-- `object_kind` and an `object_id` column (or `subject_kind` and
+-- `subject_id`): the core's attributes, identifiers, documents and series,
+-- and a module's table about an object of the core (a task, a horizon).
 create or replace function drop_attachments()
 returns trigger
 language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
+declare
+  t record;
 begin
-  delete from attributes where object_kind = tg_argv[0] and object_id = old.id;
-  delete from external_ids where object_kind = tg_argv[0] and object_id = old.id;
-  delete from documents where object_kind = tg_argv[0] and object_id = old.id;
-  delete from series where object_kind = tg_argv[0] and object_id = old.id;
+  for t in
+    select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
+      from pg_attribute a
+      join pg_class c on c.oid = a.attrelid
+      join pg_namespace n on n.oid = c.relnamespace
+     where a.attname in ('object_kind', 'subject_kind') and not a.attisdropped
+       and c.relkind in ('r', 'p') and not c.relispartition
+       and exists (select 1 from pg_attribute i where i.attrelid = c.oid and i.attname = left(a.attname, -5) || '_id' and not i.attisdropped)
+  loop
+    execute format('delete from %s where %I = $1 and %I = $2', t.table_name, t.side || '_kind', t.side || '_id')
+      using tg_argv[0], old.id;
+  end loop;
   return old;
 end;
 $$;
 
 comment on function drop_attachments() is
-  'AFTER DELETE on the table of a kind: deletes the attributes, identifiers, documents and series attached to the row.';
+  'AFTER DELETE on the table of a kind: deletes what was attached to the row, in every table with an object_kind and object_id (or subject_kind and subject_id) column.';
 
 -- ---------------------------------------------------------------------------
 -- Geometry helpers
