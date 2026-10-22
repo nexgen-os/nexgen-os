@@ -67,8 +67,8 @@ integration written against one release keeps working against every later
   test: an IFC and a CityJSON of one building land as two models placed on
   the same footprint.
 - **Modules** ([`modules/README.md`](../modules/README.md)): `storage`,
-  `charging`, `heating`, `thermal`, `kpis`, `monitoring`, `wind`, each
-  starting from the participant and its devices
+  `charging`, `heating`, `thermal`, `kpis`, `monitoring`, `sensors`,
+  `wind`, each starting from the participant and its devices
   ([0041](decisions/0041-a-module-names-one-thing.md)); a PV\*SOL study
   imported as an estimate of `solar` and compared with the `pvsol_like` profile
   within a stated tolerance ([0012](decisions/0012-a-yield-says-what-it-was-computed-from.md)).
