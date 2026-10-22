@@ -20,6 +20,39 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 > the [changelog](CHANGELOG.md). Tested; names may still change until 1.0
 > ([road to 1.0](docs/road-to-1.0.md)), and every change is written down.
 
+## For a solar developer
+
+Nexgen OS computes, sizes and documents a PV project, from the roof to
+the energy shared in a community, in a database you own. Every figure
+says which weather, period, models and losses it was computed with, so
+that a lender, a reviewer or a client can check it.
+
+- **A yield with its provenance**: PVGIS (no key), PVWatts built in, or
+  pvlib through its connector; P50 and the exceedance levels asked for,
+  IEC 61724-1 indicators, an ordered loss chain, a far horizon and the
+  soiling of the place ([`modules/solar`](modules/solar/README.md)).
+- **Products from their files**: PAN and OND read into module and
+  inverter products, with pvlib's parameter names
+  ([`packages/formats/panond`](packages/formats/panond/README.md)).
+- **Sizing on a measured curve**: the PV power that best meets a
+  self-consumption rate, a self-sufficiency, a net present value or a
+  payback, bounded by the roof faces of the place
+  ([`size()`](modules/solar/README.md#sizing-size)).
+- **Production apart from the meter**: a meter measures offtake and
+  injection, a PV system its production; the core refuses one for the
+  other.
+- **Batteries, chargers and energy sharing** in their modules
+  ([`storage`](modules/storage/README.md),
+  [`charging`](modules/charging/README.md),
+  [`community`](modules/README.md)), meter data from Enedis R6x files
+  and SGE, and the rules of France, Belgium and Spain as country packs
+  with worked cases ([`packs/`](packs/)).
+
+The path from an empty database to a house with its yearly yield is
+[below](#twenty-minutes-to-the-same-house-with-its-yield). Connectors and
+format libraries are MIT and can live inside any product; the
+[licence](#licence) says what the AGPL asks of the core.
+
 ## The model in one screen
 
 Six objects, in the order a page walks them — the organisation, the
@@ -263,3 +296,8 @@ The core, the modules, the packs and the installer are AGPL-3.0
 ([LICENSE](LICENSE)). The format libraries, the connectors and the
 Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
 can live inside any product.
+
+In practice: a product that reads and writes a Nexgen OS database through
+its tables, its functions or the MCP server keeps its own licence; a
+modified core or module offered to users over a network publishes its
+changes under the AGPL.
