@@ -7,19 +7,19 @@
  * `building` module is installed — their ground, their buildings, their
  * roof faces, facades and ground areas, each a feature with its
  * columns, its attributes (`attributes_of()`), the identifiers it is known
- * by and the runs computed on it, so that a scenario can be shown beside
- * the places it is about. Coordinates are WGS 84 longitude, latitude and
+ * by and the runs the modules computed on it (each module's `runs`), so
+ * that a figure can be shown beside the places it is about. Coordinates are WGS 84 longitude, latitude and
  * height in metres, polygons wound as RFC 7946 asks. Every source the
  * export draws on is listed with its licence and attribution.
  *
  * `open: true` is the export meant for the public: no street line, no
- * serial number, no metadata, and nothing that came from a source whose
+ * serial number, no metadata of a described object, and nothing that came from a source whose
  * licence forbids passing it on.
  */
 import { writeGeoJson, type Feature, type FeatureCollection, type Geometry } from '@nexgen-os/geojson';
 import type { Db } from '../db.js';
 
-/** A run computed on the object, as `record_run()` recorded it. */
+/** A run a module computed on the object, as its `<module>.runs` table holds it. */
 export interface RunSummary {
   id: string;
   module: string;
@@ -34,7 +34,7 @@ export type FeatureKind = 'project' | 'participant' | 'site' | 'building' | 'sur
 export interface FeatureProperties {
   kind: FeatureKind;
   name: string;
-  /** Attributes holding at the export's moment, in its scenario. */
+  /** Attributes holding at the export's moment. */
   attributes: Record<string, unknown>;
   /** Identifiers the object is known by elsewhere, scheme by scheme. */
   external_ids: { scheme: string; value: string }[];
@@ -54,7 +54,6 @@ export type GeoJsonExport = FeatureCollection<FeatureProperties> & {
   /** Foreign member: what the export is and what it owes. */
   nexgen_os: {
     schema_version: string;
-    scenario_id: string | null;
     at: string | null;
     open: boolean;
     /** Every source a feature, an attribute or an identifier came from. */
@@ -71,13 +70,11 @@ export interface GeoJsonTarget {
 }
 
 export interface GeoJsonExportOptions {
-  /** A scenario: what it adds and overrides, over the world as it is. Default: the world as it is. */
-  scenarioId?: string | null;
   /** The moment attributes and identifiers are read at. Default: now. */
   at?: Date | string;
   /** The export for the public: see the head of this file. Default: false. */
   open?: boolean;
-  /** The runs computed on each object. Default: true. */
+  /** The runs the modules computed on each object. Default: true. */
   runs?: boolean;
 }
 
@@ -116,29 +113,16 @@ interface RunRow {
 export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJsonExportOptions = {}): Promise<GeoJsonExport> {
   if (!target.participantId === !target.projectId) throw new Error('target_required: give a participantId or a projectId');
   const open = options.open ?? false;
-  const scenarioId = options.scenarioId ?? null;
   const at = options.at === undefined ? null : new Date(options.at).toISOString();
-
-  // The scenario and those it builds on: their rows join the world as it is.
-  const chain = scenarioId
-    ? (await db.query<{ id: string }>(
-        `with recursive c as (select id, parent_id from scenarios where id = $1
-                              union all select s.id, s.parent_id from scenarios s join c on s.id = c.parent_id)
-         select id from c`,
-        [scenarioId],
-      )).rows.map((r) => r.id)
-    : [];
-  if (scenarioId && chain.length === 0) throw new Error(`scenario_not_found: ${scenarioId}`);
-  const visible = (alias: string) => `(${alias}.scenario_id is null or ${alias}.scenario_id = any($2::uuid[]))`;
   const geojson = (column: string) => `ST_AsGeoJSON(ST_ForcePolygonCCW(${column}), ${PRECISION})`;
 
   const projects: Row[] = [];
   if (target.projectId) {
     const project = await db.query<Row>(
-      `select p.id, p.name, p.kind project_kind, p.country, p.status, p.start_date::text, p.end_date::text, p.tags, null source_code,
+      `select p.id, p.name, p.kind project_kind, p.country, p.status, p.start_date::text, p.end_date::text, null source_code,
               ${geojson('p.geometry')} geometry
-         from projects p where p.id = $1 and ${visible('p')}`,
-      [target.projectId, chain],
+         from projects p where p.id = $1`,
+      [target.projectId],
     );
     if (project.rows.length === 0) throw new Error(`project_not_found: ${target.projectId}`);
     projects.push(...project.rows);
@@ -147,11 +131,11 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   // The participants with a place: a group has none, and is not a feature.
   const participants = await db.query<Row>(
     `select p.id, p.name, p.project_id, p.role, p.status, p.country, p.street, p.address_extra, p.postal_code, p.city, p.region,
-            p.time_zone, p.location_precision, p.profile, p.tags, p.location_source_code source_code, ${geojson('p.geometry')} geometry
+            p.time_zone, p.location_precision, p.location_source_code source_code, ${geojson('p.geometry')} geometry
        from participants p
-      where (p.id = $1::uuid or p.project_id = $3::uuid) and p.country is not null and ${visible('p')}
+      where (p.id = $1::uuid or p.project_id = $2::uuid) and p.country is not null
       order by p.created_at, p.id`,
-    [target.participantId ?? null, chain, target.projectId ?? null],
+    [target.participantId ?? null, target.projectId ?? null],
   );
   if (target.participantId && participants.rows.length === 0) throw new Error(`participant_not_found: ${target.participantId}`);
   const found = participants.rows.map((p) => p.id);
@@ -161,43 +145,45 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const described = (await db.query<{ installed: boolean }>(`select to_regclass('building.buildings') is not null installed`)).rows[0].installed;
   const grounds = described
     ? (await db.query<Row>(
-        `select s.id, s.name, s.participant_id, s.profile, s.area_m2::float8 area_m2, s.tags, s.source_code, s.metadata,
+        `select s.id, s.name, s.participant_id, s.profile, s.area_m2::float8 area_m2, s.global_id, s.source_code, s.metadata,
                 ${geojson('s.geometry')} geometry
-           from building.sites s where s.participant_id = any($1::uuid[]) and ${visible('s')}
+           from building.sites s where s.participant_id = any($1::uuid[])
           order by s.created_at, s.id`,
-        [found, chain],
+        [found],
       )).rows
     : [];
   const buildings = described
     ? (await db.query<Row>(
         `select b.id, b.name, b.participant_id, b.site_id, b.profile, b.elevation_m::float8 elevation_m, b.height_m::float8 height_m,
-                b.status, b.tags, b.source_code, b.metadata,
+                b.year_built, b.floors_above_ground, b.floors_below_ground, b.floor_area_m2::float8 floor_area_m2, b.energy_label,
+                b.status, b.global_id, b.source_code, b.metadata,
                 ${geojson('b.footprint')} geometry
-           from building.buildings b where b.participant_id = any($1::uuid[]) and ${visible('b')}
+           from building.buildings b where b.participant_id = any($1::uuid[])
           order by b.created_at, b.id`,
-        [found, chain],
+        [found],
       )).rows
     : [];
   const surfaces = described
     ? (await db.query<Row>(
         `select f.id, f.name, f.kind surface_kind, coalesce(s.participant_id, b.participant_id) participant_id, f.site_id, f.building_id,
-                f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.tags, f.source_code, f.metadata,
+                f.azimuth_deg::float8 azimuth_deg, f.tilt_deg::float8 tilt_deg, f.area_m2::float8 area_m2, f.material,
+                f.u_value::float8 u_value, f.is_external, f.global_id, f.source_code, f.metadata,
                 ${geojson('f.geometry')} geometry
            from building.surfaces f left join building.buildings b on b.id = f.building_id left join building.sites s on s.id = f.site_id
-          where coalesce(s.participant_id, b.participant_id) = any($1::uuid[]) and ${visible('f')}
+          where coalesce(s.participant_id, b.participant_id) = any($1::uuid[])
           order by f.created_at, f.id`,
-        [found, chain],
+        [found],
       )).rows
     : [];
   const devices = await db.query<Row>(
     `select d.id, d.name, d.device_type, d.participant_id,
             d.manufacturer, d.model, d.serial_number,
-            d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text, d.tags, d.metadata,
+            d.rated_power_kw::float8 rated_power_kw, d.unit_count, d.status, d.installation_date::text,
             d.source_code, null geometry
        from devices d
-      where d.participant_id = any($1::uuid[]) and ${visible('d')}
+      where d.participant_id = any($1::uuid[])
       order by d.created_at, d.id`,
-    [found, chain],
+    [found],
   );
 
   const all: [FeatureKind, Row][] = [
@@ -211,13 +197,13 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   const ids = all.map(([, r]) => r.id);
 
   // What is attached to each object, read the one way attributes are read.
-  // An attribute or an identifier holds at the moment asked, in the scenario.
+  // An attribute or an identifier holds at the moment asked.
   const holds = (alias: string) =>
-    `(${alias}.valid_from is null or ${alias}.valid_from <= coalesce($3::timestamptz, now()))
-     and (${alias}.valid_to is null or ${alias}.valid_to > coalesce($3::timestamptz, now())) and ${visible(alias)}`;
+    `(${alias}.valid_from is null or ${alias}.valid_from <= coalesce($2::timestamptz, now()))
+     and (${alias}.valid_to is null or ${alias}.valid_to > coalesce($2::timestamptz, now()))`;
   const attachments = await db.query<Attachments>(
     `select o.id,
-            attributes_of(o.id, coalesce($3::timestamptz, now()), $4::uuid) attributes,
+            attributes_of(o.id, coalesce($2::timestamptz, now())) attributes,
             coalesce((select jsonb_agg(jsonb_build_object('scheme', e.scheme, 'value', e.value, 'source_code', i.source_code) order by e.scheme, e.value)
                         from external_ids e join id_schemes i on i.code = e.scheme
                        where e.object_id = o.id and ${holds('e')}), '[]'::jsonb) external_ids,
@@ -226,20 +212,32 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
             (select array_agg(distinct a.property_code) from attributes a join sources s on s.code = a.source_code
               where a.object_id = o.id and not s.redistributable and ${holds('a')}) closed_properties
        from unnest($1::uuid[]) o(id)`,
-    [ids, chain, at, scenarioId],
+    [ids, at],
   );
   const attached = new Map(attachments.rows.map((a) => [a.id, a]));
 
+  // The runs of every installed module that keeps them (`<module>.runs`),
+  // on an object of the core by its foreign key.
   const runs = new Map<string, RunSummary[]>();
   if (options.runs ?? true) {
-    const rows = await db.query<RunRow>(
-      `select r.subject_id, r.id, r.module_code, r.engine_version, r.inputs_hash, r.finished_at, r.results
-         from runs r
-        where r.subject_id = any($1::uuid[]) and r.status = 'succeeded' and r.scenario_id is not distinct from $2::uuid
-        order by r.finished_at, r.id`,
-      [ids, scenarioId],
+    const tables = await db.query<{ module_code: string; schema_name: string; subject: string }>(
+      `select m.code module_code, m.schema_name, c.column_name subject
+         from modules m join information_schema.columns c on c.table_schema = m.schema_name and c.table_name = 'runs'
+        where c.column_name in ('project_id', 'participant_id', 'device_id', 'meter_id')
+        order by m.code`,
     );
-    for (const r of rows.rows) {
+    const rows: RunRow[] = [];
+    for (const t of tables.rows) {
+      const found = await db.query<RunRow>(
+        `select r.${t.subject} subject_id, r.id, $2::text module_code, r.engine_version, r.inputs_hash, r.finished_at, r.results
+           from ${t.schema_name}.runs r
+          where r.${t.subject} = any($1::uuid[]) and r.status = 'succeeded'`,
+        [ids, t.module_code],
+      );
+      rows.push(...found.rows);
+    }
+    rows.sort((p, q) => new Date(p.finished_at).getTime() - new Date(q.finished_at).getTime() || p.id.localeCompare(q.id));
+    for (const r of rows) {
       const list = runs.get(r.subject_id) ?? [];
       list.push({
         id: r.id,
@@ -316,7 +314,6 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
   return writeGeoJson(features, {
     nexgen_os: {
       schema_version: version.rows[0].v,
-      scenario_id: scenarioId,
       at,
       open,
       sources: sources.rows.filter((s) => used.has(s.code)).map(({ code, name, license, attribution }) => ({ code, name, license, attribution })),

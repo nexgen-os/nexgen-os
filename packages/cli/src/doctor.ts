@@ -31,18 +31,24 @@ export interface DoctorReport {
 
 export const VOCABULARIES = [
   'device_types',
-  'profiles',
-  'link_types',
   'quantities',
+  'units',
   'property_defs',
-  'tags',
   'id_schemes',
   'sources',
-  'kinds',
-  'series_quality_codes',
   'countries',
   'regions',
 ] as const;
+
+/** The six objects of the core an attachment names by kind, and the table of each (decision 0044). */
+export const OBJECT_TABLES: Record<string, string> = {
+  organisation: 'nexgen.organisations',
+  project: 'nexgen.projects',
+  participant: 'nexgen.participants',
+  meter: 'nexgen.meters',
+  device: 'nexgen.devices',
+  series: 'nexgen.series',
+};
 
 async function exists(db: SqlClient, relation: string): Promise<boolean> {
   const [r] = await db.query<{ e: boolean }>('select to_regclass($1) is not null as e', [relation]);
@@ -111,31 +117,29 @@ export async function detachedModuleTables(db: SqlClient, schemas: string[]): Pr
 
 /**
  * Attachments whose object no longer exists, counted by kind (decision
- * 0044). An attachment is a row of a table whose `object_kind` (or
- * `subject_kind`) references `kinds`, beside its `object_id` (or
- * `subject_id`) — the core's
- * attributes, identifiers, links, documents, series and runs, and the
- * modules' tables that attach to an object of any kind; its object is the
- * row of that id in the table `kinds` gives for its kind. `drop_attachments()`
- * deletes them with their object; a row left behind was written around it.
+ * 0044). An attachment is a row of a table with an `object_kind` and an
+ * `object_id` column (or `subject_kind` and `subject_id`) — the core's
+ * attributes, identifiers, documents and series, and the modules' tables
+ * about an object of the core (a task, a horizon); its object is the row of
+ * that id in the table of its kind, one of the six objects of the core.
+ * `drop_attachments()` deletes them with their object; a row left behind
+ * was written around it.
  */
 export async function orphanedAttachments(db: SqlClient): Promise<{ kind: string; table_name: string; rows: number }[]> {
-  if (!(await exists(db, 'nexgen.kinds'))) return [];
+  if (!(await exists(db, 'nexgen.attributes'))) return [];
   const tables = await db.query<{ table_name: string; side: string }>(
     `select format('%I.%I', n.nspname, c.relname) as table_name, left(a.attname, -5) as side
-       from pg_constraint f
-       join pg_class c on c.oid = f.conrelid
+       from pg_attribute a
+       join pg_class c on c.oid = a.attrelid
        join pg_namespace n on n.oid = c.relnamespace
-       join pg_attribute a on a.attrelid = f.conrelid and a.attnum = f.conkey[1]
-      where f.contype = 'f' and f.confrelid = 'nexgen.kinds'::regclass and cardinality(f.conkey) = 1
-        and a.attname in ('object_kind', 'subject_kind') and not c.relispartition
+      where a.attname in ('object_kind', 'subject_kind') and not a.attisdropped
+        and c.relkind in ('r', 'p') and not c.relispartition
+        and exists (select 1 from pg_attribute i where i.attrelid = c.oid and i.attname = left(a.attname, -5) || '_id' and not i.attisdropped)
       order by 1, 2`,
   );
-  const kinds = await db.query<{ kind: string; table_name: string }>('select kind, table_name from nexgen.kinds order by kind');
   const found: { kind: string; table_name: string; rows: number }[] = [];
-  for (const k of kinds) {
-    if (!(await exists(db, k.table_name.includes('.') ? k.table_name : `nexgen.${k.table_name}`))) continue;
-    const of = k.table_name.includes('.') ? k.table_name : `nexgen.${k.table_name}`;
+  for (const [kind, of] of Object.entries(OBJECT_TABLES)) {
+    const k = { kind };
     for (const t of tables) {
       const [r] = await db.query<{ n: number }>(
         `select count(*)::int as n from ${t.table_name} a

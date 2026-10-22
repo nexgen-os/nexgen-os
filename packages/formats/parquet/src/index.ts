@@ -24,7 +24,7 @@ export const SERIES_FILE_COLUMNS = [
   { name: 'series_id', type: 'UUID', description: 'The series (series.id).' },
   { name: 'at', type: 'TIMESTAMP', description: 'Start of the interval, or the instant, in UTC (milliseconds).' },
   { name: 'value', type: 'DOUBLE', description: 'In the unit of the series quantity (quantities.unit).' },
-  { name: 'quality', type: 'INT32', description: 'A code of series_quality_codes: 0 measured, 1 estimated, 2 substituted, 3 missing.' },
+  { name: 'quality', type: 'INT32', description: 'The quality code of a value: 0 measured, 1 estimated, 2 substituted, 3 missing; from 100 up, a pack code.' },
 ] as const;
 
 /** The version of the schema, written in the file's key-value metadata. */

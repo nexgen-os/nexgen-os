@@ -20,7 +20,7 @@ export interface SeriesPoint {
 
 /** What names a series when it may not exist yet: the keys of `series_ensure()`. */
 export interface SeriesIdentity {
-  /** The kind of the object observed (`participant`, `meter`, `device`, `space`…), from `kinds`. */
+  /** The kind of the object observed: `organisation`, `project`, `participant`, `meter`, `device` or `series`. */
   object_kind: string;
   object_id: string;
   quantity_code: string;
@@ -30,8 +30,8 @@ export interface SeriesIdentity {
   step?: string | null;
   source_code?: string | null;
   name?: string | null;
-  scenario_id?: string | null;
-  run_id?: string | null;
+  /** A free note of where the values come from; a run names itself here, `<module>.runs:<run id>`. */
+  source?: string | null;
   device_id?: string | null;
   external_ref?: string | null;
   metadata?: Record<string, unknown>;
@@ -73,10 +73,10 @@ const iso = (t: string | Date) => new Date(t).toISOString();
 /** The series of an identity, created once. Refuses by name a different value kind or step. */
 export async function seriesEnsure(db: Db, identity: SeriesIdentity): Promise<string> {
   const r = await db.query<{ id: string }>(
-    `select series_ensure($1, $2, $3, $4, $5, $6::interval, $7, $8, $9, $10, $11, $12::jsonb, $13) id`,
+    `select series_ensure($1, $2, $3, $4, $5, $6::interval, $7, $8, $9, $10, $11::jsonb, $12) id`,
     [identity.object_kind, identity.object_id, identity.quantity_code, identity.kind ?? 'measured', identity.value_kind ?? 'interval', identity.step ?? null,
      identity.device_id ?? null, identity.external_ref ?? null, identity.source_code ?? null, identity.name ?? null,
-     identity.scenario_id ?? null, JSON.stringify(identity.metadata ?? {}), identity.run_id ?? null],
+     JSON.stringify(identity.metadata ?? {}), identity.source ?? null],
   );
   return r.rows[0].id;
 }

@@ -46,7 +46,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 |---|---|
 | `schema_version()` | `nexgen_schema_version()` |
 | `organisations()`, `participants(organisation_id=None)` | the organisations and the participants, with their place, the connection may read |
-| `attributes_of(object_id, at=None, scenario_id=None)` | every attribute holding at a moment, in a scenario (`None` = reality) |
+| `attributes_of(object_id, at=None)` | every attribute holding at a moment |
 | `resample(series_id, start, end, step, time_zone=None, issued_before=None)` | a series on a regular step over `[start, end)`, the amount of each bucket (a register's consumption), as `Bucket(start, value, samples, expected, quality)`; `step` is an interval (`"15 minutes"`, `"1 day"`) or a `timedelta` |
 | `window(series_id, start, end, limit=100000)`, `latest(series_ids)` | the stored values in time order (a register's index); the last value of each series |
 | `fill(series_id, start, end, step, method="linear")`, `coverage(series_id, start, end)` | every bucket with its gaps filled on read and flagged estimated; the gaps of a regular series |
@@ -54,7 +54,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | `store(series, values, *, unit=None, issued_at=None)` | the one write path: a series id or its identity, `(at, value[, quality])` tuples in `unit`; returns `Stored(series_id, changed)` |
 | `convert_unit(value, from_unit, to_unit)` | a conversion of the core's `units` vocabulary |
 | `participant_of(kind, object_id)`, `country_of(kind, object_id)` | the participant an object belongs to, the country of its place |
-| `attach(kind, object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None, scenario_id=None)` | one attribute, with its period and where it comes from; returns its id |
+| `attach(kind, object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None)` | one attribute, with its period and where it comes from; returns its id |
 
 Values are in the unit of the property's quantity (`quantities`), series
 values are dated at the start of their interval, instants are

@@ -91,12 +91,11 @@ export interface PlacesProvider {
 
 export interface SeriesTarget {
   organisationId: string;
-  /** The object the series is about, by its kind and its id: a participant, a meter, a device, a building, a zone. */
+  /** The object the series is about, by its kind and its id: a participant, a meter, a device, a project, an organisation. */
   objectKind: string;
   objectId: string;
   sourceCode: string;
   kind: 'measured' | 'simulated' | 'forecast' | 'setpoint';
-  scenarioId?: string | null;
   /**
    * Tells apart two series of the same object, quantity, kind and source:
    * a typical year next to the real years it was made from. Unnamed by
@@ -107,8 +106,7 @@ export interface SeriesTarget {
 
 /**
  * Writes what a connector brought back through `store()`, the one write
- * path: the series of that object, quantity, kind, source, scenario and
- * name, found or created once (a different value kind or step is refused
+ * path: the series of that object, quantity, kind, source and name, found or created once (a different value kind or step is refused
  * by name), the values converted from `series.unit`, with their quality,
  * a forecast with its issue time. A value already present is replaced; an
  * equal one is left as it is, and `inserted` counts the rows that changed.
@@ -121,7 +119,7 @@ export async function storeSeries(
 ): Promise<{ seriesId: string; inserted: number }> {
   const stored = await store(db, {
     object_kind: target.objectKind, object_id: target.objectId, quantity_code: series.quantity_code, kind: target.kind, value_kind: series.value_kind,
-    step: series.step, source_code: target.sourceCode, scenario_id: target.scenarioId ?? null, name: target.name ?? null,
+    step: series.step, source_code: target.sourceCode, name: target.name ?? null,
   }, series.values, { unit: series.unit ?? null, issuedAt: options.issuedAt ?? null });
   return { seriesId: stored.seriesId, inserted: stored.changed };
 }

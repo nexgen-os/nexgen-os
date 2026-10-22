@@ -135,11 +135,11 @@ class Nexgen:
             {"organisation": organisation_id},
         )
 
-    def attributes_of(self, object_id: str, at: Optional[datetime] = None, scenario_id: Optional[str] = None) -> Dict[str, Any]:
-        """Every attribute of an object holding at ``at`` (now by default), in a scenario (``None`` = reality)."""
+    def attributes_of(self, object_id: str, at: Optional[datetime] = None) -> Dict[str, Any]:
+        """Every attribute of an object holding at ``at`` (now by default)."""
         return self._one(
-            "select nexgen.attributes_of(%s::uuid, coalesce(%s::timestamptz, now()), %s::uuid)",
-            (object_id, at, scenario_id),
+            "select nexgen.attributes_of(%s::uuid, coalesce(%s::timestamptz, now()))",
+            (object_id, at),
         )
 
     def resample(
@@ -303,7 +303,6 @@ class Nexgen:
         source_code: Optional[str] = None,
         valid_from: Optional[datetime] = None,
         valid_to: Optional[datetime] = None,
-        scenario_id: Optional[str] = None,
     ) -> str:
         """Attaches an attribute to an object (its kind and its id), over a period, with where it comes from; returns its id.
 
@@ -318,10 +317,10 @@ class Nexgen:
         return str(
             self._one(
                 """insert into nexgen.attributes
-                          (object_kind, object_id, property_code, value, source, source_code, valid_from, valid_to, scenario_id)
-                   values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz, %s::uuid)
+                          (object_kind, object_id, property_code, value, source, source_code, valid_from, valid_to)
+                   values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz)
                    returning id""",
-                (kind, object_id, property_code, Jsonb(value), source, source_code, valid_from, valid_to, scenario_id),
+                (kind, object_id, property_code, Jsonb(value), source, source_code, valid_from, valid_to),
             )
         )
 
