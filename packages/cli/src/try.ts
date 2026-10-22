@@ -11,6 +11,7 @@
  * PGlite is loaded only by this command, so that the commands handed a
  * connection string never load it.
  */
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -107,6 +108,10 @@ export async function tryInMemory(options: TryOptions): Promise<TryReport> {
   const year = options.year ?? defaultYear();
   if (!Number.isInteger(year) || year < 2005) throw new NexgenError('usage', '--year takes a calendar year PVGIS covers, such as 2023');
   const root = options.root ?? defaultRoot();
+  // The assets of a build older than this command do not carry the dataset.
+  if (!existsSync(join(root, DEMO_DATASET))) {
+    throw new NexgenError('dataset_missing', `${DEMO_DATASET} is not under ${root}; in a clone, run npm run build -w packages/cli again`);
+  }
   const pg = await emptyMemoryDatabase();
   try {
     await install(memorySqlClient(pg), { root, modules: ['solar'], packs: [] });

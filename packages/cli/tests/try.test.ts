@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import type { Computations, Fetch } from '@nexgen-os/core';
 import { pvgis } from '@nexgen-os/pvgis';
 import { estimateYield } from '../../../modules/solar/src/yield.js';
-import { DEMO_PV_SYSTEM, defaultYear, main } from '../src/index.js';
+import { DEMO_PV_SYSTEM, defaultYear, main, tryInMemory } from '../src/index.js';
 import { repoRoot } from '../../../tests/helpers/db.js';
 
 const recorded = JSON.parse(
@@ -80,6 +80,10 @@ describe('nexgen-os try', () => {
     const year = await run(['try', '--year', 'last']);
     expect(year.code).toBe(2);
     expect(year.err).toMatch(/^usage: --year/);
+  });
+
+  it('refuses by name when the files it installs from do not carry the dataset', async () => {
+    await expect(tryInMemory({ computations: computations([]), year: 2023, root: join(repoRoot, 'packs') })).rejects.toThrow(/^dataset_missing: /);
   });
 
   it('defaults to the last full year but two', () => {
