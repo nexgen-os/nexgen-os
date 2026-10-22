@@ -184,8 +184,9 @@ describe('a yield estimate computed by pvlib', () => {
     const estimate = await one<{ provenance: string; inputs: Record<string, any> }>(db, 'select provenance, inputs from solar.estimates where id = $1', [viaPvlib.estimateId]);
     expect(estimate.provenance).toBe(installed!.version);
     expect(estimate.inputs).toMatchObject({ profile: 'pvwatts', engine: { name: 'pvlib', version: installed!.version, contract: 1 }, model: { pvlib: installed!.dependencies.pvlib } });
+    // The system's production, and the series of its array named after it (`pvlib 2023-2023 South`).
     const series = await db.query<{ quantity_code: string; n: number }>(
-      `select s.quantity_code, count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.name = 'pvlib 2023-2023' group by s.quantity_code order by 1`,
+      `select s.quantity_code, count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.name like 'pvlib 2023-2023%' group by s.quantity_code order by 1`,
     );
     expect(series.rows).toEqual([{ quantity_code: 'module_temperature', n: 8760 }, { quantity_code: 'poa_irradiance', n: 8760 }, { quantity_code: 'production_energy', n: 8760 }]);
   });
