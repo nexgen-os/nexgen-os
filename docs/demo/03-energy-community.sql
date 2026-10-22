@@ -76,7 +76,7 @@ select store(s.id, array_agg(ts order by ts), array_agg((
  where s.organisation_id = '00000000-0000-4000-8000-000300000001'
  group by s.id;
 
-insert into attributes (object_kind, object_id, property_code, value, source) values
+insert into attributes (object_kind, object_id, attribute_type, value, source) values
   ('meter', '00000000-0000-4000-8000-000300000041', 'subscribed_power', '80', 'supply contract'),
   ('meter', '00000000-0000-4000-8000-000300000042', 'subscribed_power', '120', 'supply contract'),
   ('meter', '00000000-0000-4000-8000-000300000043', 'subscribed_power', '63', 'supply contract');

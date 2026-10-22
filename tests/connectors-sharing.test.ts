@@ -94,7 +94,7 @@ describe('energy sharing in a project, as a settlement', () => {
     db = await freshDatabase(['billing', 'community', 'grid']);
     await db.exec(await readFile(join(repoRoot, 'docs', 'demo', '03-energy-community.sql'), 'utf8'));
     await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source)
+      `insert into attributes (object_kind, object_id, attribute_type, value, valid_from, valid_to, source)
        values ('project', $1, 'allocation_key', '{"method": "proportional", "parameters": {}}', '2026-01-01T00:00:00+01:00', '2027-01-01T00:00:00+01:00', 'general assembly 2025')`,
       [PROJECT],
     );
@@ -154,11 +154,11 @@ describe('energy sharing in a project, as a settlement', () => {
   });
 
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
+    await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
     const r = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
     const settlement = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.settlements where id = $1', [r.settlementId]);
     expect(settlement.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
-    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
+    await expect(db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
       .rejects.toThrow(/allocation_share/);
   });
 
@@ -175,7 +175,7 @@ describe('energy sharing in a project, as a settlement', () => {
     await expect(settleSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_outside_period/);
     await expect(settleSharing(db, { projectId: PROJECT, ...day, engine: fake })).rejects.toThrow(/^engine_kind_unsupported: fake accepts echo, pv_yield, not energy_sharing$/);
     await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values ('project', $1, 'allocation_key', '{"method": "fixed", "parameters": {}}', '2027-01-01T00:00:00+01:00', 'general assembly 2026')`,
+      `insert into attributes (object_kind, object_id, attribute_type, value, valid_from, source) values ('project', $1, 'allocation_key', '{"method": "fixed", "parameters": {}}', '2027-01-01T00:00:00+01:00', 'general assembly 2026')`,
       [PROJECT],
     );
     await expect(settleSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_changes_in_period/);
@@ -184,7 +184,7 @@ describe('energy sharing in a project, as a settlement', () => {
   it('keeps the key and the settlement to the organisation of the project', async () => {
     await organisation(db, 'Another cooperative', USER_B);
     await asUser(db, USER_B, async () => {
-      expect((await db.query(`select id from attributes where property_code = 'allocation_key'`)).rows).toEqual([]);
+      expect((await db.query(`select id from attributes where attribute_type = 'allocation_key'`)).rows).toEqual([]);
       await expect(settleSharing(db, { projectId: PROJECT, ...day, engine: spec })).rejects.toThrow(/^project_not_found/);
     });
   });

@@ -61,7 +61,7 @@ select store('00000000-0000-4000-8000-000100000072', array_agg(d order by d),
   from generate_series('2026-06-01'::timestamptz, '2026-06-30', '1 day') d;
 
 -- What the household takes in a year, from its invoices.
-insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source) values
+insert into attributes (object_kind, object_id, attribute_type, value, valid_from, valid_to, source) values
   ('participant', '00000000-0000-4000-8000-000100000010', 'annual_consumption', '4300', null, null, 'supplier invoices 2025');
 
 insert into documents (object_kind, object_id, name, kind, uri, media_type, source, captured_at) values
@@ -75,7 +75,7 @@ insert into devices (id, organisation_id, participant_id, name, device_type, man
   ('00000000-0000-4000-8000-000100000054', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000010',
    'Battery', 'battery', 'BYD', 'HVS 10.2', 5, 'planned');
 
-insert into attributes (object_kind, object_id, property_code, value, source) values
+insert into attributes (object_kind, object_id, attribute_type, value, source) values
   ('device', '00000000-0000-4000-8000-000100000054', 'efficiency', '0.95', 'datasheet');
 
 -- The monthly production PVGIS published for the PV system, south, 30°,

@@ -41,7 +41,7 @@ describe('the module', () => {
     expect(m).toEqual({ code: 'building', schema_name: 'building', requires_core_min: '0.3.0' });
     const uses = await one<{ n: number; land: string }>(db, `select count(*)::int n, max(applies_to) filter (where code = 'land') land from building.profiles`);
     expect(uses).toEqual({ n: 14, land: 'place' });
-    const props = await db.query<{ code: string; applies_to: string[] }>(`select code, applies_to from property_defs where published_by = 'building'`);
+    const props = await db.query<{ code: string; applies_to: string[] }>(`select code, applies_to from attribute_types where published_by = 'building'`);
     expect(props.rows).toEqual([{ code: 'file_record', applies_to: ['device'] }]);
   });
 

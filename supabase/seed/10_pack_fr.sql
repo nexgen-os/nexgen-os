@@ -241,7 +241,7 @@ do $seed$
 declare
   refused text;
 begin
-  with pack (property_code, region, value, unit, valid_from, valid_to, source_code, reference) as (
+  with pack (attribute_type, region, value, unit, valid_from, valid_to, source_code, reference) as (
     values
       ('bidding_zone'::text, null::text, '"10YFR-RTE------C"'::jsonb, 'code'::text, '2026-10-20'::date, null::date, 'fr_entsoe_eic_codes'::text, 'Row 10YFR-RTE------C, function Bidding Zone, display name FR'::text),
       ('bidding_zone'::text, 'FR-2A'::text, null::jsonb, 'code'::text, '2026-10-20'::date, null::date, 'fr_cre_zni'::text, 'Definition of the non-interconnected zones: not connected to the continental grid, outside the bidding zone of the mainland'::text),
@@ -266,31 +266,31 @@ begin
       ('voltage_levels'::text, null::text, '[{"code":"tbt","name":"Très basse tension","min_kv":0,"max_kv":0.05},{"code":"bt","name":"Basse tension","min_kv":0.05,"max_kv":1},{"code":"hta","name":"Haute tension A","min_kv":1,"max_kv":50},{"code":"htb","name":"Haute tension B","min_kv":50,"max_kv":400}]'::jsonb, 'KiloV'::text, '2011-07-01'::date, null::date, 'fr_code_travail_voltage_domains'::text, 'Article R. 4226-2, alternating current: TBT up to 50 V, BT up to 1 000 V, HTA up to 50 kV, HTB above; the upper bound of HTB is the highest voltage of the transmission grid, 400 kV'::text)
   ),
   problems (problem) as (
-    select format('property_unknown: %s is not a property_defs code', p.property_code)
+    select format('attribute_type_unknown: %s is not an attribute_types code', p.attribute_type)
       from pack p
-     where not exists (select 1 from property_defs d where d.code = p.property_code)
+     where not exists (select 1 from attribute_types d where d.code = p.attribute_type)
     union all
-    select format('unit_mismatch: %s is stored in %s and the pack says %s', p.property_code, q.unit, p.unit)
+    select format('unit_mismatch: %s is stored in %s and the pack says %s', p.attribute_type, q.unit, p.unit)
       from pack p
-      join property_defs d on d.code = p.property_code
+      join attribute_types d on d.code = p.attribute_type
       join quantities q on q.code = d.quantity_code
      where q.unit <> p.unit
     union all
     select format('value_edited: %s%s from %s holds %s and the pack says %s; close it with valid_to and add a row',
-                  p.property_code, coalesce(' (' || p.region || ')', ''), p.valid_from,
+                  p.attribute_type, coalesce(' (' || p.region || ')', ''), p.valid_from,
                   coalesce(x.value::text, 'null'), coalesce(p.value::text, 'null'))
       from pack p
       join defaults x
-        on x.country = 'FR' and x.property_code = p.property_code
+        on x.country = 'FR' and x.attribute_type = p.attribute_type
        and x.region is not distinct from p.region and x.valid_from = p.valid_from
      where x.value is distinct from p.value
   ),
   written as (
-    insert into defaults (property_code, country, region, value, valid_from, valid_to, source_code, reference, published_by)
-    select p.property_code, 'FR', p.region, p.value, p.valid_from, p.valid_to, p.source_code, p.reference, 'pack:fr'
+    insert into defaults (attribute_type, country, region, value, valid_from, valid_to, source_code, reference, published_by)
+    select p.attribute_type, 'FR', p.region, p.value, p.valid_from, p.valid_to, p.source_code, p.reference, 'pack:fr'
       from pack p
      where not exists (select 1 from problems)
-    on conflict (country, region, property_code, valid_from) do update set
+    on conflict (country, region, attribute_type, valid_from) do update set
       valid_to    = excluded.valid_to,
       source_code = excluded.source_code,
       reference   = excluded.reference

@@ -35,7 +35,7 @@ beforeAll(async () => {
   await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-NO', 'ZZ', 'North', 'pack:zz'), ('ZZ-SO', 'ZZ', 'South', 'pack:zz')`);
   await db.query(`insert into sources (code, name, kind, base_url, published_by) values ('zz_statistics', 'Testland statistics office', 'text', 'https://statistics.example/', 'pack:zz')`);
   // The properties come from the core vocabulary: what a pack cites is defined there.
-  await db.query(`insert into defaults (property_code, country, region, value, valid_from, valid_to, source_code, reference, published_by) values
+  await db.query(`insert into defaults (attribute_type, country, region, value, valid_from, valid_to, source_code, reference, published_by) values
                     ('pv_specific_yield_fallback', 'ZZ', null, '950', '2020-01-01', '2026-01-01', 'zz_statistics', 'yearbook 2019, table 4', 'pack:zz'),
                     ('pv_specific_yield_fallback', 'ZZ', null, '980', '2026-01-01', null, 'zz_statistics', 'yearbook 2025, table 4', 'pack:zz'),
                     ('pv_specific_yield_fallback', 'ZZ', 'ZZ-SO', '1150', '2020-01-01', null, 'zz_statistics', 'yearbook 2025, table 5', 'pack:zz'),
@@ -65,7 +65,7 @@ describe('parameter_of', () => {
     // Two levels, as a pack listing departments under their regions does.
     await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-E', 'ZZ', 'East', 'pack:zz')`);
     await db.query(`insert into regions (code, country, name, parent, published_by) values ('ZZ-E1', 'ZZ', 'East One', 'ZZ-E', 'pack:zz'), ('ZZ-E2', 'ZZ', 'East Two', 'ZZ-E', 'pack:zz')`);
-    await db.query(`insert into defaults (property_code, country, region, value, valid_from, source_code, reference, published_by) values
+    await db.query(`insert into defaults (attribute_type, country, region, value, valid_from, source_code, reference, published_by) values
                       ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E', '1200', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 6', 'pack:zz'),
                       ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E2', '1250', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 7', 'pack:zz'),
                       ('offpeak_hours', 'ZZ', 'ZZ-E', null, null, 'zz_statistics', 'decided by each operator of the East', 'pack:zz')`);
@@ -99,31 +99,31 @@ describe('parameter_of', () => {
     await expect(parameterOf('device', device, 'vat_rate_electricity')).rejects.toThrow(/parameter_missing: vat_rate_electricity for .*, reached country ZZ/);
     await expect(parameterOf('organisation', org, 'vat_rate_electricity')).rejects.toThrow(/parameter_missing: vat_rate_electricity for .*, reached organisation/);
     await expect(parameterOf('device', device, 'offpeak_hours')).rejects.toThrow(/parameter_not_decided: offpeak_hours in ZZ: depends on the supply contract/);
-    await expect(parameterOf('device', device, 'no_such_property')).rejects.toThrow(/property_unknown/);
+    await expect(parameterOf('device', device, 'no_such_property')).rejects.toThrow(/attribute_type_unknown/);
   });
 });
 
 describe('the defaults of a pack', () => {
   it('check their value and their period, cite a source, and hold in a region of their country', async () => {
-    await expect(db.query(`insert into defaults (property_code, country, value, source_code, published_by) values ('vat_rate_electricity', 'ZZ', '"high"', 'zz_statistics', 'pack:zz')`))
+    await expect(db.query(`insert into defaults (attribute_type, country, value, source_code, published_by) values ('vat_rate_electricity', 'ZZ', '"high"', 'zz_statistics', 'pack:zz')`))
       .rejects.toThrow(/invalid_value/);
-    await expect(db.query(`insert into defaults (property_code, country, value, valid_from, source_code, published_by) values ('pv_specific_yield_fallback', 'ZZ', '990', '2025-06-01', 'zz_statistics', 'pack:zz')`))
+    await expect(db.query(`insert into defaults (attribute_type, country, value, valid_from, source_code, published_by) values ('pv_specific_yield_fallback', 'ZZ', '990', '2025-06-01', 'zz_statistics', 'pack:zz')`))
       .rejects.toThrow(/overlapping_value/);
-    await expect(db.query(`insert into defaults (property_code, country, value, published_by) values ('vat_rate_electricity', 'ZZ', '0.2', 'pack:zz')`))
+    await expect(db.query(`insert into defaults (attribute_type, country, value, published_by) values ('vat_rate_electricity', 'ZZ', '0.2', 'pack:zz')`))
       .rejects.toThrow(/source_code/);
-    await expect(db.query(`insert into defaults (property_code, country, region, value, source_code, published_by) values ('vat_rate_electricity', 'ZZ', 'ZZ-XX', '0.2', 'zz_statistics', 'pack:zz')`))
+    await expect(db.query(`insert into defaults (attribute_type, country, region, value, source_code, published_by) values ('vat_rate_electricity', 'ZZ', 'ZZ-XX', '0.2', 'zz_statistics', 'pack:zz')`))
       .rejects.toThrow(/foreign key/);
-    await expect(db.query(`insert into defaults (property_code, value, source_code, published_by) values ('vat_rate_electricity', '0.2', 'zz_statistics', 'pack:zz')`))
+    await expect(db.query(`insert into defaults (attribute_type, value, source_code, published_by) values ('vat_rate_electricity', '0.2', 'zz_statistics', 'pack:zz')`))
       .rejects.toThrow(/country/);
   });
 
   it('are never edited: a period is closed and a new row added', async () => {
-    await expect(db.query(`update defaults set value = '990' where property_code = 'pv_specific_yield_fallback' and region is null and valid_from = '2026-01-01'`))
+    await expect(db.query(`update defaults set value = '990' where attribute_type = 'pv_specific_yield_fallback' and region is null and valid_from = '2026-01-01'`))
       .rejects.toThrow(/value_edited: pv_specific_yield_fallback from 2026-01-01 holds 980/);
-    await db.query(`update defaults set valid_to = '2027-01-01', reference = 'yearbook 2025, table 4, revised' where property_code = 'pv_specific_yield_fallback' and region is null and valid_from = '2026-01-01'`);
-    await db.query(`insert into defaults (property_code, country, value, valid_from, source_code, reference, published_by) values ('pv_specific_yield_fallback', 'ZZ', '990', '2027-01-01', 'zz_statistics', 'yearbook 2026, table 4', 'pack:zz')`);
+    await db.query(`update defaults set valid_to = '2027-01-01', reference = 'yearbook 2025, table 4, revised' where attribute_type = 'pv_specific_yield_fallback' and region is null and valid_from = '2026-01-01'`);
+    await db.query(`insert into defaults (attribute_type, country, value, valid_from, source_code, reference, published_by) values ('pv_specific_yield_fallback', 'ZZ', '990', '2027-01-01', 'zz_statistics', 'yearbook 2026, table 4', 'pack:zz')`);
     const rows = await db.query<{ value: number; valid_to: string | null }>(
-      `select value, valid_to::text from defaults where property_code = 'pv_specific_yield_fallback' and region is null order by valid_from`);
+      `select value, valid_to::text from defaults where attribute_type = 'pv_specific_yield_fallback' and region is null order by valid_from`);
     expect(rows.rows).toEqual([{ value: 950, valid_to: '2026-01-01' }, { value: 980, valid_to: '2027-01-01' }, { value: 990, valid_to: null }]);
   });
 

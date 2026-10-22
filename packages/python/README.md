@@ -54,7 +54,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | `store(series, values, *, unit=None, issued_at=None)` | the one write path: a series id or its identity, `(at, value[, quality])` tuples in `unit`; returns `Stored(series_id, changed)` |
 | `convert_unit(value, from_unit, to_unit)` | a conversion of the core's `units` vocabulary |
 | `participant_of(kind, object_id)`, `country_of(kind, object_id)` | the participant an object belongs to, the country of its place |
-| `attach(kind, object_id, property_code, value, *, source=None, source_code=None, valid_from=None, valid_to=None)` | one attribute, with its period and where it comes from; returns its id |
+| `attach(kind, object_id, attribute_type, value, *, source=None, source_code=None, valid_from=None, valid_to=None)` | one attribute, with its period and where it comes from; returns its id |
 
 Values are in the unit of the property's quantity (`quantities`), series
 values are dated at the start of their interval, instants are
@@ -68,7 +68,7 @@ installed, and refuse with `extra_required` otherwise.
 The client has no rights of its own: it sees and changes what the role of
 its connection may, under row level security. Every refusal of the
 database comes back as a `NexgenError` whose `code` is its name
-(`invalid_value`, `overlapping_value`, `property_not_applicable`,
+(`invalid_value`, `overlapping_value`, `attribute_type_not_applicable`,
 `series_not_found`, `time_zone_required`…), with the database's `message`
 and its `sqlstate`. Three refusals are the client's own: `db_url_required`
 (no connection string), `source_required` (an attribute without a

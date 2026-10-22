@@ -211,7 +211,7 @@ insert into weather.sources (source_code, purposes, resolution_m, grid_deg, prio
   -- Open-Meteo: ERA5 and national models blended, history and forecast.
   ('open_meteo', '{irradiance,temperature,wind,history,forecast}',     1000, 0.01, 20, 'weather');
 
-insert into property_defs (code, name, description, datatype, applies_to, published_by) values
+insert into attribute_types (code, name, description, datatype, applies_to, published_by) values
   ('weather_source', 'Weather source',
    'The weather model (a source code of weather.sources) a participant or a project reads, pinned against the rules and the defaults.',
    'text', '{participant,project}', 'weather');

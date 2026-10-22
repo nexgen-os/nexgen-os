@@ -48,7 +48,7 @@ describe('the weather module', () => {
     ]);
     expect((await one<{ t: string | null }>(db, `select to_regclass('weather.participants')::text t`)).t).toBe('weather.participants');
     const prop = await one<{ published_by: string; datatype: string; applies_to: string[] }>(
-      db, `select published_by, datatype, applies_to from property_defs where code = 'weather_source'`);
+      db, `select published_by, datatype, applies_to from attribute_types where code = 'weather_source'`);
     expect(prop).toEqual({ published_by: 'weather', datatype: 'text', applies_to: ['participant', 'project'] });
   });
 });

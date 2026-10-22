@@ -78,7 +78,7 @@ export interface PlaceRecord {
   country: string;
   external_id: { scheme: string; value: string };
   address?: Partial<Address>;
-  /** Typed values the register holds (an activity code, an annual consumption), keyed by `property_defs` code. */
+  /** Typed values the register holds (an activity code, an annual consumption), keyed by `attribute_types` code. */
   attributes?: Record<string, string | number | boolean>;
 }
 

@@ -114,7 +114,7 @@ create trigger participants_region_check before insert or update of region, coun
 
 create table defaults (
   id               uuid primary key default gen_random_uuid(),
-  property_code    text not null references property_defs(code),
+  attribute_type   text not null references attribute_types(code),
   -- The country of the pack, and the region when the value holds in part
   -- of the country only.
   country          char(2) not null references countries(code) on delete cascade,
@@ -141,7 +141,7 @@ comment on table defaults is
 
 -- The natural key a pack upserts by.
 create unique index defaults_natural_key on defaults
-  (country, region, property_code, valid_from) nulls not distinct;
+  (country, region, attribute_type, valid_from) nulls not distinct;
 
 create or replace function defaults_check()
 returns trigger
@@ -149,24 +149,24 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 begin
-  if tg_op = 'UPDATE' and (new.value is distinct from old.value or new.property_code <> old.property_code
+  if tg_op = 'UPDATE' and (new.value is distinct from old.value or new.attribute_type <> old.attribute_type
        or new.country <> old.country or new.region is distinct from old.region or new.valid_from is distinct from old.valid_from) then
     raise exception 'value_edited: % from % holds %; close it with valid_to and add a row',
-      old.property_code, coalesce(old.valid_from::text, 'the start'), coalesce(old.value::text, 'null')
+      old.attribute_type, coalesce(old.valid_from::text, 'the start'), coalesce(old.value::text, 'null')
       using errcode = 'check_violation';
   end if;
   if new.value is not null then
-    perform property_value_check(new.property_code, new.value);
+    perform attribute_value_check(new.attribute_type, new.value);
   end if;
   if exists (
     select 1 from defaults d
-     where d.property_code = new.property_code
+     where d.attribute_type = new.attribute_type
        and d.country = new.country and d.region is not distinct from new.region and d.id <> new.id
        -- the same day is the natural key's, an upsert's to resolve
        and d.valid_from is distinct from new.valid_from
        and daterange(d.valid_from, d.valid_to) && daterange(new.valid_from, new.valid_to)
   ) then
-    raise exception 'overlapping_value: % already has a default over that period', new.property_code
+    raise exception 'overlapping_value: % already has a default over that period', new.attribute_type
       using errcode = 'exclusion_violation';
   end if;
   return new;
@@ -185,7 +185,7 @@ create trigger defaults_check
 -- ---------------------------------------------------------------------------
 
 -- The attribute of one object holding at a moment.
-create or replace function attribute_at(p_object_id uuid, p_property_code text, p_at timestamptz)
+create or replace function attribute_at(p_object_id uuid, p_attribute_type text, p_at timestamptz)
 returns attributes
 language sql
 stable
@@ -193,7 +193,7 @@ set search_path = nexgen, public, extensions, pg_temp
 as $$
   select a.*
     from attributes a
-   where a.object_id = p_object_id and a.property_code = p_property_code
+   where a.object_id = p_object_id and a.attribute_type = p_attribute_type
      and (a.valid_from is null or a.valid_from <= p_at)
      and (a.valid_to is null or a.valid_to > p_at)
    limit 1;
@@ -248,7 +248,7 @@ comment on function parents_of(text, uuid) is
 create or replace function parameter_of(
   p_kind          text,
   p_object_id     uuid,
-  p_property_code text,
+  p_attribute_type text,
   p_at            timestamptz default now()
 )
 returns jsonb
@@ -267,13 +267,13 @@ declare
   v_day      date := p_at::date;
   reached    text := 'object';
 begin
-  if not exists (select 1 from property_defs where code = p_property_code) then
-    raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
+  if not exists (select 1 from attribute_types where code = p_attribute_type) then
+    raise exception 'attribute_type_unknown: %', p_attribute_type using errcode = 'foreign_key_violation';
   end if;
   v_org := object_organisation(p_kind, p_object_id);
 
   -- 1. The object itself.
-  a := attribute_at(p_object_id, p_property_code, p_at);
+  a := attribute_at(p_object_id, p_attribute_type, p_at);
   if a.id is not null then
     return jsonb_build_object('value', a.value, 'level', 'object', 'object_id', p_object_id,
                               'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -282,7 +282,7 @@ begin
   -- 2. Its parents, nearest first.
   for anc in select * from parents_of(p_kind, p_object_id) loop
     reached := anc.kind;
-    a := attribute_at(anc.object_id, p_property_code, p_at);
+    a := attribute_at(anc.object_id, p_attribute_type, p_at);
     if a.id is not null then
       return jsonb_build_object('value', a.value, 'level', anc.kind, 'object_id', anc.object_id,
                                 'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -292,7 +292,7 @@ begin
   -- 3. Its organisation: an object like any other, whose defaults are its attributes.
   reached := 'organisation';
   if p_kind <> 'organisation' then
-    a := attribute_at(v_org, p_property_code, p_at);
+    a := attribute_at(v_org, p_attribute_type, p_at);
     if a.id is not null then
       return jsonb_build_object('value', a.value, 'level', 'organisation', 'object_id', v_org,
                                 'source_code', a.source_code, 'reference', a.source, 'valid_from', a.valid_from);
@@ -309,11 +309,11 @@ begin
       reached := 'region';
       v_climbed := v_climbed || v_region;
       select * into d from defaults
-       where property_code = p_property_code and country = v_place.country and region = v_region
+       where attribute_type = p_attribute_type and country = v_place.country and region = v_region
          and (valid_from is null or valid_from <= v_day) and (valid_to is null or valid_to > v_day);
       if found then
         if d.value is null then
-          raise exception 'parameter_not_decided: % in %: %', p_property_code, v_region, coalesce(d.reference, 'no single value')
+          raise exception 'parameter_not_decided: % in %: %', p_attribute_type, v_region, coalesce(d.reference, 'no single value')
             using errcode = 'no_data_found';
         end if;
         return jsonb_build_object('value', d.value, 'level', 'region', 'region', v_region,
@@ -323,11 +323,11 @@ begin
     end loop;
     reached := 'country';
     select * into d from defaults
-     where property_code = p_property_code and country = v_place.country and region is null
+     where attribute_type = p_attribute_type and country = v_place.country and region is null
        and (valid_from is null or valid_from <= v_day) and (valid_to is null or valid_to > v_day);
     if found then
       if d.value is null then
-        raise exception 'parameter_not_decided: % in %: %', p_property_code, v_place.country, coalesce(d.reference, 'no single value')
+        raise exception 'parameter_not_decided: % in %: %', p_attribute_type, v_place.country, coalesce(d.reference, 'no single value')
           using errcode = 'no_data_found';
       end if;
       return jsonb_build_object('value', d.value, 'level', 'country', 'country', v_place.country,
@@ -335,7 +335,7 @@ begin
     end if;
   end if;
 
-  raise exception 'parameter_missing: % for %, reached %', p_property_code, p_object_id,
+  raise exception 'parameter_missing: % for %, reached %', p_attribute_type, p_object_id,
     case reached when 'country' then 'country ' || v_place.country when 'region' then 'region ' || v_place.region else reached end
     using errcode = 'no_data_found';
 end;

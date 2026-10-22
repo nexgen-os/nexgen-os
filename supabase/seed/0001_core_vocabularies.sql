@@ -128,7 +128,7 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset") values
 -- is its `rated_power_kw`, its commissioning its `installation_date`.
 -- ---------------------------------------------------------------------------
 
-insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to) values
+insert into attribute_types (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to) values
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}'),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{participant}'),
   -- The sum over a participant or a project; a device's own is its rated power.
@@ -140,7 +140,7 @@ insert into property_defs (code, name, datatype, quantity_code, minimum, maximum
 -- its pack and read through parameter_of(); an organisation or an object
 -- that knows better holds the same property as an attribute. A price is in
 -- the currency of the country (countries.currency), hence no quantity.
-insert into property_defs (code, name, datatype, quantity_code, minimum, maximum, description) values
+insert into attribute_types (code, name, datatype, quantity_code, minimum, maximum, description) values
   ('metering_step',               'Metering step',                          'text',   null,              null, null, 'The interval of the readings a grid operator publishes, as an ISO 8601 duration (PT15M).'),
   ('bidding_zone',                'Bidding zone',                           'text',   null,              null, null, 'The bidding zone of the wholesale electricity market, by its EIC code.'),
   ('grid_co2_factor',             'Emission factor of grid electricity',    'number', 'emission_factor', 0,    null, 'Greenhouse gas emitted per kWh taken from the grid, from the transmission operator''s yearly balance.'),

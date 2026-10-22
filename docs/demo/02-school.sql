@@ -91,11 +91,11 @@ select store(s.id, array['2026-01-12 06:00+01', '2026-01-12 16:30+01']::timestam
  where s.name = 'Classroom 1' and s.kind = 'setpoint';
 
 -- A property the installation publishes, and the attribute that uses it.
-insert into property_defs (code, name, datatype, minimum, applies_to, published_by) values
+insert into attribute_types (code, name, datatype, minimum, applies_to, published_by) values
   ('pupils', 'Pupils', 'integer', 0, '{participant}', 'installation')
 on conflict (code) do nothing;
 
-insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values
+insert into attributes (object_kind, object_id, attribute_type, value, valid_from, source) values
   ('participant', '00000000-0000-4000-8000-000200000010', 'pupils', '212', '2025-09-01', 'school register 2025-2026');
 
 -- The drawings and the model are the school's documents.

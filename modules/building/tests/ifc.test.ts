@@ -211,7 +211,7 @@ describe('an IFC4 model with its equipment', () => {
               (select value from external_ids where object_id = d.id and scheme = 'ifc_guid') guid,
               d.source_code source, f.value->'ifc'->'attributes'->>'PredefinedType' predefined,
               (f.value->'ifc'->'placement'->'position'->>0)::float lon, (f.value->'ifc'->'placement'->'position'->>1)::float lat
-         from devices d join attributes f on f.object_kind = 'device' and f.object_id = d.id and f.property_code = 'file_record'
+         from devices d join attributes f on f.object_kind = 'device' and f.object_id = d.id and f.attribute_type = 'file_record'
         where d.participant_id = $1 order by d.name`,
       [home, r.buildings[0].id],
     );

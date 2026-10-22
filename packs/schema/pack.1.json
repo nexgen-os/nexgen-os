@@ -277,7 +277,7 @@
       "additionalProperties": false,
       "description": "One value, for the whole country or for one region, over one period. A value that changes is never edited: the row gets a valid_to, and the new value is a new row whose valid_from is that day.",
       "properties": {
-        "property": { "$ref": "#/$defs/code", "description": "A property_defs code; the database refuses an unknown one (property_unknown)." },
+        "property": { "$ref": "#/$defs/code", "description": "A attribute_types code; the database refuses an unknown one (attribute_type_unknown)." },
         "region": { "$ref": "#/$defs/region_code", "description": "The region the value holds in; absent: the whole country." },
         "value": {
           "type": ["number", "string", "boolean", "array", "object", "null"],

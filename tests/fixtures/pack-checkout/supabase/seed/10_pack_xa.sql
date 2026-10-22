@@ -99,7 +99,7 @@ do $seed$
 declare
   refused text;
 begin
-  with pack (property_code, region, value, unit, valid_from, valid_to, source_code, reference) as (
+  with pack (attribute_type, region, value, unit, valid_from, valid_to, source_code, reference) as (
     values
       ('connection_max_power_lv'::text, null::text, '250'::jsonb, 'KiloW'::text, '2020-01-01'::date, null::date, 'xa_grid_code'::text, 'Article 7, table 1'::text),
       ('grid_co2_factor'::text, null::text, '0.12'::jsonb, 'KiloGM-PER-KiloW-HR'::text, '2026-01-01'::date, null::date, 'xa_statistics'::text, 'Yearly balance 2025, table 3'::text),
@@ -110,31 +110,31 @@ begin
       ('voltage_levels'::text, null::text, '[{"code":"lv","name":"Low voltage","min_kv":0,"max_kv":1},{"code":"mv","name":"Medium voltage","min_kv":1,"max_kv":36},{"code":"hv","name":"High voltage","min_kv":36,"max_kv":400}]'::jsonb, 'KiloV'::text, '2020-01-01'::date, null::date, 'xa_grid_code'::text, 'Article 2'::text)
   ),
   problems (problem) as (
-    select format('property_unknown: %s is not a property_defs code', p.property_code)
+    select format('attribute_type_unknown: %s is not an attribute_types code', p.attribute_type)
       from pack p
-     where not exists (select 1 from property_defs d where d.code = p.property_code)
+     where not exists (select 1 from attribute_types d where d.code = p.attribute_type)
     union all
-    select format('unit_mismatch: %s is stored in %s and the pack says %s', p.property_code, q.unit, p.unit)
+    select format('unit_mismatch: %s is stored in %s and the pack says %s', p.attribute_type, q.unit, p.unit)
       from pack p
-      join property_defs d on d.code = p.property_code
+      join attribute_types d on d.code = p.attribute_type
       join quantities q on q.code = d.quantity_code
      where q.unit <> p.unit
     union all
     select format('value_edited: %s%s from %s holds %s and the pack says %s; close it with valid_to and add a row',
-                  p.property_code, coalesce(' (' || p.region || ')', ''), p.valid_from,
+                  p.attribute_type, coalesce(' (' || p.region || ')', ''), p.valid_from,
                   coalesce(x.value::text, 'null'), coalesce(p.value::text, 'null'))
       from pack p
       join defaults x
-        on x.country = 'XA' and x.property_code = p.property_code
+        on x.country = 'XA' and x.attribute_type = p.attribute_type
        and x.region is not distinct from p.region and x.valid_from = p.valid_from
      where x.value is distinct from p.value
   ),
   written as (
-    insert into defaults (property_code, country, region, value, valid_from, valid_to, source_code, reference, published_by)
-    select p.property_code, 'XA', p.region, p.value, p.valid_from, p.valid_to, p.source_code, p.reference, 'pack:xa'
+    insert into defaults (attribute_type, country, region, value, valid_from, valid_to, source_code, reference, published_by)
+    select p.attribute_type, 'XA', p.region, p.value, p.valid_from, p.valid_to, p.source_code, p.reference, 'pack:xa'
       from pack p
      where not exists (select 1 from problems)
-    on conflict (country, region, property_code, valid_from) do update set
+    on conflict (country, region, attribute_type, valid_from) do update set
       valid_to    = excluded.valid_to,
       source_code = excluded.source_code,
       reference   = excluded.reference

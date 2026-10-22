@@ -732,7 +732,7 @@ comment on function building.building_of(text, uuid) is
 -- room, its position, its description — so that an export gives it back as
 -- it came. A device is not placed (decision 0026): this is the file's word,
 -- not a placement.
-insert into property_defs (code, name, description, datatype, applies_to, published_by) values
+insert into attribute_types (code, name, description, datatype, applies_to, published_by) values
   ('file_record', 'File record',
    'What the file a device was read from says of it that no column holds, by format: {"ifc": {…}} or {"ha": {…}}.',
    'json', '{device}', 'building');

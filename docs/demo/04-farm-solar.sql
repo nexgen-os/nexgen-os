@@ -43,7 +43,7 @@ insert into devices (id, organisation_id, participant_id, name, device_type, pro
 
 -- Every device is the farm's, behind its two meters (participant_meters()).
 
-insert into attributes (object_kind, object_id, property_code, value, source) values
+insert into attributes (object_kind, object_id, attribute_type, value, source) values
   ('participant', '00000000-0000-4000-8000-000400000010', 'annual_consumption', '186000', 'supplier invoices 2025'),
   ('meter', '00000000-0000-4000-8000-000400000041', 'subscribed_power', '160', 'supply contract');
 

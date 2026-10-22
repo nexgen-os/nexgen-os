@@ -18,9 +18,9 @@ afterAll(async () => {
 // The validated list of the core: the six objects and what they need, and
 // nothing else (decision 0006). A new table of the core is a decision.
 const CORE_TABLES = [
-  'attributes', 'connectors', 'contacts', 'countries', 'defaults', 'device_types', 'devices', 'documents',
-  'external_ids', 'forecast_values', 'id_schemes', 'meters', 'modules', 'organisation_members',
-  'organisations', 'participants', 'products', 'projects', 'property_defs', 'quantities', 'regions',
+  'attribute_types', 'attributes', 'connectors', 'contacts', 'countries', 'defaults', 'device_types',
+  'devices', 'documents', 'external_ids', 'forecast_values', 'id_schemes', 'meters', 'modules',
+  'organisation_members', 'organisations', 'participants', 'products', 'projects', 'quantities', 'regions',
   'schema_migrations', 'series', 'series_rollups', 'series_values', 'sources', 'units',
 ];
 
@@ -48,7 +48,7 @@ describe('the nexgen schema', () => {
       for (const kind of ['organisation', 'project', 'participant', 'meter', 'device', 'series']) expect(check.def).toContain(`'${kind}'`);
     }
     await expect(db.query(
-      `insert into attributes (organisation_id, object_kind, object_id, property_code, value, source) values ($1, 'building', $1, 'efficiency', '0.9', 'test')`,
+      `insert into attributes (organisation_id, object_kind, object_id, attribute_type, value, source) values ($1, 'building', $1, 'efficiency', '0.9', 'test')`,
       [org],
     )).rejects.toThrow(/attributes_object_kind|kind_unknown/);
     await expect(db.query(`select set_attribute('surface', $1, 'efficiency', '0.9')`, [org])).rejects.toThrow(/kind_unknown: surface/);

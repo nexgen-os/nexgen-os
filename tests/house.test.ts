@@ -125,7 +125,7 @@ describe('a house', () => {
 
   it('attaches typed attributes with their history and reads them at any date', async () => {
     await db.query(
-      `insert into attributes (object_kind, object_id, property_code, value, valid_from, valid_to, source) values
+      `insert into attributes (object_kind, object_id, attribute_type, value, valid_from, valid_to, source) values
          ('participant', $1, 'annual_consumption', '5200', null, '2025-06-01', 'invoices 2024'),
          ('participant', $1, 'annual_consumption', '3900', '2025-06-01', null, 'invoices 2025, after insulation')`,
       [home],
@@ -138,23 +138,23 @@ describe('a house', () => {
 
   it('refuses an attribute of the wrong type, out of range, on the wrong kind, or on an object that is not of the core', async () => {
     await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('device', $1, 'efficiency', '"high"')`, [pv]),
+      db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('device', $1, 'efficiency', '"high"')`, [pv]),
     ).rejects.toThrow(/must be a number/);
     await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('device', $1, 'efficiency', '1.4')`, [pv]),
+      db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('device', $1, 'efficiency', '1.4')`, [pv]),
     ).rejects.toThrow(/at most 1/);
     await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'efficiency', '0.9')`, [home]),
-    ).rejects.toThrow(/property_not_applicable/);
+      db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('participant', $1, 'efficiency', '0.9')`, [home]),
+    ).rejects.toThrow(/attribute_type_not_applicable/);
     await expect(
-      db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('surface', $1, 'efficiency', '0.9')`, [roof]),
+      db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('surface', $1, 'efficiency', '0.9')`, [roof]),
     ).rejects.toThrow(/attributes_object_kind|kind_unknown/);
   });
 
   it('refuses two attributes over overlapping periods', async () => {
     await expect(
       db.query(
-        `insert into attributes (object_kind, object_id, property_code, value, valid_from, source) values ('participant', $1, 'annual_consumption', '4000', '2026-01-01', 'a guess')`,
+        `insert into attributes (object_kind, object_id, attribute_type, value, valid_from, source) values ('participant', $1, 'annual_consumption', '4000', '2026-01-01', 'a guess')`,
         [home],
       ),
     ).rejects.toThrow(/overlapping_value/);
@@ -205,7 +205,7 @@ describe('a house', () => {
 
   it('removes everything attached when a device goes', async () => {
     const heater = await insert(db, 'devices', { organisation_id: org, participant_id: home, name: 'Water heater', device_type: 'boiler' });
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('device', $1, 'efficiency', '0.9', 'datasheet')`, [heater]);
+    await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('device', $1, 'efficiency', '0.9', 'datasheet')`, [heater]);
     await db.query(`insert into documents (object_kind, object_id, name, uri) values ('device', $1, 'Photo', 's3://photos/heater.jpg')`, [heater]);
     await db.query(`select series_ensure('device', $1, 'temperature', 'measured', 'instant')`, [heater]);
     await db.query('delete from devices where id = $1', [heater]);

@@ -95,7 +95,7 @@ Four things only you do here:
    `select id, name, project_id, country, time_zone, location_precision from participants`.
    A participant without a time zone has no daily readings; say so.
 2. **Learn the vocabulary before writing**: `device_types`, `quantities`
-   (code and unit), `property_defs` (what an attribute may hold),
+   (code and unit), `attribute_types` (what an attribute may hold),
    `sources` (what exists outside, with its licence), `id_schemes`.
 3. **Describe, with a source**: the participants of a project with their
    place, the meters they carry and the devices behind them; with the

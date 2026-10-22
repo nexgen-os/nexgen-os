@@ -19,7 +19,7 @@ create schema nexgen;
 create schema grid;
 set search_path = nexgen, public;
 create table quantities (code text primary key, unit text not null);
-create table property_defs (code text primary key, datatype text not null, quantity_code text references quantities(code));
+create table attribute_types (code text primary key, datatype text not null, quantity_code text references quantities(code));
 create table sources (
   code text primary key, name text not null, description text, kind text not null, base_url text, docs_url text,
   auth text not null, countries text[] not null, regions text[] not null, license text, attribution text,
@@ -37,17 +37,17 @@ create table regions (
   parent text references regions(code), time_zone text, published_by text not null);
 create table defaults (
   id uuid primary key default gen_random_uuid(),
-  property_code text not null references property_defs(code),
+  attribute_type text not null references attribute_types(code),
   country char(2) not null references countries(code), region text references regions(code),
   value jsonb, valid_from date, valid_to date,
   source_code text not null references sources(code), reference text, published_by text not null,
-  unique nulls not distinct (country, region, property_code, valid_from));
+  unique nulls not distinct (country, region, attribute_type, valid_from));
 create table grid.operators (
   code text primary key, name text not null, kind text not null, country char(2) not null,
   regions text[] not null, coverage text, website text, data_hub_url text,
   identifier_scheme text references nexgen.id_schemes(code), description text, published_by text not null);
 insert into quantities values ('power', 'KiloW'), ('length', 'M'), ('emission_factor', 'KiloGM-PER-KiloW-HR');
-insert into property_defs values
+insert into attribute_types values
   ('connection_max_power_lv', 'number', 'power'), ('grid_co2_factor', 'number', 'emission_factor'),
   ('metering_step', 'text', null), ('offpeak_hours', 'json', null),
   ('sharing_max_distance_m', 'number', 'length'), ('voltage_levels', 'json', null);
@@ -84,9 +84,9 @@ describe('the seed of a pack on a database', () => {
     expect(country).toMatchObject({ currency: 'XTS', time_zones: ['Etc/UTC', 'Etc/GMT-1'], pack_version: '0.1.0' });
     expect(seed).toContain(`-- checksum       ${country!.pack_checksum}`);
     const step = await db.query<{ value: string; valid_to: Date | null }>(
-      "select value, valid_to from defaults where property_code = 'metering_step' order by valid_from");
+      "select value, valid_to from defaults where attribute_type = 'metering_step' order by valid_from");
     expect(step.rows.map((r) => [r.value, r.valid_to?.toISOString().slice(0, 10) ?? null])).toEqual([['PT30M', '2025-01-01'], ['PT15M', null]]);
-    expect((await db.query("select value from defaults where property_code = 'offpeak_hours'")).rows).toEqual([{ value: null }]);
+    expect((await db.query("select value from defaults where attribute_type = 'offpeak_hours'")).rows).toEqual([{ value: null }]);
   });
 
   it('brings a new version to an installation: a period closed, a value added, the version recorded', async () => {
@@ -99,7 +99,7 @@ describe('the seed of a pack on a database', () => {
       });
     }));
     const rows = await db.query<{ value: number; valid_to: Date | null }>(
-      "select value, valid_to from defaults where property_code = 'grid_co2_factor' order by valid_from");
+      "select value, valid_to from defaults where attribute_type = 'grid_co2_factor' order by valid_from");
     expect(rows.rows.map((r) => [r.value, r.valid_to?.toISOString().slice(0, 10) ?? null])).toEqual([[0.12, '2027-01-01'], [0.1, null]]);
     expect((await db.query<{ pack_version: string }>('select pack_version from countries')).rows[0]!.pack_version).toBe('0.2.0');
   });
@@ -121,7 +121,7 @@ describe('the seed of a pack on a database', () => {
       await edit(root, 'defaults.json', (j) => { j.defaults[0].property = 'metering_interval'; j.defaults[1].property = 'metering_interval'; });
     });
     await expect(db.exec(seed)).rejects.toThrow(
-      /^property_unknown: metering_interval is not a property_defs code; property_unknown: metering_interval .*; unit_mismatch: connection_max_power_lv is stored in KiloW and the pack says W$/);
+      /^attribute_type_unknown: metering_interval is not an attribute_types code; attribute_type_unknown: metering_interval .*; unit_mismatch: connection_max_power_lv is stored in KiloW and the pack says W$/);
     expect(await count('countries')).toBe(0);
   });
 

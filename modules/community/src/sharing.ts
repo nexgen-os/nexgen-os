@@ -94,7 +94,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
       `select value, valid_from, valid_to, source, source_code,
               (valid_from is null or valid_from <= $2::timestamptz) and (valid_to is null or valid_to >= $3::timestamptz) covers
          from attributes
-        where object_id = $1 and property_code = 'allocation_key'
+        where object_id = $1 and attribute_type = 'allocation_key'
           and (valid_from is null or valid_from < $3::timestamptz) and (valid_to is null or valid_to > $2::timestamptz)
         order by valid_from nulls first`,
       [request.projectId, from, to],

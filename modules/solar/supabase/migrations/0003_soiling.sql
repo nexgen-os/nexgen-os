@@ -12,7 +12,7 @@
 
 set search_path = nexgen, public, extensions;
 
-insert into property_defs (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
+insert into attribute_types (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
   ('soiling_loss', 'Soiling loss',
    'The fraction of the light reaching the modules that dirt takes over a year (0.02 for 2 %), on a PV system or every array of a participant. It replaces the soiling loss of a yield profile.',
    'number', 'ratio', 0, 1, '{device,participant}', 'solar');

@@ -38,7 +38,7 @@ create trigger settlements_set_updated_at before update on community.settlements
   for each row execute function set_updated_at();
 call secure_table('community.settlements');
 
-insert into property_defs (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
+insert into attribute_types (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
   ('allocation_key', 'Allocation key',
    'How a project shares energy among its participants: {"method": "<a method an engine knows>", "parameters": {...}}, as the engine reads it.',
    'json', null, null, null, '{project}', 'community'),

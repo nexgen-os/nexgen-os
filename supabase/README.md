@@ -77,7 +77,7 @@ documents, and stay close to the platform that proved it
 | `attributes`, `external_ids`, `documents` | what attaches to one of the six objects, named by its kind and its id: typed values with validity and source, identifiers, files | IFC property sets, bSDD |
 | `modules`, `connectors` | the modules installed, an organisation's use of a source through a connector; a module keeps its figures in its own schema | — |
 | `countries`, `regions`, `defaults` | what a country pack publishes: the country, its regions, the values it decides; `parameter_of()` resolves a parameter from the object up to the country along the foreign keys and a region's parents, with no global fallback | ISO 3166, ISO 4217 |
-| `device_types`, `quantities`, `units`, `property_defs`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, QUDT |
+| `device_types`, `quantities`, `units`, `attribute_types`, `id_schemes`, `sources` | the vocabularies, as data, including the external APIs, datasets and published texts | Brick, IFC, QUDT |
 
 Every act that writes several rows or carries a rule is one function named
 after the gesture — `join_project`, `locate_participant`, `declare_meter`,

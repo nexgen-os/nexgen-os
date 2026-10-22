@@ -107,9 +107,9 @@ describe('the fr pack', () => {
     await expect(p(brest, 'offpeak_hours')).rejects.toThrow(/parameter_not_decided: offpeak_hours in FR: Pages 1-2/);
     await expect(p(brest, 'pv_specific_yield_fallback')).rejects.toThrow(/parameter_missing: pv_specific_yield_fallback .* reached country FR/);
     // An organisation that knows better holds the property as an attribute, and wins.
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'metering_step', '"PT10M"'::jsonb, 'supply contract')`, [org]);
+    await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('organisation', $1, 'metering_step', '"PT10M"'::jsonb, 'supply contract')`, [org]);
     expect(await p(brest, 'metering_step')).toMatchObject({ value: 'PT10M', level: 'organisation' });
-    const voltage = await one<{ levels: { code: string }[] }>(db, `select value levels from defaults where country = 'FR' and property_code = 'voltage_levels'`);
+    const voltage = await one<{ levels: { code: string }[] }>(db, `select value levels from defaults where country = 'FR' and attribute_type = 'voltage_levels'`);
     expect(voltage.levels.map((l) => l.code)).toEqual(['tbt', 'bt', 'hta', 'htb']);
   });
 
@@ -119,13 +119,13 @@ describe('the fr pack', () => {
     const paris = await joinWithPlace(db, org, 'Mairie de Paris', { country: 'FR', region: 'FR-75C' });
     const evry = await joinWithPlace(db, org, 'Mairie d\'Évry', { country: 'FR', region: 'FR-91' });
     await db.query(`insert into sources (code, name, kind, base_url, published_by) values ('test_regional_text', 'A text of a region, for this test', 'text', 'https://region.example/', 'test')`);
-    await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values
+    await db.query(`insert into defaults (attribute_type, country, region, value, source_code, reference, published_by) values
                       ('pv_specific_yield_fallback', 'FR', 'FR-IDF', '1000', 'test_regional_text', 'decided by the region', 'test')`);
     const p = async (home: string, property: string) =>
       (await one<{ p: Record<string, unknown> }>(db, "select parameter_of('participant', $1, $2, '2026-10-20') p", [home, property])).p;
     expect(await p(paris, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF', reference: 'decided by the region' });
     expect(await p(evry, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, level: 'region', region: 'FR-IDF' });
-    await db.query(`insert into defaults (property_code, country, region, value, source_code, reference, published_by) values
+    await db.query(`insert into defaults (attribute_type, country, region, value, source_code, reference, published_by) values
                       ('pv_specific_yield_fallback', 'FR', 'FR-75C', '1010', 'test_regional_text', 'decided by the department', 'test')`);
     expect(await p(paris, 'pv_specific_yield_fallback')).toMatchObject({ value: 1010, level: 'region', region: 'FR-75C' });
     expect(await p(evry, 'pv_specific_yield_fallback')).toMatchObject({ value: 1000, region: 'FR-IDF' });

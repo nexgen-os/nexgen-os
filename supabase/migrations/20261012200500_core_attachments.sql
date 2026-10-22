@@ -51,20 +51,20 @@ comment on function attach() is
 
 -- A value fits a property: its datatype, its range, its allowed values.
 -- Shared by attributes and by the defaults of the country packs.
-create or replace function property_value_check(p_property_code text, p_value jsonb)
+create or replace function attribute_value_check(p_attribute_type text, p_value jsonb)
 returns void
 language plpgsql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  def   property_defs%rowtype;
+  def   attribute_types%rowtype;
   t     text := jsonb_typeof(p_value);
   n     numeric;
 begin
-  select * into def from property_defs where code = p_property_code;
+  select * into def from attribute_types where code = p_attribute_type;
   if not found then
-    raise exception 'property_unknown: %', p_property_code using errcode = 'foreign_key_violation';
+    raise exception 'attribute_type_unknown: %', p_attribute_type using errcode = 'foreign_key_violation';
   end if;
   if def.datatype in ('number', 'integer') then
     if t <> 'number' then
@@ -96,7 +96,7 @@ begin
 end;
 $$;
 
-comment on function property_value_check(text, jsonb) is
+comment on function attribute_value_check(text, jsonb) is
   'Refuses, as invalid_value, a value that does not fit its property: datatype, range, allowed values.';
 
 -- ---------------------------------------------------------------------------
@@ -108,7 +108,7 @@ create table attributes (
   organisation_id  uuid not null references organisations(id) on delete cascade,
   object_kind      text not null,
   object_id        uuid not null,
-  property_code    text not null references property_defs(code),
+  attribute_type   text not null references attribute_types(code),
   -- A JSON scalar (or a JSON document for datatype `json`). Numbers are in
   -- the unit of the property's quantity, always.
   value            jsonb not null,
@@ -128,10 +128,10 @@ create table attributes (
 );
 
 comment on table attributes is
-  'Values a trade attaches to an object beyond its columns — U-value, energy label, roof material, year of construction, efficiency — typed by property_defs, with validity periods and provenance. A column holds what every row has and every query filters on; the rest is an attribute.';
+  'Values a trade attaches to an object beyond its columns — U-value, energy label, roof material, year of construction, efficiency — typed by attribute_types, with validity periods and provenance. A column holds what every row has and every query filters on; the rest is an attribute.';
 
 create unique index attributes_one_per_period on attributes
-  (object_kind, object_id, property_code, valid_from) nulls not distinct;
+  (object_kind, object_id, attribute_type, valid_from) nulls not distinct;
 create index attributes_object_idx on attributes (object_kind, object_id);
 
 create trigger attributes_attach
@@ -144,20 +144,20 @@ language plpgsql
 set search_path = nexgen, public, extensions, pg_temp
 as $$
 declare
-  def   property_defs%rowtype;
+  def   attribute_types%rowtype;
 begin
-  select * into def from property_defs where code = new.property_code;
+  select * into def from attribute_types where code = new.attribute_type;
 
   if def.applies_to is not null and not new.object_kind = any (def.applies_to) then
-    raise exception 'property_not_applicable: % does not apply to a %', def.code, new.object_kind
+    raise exception 'attribute_type_not_applicable: % does not apply to a %', def.code, new.object_kind
       using errcode = 'check_violation';
   end if;
-  perform property_value_check(new.property_code, new.value);
+  perform attribute_value_check(new.attribute_type, new.value);
 
   if exists (
     select 1 from attributes a
      where a.object_kind = new.object_kind and a.object_id = new.object_id
-       and a.property_code = new.property_code
+       and a.attribute_type = new.attribute_type
        and a.id <> new.id
        and tstzrange(a.valid_from, a.valid_to) && tstzrange(new.valid_from, new.valid_to)
   ) then
@@ -185,7 +185,7 @@ language sql
 stable
 set search_path = nexgen, public, extensions, pg_temp
 as $$
-  select coalesce(jsonb_object_agg(a.property_code, a.value), '{}'::jsonb)
+  select coalesce(jsonb_object_agg(a.attribute_type, a.value), '{}'::jsonb)
     from attributes a
    where a.object_id = p_object_id
      and (a.valid_from is null or a.valid_from <= p_at)
@@ -302,7 +302,7 @@ call secure_table('documents');
 create or replace function set_attribute(
   p_object_kind   text,
   p_object_id     uuid,
-  p_property_code text,
+  p_attribute_type text,
   p_value         jsonb,
   p_from          timestamptz default null,
   p_source_code   text default null,
@@ -319,18 +319,18 @@ begin
   perform object_organisation(p_object_kind, p_object_id);
   if p_from is not null then
     update attributes set valid_to = p_from
-     where object_kind = p_object_kind and object_id = p_object_id and property_code = p_property_code
+     where object_kind = p_object_kind and object_id = p_object_id and attribute_type = p_attribute_type
        and (valid_from is null or valid_from < p_from)
        and (valid_to is null or valid_to > p_from);
   end if;
-  insert into attributes (id, object_kind, object_id, property_code, value, valid_from, source_code, source)
-  values (v_id, p_object_kind, p_object_id, p_property_code, p_value, p_from, p_source_code, p_source);
+  insert into attributes (id, object_kind, object_id, attribute_type, value, valid_from, source_code, source)
+  values (v_id, p_object_kind, p_object_id, p_attribute_type, p_value, p_from, p_source_code, p_source);
   return v_id;
 end;
 $$;
 
 comment on function set_attribute(text, uuid, text, jsonb, timestamptz, text, text) is
-  'Sets an attribute of an object (its kind and id) from a moment on: the value holding then is closed there, the new one opens. Refuses kind_unknown, object_not_found, property_not_applicable, invalid_value, overlapping_value. Returns its id.';
+  'Sets an attribute of an object (its kind and id) from a moment on: the value holding then is closed there, the new one opens. Refuses kind_unknown, object_not_found, attribute_type_not_applicable, invalid_value, overlapping_value. Returns its id.';
 
 create or replace function add_identifier(p_object_kind text, p_object_id uuid, p_scheme text, p_value text, p_from timestamptz default null)
 returns void
@@ -380,7 +380,7 @@ $$;
 comment on function attach_document(text, uuid, text, text, text, text, text, text, timestamptz) is
   'Attaches a file to an object (its kind and id): a permit, a datasheet, a report, a photo. Refuses kind_unknown, object_not_found. Returns its id.';
 
-grant execute on function attributes_of(uuid, timestamptz), property_value_check(text, jsonb),
+grant execute on function attributes_of(uuid, timestamptz), attribute_value_check(text, jsonb),
   set_attribute(text, uuid, text, jsonb, timestamptz, text, text), add_identifier(text, uuid, text, text, timestamptz),
   attach_document(text, uuid, text, text, text, text, text, text, timestamptz)
   to authenticated, service_role;

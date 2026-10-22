@@ -237,7 +237,7 @@ describe('what has to be done, from the templates of a country and a kind of pro
   it('apply a condition once the project has the attribute it names', async () => {
     await db.query(`select set_attribute('project', $1, 'installed_power', '36'::jsonb, null, null, 'design')`, [roofFr]);
     expect(await plan(roofFr)).toMatchObject({ created: 0, existing: 3, skipped: [] });
-    await db.query(`update attributes set value = '300'::jsonb where object_id = $1 and property_code = 'installed_power'`, [roofFr]);
+    await db.query(`update attributes set value = '300'::jsonb where object_id = $1 and attribute_type = 'installed_power'`, [roofFr]);
     const bigger = await plan(roofFr);
     expect(bigger).toMatchObject({ created: 1, existing: 3, skipped: [] });
     const permit = await one<{ role: string; phase: string }>(db, `select role, phase from planning.tasks where subject_id = $1 and name = 'Building permit granted'`, [roofFr]);

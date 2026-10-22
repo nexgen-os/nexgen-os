@@ -160,7 +160,7 @@ export async function exportHomeAssistant(db: Db, buildingId: string): Promise<H
   }>(
     `select d.name, a.value->'ha' ha, d.manufacturer, d.model, d.serial_number
        from devices d join building.buildings b on b.participant_id = d.participant_id
-       join attributes a on a.object_kind = 'device' and a.object_id = d.id and a.property_code = 'file_record'
+       join attributes a on a.object_kind = 'device' and a.object_id = d.id and a.attribute_type = 'file_record'
       where b.id = $1 and a.value ? 'ha' order by d.name`,
     [buildingId]);
   const points = await db.query<{ id: string; unit: string; quantity: string; kind: HomePoint['role']; value_kind: HomePoint['valueKind'];

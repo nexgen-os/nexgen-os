@@ -212,7 +212,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
                        where e.object_id = o.id and ${holds('e')}), '[]'::jsonb) external_ids,
             (select array_agg(distinct a.source_code) from attributes a
               where a.object_id = o.id and a.source_code is not null and ${holds('a')}) attribute_sources,
-            (select array_agg(distinct a.property_code) from attributes a join sources s on s.code = a.source_code
+            (select array_agg(distinct a.attribute_type) from attributes a join sources s on s.code = a.source_code
               where a.object_id = o.id and not s.redistributable and ${holds('a')}) closed_properties
        from unnest($1::uuid[]) o(id)`,
     [ids, at],

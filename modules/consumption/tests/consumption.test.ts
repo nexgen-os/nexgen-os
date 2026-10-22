@@ -208,7 +208,7 @@ describe('a curve on quarter-hours', () => {
 
 describe('a typical curve from the annual consumption', () => {
   it('spreads the participant\'s annual consumption over one year', async () => {
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'annual_consumption', '438000', 'energy audit 2022')`, [BLOCK]);
+    await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('participant', $1, 'annual_consumption', '438000', 'energy audit 2022')`, [BLOCK]);
     const r = await reconstructConsumption(db, { participantId: BLOCK, from: '2026-01-01', to: '2027-01-01', profileCode: 'flat' });
     expect(r.slots).toBe(8760);
     expect(r.kwh).toBeCloseTo(438_000, 3);

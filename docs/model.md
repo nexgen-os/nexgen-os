@@ -303,7 +303,7 @@ core (a task, a horizon, activity hours) names it the same way, with the
 same check.
 
 - **attributes** — one row per property and validity period, typed by
-  `property_defs` (datatype, quantity hence unit, range, allowed values,
+  `attribute_types` (datatype, quantity hence unit, range, allowed values,
   kinds it applies to), with its source. A column holds only what every row
   has and every query filters on
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md)); the rest
@@ -345,7 +345,7 @@ everyone signed in.
 
 `device_types` (with the module that derives each), `quantities` (one
 unit each, QUDT), `units` (QUDT codes and symbols, with the factor and
-offset of each), `property_defs` (what an attribute may hold: the values
+offset of each), `attribute_types` (what an attribute may hold: the values
 `parameter_of()` resolves, those the packs publish and those a module
 declares), `id_schemes` and `sources` (the external APIs, datasets,
 registers and published texts: base URL, authentication type, licence,

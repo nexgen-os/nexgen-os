@@ -57,7 +57,7 @@ describe('row level security', () => {
     expect(r.rows).toHaveLength(1);
     await expect(
       asUser(db, VIEWER, () =>
-        db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'annual_consumption', '12000')`, [homeA]),
+        db.query(`insert into attributes (object_kind, object_id, attribute_type, value) values ('participant', $1, 'annual_consumption', '12000')`, [homeA]),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -135,9 +135,9 @@ describe('organisations', () => {
   });
 
   it('are objects: an attribute attaches to one, readable by its members only', async () => {
-    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'subscribed_power', '120', 'a guess')`, [orgA]))
-      .rejects.toThrow(/property_not_applicable/);
-    await db.query(`insert into property_defs (code, name, datatype, published_by) values ('discount_rate', 'Discount rate', 'number', 'installation')`);
+    await expect(db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('organisation', $1, 'subscribed_power', '120', 'a guess')`, [orgA]))
+      .rejects.toThrow(/attribute_type_not_applicable/);
+    await db.query(`insert into attribute_types (code, name, datatype, published_by) values ('discount_rate', 'Discount rate', 'number', 'installation')`);
     await asUser(db, USER_A, () => db.query(`select set_attribute('organisation', $1, 'discount_rate', '0.04', null, null, 'board decision')`, [orgA]));
     const mine = await asUser(db, USER_A, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
     const theirs = await asUser(db, USER_B, () => db.query(`select value from attributes where object_id = $1`, [orgA]));
@@ -148,12 +148,12 @@ describe('organisations', () => {
   it('read the pack\'s defaults and write none of them: their own are their attributes', async () => {
     await db.query(`insert into countries (code, name, currency, time_zones, region_level, pack_version, published_by) values ('ZZ', 'Testland', 'ZZZ', '{UTC}', 'region', '0.1.0', 'pack:zz')`);
     await db.query(`insert into sources (code, name, kind) values ('zz_statistics', 'Testland statistics', 'text')`);
-    await db.query(`insert into defaults (property_code, country, value, source_code, reference, published_by) values ('discount_rate', 'ZZ', '0.05', 'zz_statistics', 'table 1', 'pack:zz')`);
+    await db.query(`insert into defaults (attribute_type, country, value, source_code, reference, published_by) values ('discount_rate', 'ZZ', '0.05', 'zz_statistics', 'table 1', 'pack:zz')`);
     const a = await asUser(db, USER_A, () => db.query<{ value: number }>(`select value from defaults`));
     const b = await asUser(db, USER_B, () => db.query<{ value: number }>(`select value from defaults`));
     expect(a.rows.map((r) => r.value)).toEqual([0.05]);
     expect(b.rows.map((r) => r.value)).toEqual([0.05]);
-    await expect(asUser(db, USER_A, () => db.query(`insert into defaults (property_code, country, value, source_code, valid_from, published_by) values ('discount_rate', 'ZZ', '0.03', 'zz_statistics', '2030-01-01', 'firm a')`)))
+    await expect(asUser(db, USER_A, () => db.query(`insert into defaults (attribute_type, country, value, source_code, valid_from, published_by) values ('discount_rate', 'ZZ', '0.03', 'zz_statistics', '2030-01-01', 'firm a')`)))
       .rejects.toThrow(/permission denied/);
     await expect(asUser(db, USER_B, () => db.query(`update defaults set reference = 'edited' where country = 'ZZ'`))).rejects.toThrow(/permission denied/);
   });

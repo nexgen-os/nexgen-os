@@ -145,7 +145,7 @@ describe('the be pack', () => {
     expect(await p(brussels, 'grid_fees_and_taxes')).toMatchObject({ value: 199.5 });
     await expect(p(flanders, 'pv_specific_yield_fallback')).rejects.toThrow(/parameter_missing: pv_specific_yield_fallback .* reached country BE/);
     // An organisation that knows better holds the property as an attribute, and wins.
-    await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'metering_step', '"PT5M"'::jsonb, 'supply contract')`, [org]);
+    await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('organisation', $1, 'metering_step', '"PT5M"'::jsonb, 'supply contract')`, [org]);
     expect(await p(wallonia, 'metering_step')).toMatchObject({ value: 'PT5M', level: 'organisation' });
   });
 

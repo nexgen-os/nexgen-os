@@ -71,7 +71,7 @@ begin
       -- value a JSON number.
       select case when jsonb_typeof(a.value) = 'number' then (a.value #>> '{}')::numeric end into v_value
         from attributes a
-       where a.object_kind = 'project' and a.object_id = p_project_id and a.property_code = t.applies_when->>'property'
+       where a.object_kind = 'project' and a.object_id = p_project_id and a.attribute_type = t.applies_when->>'property'
        limit 1;
       if v_value is null then
         v_skipped := v_skipped || jsonb_build_object('code', t.code, 'published_by', t.published_by,

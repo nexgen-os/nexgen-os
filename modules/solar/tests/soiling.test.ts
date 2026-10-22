@@ -45,7 +45,7 @@ let east: string;
 async function soiling(kind: string, objectId: string, value: number, source: string): Promise<void> {
   // An array says its own in its column; a system or a participant as an attribute, with its source.
   if (kind === 'pv_array') await db.query('update solar.pv_arrays set soiling_loss = $2 where id = $1', [objectId, value]);
-  else await db.query(`insert into attributes (organisation_id, object_kind, object_id, property_code, value, source) values ($1, $2, $3, 'soiling_loss', $4::jsonb, $5)`, [org, kind, objectId, JSON.stringify(value), source]);
+  else await db.query(`insert into attributes (organisation_id, object_kind, object_id, attribute_type, value, source) values ($1, $2, $3, 'soiling_loss', $4::jsonb, $5)`, [org, kind, objectId, JSON.stringify(value), source]);
 }
 
 beforeAll(async () => {
@@ -74,7 +74,7 @@ describe('solar.soiling_of', () => {
   it('refuses a value outside 0 to 1 and an object the property does not apply to', async () => {
     await expect(soiling('pv_array', east, 2, 'a percentage by mistake')).rejects.toThrow();
     const project = await insert(db, 'projects', { organisation_id: org, name: 'Barn study', country: 'BE' });
-    await expect(soiling('project', project, 0.02, 'a project')).rejects.toThrow(/property_not_applicable/);
+    await expect(soiling('project', project, 0.02, 'a project')).rejects.toThrow(/attribute_type_not_applicable/);
   });
 });
 

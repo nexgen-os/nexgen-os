@@ -43,7 +43,7 @@ identity. A value that depends on the company, a contract or an option is
 again changes nothing and a new version reaches an installation that holds an
 older one; `countries` records the version, the checksum and the
 certification. The database refuses, by name, a value edited in place
-(`value_edited`), an unknown property (`property_unknown`) and a unit that is
+(`value_edited`), an unknown property (`attribute_type_unknown`) and a unit that is
 not the property's (`unit_mismatch`).
 
 `nexgen-os pack check --all`, run by the CI, refuses:

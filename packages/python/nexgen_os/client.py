@@ -296,7 +296,7 @@ class Nexgen:
         self,
         kind: str,
         object_id: str,
-        property_code: str,
+        attribute_type: str,
         value: Any,
         *,
         source: Optional[str] = None,
@@ -317,10 +317,10 @@ class Nexgen:
         return str(
             self._one(
                 """insert into nexgen.attributes
-                          (object_kind, object_id, property_code, value, source, source_code, valid_from, valid_to)
+                          (object_kind, object_id, attribute_type, value, source, source_code, valid_from, valid_to)
                    values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz)
                    returning id""",
-                (kind, object_id, property_code, Jsonb(value), source, source_code, valid_from, valid_to),
+                (kind, object_id, attribute_type, Jsonb(value), source, source_code, valid_from, valid_to),
             )
         )
 

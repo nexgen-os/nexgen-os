@@ -61,7 +61,7 @@ describe('a Home Assistant home in Nexgen OS', () => {
     const devices = await db.query<{ name: string; room: string | null; participant: boolean }>(
       `select d.name, s.name room, d.participant_id = b.participant_id participant
          from devices d join building.buildings b on b.id = $1
-         left join attributes a on a.object_kind = 'device' and a.object_id = d.id and a.property_code = 'file_record'
+         left join attributes a on a.object_kind = 'device' and a.object_id = d.id and a.attribute_type = 'file_record'
          left join building.spaces s on s.building_id = b.id and s.metadata->'ha'->>'key' = a.value->'ha'->>'space'
         order by d.name`, [building]);
     expect(devices.rows).toEqual([

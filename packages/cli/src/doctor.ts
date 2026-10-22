@@ -33,7 +33,7 @@ export const VOCABULARIES = [
   'device_types',
   'quantities',
   'units',
-  'property_defs',
+  'attribute_types',
   'id_schemes',
   'sources',
   'countries',
@@ -287,7 +287,7 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
     if (n === null) continue;
     report.vocabularies[v] = n;
   }
-  for (const v of ['device_types', 'quantities', 'property_defs'] as const) {
+  for (const v of ['device_types', 'quantities', 'attribute_types'] as const) {
     if (report.vocabularies[v] === 0) problems.push({ code: 'vocabulary_empty', detail: `nexgen.${v} has no row; the core seed did not run` });
   }
   return report;

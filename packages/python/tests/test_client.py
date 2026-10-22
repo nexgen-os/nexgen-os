@@ -113,7 +113,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(refused.exception.code, "overlapping_value")
         with self.assertRaises(NexgenError) as refused:
             self.nexgen.attach("device", FIXTURE["meter"], "annual_consumption", -5, source="a reading")
-        self.assertIn(refused.exception.code, ("property_not_applicable", "invalid_value"))
+        self.assertIn(refused.exception.code, ("attribute_type_not_applicable", "invalid_value"))
 
     def test_refuses_a_value_without_a_source(self):
         with self.assertRaises(NexgenError) as refused:

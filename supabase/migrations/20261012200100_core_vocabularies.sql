@@ -9,7 +9,7 @@
 -- Every vocabulary row maps to the open standard it comes from:
 --
 --   device_types    Brick Schema equipment classes, IFC distribution elements
---   property_defs   buildingSMART Data Dictionary (bSDD), IFC property sets
+--   attribute_types buildingSMART Data Dictionary (bSDD), IFC property sets
 --   quantities      QUDT quantity kinds and units
 --   sources         the external systems data comes from, with their licence
 --   id_schemes      IFC GlobalId, OpenStreetMap, Overture GERS, national registers
@@ -85,10 +85,10 @@ comment on table quantities is
   'Physical quantities with the single unit their values are stored in (QUDT).';
 
 -- ---------------------------------------------------------------------------
--- property_defs — values that can be attached to an object as attributes.
+-- attribute_types — values that can be attached to an object as attributes.
 -- ---------------------------------------------------------------------------
 
-create table property_defs (
+create table attribute_types (
   code            text primary key,
   name            text not null,
   description     text,
@@ -103,13 +103,13 @@ create table property_defs (
   -- project, participant, meter, device, series.
   applies_to      text[],
   published_by    text not null default 'core',
-  constraint property_defs_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
-  constraint property_defs_datatype check (datatype in ('number', 'integer', 'text', 'boolean', 'date', 'json')),
-  constraint property_defs_quantity_only_numbers check (quantity_code is null or datatype in ('number', 'integer')),
-  constraint property_defs_applies_to check (applies_to <@ array['organisation', 'project', 'participant', 'meter', 'device', 'series'])
+  constraint attribute_types_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
+  constraint attribute_types_datatype check (datatype in ('number', 'integer', 'text', 'boolean', 'date', 'json')),
+  constraint attribute_types_quantity_only_numbers check (quantity_code is null or datatype in ('number', 'integer')),
+  constraint attribute_types_applies_to check (applies_to <@ array['organisation', 'project', 'participant', 'meter', 'device', 'series'])
 );
 
-comment on table property_defs is
+comment on table attribute_types is
   'Attributes a trade can attach to an object of the core: an annual consumption, an efficiency, a degradation rate, the parameters parameter_of() resolves… Aligned on bSDD and IFC property sets.';
 
 -- ---------------------------------------------------------------------------
@@ -201,7 +201,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['device_types', 'quantities', 'property_defs', 'sources', 'id_schemes'] loop
+  foreach t in array array['device_types', 'quantities', 'attribute_types', 'sources', 'id_schemes'] loop
     execute format('alter table %I enable row level security', t);
     execute format('create policy %I on %I for select to authenticated using (true)', t || '_read', t);
     execute format('grant select on %I to authenticated', t);

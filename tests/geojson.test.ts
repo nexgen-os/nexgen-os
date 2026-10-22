@@ -39,7 +39,7 @@ beforeAll(async () => {
      values ('roof_layer', 'A commercial roof layer', 'api', 'Proprietary', '© Roof Layer Inc.', false)`,
   );
   await db.query(
-    `insert into attributes (object_kind, object_id, property_code, value, source_code) values ('participant', $1, 'installed_power', '640', 'roof_layer')`,
+    `insert into attributes (object_kind, object_id, attribute_type, value, source_code) values ('participant', $1, 'installed_power', '640', 'roof_layer')`,
     [FARM],
   );
   await db.query(`update building.buildings set floor_area_m2 = 280 where id = $1`, [BARN]);
@@ -180,7 +180,7 @@ describe('the open export', () => {
 describe('a moment, a project', () => {
   it('reads attributes at the moment asked', async () => {
     await db.query(
-      `update attributes set valid_from = '2026-01-01' where object_id = $1 and property_code = 'installed_power'`,
+      `update attributes set valid_from = '2026-01-01' where object_id = $1 and attribute_type = 'installed_power'`,
       [FARM],
     );
     const before = await exportGeoJson(db, { participantId: FARM }, { at: '2025-06-01T00:00:00Z' });
