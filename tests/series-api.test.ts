@@ -84,6 +84,13 @@ describe('store()', () => {
     expect(await latest(db, [s])).toEqual([{ series_id: s, at: '2026-05-04T09:00:00.000Z', value: 19, quality: 1 }]);
     await store(db, s, [{ at: '2026-05-04T07:00:00Z', value: 17 }]);
     expect((await latest(db, [s]))[0].value).toBe(19);
+    // The latest value is a view over the values: nothing to keep up to date.
+    expect((await db.query(`select relkind from pg_class where oid = 'nexgen.series_latest'::regclass`)).rows).toEqual([{ relkind: 'v' }]);
+    // A pack's own code from 100 up is kept; a code between is refused by the column itself.
+    await store(db, s, [{ at: '2026-05-04T11:00:00Z', value: 20, quality: 150 }]);
+    expect((await latest(db, [s]))[0]).toMatchObject({ value: 20, quality: 150 });
+    await expect(db.query(`insert into series_values (series_id, at, value, quality) values ($1, '2026-05-04T12:00:00Z', 1, 42)`, [s]))
+      .rejects.toThrow(/series_values_quality/);
   });
 
   it('is the only way an API role writes values', async () => {
@@ -123,28 +130,32 @@ describe('rollups', () => {
       at('2026-06-01T00:00:00+02:00', 96 * 31, 15).map((t, i) => ({ at: t, value: (i % 96) / 4 })))).seriesId;
   });
 
-  it('give the same figures as the values, and are not read while an hour is dirty', async () => {
-    const raw = {
-      hours: await resample(db, s, '2026-06-10T00:00:00Z', '2026-06-11T00:00:00Z', '1 hour'),
-      days: await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 day'),
-      month: await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 month'),
-    };
-    const drained = await one<{ n: number }>(db, 'select series_rollup() n');
-    expect(drained.n).toBeGreaterThanOrEqual(31 * 24);
+  it('are written with the values, and give the same figures as the values', async () => {
     const counts = await one<{ hours: number; days: number }>(db,
       `select count(*) filter (where step = 'hour')::int hours, count(*) filter (where step = 'day')::int days from series_rollups where series_id = $1`, [s]);
     expect(counts).toEqual({ hours: 31 * 24, days: 31 });
-    expect(await resample(db, s, '2026-06-10T00:00:00Z', '2026-06-11T00:00:00Z', '1 hour')).toEqual(raw.hours);
-    expect(await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 day')).toEqual(raw.days);
-    expect(await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 month')).toEqual(raw.month);
+    const read = async () => ({
+      hours: await resample(db, s, '2026-06-10T00:00:00Z', '2026-06-11T00:00:00Z', '1 hour'),
+      days: await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 day'),
+      month: await resample(db, s, '2026-06-01T00:00:00+02:00', '2026-07-01T00:00:00+02:00', '1 month'),
+    });
+    const fromRollups = await read();
+    // Without its rollups, the same reads go back to the values.
+    await db.query('delete from series_rollups where series_id = $1', [s]);
+    const raw = await read();
+    expect(fromRollups).toEqual(raw);
     expect(raw.month[0]).toMatchObject({ samples: 96 * 30, expected: 96 * 30, quality: 0 });
+    await db.query(
+      `select series_rollup_hours($1, array(select distinct date_bin('1 hour', at, timestamptz '2000-01-01 00:00:00+00') from series_values where series_id = $1 order by 1))`,
+      [s],
+    );
 
-    // A corrected value makes its hour dirty: the read goes back to the values until the next rollup.
+    // A corrected value refreshes the rollups of its hour and its day as it is written.
     await store(db, s, [{ at: '2026-06-10T10:00:00Z', value: 100 }]);
     const corrected = await resample(db, s, '2026-06-10T00:00:00+02:00', '2026-06-11T00:00:00+02:00', '1 day');
     expect(corrected[0].value).toBeCloseTo(raw.days[9].value! - 12 + 100, 9);
-    await db.query('select series_rollup()');
-    expect(await resample(db, s, '2026-06-10T00:00:00+02:00', '2026-06-11T00:00:00+02:00', '1 day')).toEqual(corrected);
+    const day = await one<{ total: number }>(db, `select total from series_rollups where series_id = $1 and step = 'day' and bucket = '2026-06-10T00:00:00+02:00'`, [s]);
+    expect(day.total).toBeCloseTo(corrected[0].value!, 9);
   });
 });
 

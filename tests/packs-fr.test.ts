@@ -43,9 +43,9 @@ afterAll(async () => {
 describe('the fr pack', () => {
   it('says who the country is: currency, language, time zones, departments and their regions', async () => {
     const fr = await one<Record<string, unknown>>(db,
-      `select name, currency, languages, time_zones[1] tz, region_level, municipality_scheme, pack_version, certification from countries where code = 'FR'`);
+      `select name, currency, languages, time_zones[1] tz, region_level, municipality_scheme, pack_version from countries where code = 'FR'`);
     expect(fr).toEqual({ name: 'France', currency: 'EUR', languages: ['fr'], tz: 'Europe/Paris', region_level: 'department',
-      municipality_scheme: 'insee', pack_version: '0.2.0', certification: 'community' });
+      municipality_scheme: 'insee', pack_version: '0.2.0' });
     const departments = await one<{ n: number; regions: number }>(db,
       `select count(*) filter (where parent is not null or code ~ '^FR-97')::int n, count(*) filter (where parent is null and code !~ '^FR-97')::int regions from regions where country = 'FR'`);
     expect(departments).toEqual({ n: 103, regions: 13 });

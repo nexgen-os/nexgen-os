@@ -83,37 +83,64 @@ describe('row level security', () => {
 });
 
 describe('computation runs', () => {
+  // A module that computes keeps its runs in a table of its own, of the shape
+  // the core's gesture writes (core/migrations/…_core_modules_runs.sql).
+  beforeAll(async () => {
+    await db.exec(`
+      create schema pv;
+      grant usage on schema pv to authenticated, service_role;
+      create table pv.runs (
+        id               uuid primary key default gen_random_uuid(),
+        organisation_id  uuid not null references nexgen.organisations(id) on delete cascade,
+        participant_id   uuid not null references nexgen.participants(id) on delete cascade,
+        engine_version   text not null,
+        inputs           jsonb not null,
+        inputs_hash      text not null,
+        results          jsonb,
+        status           text not null default 'running' check (status in ('running', 'succeeded')),
+        started_at       timestamptz not null default now(),
+        finished_at      timestamptz,
+        check ((status = 'running') = (finished_at is null)));
+      create unique index runs_one_success_per_input on pv.runs (organisation_id, inputs_hash) where status = 'succeeded';
+      create trigger runs_is_final before update on pv.runs for each row execute function nexgen.run_is_final();
+      call nexgen.secure_table('pv.runs');
+    `);
+  });
+
   it('returns the same run for the same inputs and engine version', async () => {
     const inputs = { horizon: '2027', weather: 'tmy' };
     const first = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.1.0', 'participant', $1, null, $2, '{"kwh": 5400}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [siteA, inputs]),
     );
     const again = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.1.0', 'participant', $1, null, $2, '{"kwh": 5400}') id`, [
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.1.0', $2, '{"kwh": 5400}') id`, [
         siteA,
         { weather: 'tmy', horizon: '2027' },
       ]),
     );
     const newer = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.2.0', 'participant', $1, null, $2, '{"kwh": 5410}') id`, [siteA, inputs]),
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.2.0', $2, '{"kwh": 5410}') id`, [siteA, inputs]),
     );
     expect(again.id).toBe(first.id);
     expect(newer.id).not.toBe(first.id);
+    await expect(asUser(db, USER_B, () => db.query(`select record_run('pv.runs', 'participant', $1, '0.1.0', '{}', '{}')`, [siteA])))
+      .rejects.toThrow(/object_not_found/);
   });
 
   it('never changes a finished run', async () => {
-    await expect(db.query(`update runs set results = '{"kwh": 1}'`)).rejects.toThrow(/run_is_final/);
+    await expect(db.query(`update pv.runs set results = '{"kwh": 1}'`)).rejects.toThrow(/run_is_final/);
+    await expect(db.query(`update pv.runs set inputs = '{}'`)).rejects.toThrow(/run_is_final/);
   });
 
   it('never changes the series a finished run computed', async () => {
     const run = await asUser(db, USER_A, () =>
-      one<{ id: string }>(db, `select record_run('pv', '0.3.0', 'participant', $1, null, '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
+      one<{ id: string }>(db, `select record_run('pv.runs', 'participant', $1, '0.3.0', '{"horizon": "2028"}', '{"kwh": 5420}', $2) id`, [
         siteA,
         JSON.stringify([{ key: 'production', object_kind: 'participant', object_id: siteA, quantity_code: 'production_energy', step: '1 hour', at: ['2028-06-01T10:00:00Z', '2028-06-01T11:00:00Z'], value: [1.5, 1.7] }]),
       ]),
     );
     const owned = await one<{ id: string; results: { kwh: number; series: Record<string, string> } }>(
-      db, `select s.id, r.results from runs r join series s on s.run_id = r.id where r.id = $1`, [run.id]);
+      db, `select s.id, r.results from pv.runs r join series s on s.source = 'pv.runs:' || r.id where r.id = $1`, [run.id]);
     expect(owned.results).toEqual({ kwh: 5420, series: { production: owned.id } });
     await expect(asUser(db, USER_A, () => db.query(`update series_values set value = 0 where series_id = $1`, [owned.id]))).rejects.toThrow(/permission denied/);
     await expect(db.query(`select store($1, array['2028-06-01T12:00:00Z']::timestamptz[], array[1.0]::float8[])`, [owned.id])).rejects.toThrow(/run_is_final/);
@@ -130,7 +157,7 @@ describe('organisations', () => {
   });
 
   it('are objects: an attribute attaches to one, readable by its members only', async () => {
-    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'roof_area', '120', 'a guess')`, [orgA]))
+    await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('organisation', $1, 'subscribed_power', '120', 'a guess')`, [orgA]))
       .rejects.toThrow(/property_not_applicable/);
     await db.query(`insert into property_defs (code, name, datatype, published_by) values ('discount_rate', 'Discount rate', 'number', 'installation')`);
     await asUser(db, USER_A, () => db.query(`select set_attribute('organisation', $1, 'discount_rate', '0.04', null, null, 'board decision')`, [orgA]));
@@ -173,7 +200,7 @@ describe('what the core publishes', () => {
     const r = await db.query(
       `select code from id_schemes where code ~ '_(be|fr|nl|es|de|lu|sn)$'
        union all select code from device_types where code ~ '_(be|fr|nl|es|de|lu|sn)$'
-       union all select code from profiles where code ~ '_(be|fr|nl|es|de|lu|sn)$'`,
+       union all select code from building.profiles where code ~ '_(be|fr|nl|es|de|lu|sn)$'`,
     );
     expect(r.rows).toEqual([]);
   });
@@ -190,7 +217,7 @@ describe('what the core publishes', () => {
     expect(Number(left.n)).toBe(0);
   });
 
-  it('refuses by name an attachment to an object that is not found, of a kind nobody published, or of another organisation', async () => {
+  it('refuses by name an attachment to an object that is not found, of a kind that is not one of the six, or of another organisation', async () => {
     await expect(db.query(`select set_attribute('participant', gen_random_uuid(), 'annual_consumption', '1')`)).rejects.toThrow(/object_not_found/);
     await expect(db.query(`select set_attribute('spaceship', $1, 'annual_consumption', '1')`, [siteA])).rejects.toThrow(/kind_unknown/);
     await expect(asUser(db, USER_B, () => db.query(`select set_attribute('participant', $1, 'annual_consumption', '1')`, [siteA])))

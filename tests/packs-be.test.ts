@@ -64,9 +64,9 @@ describe('the be pack', () => {
 
   it('says who the country is: currency, languages, time zone and the three regions', async () => {
     const be = await one<Record<string, unknown>>(db,
-      `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version, certification from countries where code = 'BE'`);
+      `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version from countries where code = 'BE'`);
     expect(be).toEqual({ name: 'Belgium', currency: 'EUR', languages: ['nl', 'fr', 'de'], time_zones: ['Europe/Brussels'], region_level: 'region',
-      municipality_scheme: 'nis', pack_version: '0.2.0', certification: 'community' });
+      municipality_scheme: 'nis', pack_version: '0.2.0' });
     const regions = await db.query<{ code: string }>(`select code from regions where country = 'BE' order by code`);
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
     // One level: a region has no parent, and parameter_of() goes from the region to the country.

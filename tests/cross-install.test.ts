@@ -205,7 +205,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
   it('public holds only Ekwo, nexgen and its module schemas only Nexgen', () => {
     const { ekwo: e, nexgen: n } = run.side;
     expect(e.size).toBeGreaterThan(500);
-    expect(n.size).toBeGreaterThan(200);
+    expect(n.size).toBeGreaterThan(150);
     expect(new Set([...n].map(schemaOf))).toEqual(new Set(NEXGEN_SCHEMAS));
     expect([...e].filter((o) => !EKWO_SCHEMAS.includes(schemaOf(o)))).toEqual([]);
     for (const o of run.all) {
