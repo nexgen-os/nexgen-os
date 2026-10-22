@@ -161,7 +161,7 @@ describe('the be pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'be' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'be', version: '0.3.0', file: 'core/seed/11_pack_be.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'be', version: '0.3.0', file: 'supabase/seed/11_pack_be.sql', state: 'up_to_date' }]);
   });
 });
 

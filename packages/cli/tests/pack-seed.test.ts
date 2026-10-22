@@ -74,7 +74,7 @@ describe('the seed of a pack on a database', () => {
   });
 
   it('writes every section, and a second run changes nothing', async () => {
-    const seed = await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8');
+    const seed = await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8');
     for (let run = 0; run < 2; run += 1) {
       await db.exec(seed);
       expect([await count('sources'), await count('id_schemes'), await count('countries'), await count('regions'), await count('grid.operators'), await count('defaults')])
@@ -90,7 +90,7 @@ describe('the seed of a pack on a database', () => {
   });
 
   it('brings a new version to an installation: a period closed, a value added, the version recorded', async () => {
-    await db.exec(await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8'));
+    await db.exec(await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8'));
     await db.exec(await seedOf(async (root) => {
       await edit(root, 'pack.json', (j) => { j.version = '0.2.0'; });
       await edit(root, 'defaults.json', (j) => {
@@ -105,7 +105,7 @@ describe('the seed of a pack on a database', () => {
   });
 
   it('refuses a value edited in place, and writes nothing of that seed', async () => {
-    await db.exec(await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8'));
+    await db.exec(await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8'));
     const edited = await seedOf(async (root) => {
       await edit(root, 'pack.json', (j) => { j.version = '0.2.0'; });
       await edit(root, 'defaults.json', (j) => { j.defaults[2].value = 0.2; });
@@ -128,7 +128,7 @@ describe('the seed of a pack on a database', () => {
   it('leaves a row another publisher holds as it is', async () => {
     await db.exec(`insert into sources (code, name, kind, auth, countries, regions, redistributable, published_by)
                    values ('xa_statistics', 'Kept by the core', 'file', 'none', '{}', '{}', true, 'core')`);
-    await db.exec(await readFile(join(FIXTURE, 'core/seed/10_pack_xa.sql'), 'utf8'));
+    await db.exec(await readFile(join(FIXTURE, 'supabase/seed/10_pack_xa.sql'), 'utf8'));
     expect((await db.query("select name, published_by from sources where code = 'xa_statistics'")).rows).toEqual([{ name: 'Kept by the core', published_by: 'core' }]);
   });
 });

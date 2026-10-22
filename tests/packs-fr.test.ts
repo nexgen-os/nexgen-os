@@ -144,7 +144,7 @@ describe('the fr pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'fr' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'fr', version: '0.3.0', file: 'core/seed/10_pack_fr.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'fr', version: '0.3.0', file: 'supabase/seed/10_pack_fr.sql', state: 'up_to_date' }]);
   });
 
   it('reads the national address register with house-number precision and the department as region', async () => {

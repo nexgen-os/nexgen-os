@@ -1,14 +1,35 @@
-# The core
+# `supabase/` — the core in the database
 
-The schema `nexgen` and the vocabularies it starts with, in plain SQL for
-Postgres with PostGIS. There is no Supabase configuration file here: the
-installer is the project's own (`npx nexgen-os init`, see
-[`packages/cli`](../packages/cli/README.md)) and records each file by its path.
+Everything of the core that ends up in your Postgres lives here: the schema
+`nexgen`, in plain SQL for Postgres with PostGIS, and the rows it starts with.
+A module carries its own migrations in `modules/<code>/supabase/migrations/`
+([`modules/`](../modules/README.md)).
 
-```
-core/migrations/   the schema, one file per family of tables, the version last
-core/seed/         the vocabularies, and the seeds compiled from the packs (packs/<cc>)
-```
+| Folder | What it is | When it runs |
+|---|---|---|
+| [`migrations/`](migrations/) | The schema `nexgen`: one file per family of tables, functions and row level security, the schema version last | `npx nexgen-os init`, then `npx nexgen-os migrate` for what a release adds |
+| [`seed/`](seed/) | The vocabularies of the core (`0001_core_vocabularies.sql`) and one seed per country, compiled from its pack (`<n>_pack_<cc>.sql`, written by `nexgen-os pack build`, never by hand) | After the core's migrations and the modules asked for; a pack's seed only when the pack is asked for (`--packs`) |
+| `config.toml` | The Supabase CLI configuration, for a local project started with `supabase start` | Read by the Supabase CLI |
+
+How `npx nexgen-os init` applies the folder: the core's migrations in the
+order of their names, then the core's seed, then each module asked for
+(`--modules`, every module by default) with its migrations in order, then
+each pack asked for (`--packs`, none by default). Each file runs in its own
+transaction and is recorded by its path in `nexgen.schema_migrations`, so a
+second pass applies only what is missing and `npx nexgen-os doctor` names
+what is pending. The installer is the project's own: the Supabase CLI does
+not know the modules or the packs, which is why `config.toml` seeds the
+vocabularies only. The published package carries a copy of this folder, the
+modules' migrations and the packs' manifests, in the same layout
+([`packages/cli`](../packages/cli/README.md)).
+
+Two rules hold for the whole folder:
+
+- **A released migration is never edited**: it has already run on databases
+  nobody here controls. A change is a new migration
+  ([releasing](../docs/releasing.md)).
+- **A country is data.** What a country decides is a row of its pack,
+  compiled into `seed/`; fix the pack and build again, never a function.
 
 ## The model in one screen
 

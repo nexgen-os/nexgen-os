@@ -84,7 +84,7 @@ describe('row level security', () => {
 
 describe("a module's figures", () => {
   // A module that computes keeps its figures in a plain table of its own, of
-  // the shape core/migrations/…_core_modules.sql describes.
+  // the shape supabase/migrations/…_core_modules.sql describes.
   beforeAll(async () => {
     await db.exec(`
       create schema pv;

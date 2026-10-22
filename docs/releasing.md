@@ -13,7 +13,7 @@ worse than one not cut.
 
 1. **The schema version.** When the release adds anything a package reads —
    a table, a column, a function — a migration
-   `core/migrations/<YYYYMMDDHHMMSS>_schema_version_<x_y_z>.sql`
+   `supabase/migrations/<YYYYMMDDHHMMSS>_schema_version_<x_y_z>.sql`
    redefines `nexgen.nexgen_schema_version()` to return the new number, and
    does nothing else. `packages/cli/tests/version.test.ts` reads it.
 

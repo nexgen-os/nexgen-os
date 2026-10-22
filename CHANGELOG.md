@@ -103,7 +103,7 @@ the core ([modules/README.md](modules/README.md),
 
 **The packs**: `fr` and `be`, version `0.3.0`, certification `community`,
 written as JSON against `packs/schema/pack.1.json` and compiled into
-`core/seed/` — identity and regions, identifiers, sources, grid operators
+`supabase/seed/` — identity and regions, identifiers, sources, grid operators
 and defaults, each value with its source and reference
 ([packs/README.md](packs/README.md),
 [0020](docs/decisions/0020-a-pack-holds-what-a-function-reads.md),

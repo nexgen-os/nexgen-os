@@ -4,7 +4,7 @@
  * where `packs/` and its schema are; a published installation holds the
  * compiled seeds and nothing to compile.
  *
- *   pack build <cc>|--all   validate, compile to core/seed/<n>_pack_<cc>.sql,
+ *   pack build <cc>|--all   validate, compile to supabase/seed/<n>_pack_<cc>.sql,
  *                           write the checksum into pack.json
  *   pack check <cc>|--all   the same in memory, and refuse a seed or a
  *                           checksum that is not the output of its pack

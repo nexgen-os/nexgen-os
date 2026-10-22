@@ -13,7 +13,7 @@ let seed: string;
 
 beforeAll(async () => {
   db = await freshDatabase(['grid']);
-  seed = await readFile(join(repoRoot, 'tests/fixtures/pack-checkout/core/seed/10_pack_xa.sql'), 'utf8');
+  seed = await readFile(join(repoRoot, 'tests/fixtures/pack-checkout/supabase/seed/10_pack_xa.sql'), 'utf8');
   expect(seed).not.toContain('organisation_id');
 });
 

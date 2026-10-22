@@ -4,7 +4,7 @@
 -- Do not edit: change the pack and build again. `nexgen-os pack check --all`
 -- refuses a seed that is not the exact output of its pack.
 --
--- file           core/seed/10_pack_xa.sql
+-- file           supabase/seed/10_pack_xa.sql
 -- checksum       sha256:1f4d471b52d59e4015c56f2956356a7720ea75aa89abad13022e6b0d510ddac5
 -- certification  reviewed, A grid engineer of the fixture, for the tests of the toolchain, 2026-10-19
 -- schema_min     0.2.0

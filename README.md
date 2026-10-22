@@ -42,7 +42,7 @@ folders and documents (the meter is `meters` in the core and `grid.meters`
 in the grid module); and **stay close to the platform this core was taken
 from**, whose structure has proven itself in the field. The table that groups the
 core's tables, the functions that act on them and the standards they follow
-is in [core/README.md](core/README.md); the diagram and the rules are in
+is in [supabase/README.md](supabase/README.md); the diagram and the rules are in
 [docs/model.md](docs/model.md); the rules and why in
 [docs/doctrine.md](docs/doctrine.md).
 
@@ -183,7 +183,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 ## Layout
 
 ```
-core/                  the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies, the model in one screen
+supabase/              the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies and the country seeds, the model in one screen
 modules/               one Postgres schema per module (billing, building, community, consumption, grid, planning, solar, weather); a module's TypeScript is in its `src/`
 packs/                 one folder per country, data only (fr, be: identity and regions, identifiers, sources, grid operators, defaults), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status

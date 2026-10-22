@@ -16,8 +16,8 @@ const copy = (rel) => {
   if (existsSync(join(repo, rel))) cpSync(join(repo, rel), join(out, rel), { recursive: true });
 };
 
-copy('core/migrations');
-copy('core/seed');
+copy('supabase/migrations');
+copy('supabase/seed');
 for (const m of readdirSync(join(repo, 'modules'))) copy(`modules/${m}/migrations`);
 for (const p of readdirSync(join(repo, 'packs'))) copy(`packs/${p}/pack.json`);
 // The package is AGPL-3.0 like the core: npm ships a LICENSE found at the package root.
