@@ -1,5 +1,5 @@
 // The series package of the core: one way to write (store(), with its
-// units, qualities, steps and runs), the rollups and the latest value it
+// units, qualities, steps and calculations), the rollups and the latest value it
 // keeps, and the family of reads — resample() on a register, on a
 // half-hour time zone, on steps of several days; window(), latest(),
 // fill(), coverage(), forecast_at(), export_rows() — with the access check

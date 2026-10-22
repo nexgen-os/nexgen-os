@@ -1,8 +1,8 @@
-// A yield run computed by an external engine (decision 0013), with a fake
+// A yield estimate computed by an external engine (decision 0013), with a fake
 // engine in Node so that it runs without Python: the profile chooses the
 // weather, the models and the losses, the engine computes, and what it
 // answers lands as simulated series on the system and its arrays, with the
-// engine's version on the run.
+// engine's version on the estimate.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -32,7 +32,7 @@ afterAll(async () => {
   await db.close();
 });
 
-describe('a yield run computed by an engine', () => {
+describe('a yield estimate computed by an engine', () => {
   it('sends the profile\'s choices and the weather read per array, stores the answer as it comes and records the engine', async () => {
     const asked: string[] = [];
     const result = await estimateYield(
@@ -64,9 +64,9 @@ describe('a yield run computed by an engine', () => {
       { object_id: system, quantity_code: 'production_energy', kind: 'simulated', source_code: 'open_meteo', name: 'fake 2023-2023', n: 8760 },
     ]);
 
-    const run = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.estimates where id = $1', [result.estimateId]);
-    expect(run.engine_version).toBe('fake 1.0.0');
-    expect(run.inputs).toMatchObject({
+    const estimate = await one<{ engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(db, 'select engine_version, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.engine_version).toBe('fake 1.0.0');
+    expect(estimate.inputs).toMatchObject({
       profile: 'pvwatts',
       engine: { name: 'fake', version: 'fake 1.0.0', contract: 1, dependencies: { node: process.versions.node } },
       weather: { source: 'open_meteo', model: 'era5', years: { from: 2023, to: 2023 }, time_zone: 'Europe/Brussels' },
@@ -74,9 +74,9 @@ describe('a yield run computed by an engine', () => {
       losses: [{ code: 'system', pct: 14 }],
     });
     // What the engine was told, as it echoes it: the profile's models.
-    expect(run.inputs.model.models).toEqual({ decomposition: null, transposition: null, temperature: 'faiman', temperature_parameters: { u0: 25, u1: 6.84 }, aoi: 'no_loss', spectral: 'no_loss' });
-    expect(run.results).toMatchObject({ series_id: result.seriesId, annual_kwh: 4380, years_covered: [2023] });
-    expect(Object.keys(run.results.array_series).sort()).toEqual(['East', 'South']);
+    expect(estimate.inputs.model.models).toEqual({ decomposition: null, transposition: null, temperature: 'faiman', temperature_parameters: { u0: 25, u1: 6.84 }, aoi: 'no_loss', spectral: 'no_loss' });
+    expect(estimate.results).toMatchObject({ series_id: result.seriesId, annual_kwh: 4380, years_covered: [2023] });
+    expect(Object.keys(estimate.results.array_series).sort()).toEqual(['East', 'South']);
   });
 
   it('a profile that names a transposition sends the horizontal components once for the participant', async () => {
@@ -86,20 +86,20 @@ describe('a yield run computed by an engine', () => {
     expect(asked.map((u) => [new URL(u).searchParams.get('hourly'), new URL(u).searchParams.has('tilt')])).toEqual([['shortwave_radiation,temperature_2m,wind_speed_10m', false]]);
   });
 
-  it('sends an inverter known by its OND file as the Sandia model fitted on its curves, and records it with the run', async () => {
+  it('sends an inverter known by its OND file as the Sandia model fitted on its curves, and records it with the estimate', async () => {
     const ond = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/ond-inverter-10kw.json`, 'utf8'));
     const inverter = await insert(db, 'device_directory', { organisation_id: org, device_type: 'inverter', manufacturer: 'Example Power', model_ref: 'EP-10K', unit_power_kw: 10 });
     await db.query(`insert into solar.inverter_products (id, model, parameters) values ($1, 'ond', $2)`, [inverter, JSON.stringify(ond)]);
     const module = await insert(db, 'device_directory', { organisation_id: org, device_type: 'solar', manufacturer: 'Example Solar', model_ref: 'ES-M108-430', unit_power_kw: 0.43 });
     await db.query(`insert into solar.module_products (id, model, parameters) values ($1, 'pvsyst', $2)`, [module, JSON.stringify({ gamma_ref: 1, mu_gamma: -0.0002, I_L_ref: 13.90531675, I_o_ref: 9.1907963e-12, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 })]);
-    const run = (over: { pvSystemId: string }) => estimateYield(db, { ...over, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
+    const compute = (over: { pvSystemId: string }) => estimateYield(db, { ...over, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: -0.0035, engine: fake }, { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
     await db.query('update solar.pv_arrays set inverter_product_id = $1 where pv_system_id = $2', [inverter, system]);
     try {
       // Sandia reads the DC voltage: the PVWatts module model of the arrays gives none.
-      await expect(run({ pvSystemId: system })).rejects.toThrow(/^inverter_needs_voltage: the ond inverter reads the DC voltage/);
+      await expect(compute({ pvSystemId: system })).rejects.toThrow(/^inverter_needs_voltage: the ond inverter reads the DC voltage/);
 
       await db.query('update solar.pv_arrays set module_product_id = $1, modules_per_string = 23, strings = 1 where pv_system_id = $2', [module, system]);
-      const result = await run({ pvSystemId: system });
+      const result = await compute({ pvSystemId: system });
       const recorded = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
       expect(recorded.inputs.inverter).toEqual({ model: 'sandia', fitted_from: 'ond', parameters: sandiaFromOnd(ond) });
       expect(recorded.inputs.arrays.map((a: { module_model: string }) => a.module_model)).toEqual(['pvsyst', 'pvsyst']);

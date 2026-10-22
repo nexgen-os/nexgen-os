@@ -1,6 +1,6 @@
-// A yield run of the `pvgis_like` profile on a system of two arrays: the
+// A yield estimate of the `pvgis_like` profile on a system of two arrays: the
 // energies of the arrays add up hour by hour, the series lands as simulated
-// production of the system, and the run records the weather, the years, the
+// production of the system, and the estimate records the weather, the years, the
 // arrays, the losses and the conventions it was computed with.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -31,8 +31,8 @@ afterAll(async () => {
   await db.close();
 });
 
-describe('a pvgis_like yield run', () => {
-  it('asks PVGIS once per array, adds the energies, stores them as simulated production and records the run', async () => {
+describe('a pvgis_like yield estimate', () => {
+  it('asks PVGIS once per array, adds the energies, stores them as simulated production and records the estimate', async () => {
     const recorded = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/pvgis-seriescalc-brussels-2023-48h.json`, 'utf8')) as { outputs: { hourly: { P: number }[] } };
     const fetch: Fetch = async (url) => {
       asked.push(url);
@@ -44,7 +44,7 @@ describe('a pvgis_like yield run', () => {
     const params = asked.map((u) => Object.fromEntries(new URL(u).searchParams)).sort((a, b) => Number(b.peakpower) - Number(a.peakpower));
     expect(params.map((p) => [p.peakpower, p.aspect, p.angle, p.loss, p.mountingplace])).toEqual([['20', '0', '30', '14', 'building'], ['10', '-90', '30', '14', 'building']]);
 
-    // The recorded answer is the 1 kWp one and is served to both arrays: the run adds the two answers.
+    // The recorded answer is the 1 kWp one and is served to both arrays: the estimate adds the two answers.
     const recordedKwh = recorded.outputs.hourly.reduce((s, h) => s + h.P, 0) / 1000;
     expect(result.kwp).toBe(30);
     expect(result.annualKwh).toBeCloseTo(recordedKwh * 2, 3);
@@ -60,16 +60,16 @@ describe('a pvgis_like yield run', () => {
     );
     expect(series).toEqual({ kind: 'simulated', source: 'pvgis', n: 48, max: Math.round(0.35008 * 2 * 1e6) / 1e6 });
 
-    const run = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.estimates where id = $1', [result.estimateId]);
-    expect(run.status).toBe('finished');
-    expect(run.inputs).toMatchObject({
+    const estimate = await one<{ status: string; inputs: Record<string, unknown>; results: Record<string, unknown> }>(db, 'select status, inputs, results from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.status).toBe('finished');
+    expect(estimate.inputs).toMatchObject({
       profile: 'pvgis_like',
       weather: { source: 'pvgis', radiation_db: 'PVGIS-SARAH3', years: { from: 2023, to: 2023 } },
       conventions: { time: 'interval start, UTC' },
     });
-    const arrays = (run.inputs.arrays as { kwp: number; azimuth_deg: number; tilt_deg: number }[]).sort((a, b) => b.kwp - a.kwp);
+    const arrays = (estimate.inputs.arrays as { kwp: number; azimuth_deg: number; tilt_deg: number }[]).sort((a, b) => b.kwp - a.kwp);
     expect(arrays).toMatchObject([{ kwp: 20, azimuth_deg: 180, tilt_deg: 30 }, { kwp: 10, azimuth_deg: 90, tilt_deg: 30 }]);
-    expect(run.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
+    expect(estimate.results).toMatchObject({ series_id: result.seriesId, kwp: 30 });
   });
 
   it('throws named errors for a profile PVGIS cannot run and a system whose participant has no position', async () => {

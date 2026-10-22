@@ -19,7 +19,7 @@ let seller: string;
 let buyer: string;
 let unnamed: string;
 let stranger: string;
-let run: string;
+let settlement: string;
 
 const uuid = async () => (await one<{ id: string }>(db, 'select gen_random_uuid() id')).id;
 
@@ -53,8 +53,8 @@ beforeAll(async () => {
   buyer = await participant(org, p, 'Warehouse', await contact(org, 'Warehouse tenant'));
   unnamed = await participant(org, p, 'Workshop', null);
   stranger = await participant(other, await project(other), 'Elsewhere', await contact(other, 'Someone else'));
-  // The settlement run is the computing module's; the bill names it by its id.
-  run = await uuid();
+  // The settlement is the computing module's; the bill names it by its id.
+  settlement = await uuid();
 }, 120_000);
 
 afterAll(async () => {
@@ -75,7 +75,7 @@ describe('billing without Ekwo OS', () => {
 
   it('records a bill between two participants with any Ekwo id, and lists it', async () => {
     const id = await uuid();
-    await asUser(db, USER_A, () => record([buyer, id, 'purchase', '2026-05-01', '2026-05-31', seller, run]));
+    await asUser(db, USER_A, () => record([buyer, id, 'purchase', '2026-05-01', '2026-05-31', seller, settlement]));
     const rows = await asUser(db, USER_A, () =>
       db.query<Record<string, unknown>>(
         `select id, organisation_id, participant_id, counterparty_participant_id, kind, period_from::text, period_to::text, settlement_id
@@ -84,7 +84,7 @@ describe('billing without Ekwo OS', () => {
       ),
     );
     expect(rows.rows).toEqual([
-      { id, organisation_id: org, participant_id: buyer, counterparty_participant_id: seller, kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', settlement_id: run },
+      { id, organisation_id: org, participant_id: buyer, counterparty_participant_id: seller, kind: 'purchase', period_from: '2026-05-01', period_to: '2026-05-31', settlement_id: settlement },
     ]);
     expect((await asUser(db, USER_B, () => db.query('select * from billing.invoices'))).rows).toEqual([]);
   });
@@ -106,8 +106,8 @@ describe('billing without Ekwo OS', () => {
     await expect(record([seller, await uuid(), 'refund', '2026-05-01', '2026-05-31', null, null])).rejects.toThrow(/invoices_kind/);
     await expect(record([seller, await uuid(), 'sale', '2026-05-31', '2026-05-01', null, null])).rejects.toThrow(/invoices_period/);
     const id = await uuid();
-    await record([seller, id, 'sale', '2026-05-01', '2026-05-31', buyer, run]);
-    await expect(record([seller, id, 'sale', '2026-05-01', '2026-05-31', buyer, run])).rejects.toThrow(/^invoice_already_recorded/);
+    await record([seller, id, 'sale', '2026-05-01', '2026-05-31', buyer, settlement]);
+    await expect(record([seller, id, 'sale', '2026-05-01', '2026-05-31', buyer, settlement])).rejects.toThrow(/^invoice_already_recorded/);
     // A participant of another organisation is not seen, so not found.
     await expect(asUser(db, USER_A, () => record([stranger, id, 'sale', '2026-05-01', '2026-05-31', null, null]))).rejects.toThrow(/^participant_not_found/);
   });
@@ -144,7 +144,7 @@ describe('billing without Ekwo OS', () => {
 });
 
 describe('the energy community of example 3', () => {
-  it('records one bill between two participants, from the settlement run', async () => {
+  it('records one bill between two participants, from the settlement', async () => {
     const community = await freshDatabase(['billing', 'community', 'grid']);
     try {
       await community.exec(await readFile(join(repoRoot, 'examples', '03-energy-community.sql'), 'utf8'));

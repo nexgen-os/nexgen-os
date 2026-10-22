@@ -1,5 +1,5 @@
 // From a PV system to its yield, on your own database: a `pvgis_like` yield
-// run for one calendar year, recorded as a run, then read back month by
+// estimate for one calendar year, recorded as an estimate, then read back month by
 // month through `resample()`, the one way to read a series.
 //
 //   export NEXGEN_DB_URL=…   # the connection string, never written to a file
@@ -21,7 +21,7 @@ export interface MonthOfYield {
   kwh: number;
 }
 
-/** Runs the yield of `pvSystemId` for `year` and reads its series back by month. */
+/** Estimates the yield of `pvSystemId` for `year` and reads its series back by month. */
 export async function yieldOfSystem(
   db: Db,
   pvSystemId: string,
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     await client.exec('set search_path = nexgen, public, extensions');
     const db: Db = { query: async <T>(sql: string, params?: unknown[]) => ({ rows: await client.query<T>(sql, params) }) };
     const { result, months } = await yieldOfSystem(db, pvSystemId, year);
-    console.log(`run ${result.estimateId}: ${Math.round(result.annualKwh)} kWh in ${year}, ${Math.round(result.kwhPerKwp)} kWh/kWp on ${result.kwp} kWp (${result.radiationDb})`);
+    console.log(`estimate ${result.estimateId}: ${Math.round(result.annualKwh)} kWh in ${year}, ${Math.round(result.kwhPerKwp)} kWh/kWp on ${result.kwp} kWp (${result.radiationDb})`);
     for (const { month, kwh } of months) console.log(`  ${month}  ${kwh} kWh`);
   } finally {
     await client.close();

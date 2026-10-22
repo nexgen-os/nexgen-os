@@ -1,5 +1,5 @@
 // The twenty-minute path of the README, on PGlite: the house of example 01,
-// its PV system and its array described in the `solar` module, a yield run
+// its PV system and its array described in the `solar` module, a yield estimate
 // through `examples/yield.ts` and its series read back by month.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -27,7 +27,7 @@ afterAll(async () => {
 });
 
 describe('the yield of example 01, as the README runs it', () => {
-  it('runs on the orientation of its array, records the run and reads the year back by month', async () => {
+  it('runs on the orientation of its array, records the estimate and reads the year back by month', async () => {
     const recorded = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/pvgis-seriescalc-brussels-2023-48h.json`, 'utf8')) as { outputs: { hourly: { P: number }[] } };
     const asked: string[] = [];
     const fetch: Fetch = async (url) => {
@@ -49,7 +49,7 @@ describe('the yield of example 01, as the README runs it', () => {
     expect(months[0]?.month).toBe('2023-01');
     expect(months[0]?.kwh).toBeCloseTo(result.annualKwh, 1);
 
-    const run = await one<{ status: string; device_id: string }>(db, 'select status, device_id from solar.estimates where id = $1', [result.estimateId]);
-    expect(run).toEqual({ status: 'finished', device_id: PV_SYSTEM });
+    const estimate = await one<{ status: string; device_id: string }>(db, 'select status, device_id from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate).toEqual({ status: 'finished', device_id: PV_SYSTEM });
   });
 });

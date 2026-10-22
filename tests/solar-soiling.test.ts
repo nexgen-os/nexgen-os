@@ -1,7 +1,7 @@
 // The soiling of a place (`soiling_loss`): a column of a PV array, an
 // attribute of its system or its participant, read the nearest first, that
 // takes the place of a yield profile's own soiling loss. A profile that
-// folds soiling into one aggregate loss keeps it, and the run says so.
+// folds soiling into one aggregate loss keeps it, and the estimate says so.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -78,7 +78,7 @@ describe('solar.soiling_of', () => {
   });
 });
 
-describe('a yield run with the soiling of the place', () => {
+describe('a yield estimate with the soiling of the place', () => {
   it('keeps an aggregate loss whole (pvgis_like) and records the soiling it did not apply', async () => {
     const recorded = JSON.parse(await readFile(`${repoRoot}/tests/fixtures/pvgis-seriescalc-brussels-2023-48h.json`, 'utf8'));
     const asked: string[] = [];
@@ -88,9 +88,9 @@ describe('a yield run with the soiling of the place', () => {
     };
     const result = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 } }, pvgis({ fetch }));
     expect(asked.map((u) => new URL(u).searchParams.get('loss'))).toEqual(['14', '14']);
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
-    expect(run.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
-    expect(run.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'participant', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
+    const estimate = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: unknown } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
+    expect(estimate.inputs.arrays[0]).toMatchObject({ soiling: { fraction: 0.05, level: 'participant', applied: false, why: expect.stringMatching(/aggregate loss/) }, system_loss_pct: 14 });
   });
 
   it('sends the place\'s soiling to an engine in place of the profile\'s (pvsyst_like), and records it', async () => {
@@ -99,16 +99,16 @@ describe('a yield run with the soiling of the place', () => {
       { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvsyst_like', gammaPdc: -0.0035, engine: fake },
       { weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) },
     );
-    const run = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
-    expect(run.inputs.losses.find((l) => l.code === 'soiling')).toEqual({ code: 'soiling', pct: 5 });
-    expect(run.inputs.losses.map((l) => l.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
-    expect(run.inputs.arrays.map((a) => a.soiling)).toEqual([
+    const estimate = await one<{ inputs: { arrays: Record<string, unknown>[]; losses: { code: string; pct: number | null }[] } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
+    expect(estimate.inputs.losses.find((l) => l.code === 'soiling')).toEqual({ code: 'soiling', pct: 5 });
+    expect(estimate.inputs.losses.map((l) => l.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
+    expect(estimate.inputs.arrays.map((a) => a.soiling)).toEqual([
       expect.objectContaining({ fraction: 0.05, level: 'participant', applied: true }),
       expect.objectContaining({ fraction: 0.05, level: 'participant', applied: true }),
     ]);
   });
 
-  it('refuses an engine run whose arrays have different soiling: the request carries one list of losses', async () => {
+  it('refuses an engine estimate whose arrays have different soiling: the request carries one list of losses', async () => {
     await soiling('pv_array', south, 0.01, 'cleaned every spring');
     await expect(estimateYield(
       db,

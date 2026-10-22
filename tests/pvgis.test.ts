@@ -1,6 +1,6 @@
 // PVGIS answers land in the core's conventions: azimuth from true north
 // becomes PVGIS's aspect from south, each hour is dated at its start in UTC,
-// watts become kilowatt-hours, and the series store as a simulated run would.
+// watts become kilowatt-hours, and the series store as a simulated estimate would.
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';

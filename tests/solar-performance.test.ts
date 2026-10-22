@@ -1,6 +1,6 @@
 // The IEC 61724-1 indicators of a PV system: final and reference yields,
 // performance ratio and energy performance index, on the hours every series
-// has, by month in the time zone of the participant, recorded as a run that a new
+// has, by month in the time zone of the participant, recorded as an estimate that a new
 // reading renews.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -59,11 +59,11 @@ describe('the IEC 61724-1 indicators', () => {
     expect(got.months.map((m) => [m.period, m.hours])).toEqual([['2025-06', 5 * 24 - 1], ['2025-07', 3 * 24]]);
     expect(got.months.reduce((s, m) => s + m.energy_kwh, 0)).toBeCloseTo(got.total.energy_kwh, 5);
 
-    const run = await one<{ engine_version: string; device_id: string; inputs: Record<string, any> }>(db, 'select engine_version, device_id, inputs from solar.estimates where id = $1', [got.estimateId]);
-    expect(run).toMatchObject({ engine_version: PERFORMANCE_ENGINE_VERSION, device_id: system });
-    expect(run.inputs).toMatchObject({ kind: 'performance', standard: 'IEC 61724-1', kwp: 10, period: { from: '2025-06-26', to: '2025-07-03', time_zone: 'Europe/Brussels' }, irradiance: { source: 'measured', series: [{ series_id: sensor.seriesId }] } });
+    const estimate = await one<{ engine_version: string; device_id: string; inputs: Record<string, any> }>(db, 'select engine_version, device_id, inputs from solar.estimates where id = $1', [got.estimateId]);
+    expect(estimate).toMatchObject({ engine_version: PERFORMANCE_ENGINE_VERSION, device_id: system });
+    expect(estimate.inputs).toMatchObject({ kind: 'performance', standard: 'IEC 61724-1', kwp: 10, period: { from: '2025-06-26', to: '2025-07-03', time_zone: 'Europe/Brussels' }, irradiance: { source: 'measured', series: [{ series_id: sensor.seriesId }] } });
 
-    // The same readings give the same run; a new reading, a new one.
+    // The same readings give the same estimate; a new reading, a new one.
     expect((await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' })).estimateId).toBe(got.estimateId);
     await storeSeries(db, target('device', system, 'measured'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: [{ at: '2025-06-26T12:00:00.000Z', value: 800 }] });
     const renewed = await performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03' });
@@ -71,7 +71,7 @@ describe('the IEC 61724-1 indicators', () => {
     expect(renewed.total.hours).toBe(8 * 24);
   });
 
-  it('compares with a yield run: the energy performance index, and the run\'s irradiance when no sensor is there', async () => {
+  it('compares with a yield estimate: the energy performance index, and the estimate\'s irradiance when no sensor is there', async () => {
     const expected = await storeSeries(db, target('device', system, 'simulated', 'fake 2025-2025'), { quantity_code: 'production_energy', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => (sun(i) / 1000) * 10 * 0.8 / 0.95) });
     const poa = await storeSeries(db, target('device', system, 'simulated', 'fake 2025-2025 South'), { quantity_code: 'poa_irradiance', value_kind: 'interval', step: '1 hour', values: hourly('2025-06-25T00:00:00Z', 240, (i) => sun(i) * 1.05) });
     const yieldEstimate = (await db.query<{ id: string }>(`select record_calculation('solar.estimates', 'device', $1, 'fake 1.0.0', '{"profile": "pvwatts"}', $2::jsonb) id`, [system, JSON.stringify({ series_id: expected.seriesId, array_series: { South: { poa_irradiance: poa.seriesId } } })])).rows[0].id;
@@ -85,9 +85,9 @@ describe('the IEC 61724-1 indicators', () => {
     expect(fromEstimate.irradiance).toBe('simulated');
     expect(fromEstimate.total.performance_ratio).toBeCloseTo(0.8 / 1.05, 6);
     expect(fromEstimate.total.energy_performance_index).toBeCloseTo(0.95, 6);
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.estimates where id = $1', [fromEstimate.estimateId]);
-    expect(run.inputs.irradiance).toMatchObject({ source: 'simulated', estimate_id: yieldEstimate, series: [{ series_id: poa.seriesId, kwp: 10 }] });
-    expect(run.inputs.expected).toMatchObject({ estimate_id: yieldEstimate, series_id: expected.seriesId });
+    const estimate = await one<{ inputs: Record<string, any> }>(db, 'select inputs from solar.estimates where id = $1', [fromEstimate.estimateId]);
+    expect(estimate.inputs.irradiance).toMatchObject({ source: 'simulated', estimate_id: yieldEstimate, series: [{ series_id: poa.seriesId, kwp: 10 }] });
+    expect(estimate.inputs.expected).toMatchObject({ estimate_id: yieldEstimate, series_id: expected.seriesId });
 
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2025-06-26', to: '2025-07-03', yieldEstimateId: home })).rejects.toThrow(/^estimate_not_of_system/);
     await expect(performanceIndicators(db, { pvSystemId: system, from: '2024-06-26', to: '2024-07-03', yieldEstimateId: yieldEstimate })).rejects.toThrow(/^period_not_covered/);

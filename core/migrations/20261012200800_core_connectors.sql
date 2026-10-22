@@ -23,7 +23,7 @@ create table connectors (
   -- The name of the credential in the installation's vault.
   secret_ref       text,
   status           text not null default 'active',
-  last_run_at      timestamptz,
+  last_read_at     timestamptz,
   last_error       text,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),

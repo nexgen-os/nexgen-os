@@ -1,6 +1,6 @@
 // The `consumption` module: the office block of example 7 in Munich, its
 // activity hours, its electricity curve reconstructed from a monthly bill
-// and from its annual consumption, recorded as runs, and read back measured
+// and from its annual consumption, recorded as estimates, and read back measured
 // first once its meter gives readings.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -154,22 +154,22 @@ describe('a curve reconstructed from a bill', () => {
     expect(at('2026-01-15T02:00:00.000Z')).toBeCloseTo(closed * 0.25, 5);
   });
 
-  it('is a run of the module that says its profile, its hours, its energy and its conventions, and the same inputs give the same run', async () => {
+  it('is an estimate of the module that says its profile, its hours, its energy and its conventions, and the same inputs give the same estimate', async () => {
     const request = { participantId: BLOCK, from: '2026-01-01', to: '2026-02-01', profileCode: 'office_hours', energy: { kwh: 41_850, source: 'electricity bill January 2026' } };
     const first = await reconstructConsumption(db, request);
     const again = await reconstructConsumption(db, request);
     expect(again.estimateId).toBe(first.estimateId);
-    const run = await one<{ participant_id: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
+    const estimate = await one<{ participant_id: string; engine_version: string; inputs: Record<string, any>; results: Record<string, any> }>(
       db, 'select participant_id, engine_version, inputs, results from consumption.estimates where id = $1', [first.estimateId],
     );
-    expect(run.participant_id).toBe(BLOCK);
-    expect(run.engine_version).toBe('consumption-curve-0.3.0');
-    expect(run.inputs.profile).toMatchObject({ code: 'office_hours', method: 'activity_hours', closed_ratio: 0.25 });
-    expect(run.inputs.activity_hours).toHaveLength(5);
-    expect(run.inputs.activity_hours[0]).toEqual({ weekday: 1, opens: '07:00:00', closes: '19:00:00', valid_from: null, valid_to: null });
-    expect(run.inputs.energy).toEqual({ kwh: 41_850, source_code: null, source: 'electricity bill January 2026', document_id: null });
-    expect(run.inputs.period).toEqual({ from: '2026-01-01', to: '2026-02-01', time_zone: TZ });
-    expect(run.results).toMatchObject({ series_id: first.seriesId, step: '60 minutes', slots: 744 });
+    expect(estimate.participant_id).toBe(BLOCK);
+    expect(estimate.engine_version).toBe('consumption-curve-0.3.0');
+    expect(estimate.inputs.profile).toMatchObject({ code: 'office_hours', method: 'activity_hours', closed_ratio: 0.25 });
+    expect(estimate.inputs.activity_hours).toHaveLength(5);
+    expect(estimate.inputs.activity_hours[0]).toEqual({ weekday: 1, opens: '07:00:00', closes: '19:00:00', valid_from: null, valid_to: null });
+    expect(estimate.inputs.energy).toEqual({ kwh: 41_850, source_code: null, source: 'electricity bill January 2026', document_id: null });
+    expect(estimate.inputs.period).toEqual({ from: '2026-01-01', to: '2026-02-01', time_zone: TZ });
+    expect(estimate.results).toMatchObject({ series_id: first.seriesId, step: '60 minutes', slots: 744 });
   });
 
   it('needs the participant\'s activity hours for a profile by hours, and its time zone', async () => {
@@ -188,7 +188,7 @@ describe('a curve reconstructed from a bill', () => {
 });
 
 describe('a curve on quarter-hours', () => {
-  it('takes the step of its profile, and its series belongs to a run that is final', async () => {
+  it('takes the step of its profile, and its series belongs to an estimate that is final', async () => {
     await db.query(
       `insert into consumption.load_profiles (code, name, method, slots_per_day, day_shapes, published_by)
        values ('flat_quarter_hours', 'Flat, by quarter-hours', 'day_shapes', 96,

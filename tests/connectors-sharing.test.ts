@@ -1,9 +1,9 @@
 // The `energy_sharing` engine contract: the example engine
 // (packages/connectors/sharing-example, pure Python) on a day of three participants
-// whose result is written by hand in JSON, its named refusals, and a run of
+// whose result is written by hand in JSON, its named refusals, and a settlement of
 // the `community` module on the energy community of example 3, its key an
 // attribute of the project, recorded with the engine's version and stored
-// as series of the run on the participants. Without Python, the engine's
+// as series of the settlement on the participants. Without Python, the engine's
 // tests are skipped and say so.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -86,7 +86,7 @@ describe.skipIf(!installed)(`the example sharing engine${skipped}`, () => {
   });
 });
 
-describe('energy sharing in a project, as a run', () => {
+describe('energy sharing in a project, as a settlement', () => {
   let db: PGlite;
   const day = { from: '2026-05-02T00:00:00+02:00', to: '2026-05-03T00:00:00+02:00', step: '15 minutes' };
 
@@ -131,24 +131,24 @@ describe('energy sharing in a project, as a run', () => {
     expect(series).toEqual({ kind: 'simulated', object_id: VAN_DIJK, source: `community.settlements:${r.settlementId}` });
   });
 
-  it.skipIf(!installed)('is a run that names its engine, its key, its period and the series it read; the same inputs give the same run', async () => {
+  it.skipIf(!installed)('is a settlement that names its engine, its key, its period and the series it read; the same inputs give the same settlement', async () => {
     const first = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
     const again = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
     expect(again).toEqual(first);
-    const run = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
+    const settlement = await one<{ engine_version: string; project_id: string; inputs: Record<string, any>; results: Record<string, any> }>(
       db, 'select engine_version, project_id, inputs, results from community.settlements where id = $1', [first.settlementId],
     );
-    expect(run).toMatchObject({ engine_version: 'sharing_example 0.3.0', project_id: PROJECT });
-    expect(run.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.3.0', contract: 1 });
-    expect(run.inputs.key).toEqual({
+    expect(settlement).toMatchObject({ engine_version: 'sharing_example 0.3.0', project_id: PROJECT });
+    expect(settlement.inputs.engine).toMatchObject({ name: 'sharing_example', version: 'sharing_example 0.3.0', contract: 1 });
+    expect(settlement.inputs.key).toEqual({
       method: 'proportional', parameters: {}, valid_from: '2025-12-31T23:00:00Z', valid_to: '2026-12-31T23:00:00Z', source: 'general assembly 2025', source_code: null,
     });
-    expect(run.inputs.period).toEqual({ from: '2026-05-01T22:00:00Z', to: '2026-05-02T22:00:00Z', step: '15 minutes' });
-    const plant = run.inputs.participants.find((p: { id: string }) => p.id === PLANT);
+    expect(settlement.inputs.period).toEqual({ from: '2026-05-01T22:00:00Z', to: '2026-05-02T22:00:00Z', step: '15 minutes' });
+    const plant = settlement.inputs.participants.find((p: { id: string }) => p.id === PLANT);
     expect(plant.series).toEqual({ offtake_energy: [], injection_energy: ['00000000-0000-4000-8000-000300000074'] });
-    expect(run.results.totals.steps).toBe(96);
-    expect(run.results.meta.key).toEqual({ method: 'proportional', basis: 'offtake' });
-    // A finished run's series take no more values.
+    expect(settlement.results.totals.steps).toBe(96);
+    expect(settlement.results.meta.key).toEqual({ method: 'proportional', basis: 'offtake' });
+    // A finished settlement's series take no more values.
     await expect(db.query(`select store($1, array['2026-05-02T00:00:00Z']::timestamptz[], array[1]::float8[])`, [first.series[PLANT].injection_energy]))
       .rejects.toThrow(/calculation_is_final/);
   });
@@ -156,8 +156,8 @@ describe('energy sharing in a project, as a run', () => {
   it.skipIf(!installed)('hands each participant its attributes, for a key that reads them', async () => {
     await db.query(`insert into attributes (object_kind, object_id, property_code, value, source) values ('participant', $1, 'allocation_share', '0.4', 'general assembly 2025')`, [VAN_DIJK]);
     const r = await settleSharing(db, { projectId: PROJECT, ...day, engine: spec });
-    const run = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.settlements where id = $1', [r.settlementId]);
-    expect(run.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
+    const settlement = await one<{ inputs: Record<string, any> }>(db, 'select inputs from community.settlements where id = $1', [r.settlementId]);
+    expect(settlement.inputs.participants.find((p: { id: string }) => p.id === VAN_DIJK).attributes).toEqual({ allocation_share: 0.4 });
     await expect(db.query(`insert into attributes (object_kind, object_id, property_code, value) values ('participant', $1, 'allocation_share', '1.5')`, ['00000000-0000-4000-8000-000300000052']))
       .rejects.toThrow(/allocation_share/);
   });
@@ -181,7 +181,7 @@ describe('energy sharing in a project, as a run', () => {
     await expect(settleSharing(db, { projectId: PROJECT, from: '2026-12-31T00:00:00Z', to: '2027-01-02T00:00:00Z', step: '1 hour', engine: spec })).rejects.toThrow(/^key_changes_in_period/);
   });
 
-  it('keeps the key and the run to the organisation of the project', async () => {
+  it('keeps the key and the settlement to the organisation of the project', async () => {
     await organisation(db, 'Another cooperative', USER_B);
     await asUser(db, USER_B, async () => {
       expect((await db.query(`select id from attributes where property_code = 'allocation_key'`)).rows).toEqual([]);

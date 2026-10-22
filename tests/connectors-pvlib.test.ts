@@ -1,7 +1,7 @@
 // The pvlib engine (packages/connectors/pvlib), when it is installed: the same roof
 // computed by modules/solar/src/pvwatts.ts and by pvlib with the same model
 // choices, day by day; pvlib's own transposition against the source's; its
-// named refusals; and a yield run through it. Without the engine, every test
+// named refusals; and a yield estimate through it. Without the engine, every test
 // is skipped and says how to install it.
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -156,7 +156,7 @@ describe(`the pvlib engine${installed ? ` (${installed.version}, Python ${instal
   });
 });
 
-describe('a yield run computed by pvlib', () => {
+describe('a yield estimate computed by pvlib', () => {
   let db: PGlite;
   let system: string;
 
@@ -174,16 +174,16 @@ describe('a yield run computed by pvlib', () => {
     await db?.close();
   });
 
-  it.skipIf(!installed)(`the pvwatts profile through pvlib gives the annual of the pvwatts run on the same year, and records pvlib's version${skipped}`, async () => {
+  it.skipIf(!installed)(`the pvwatts profile through pvlib gives the annual of the pvwatts estimate on the same year, and records pvlib's version${skipped}`, async () => {
     const weather = () => ({ weather: openMeteo({ fetch: syntheticArchive(4.35, []) }) });
     const viaPvlib = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, engine: spec }, weather());
     const here = await estimateYield(db, { pvSystemId: system, years: { from: 2023, to: 2023 }, profileCode: 'pvwatts', gammaPdc: GAMMA, typicalYear: false }, weather());
     console.info(`a synthetic year, 20 kWp: pvwatts.ts ${here.annualKwh} kWh, pvlib ${viaPvlib.annualKwh} kWh (${pct(viaPvlib.annualKwh, here.annualKwh)})`);
     expect(Math.abs(viaPvlib.annualKwh - here.annualKwh) / here.annualKwh).toBeLessThan(0.01);
 
-    const run = await one<{ engine_version: string; inputs: Record<string, any> }>(db, 'select engine_version, inputs from runs where id = $1', [viaPvlib.estimateId]);
-    expect(run.engine_version).toBe(installed!.version);
-    expect(run.inputs).toMatchObject({ profile: 'pvwatts', engine: { name: 'pvlib', version: installed!.version, contract: 1 }, model: { pvlib: installed!.dependencies.pvlib } });
+    const estimate = await one<{ engine_version: string; inputs: Record<string, any> }>(db, 'select engine_version, inputs from estimates where id = $1', [viaPvlib.estimateId]);
+    expect(estimate.engine_version).toBe(installed!.version);
+    expect(estimate.inputs).toMatchObject({ profile: 'pvwatts', engine: { name: 'pvlib', version: installed!.version, contract: 1 }, model: { pvlib: installed!.dependencies.pvlib } });
     const series = await db.query<{ quantity_code: string; n: number }>(
       `select s.quantity_code, count(v.*)::int n from series s join series_values v on v.series_id = s.id where s.name = 'pvlib 2023-2023' group by s.quantity_code order by 1`,
     );

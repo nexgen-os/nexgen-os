@@ -1,6 +1,6 @@
-// P50 and P90 of a yield run on real years: the yearly totals in the participant's
+// P50 and P90 of a yield estimate on real years: the yearly totals in the participant's
 // local standard time, their spread, the components the caller names in
-// quadrature, recorded as a run anyone can redo.
+// quadrature, recorded as an estimate anyone can redo.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
@@ -44,11 +44,11 @@ describe('the quantiles of the normal distribution', () => {
   });
 });
 
-describe('P50 and P90 of a yield run', () => {
-  it('takes the yearly totals of the run, their spread, and gives P75, P90 and P99 for one year', async () => {
+describe('P50 and P90 of a yield estimate', () => {
+  it('takes the yearly totals of the estimate, their spread, and gives P75, P90 and P99 for one year', async () => {
     // 876, 963.6 and 788.4 kWh: a mean of 876 and a sample standard deviation of 87.6, 10 %.
-    const run = await yieldEstimate('fake 2021-2023', { 2021: 0.1, 2022: 0.11, 2023: 0.09 });
-    const got = await exceedance(db, { yieldEstimateId: run });
+    const estimate = await yieldEstimate('fake 2021-2023', { 2021: 0.1, 2022: 0.11, 2023: 0.09 });
+    const got = await exceedance(db, { yieldEstimateId: estimate });
     expect(got.years).toEqual([{ year: 2021, kwh: 876 }, { year: 2022, kwh: 963.6 }, { year: 2023, kwh: 788.4 }]);
     expect(got.p50_kwh).toBe(876);
     expect(got.sigma).toEqual({ interannual: 0.1, interannual_over_horizon: 0.1, total: 0.1 });
@@ -56,25 +56,25 @@ describe('P50 and P90 of a yield run', () => {
     expect(Object.keys(got.exceedance_kwh)).toEqual(['75', '90', '99']);
 
     const recorded = await one<{ engine_version: string; device_id: string; inputs: Record<string, any> }>(db, 'select engine_version, device_id, inputs from solar.estimates where id = $1', [got.estimateId]);
-    expect(recorded).toMatchObject({ engine_version: EXCEEDANCE_ENGINE_VERSION, device_id: system, inputs: { kind: 'exceedance', yield_estimate_id: run, horizon_years: 1, uncertainties: [] } });
-    expect((await exceedance(db, { yieldEstimateId: run })).estimateId).toBe(got.estimateId);
+    expect(recorded).toMatchObject({ engine_version: EXCEEDANCE_ENGINE_VERSION, device_id: system, inputs: { kind: 'exceedance', yield_estimate_id: estimate, horizon_years: 1, uncertainties: [] } });
+    expect((await exceedance(db, { yieldEstimateId: estimate })).estimateId).toBe(got.estimateId);
   });
 
   it('adds the named components in quadrature, the weather of ten years varying less than one', async () => {
-    const run = await yieldEstimate('fake 2021-2023 again', { 2021: 0.1, 2022: 0.11, 2023: 0.09 });
-    const got = await exceedance(db, { yieldEstimateId: run, horizonYears: 10, uncertainties: [{ code: 'irradiance', pct: 5 }, { code: 'models', pct: 3 }], probabilities: [90] });
+    const estimate = await yieldEstimate('fake 2021-2023 again', { 2021: 0.1, 2022: 0.11, 2023: 0.09 });
+    const got = await exceedance(db, { yieldEstimateId: estimate, horizonYears: 10, uncertainties: [{ code: 'irradiance', pct: 5 }, { code: 'models', pct: 3 }], probabilities: [90] });
     const sigma = Math.sqrt(0.01 / 10 + 0.05 ** 2 + 0.03 ** 2);
     expect(got.sigma.interannual_over_horizon).toBeCloseTo(0.1 / Math.sqrt(10), 6);
     expect(got.sigma.total).toBeCloseTo(sigma, 6);
     expect(got.exceedance_kwh).toEqual({ '90': expect.closeTo(876 * (1 - 1.2815516 * sigma), 2) });
   });
 
-  it('refuses a typical year, a run of one complete year and what is not a yield run, by name', async () => {
-    await expect(exceedance(db, { yieldEstimateId: await yieldEstimate('typical', { 2023: 0.1 }, { typical_months: [2019] }) })).rejects.toThrow(/^real_years_required: the run gives one typical year/);
+  it('refuses a typical year, an estimate of one complete year and what is not a yield estimate, by name', async () => {
+    await expect(exceedance(db, { yieldEstimateId: await yieldEstimate('typical', { 2023: 0.1 }, { typical_months: [2019] }) })).rejects.toThrow(/^real_years_required: the estimate gives one typical year/);
     await expect(exceedance(db, { yieldEstimateId: await yieldEstimate('one year', { 2023: 0.1 }) })).rejects.toThrow(/^real_years_required: 1 complete year/);
     await expect(exceedance(db, { yieldEstimateId: system })).rejects.toThrow(/^estimate_not_found/);
-    const run = await yieldEstimate('fake 2021-2022', { 2021: 0.1, 2022: 0.11 });
-    await expect(exceedance(db, { yieldEstimateId: run, probabilities: [100] })).rejects.toThrow(/^probability_invalid/);
-    await expect(exceedance(db, { yieldEstimateId: run, uncertainties: [{ code: 'soiling', pct: -1 }] })).rejects.toThrow(/^uncertainty_invalid/);
+    const estimate = await yieldEstimate('fake 2021-2022', { 2021: 0.1, 2022: 0.11 });
+    await expect(exceedance(db, { yieldEstimateId: estimate, probabilities: [100] })).rejects.toThrow(/^probability_invalid/);
+    await expect(exceedance(db, { yieldEstimateId: estimate, uncertainties: [{ code: 'soiling', pct: -1 }] })).rejects.toThrow(/^uncertainty_invalid/);
   });
 });

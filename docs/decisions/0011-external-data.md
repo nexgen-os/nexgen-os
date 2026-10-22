@@ -42,7 +42,7 @@ third word.
    secret.** It says that this organisation reads that source, for what
    (`config`), with which credential by name (`secret_ref`, resolved in the
    installation's vault), and how the last collection went (`status`,
-   `last_run_at`, `last_error`). It holds no secret and no data. The table
+   `last_read_at`, `last_error`). It holds no secret and no data. The table
    takes the word of the code because the row is that code, configured.
 
 Whatever a connector writes says where it came from: the source of a
