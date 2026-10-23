@@ -12,6 +12,10 @@ release may break, and says how. How a release is cut:
 
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.
 
+### Fixed
+
+- Pack `be` 0.3.1: VAT on electricity for a professional customer, 21 % and the Ekwo OS tax `BE-S-21` (circular 2023/C/64 of FPS Finance). The 6 % row held for every segment, so `billing.tax_of()` gave a business participant `BE-S-06`.
+
 ## [0.3.0] — 2026-10-22
 
 The first release of Nexgen OS: an open digital twin of energy places —

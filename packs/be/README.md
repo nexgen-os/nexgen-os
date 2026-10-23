@@ -3,7 +3,7 @@
 The values Belgium decides that a function of the model reads, compiled by
 `nexgen-os pack build be` into
 [`supabase/seed/11_pack_be.sql`](../../supabase/seed/11_pack_be.sql).
-Version 0.3.0, certification `community`: checked by the toolchain, read by
+Version 0.3.1, certification `community`: checked by the toolchain, read by
 no Belgian professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.
 
@@ -22,7 +22,7 @@ region in the `national` choice of `geocoderFor()`.
 |---|---|
 | `pack.json` | Belgium, the euro, French, Dutch and German (see below), `Europe/Brussels`, four-digit postal codes, municipalities numbered by `nis`; the three regions of ISO 3166-2 at the region level `region` |
 | `identifiers.json` | `nis` (the 5-digit municipality code of Statbel), `vlaanderen_address` and `vlaanderen_building` (Flanders), `urbis_building` (Brussels), `icar_address` (Wallonia, which keeps no building register), `enterprise_number` (KBO / BCE, ISO 6523 code `0208`, the party scheme of Ekwo OS's pack for Belgium), each with a pattern and an example that matches it. A Belgian metering point, the 18-digit EAN of an energy bill (prefix `54`), is a GS1 Global Service Relation Number: it uses the core scheme `gs1_gsrn`, and the pack adds none of its own |
-| `sources.json` | nine registers and services: `geopunt` (`BE-VLG`, `BE-BRU`), `basisregisters_vlaanderen` (`BE-VLG`), `urbis` (`BE-BRU`), `icar` (`BE-WAL`, `redistributable` false: its terms of use are still being drafted), `rmi_aws`, `statbel`, `kbo_bce`, `fluvius_open_data`, `elia_open_data`; and the ten published texts (`kind` `text`, code `be_…`) a value or a frame of the pack cites, nothing else |
+| `sources.json` | nine registers and services: `geopunt` (`BE-VLG`, `BE-BRU`), `basisregisters_vlaanderen` (`BE-VLG`), `urbis` (`BE-BRU`), `icar` (`BE-WAL`, `redistributable` false: its terms of use are still being drafted), `rmi_aws`, `statbel`, `kbo_bce`, `fluvius_open_data`, `elia_open_data`; and the eleven published texts (`kind` `text`, code `be_…`) a value or a frame of the pack cites, nothing else |
 | `grid.json` | eight operators: Elia (transmission, the whole country), Fluvius (`BE-VLG`), Sibelga (`BE-BRU`), and in Wallonia, where each municipality is served by the operator it designated, ORES, RESA, AIEG, AIESH and REW. Every distribution operator issues GSRN metering points |
 | `project_kinds.json` | the frames of the regional laws: `be_cer` (communauté d'énergie renouvelable) and `be_cec` (communauté d'énergie citoyenne) of the Walloon electricity decree, `be_cel` (communauté d'énergie locale) of the Brussels ordinance, each refining `energy_community`; `be_energy_sharing` (energiedelen, partage d'énergie) of the Flemish energy decree, refining `collective_self_consumption`. Each cites the definitions article of its text |
 | `municipalities.json` | six municipalities of Statbel's REFNIS list under their region: Bruxelles, Antwerpen, Gent, Liège, Namur, Charleroi. A representative subset: the full list (565 municipalities) is the same file at full length, or a connector writing the same `regions` rows from Statbel's file. Belgium publishes no density class the pack reads |
@@ -55,6 +55,7 @@ language of the request first.
 | `energy_price_business` | 110.8 €/MWh (2024), 102.5 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
 | `grid_fees_and_taxes` | 176.9 €/MWh (2024), 199.5 €/MWh (2025): network costs and taxes of the household band, VAT excluded; a national mean | Eurostat `nrg_pc_204_c` |
 | `vat_rate_electricity` | 0.06 from 1 April 2023, for a private customer, a ratio kept for simulation | FPS Finance, "Uw energiefactuur" |
+| `vat_rate_electricity`, `vat_code_electricity` (`segment` `professional`) | 0.21 and `BE-S-21` from 1 April 2023: a contract with a company number is presumed professional unless the customer declares a mainly non-professional consumption, and keeps the normal rate | FPS Finance, circular 2023/C/64 |
 | `vat_code_electricity` | `BE-S-06` over the same period: the sale tax of Ekwo OS's pack for Belgium (`taxes.json`) the rate above mirrors, which an invoice takes ([with Ekwo OS](../../docs/with-ekwo-os.md#one-source-on-a-shared-database)) | FPS Finance, "Uw energiefactuur" |
 | `market_co2_factor` | 0.13173 kg CO2/kWh, the residual mix of 2024 (direct emissions, for electricity disclosure) | Association of Issuing Bodies, European Residual Mixes 2024, Table 2, page 7 (final version of 11 August 2025) |
 | `injection_price_reference` | 70.2 €/MWh from 2024, the mean day-ahead price of the Belgian bidding zone, one zone for the three regions | CREG, annual report 2024 |
@@ -157,8 +158,6 @@ figures an installation must find from it (`tests/golden.test.ts`,
   `5414489`.
 - **Network costs by region**: Eurostat gives a national mean; the three
   regulators (VREG, Brugel, CWaPE) publish the tariffs of each operator.
-- **VAT**: 0.06 is the rate for a private customer; the rate for a business
-  is not stated on the page read.
 - The metering step of the other Walloon operators (RESA, AIEG, AIESH, REW),
   and the municipalities each Walloon operator serves (the pack names the
   region, not the municipality list).

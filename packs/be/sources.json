@@ -178,6 +178,15 @@
       "redistributable": false
     },
     {
+      "code": "be_fps_finance_vat_circular_2023_c_64",
+      "name": "FPS Finance – Circular 2023/C/64 on the reduced VAT rate for deliveries of electricity, natural gas and heat through heating networks",
+      "description": "The federal tax administration's circular of 26 June 2023 on the permanent rate of 6 %: which contracts it covers, the presumption of a professional consumption when a company number is given, and the declaration of a mainly non-professional consumption.",
+      "kind": "text",
+      "url": "https://eservices.minfin.fgov.be/myminfin-web/pages/public/fisconet/document/2eb1db86-acb0-47e1-b049-62ed0391c3e9",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
       "code": "be_wal_electricity_decree",
       "name": "Décret du 12 avril 2001 relatif à l'organisation du marché régional de l'électricité (Wallonia), as amended by the décret du 5 mai 2022",
       "description": "The Walloon decree that defines energy sharing, renewable energy communities and citizen energy communities.",

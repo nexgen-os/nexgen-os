@@ -119,6 +119,28 @@
       "valid_from": "2023-04-01"
     },
     {
+      "attribute_type": "vat_rate_electricity",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 0.21,
+      "unit": "UNITLESS",
+      "source_code": "be_fps_finance_vat_circular_2023_c_64",
+      "reference": "The reduced rate of 6 % covers a contract for which no company number was given (1 April to 30 June 2023), then a consumption that is not professional; a contract concluded with a company number is presumed professional unless the customer declares a mainly non-professional consumption, and keeps the normal rate of 21 %",
+      "valid_from": "2023-04-01"
+    },
+    {
+      "attribute_type": "vat_code_electricity",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": "BE-S-21",
+      "unit": "code",
+      "source_code": "be_fps_finance_vat_circular_2023_c_64",
+      "reference": "The rate above as Ekwo OS's pack be names it: the sale tax BE-S-21 (\"Taux normal\", 21 %) of its taxes.json, which an invoice takes",
+      "valid_from": "2023-04-01"
+    },
+    {
       "attribute_type": "sharing_perimeter",
       "region": "BE-WAL",
       "condition": {
