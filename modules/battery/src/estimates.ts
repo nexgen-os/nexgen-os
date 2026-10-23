@@ -301,7 +301,7 @@ export interface DispatchedBattery {
   deviceId: string;
   indicators: Indicators;
   savings: number | null;
-  series: { charge: string; discharge: string; level: string };
+  series: { charge: string; discharge: string; grid_charge?: string; level: string };
 }
 
 /**
@@ -358,6 +358,9 @@ export async function dispatch(db: Db, request: PeriodRequest): Promise<Dispatch
     const series = {
       charge: (await write('battery_charge_energy', d.charge, 'interval')).seriesId,
       discharge: (await write('battery_discharge_energy', d.discharge, 'interval')).seriesId,
+      // The part of the charge a battery run for peak shaving or arbitrage took from the grid:
+      // neither produced nor self-consumed, so that an indicator never counts it as such.
+      ...(b.battery.objective === 'self_consumption' ? {} : { grid_charge: (await write('battery_grid_charge_energy', d.chargeFromGrid, 'interval')).seriesId }),
       // The state of charge at the start of each interval, in percent of the usable capacity.
       level: (await write('charge_level', d.level.map((l) => (l / b.battery.capacityKwh) * 100), 'instant')).seriesId,
     };

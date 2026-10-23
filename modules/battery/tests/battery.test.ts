@@ -239,6 +239,10 @@ describe('dispatch() for arbitrage', () => {
     expect(r.indicators.discharge_kwh).toBeCloseTo(5 * Math.sqrt(0.9), 6);
     const discharge = await db.query<{ at: Date; value: number }>('select at, value from series_values where series_id = $1 and value > 0', [r.series.discharge]);
     expect(discharge.rows.map((v) => v.at.toISOString())).toEqual([at(19)]);
+    // The part of the charge taken from the grid is a series of its own, which the indicators read.
+    const grid = await one<{ quantity_code: string; total: number }>(db,
+      'select s.quantity_code, sum(v.value)::float8 total from series s join series_values v on v.series_id = s.id where s.id = $1 group by 1', [r.series.grid_charge]);
+    expect(grid).toEqual({ quantity_code: 'battery_grid_charge_energy', total: r.indicators.charge_from_grid_kwh });
   });
 
   it('is refused for a participant without a time zone', async () => {

@@ -132,7 +132,7 @@ place's own production is `direct + discharge`; what is not injected is
 | Code | Formula | Figure |
 |---|---|---|
 | `self_consumed_energy` | `direct + discharge` | kWh |
-| `self_consumption_rate` | `(direct + charge) / production` | ratio |
+| `self_consumption_rate` | `(direct + charge - grid_charge) / production` | ratio; the charge a battery took from the grid (`battery_grid_charge_energy`) is not counted, and the direct part, when no series measures it, is `production - injection - charge + grid_charge` |
 | `self_sufficiency_rate` | `(direct + discharge) / (offtake + direct + discharge)` | ratio |
 | `coverage_rate` | `production / (offtake + direct + discharge)` | ratio |
 | `shared_rate` | `shared_injection / production` | ratio; a project's collective self-consumption rate |
@@ -148,7 +148,7 @@ place's own production is `direct + discharge`; what is not injected is
 | `injection_value` | `injection * price / 1000`, `injection_price_reference` | an amount |
 | `offtake_change_rate` | `offtake / offtake_year_before` | ratio: below 1 the place saves, above it rebounds |
 | `battery_charged_energy`, `battery_discharged_energy` | `charge`, `discharge` | kWh, of a battery, a participant's, a project's |
-| `battery_boost_rate` | `charge / production` | ratio: the points of self-consumption the batteries add; for a project, every battery of its participants, a community battery among them |
+| `battery_boost_rate` | `(charge - grid_charge) / production` | ratio: the points of self-consumption the batteries add, the charge they took from the grid left out; for a project, every battery of its participants, a community battery among them |
 | `injection_day_ahead_value` | `injection / 1000`, the injection of each hour times the `energy_price` of that hour | an amount |
 | `shared_day_ahead_value` | `shared_injection / 1000`, hour by hour at the price | an amount |
 | `residual_day_ahead_value` | `(offtake - shared_offtake) / 1000`, hour by hour at the price | an amount |
@@ -183,6 +183,9 @@ and a project's own country for `parameter_of()`.
 
 ## What it does not compute
 
+- The share of a battery's discharge that came from the grid: the self-consumed
+  energy, the self-sufficiency, the coverage, the savings and the CO2 avoided
+  count what a battery gives back whole.
 - A sum interval by interval of a nonlinear expression — the collective
   self-consumption of a project as the sum over quarter-hours of
   `min(production, consumption)`: that is the volume a sharing engine
