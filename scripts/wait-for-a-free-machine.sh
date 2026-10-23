@@ -6,8 +6,11 @@
 #
 #   sh scripts/wait-for-a-free-machine.sh
 #
-# The bracket keeps this script's own command line from matching.
-pattern='vi[t]est|[j]est|[p]laywright test'
+# Only a Node process running a test runner counts: another program whose
+# command line merely mentions one (an editor, an agent given a prompt that
+# names it) does not hold the machine. The bracket keeps this script's own
+# command line from matching.
+pattern='^[^ ]*node .*(vi[t]est|[j]est|[p]laywright test)'
 for _ in $(seq 1 120); do
   pgrep -f "$pattern" >/dev/null || exit 0
   sleep 15
