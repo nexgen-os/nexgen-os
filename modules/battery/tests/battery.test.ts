@@ -290,6 +290,25 @@ describe('size()', () => {
     expect(r.curve.at(-2)!.peak_kw).toBeGreaterThan(2);
   });
 
+  it('says when the period is under a year, whose season weighs on what it recommends', async () => {
+    // The day of June above: one day scaled to a year.
+    const day = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'self_consumption_rate' });
+    expect(day.warnings).toEqual([expect.stringMatching(/^period_under_a_year: 1 day, scaled to a year of 365\.25/)]);
+    const e = await one<{ results: any }>(db, 'select results from battery.estimates where id = $1', [day.estimateId]);
+    expect(e.results.warnings).toEqual(day.warnings);
+    // The same day every day of a whole year: nothing to say.
+    const project = await insert(db, 'projects', { organisation_id: org, name: 'A year', country: 'BE' });
+    const year = await place(project, 'A year of days');
+    const start = Date.parse('2025-06-01T00:00:00.000Z');
+    const hoursOfYear = Array.from({ length: 365 * 24 }, (_, i) => i);
+    for (const [quantity, values] of [['production_energy', SUN], ['consumption_energy', EVENING]] as const) {
+      await store(db, { object_kind: 'participant', object_id: year, quantity_code: quantity, kind: 'measured', value_kind: 'interval', step: '1 hour' },
+        hoursOfYear.map((i) => ({ at: new Date(start + i * 3_600_000).toISOString(), value: values[i % 24] })));
+    }
+    const whole = await size(db, { perimeter: { kind: 'participant', id: year }, from: '2025-06-01T00:00:00.000Z', to: '2026-06-01T00:00:00.000Z', criterion: 'self_consumption_rate' });
+    expect(whole.warnings).toEqual([]);
+  });
+
   it('refuses a criterion it does not know, in the function and in the table', async () => {
     await expect(size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'beauty' as never })).rejects.toThrow(/sizing_criterion_unknown/);
     await expect(size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'max_power' })).rejects.toThrow(/peak_threshold_required/);

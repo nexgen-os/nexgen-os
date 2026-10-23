@@ -173,7 +173,11 @@ threshold — with its power from `battery_c_rate` and its efficiency from
 | `net_present_value` | the greatest net present value of the savings of a year over `battery_lifetime` years at `discount_rate`, less the capex; none when no capacity has a positive one (`reason`). With a discount rate of 0 it is the net benefit the rule taken from maximised, times the lifetime |
 | `max_power` | the smallest capacity giving the lowest peak of offtake, the battery run for peak shaving under `peakThresholdKw` |
 
-The savings of the period are scaled to a year of 365.25 days. The
+The savings of the period are scaled to a year of 365.25 days. On a period
+under a year, the season it covers weighs on the savings, the payback, the
+net present value and the rates: the result says so in `warnings`
+(`period_under_a_year`, with the number of days), and a sizing that the
+person relies on is run on a whole year. The
 estimate is about the participant or the project, with its `criterion`, a
 word of the core's vocabulary `sizing_criteria`, shared with
 `solar.size()` (decision [0045](../../docs/decisions/0045-to-size-is-one-gesture.md));
