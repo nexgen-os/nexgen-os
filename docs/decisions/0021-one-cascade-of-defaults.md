@@ -1,6 +1,6 @@
 # 0021 — One cascade of defaults, climbing a region to its parent, and no global fallback
 
-> Status: accepted
+> Status: accepted · amended by [0053](0053-a-technology-figure-holds-everywhere-below-every-place.md) and [0054](0054-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md)
 
 ## Context
 

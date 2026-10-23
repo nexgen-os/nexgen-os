@@ -70,8 +70,9 @@ describes; its record is written once the fix has shipped.
 ## Packs
 
 - [0020](0020-a-pack-holds-what-a-function-reads.md) · A pack holds what a function reads, and data cannot execute · accepted
-- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted, amended by 0053
+- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted, amended by 0053 and 0054
 - [0053](0053-a-technology-figure-holds-everywhere-below-every-place.md) · A technology figure holds everywhere, below every place · accepted
+- [0054](0054-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md) · A parameter is resolved once, from the country down to the device; what an owner may choose is a parameter, never a method constant · accepted
 - [0044](0044-a-condition-has-one-shape.md) · A condition has one shape, checked and matched by one function · accepted
 - [0034](0034-a-pack-upgrade-is-never-silent.md) · A pack upgrade is never silent, and a golden case is its contract · accepted, implemented
 
