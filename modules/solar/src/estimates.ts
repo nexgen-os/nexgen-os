@@ -68,17 +68,27 @@ export interface FoundLoss {
 /**
  * The loss chain of a yield as rows: the profile's losses in their order,
  * each an assumption of the profile (`solar.yield_profiles:<code>`), the
- * soiling the place says in place of the profile's when it says one, with
- * its source and quality. Arrays whose chains are the same give one chain
+ * soiling the place says in place of the profile's when it says one, and
+ * a loss the profile leaves to the place (`system`, resolved as
+ * `system_loss`), each with its source and quality. Arrays whose chains are the same give one chain
  * (`array_name` null); otherwise one per array.
  */
 export function lossChain(
   profileCode: string,
   profileLosses: { code: string; pct: number | null }[],
   arrays: { name: string; soiling: FoundLoss | null }[],
+  resolved: Record<string, FoundLoss | null> = {},
 ): LossRow[] {
   const chainOf = (soiling: FoundLoss | null, arrayName: string | null): LossRow[] =>
     profileLosses.map((l) => {
+      const found = resolved[l.code];
+      if (found) {
+        return {
+          array_name: arrayName, code: l.code, fraction: found.value, source_code: found.source_code,
+          reference: found.reference ?? `${l.code}_loss of the ${found.level}`,
+          quality: (found.quality as LossRow['quality'] | undefined) ?? 'estimated',
+        };
+      }
       if (l.code === 'soiling' && soiling) {
         return {
           array_name: arrayName, code: l.code, fraction: soiling.value, source_code: soiling.source_code,
