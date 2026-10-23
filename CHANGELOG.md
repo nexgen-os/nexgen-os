@@ -10,6 +10,7 @@ release may break, and says how. How a release is cut:
 
 ### Added
 
+- `battery.size()` says in `warnings` when its period is under a year (`period_under_a_year`, with the number of days): the savings of the period are scaled to a year, so the season it covers weighs on the savings, the payback, the net present value and the rates. On one site, a 5 kWh battery saved 318 a year sized on a whole year, 374 on June alone and 94 on December alone.
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.
 - `nexgen-os init` reads, before applying anything, the schema each module it installs would create, and refuses one the database already holds by name: `schema_taken`, naming the schema, the module and the objects already in it. `nexgen-os doctor` names the same schemas for the modules not installed yet.
 - A module manifest may list the codes the module carried in an earlier release, `formerly` ([0054](docs/decisions/0054-a-module-that-cannot-install-changes-its-code.md)); `migrate` and `doctor` refuse an installation that holds one as `module_renamed`, naming the new code.

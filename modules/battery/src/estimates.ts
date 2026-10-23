@@ -401,6 +401,8 @@ export interface SizeResult {
   curve: SizePoint[];
   recommended: SizePoint | null;
   reason: string | null;
+  /** What the caller should know before relying on the recommendation, each starting with a name. */
+  warnings: string[];
 }
 
 /** How many capacities a sweep has when the request says neither its step nor its points, as the reference rule swept. */
@@ -502,6 +504,12 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
   }
 
   const years = (read.buckets.length * read.flows.stepHours) / YEAR_HOURS;
+  // The savings of the period are scaled to a year: on a period under a year,
+  // the season it covers weighs on every figure of the curve.
+  const periodDays = round((read.buckets.length * read.flows.stepHours) / 24, 3);
+  const warnings = periodDays < 365
+    ? [`period_under_a_year: ${periodDays} day${periodDays === 1 ? '' : 's'}, scaled to a year of 365.25; the season of the period weighs on the savings, the payback, the net present value and the rates`]
+    : [];
   const annuity = lifetime ? Array.from({ length: lifetime.value }, (_, y) => (1 + (discount?.value ?? 0)) ** -(y + 1)).reduce((s, v) => s + v, 0) : null;
   const curve: SizePoint[] = [];
   for (let capacity = minKwh; capacity <= maxKwh + 1e-9; capacity += stepKwh) {
@@ -560,10 +568,10 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     },
     prices: { read: prices.read, missing: prices.missing, currency: prices.currency },
   };
-  const results = { criterion: request.criterion, recommended, reason, curve, currency: prices.currency };
+  const results = { criterion: request.criterion, recommended, reason, warnings, curve, currency: prices.currency };
   const row = (await db.query<{ id: string }>(
     `insert into battery.estimates (participant_id, project_id, criterion, provenance, inputs, results)
      values ($1, $2, $3, $4, $5::jsonb, $6::jsonb) returning id`,
     [kind === 'participant' ? id : null, kind === 'project' ? id : null, request.criterion, BATTERY_ENGINE_VERSION, JSON.stringify(inputs), JSON.stringify(results)])).rows[0];
-  return { estimateId: row.id, curve, recommended, reason };
+  return { estimateId: row.id, curve, recommended, reason, warnings };
 }
