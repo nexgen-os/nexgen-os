@@ -59,11 +59,11 @@ describe('a battery run for self-consumption, on days checked by hand', () => {
     expect(sum(d.discharge)).toBeCloseTo(7, 12);
   });
 
-  it('loses its efficiency on discharge: serving 1 kWh empties it of 1 / efficiency', () => {
+  it('splits its efficiency: charging 1 kWh fills it of √η, serving 1 kWh empties it of 1 / √η', () => {
     const d = dispatchBattery(DAY, { ...BATTERY, efficiency: 0.9 });
-    expect(sum(d.charge)).toBeCloseTo(10, 9);
-    // 10 kWh stored serve 9 kWh: 3, 3 and 3, then nothing.
-    expect(d.discharge.slice(18, 22).map((v) => +v.toFixed(9))).toEqual([3, 3, 3, 0]);
+    // Full, it took 10 / √0.9 = 10.54 kWh of the surplus and serves 10 × √0.9 = 9.49 kWh: 3, 3, 3, then 0.49.
+    expect(sum(d.charge)).toBeCloseTo(10 / Math.sqrt(0.9), 9);
+    expect(d.discharge.slice(18, 22).map((v) => +v.toFixed(9))).toEqual([3, 3, 3, +(10 * Math.sqrt(0.9) - 9).toFixed(9)]);
     expect(indicators(DAY, { ...BATTERY, efficiency: 0.9 }, d).cycles).toBeCloseTo(1, 6);
   });
 
@@ -113,13 +113,16 @@ describe('a battery run for peak shaving', () => {
 });
 
 describe('a battery run for arbitrage', () => {
-  it('charges in the cheapest interval of the day and serves the load in the dearest', () => {
+  it('charges in the cheapest intervals it needs to fill up and serves the load in the dearest', () => {
     const flows: Flows = { production: [0, 0, 0, 0], consumption: [5, 5, 5, 5], stepHours: 1, prices: [0.1, 0.5, 0.2, 1], days: [1, 1, 1, 1] };
     const battery: Battery = { ...BATTERY, capacityKwh: 5, efficiency: 0.9, objective: 'arbitrage' };
     const d = dispatchBattery(flows, battery);
-    expect(d.chargeFromGrid).toEqual([5, 0, 0, 0]);
-    expect(d.discharge.map((v) => +v.toFixed(9))).toEqual([0, 0, 0, 4.5]);
-    expect(d.offtake.map((v) => +v.toFixed(9))).toEqual([10, 5, 5, 0.5]);
+    // 5 kWh held take 5 / √0.9 = 5.27 kWh from the grid: 5 at 0.1, the rest at 0.2; it serves 5 × √0.9 = 4.74 kWh at 1.
+    const top = 5 / Math.sqrt(0.9) - 5;
+    const served = 5 * Math.sqrt(0.9);
+    expect(d.chargeFromGrid.map((v) => +v.toFixed(9))).toEqual([5, 0, +top.toFixed(9), 0]);
+    expect(d.discharge.map((v) => +v.toFixed(9))).toEqual([0, 0, 0, +served.toFixed(9)]);
+    expect(d.offtake.map((v) => +v.toFixed(9))).toEqual([10, 5, +(5 + top).toFixed(9), +(5 - served).toFixed(9)]);
   });
 
   it('does nothing when the spread does not pay its losses', () => {
@@ -184,16 +187,17 @@ describe('parity with the reference rule, on its own fixtures', () => {
     expect(sum(dispatchBattery(FIXTURE, battery(400, 1)).discharge)).toBeCloseTo(400, 9);
   });
 
-  it('with losses, serves efficiency times what the reference serves when the battery empties every day, within 0.1 kWh', () => {
-    // The reference takes the loss off what it serves, not off what it holds;
-    // it stops iterating within 1e-4 MWh, 0.1 kWh, which bounds the difference.
+  it('with losses, serves √η times what the reference serves when the battery empties every day, within 0.1 kWh', () => {
+    // The reference takes the loss off what it serves, not off what it holds:
+    // a full battery serves its capacity × η there, its capacity × √η here.
+    // It stops iterating within 1e-4 MWh, 0.1 kWh, which bounds the difference.
     // Up to 400 kWh the evening load of 900 kWh empties both; an 800 kWh
     // battery is emptied here and not by the reference, which serves 0.9 of
     // each hour's load and keeps the rest.
     for (const capacity of [100, 200, 400]) {
       const ours = sum(dispatchBattery(FIXTURE, battery(capacity, 0.9)).discharge);
       const ref = reference(capacity, 0.9).discharge * 1000;
-      expect(Math.abs(ours - ref * 0.9)).toBeLessThan(0.1);
+      expect(Math.abs(ours - ref * Math.sqrt(0.9))).toBeLessThan(0.1);
     }
   });
 

@@ -341,7 +341,7 @@ export async function dispatch(db: Db, request: PeriodRequest): Promise<Dispatch
       chain: { position: n + 1, of: described.length, after: described.slice(0, n).map((x) => x.deviceId) },
       prices: { read: prices.read, missing: prices.missing, currency: prices.currency },
       conventions: {
-        time: 'interval start, UTC', energy: 'kWh per interval', efficiency: 'round trip, applied on discharge',
+        time: 'interval start, UTC', energy: 'kWh per interval', efficiency: 'round trip, its square root on charge and on discharge',
         start_level: 'the level the period ends with, within 1e-4 kWh, twenty passes at most',
       },
     };
@@ -498,7 +498,7 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     peakDay = Math.max(peakDay, over);
     days++;
   }
-  const maxKwh = request.bounds?.maxKwh ?? (objective === 'peak_shaving' ? peakDay / efficiency.value : movable / days);
+  const maxKwh = request.bounds?.maxKwh ?? (objective === 'peak_shaving' ? peakDay / Math.sqrt(efficiency.value) : movable / days);
   const points = request.bounds?.points ?? SWEEP_POINTS;
   const stepKwh = request.bounds?.stepKwh ?? maxKwh / points;
   const minKwh = request.bounds?.minKwh ?? stepKwh;
