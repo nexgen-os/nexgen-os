@@ -27,6 +27,9 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      - name: wait for this machine to be free of another test suite
+        if: ${{ vars.CI_RUNNER }}
+        run: sh scripts/wait-for-a-free-machine.sh
       - run: npm test
 
   connector-pvlib:
@@ -54,6 +57,9 @@ jobs:
       - run: npm ci
       - run: pip install -e packages/connectors/pvlib
       - run: echo '{"engine":"pvlib","contract":1,"request":{"describe":true}}' | python -m nexgen_pvlib
+      - name: wait for this machine to be free of another test suite
+        if: ${{ vars.CI_RUNNER }}
+        run: sh scripts/wait-for-a-free-machine.sh
       - run: npx vitest run tests/connectors-pvlib.test.ts tests/connectors-runner.test.ts
         env:
           NEXGEN_ENGINE_PVLIB: python -m nexgen_pvlib
@@ -82,6 +88,9 @@ jobs:
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - run: npm ci
       - run: pip install -e "packages/python[binary]"
+      - name: wait for this machine to be free of another test suite
+        if: ${{ vars.CI_RUNNER }}
+        run: sh scripts/wait-for-a-free-machine.sh
       - run: npx vitest run tests/sdk-python.test.ts
         env:
           NEXGEN_SDK_PYTHON: python
