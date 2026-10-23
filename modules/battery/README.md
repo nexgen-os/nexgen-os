@@ -26,8 +26,9 @@ participant's, its project's, its organisation's, then its pack's:
 `battery_c_rate` (power as a fraction of capacity per hour) and
 `round_trip_efficiency`, the core's attribute types, and for a sizing,
 published by this module, `battery_cost` (installed cost per MWh of usable
-capacity, in the currency of the country), `battery_lifetime` (years) and
-`discount_rate`.
+capacity, in the currency of the country), `battery_opex` (operating cost
+per MWh of usable capacity and per year, none counted when nobody says it),
+`battery_lifetime` (years) and `discount_rate`.
 
 This module publishes `battery_c_rate` (0.4) and `round_trip_efficiency`
 (0.85) **at the generic level of `parameter_of()`**, valid in every
@@ -169,8 +170,8 @@ threshold — with its power from `battery_c_rate` and its efficiency from
 | Criterion | Recommended point |
 |---|---|
 | `self_consumption_rate`, `self_sufficiency` | the smallest capacity within 0.1 point of the best rate of the sweep: past it, a bigger battery adds less than 0.1 point |
-| `payback` | the shortest simple payback, the capex (capacity at `battery_cost`) over the savings of a year |
-| `net_present_value` | the greatest net present value of the savings of a year over `battery_lifetime` years at `discount_rate`, less the capex; none when no capacity has a positive one (`reason`). With a discount rate of 0 it is the net benefit the rule taken from maximised, times the lifetime |
+| `payback` | the shortest simple payback, the capex (capacity at `battery_cost`) over the savings of a year less its operating cost (capacity at `battery_opex`) |
+| `net_present_value` | the greatest net present value of the savings of a year less its operating cost over `battery_lifetime` years at `discount_rate`, less the capex; none when no capacity has a positive one (`reason`). With a discount rate of 0 it is the net benefit the rule taken from maximised, times the lifetime |
 | `max_power` | the smallest capacity giving the lowest peak of offtake, the battery run for peak shaving under `peakThresholdKw` |
 
 The savings of the period are scaled to a year of 365.25 days. On a period

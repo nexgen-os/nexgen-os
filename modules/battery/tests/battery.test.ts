@@ -283,6 +283,27 @@ describe('size()', () => {
     expect(payback.recommended!.payback_years).toBeCloseTo(450 / (0.22 * 365.25), 2);
   });
 
+  it('counts the operating cost of a year when it is said, and says when it is not', async () => {
+    const without = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'net_present_value' });
+    const e0 = await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [without.estimateId]);
+    expect(e0.inputs.parameters.battery_opex).toBeNull();
+    expect(without.curve.every((p) => p.opex_per_year === null)).toBe(true);
+    // 10 per kWh of usable capacity and per year, the organisation's figure.
+    await attribute('organisation', org, 'battery_opex', 10_000);
+    const withOpex = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'net_present_value' });
+    const before = without.curve.at(-1)!;
+    const after = withOpex.curve.at(-1)!;
+    expect(after.opex_per_year).toBe(12 * 10);
+    expect(after.savings_per_year).toBe(before.savings_per_year);
+    // 15 years at 5 %: an annuity factor of 10.3797; the net present value loses 120 a year over it.
+    const annuity = Array.from({ length: 15 }, (_, y) => 1.05 ** -(y + 1)).reduce((s, v) => s + v, 0);
+    expect(after.net_present_value!).toBeCloseTo(before.net_present_value! - 120 * annuity, 1);
+    expect(after.payback_years!).toBeCloseTo(after.capex! / (after.savings_per_year! - 120), 2);
+    const e1 = await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [withOpex.estimateId]);
+    expect(e1.inputs.parameters.battery_opex).toMatchObject({ value: 10_000, level: 'organisation' });
+    await db.query(`delete from attributes where object_kind = 'organisation' and object_id = $1 and attribute_type = 'battery_opex'`, [org]);
+  });
+
   it('sizes for the peak under a threshold', async () => {
     const r = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'max_power', peakThresholdKw: 2 });
     // One kWh an hour above 2 kW for four hours: 4 kWh to serve, 4 / 0.9 kWh to hold.
