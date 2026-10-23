@@ -31,6 +31,10 @@ release may break, and says how. How a release is cut:
 
   then `nexgen-os migrate`, `nexgen-os init --modules battery` with the modules and packs already installed, and load the export into `battery.devices` and `battery.products`. The series the estimates of `storage` wrote keep their source, `storage.estimates:<id>`.
 
+### Fixed
+
+- Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
+
 ## [0.3.0] — 2026-10-22
 
 The first release of Nexgen OS: an open digital twin of energy places —

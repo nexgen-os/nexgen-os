@@ -1,0 +1,7 @@
+# Text files are checked out with LF on every platform: the seeds of the packs
+# are compared byte for byte with their checksum (nexgen-os pack check).
+* text=auto eol=lf
+
+# Fixtures are files as their tools write them (PVsyst, PVGIS…), line endings
+# included: their bytes are kept as committed.
+packages/formats/*/tests/fixtures/** -text
