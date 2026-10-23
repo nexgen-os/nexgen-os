@@ -12,7 +12,7 @@ figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
 > Status: **0.3.0**, the first release — the core schema, the `building`,
 > `grid`, `community`, `billing`, `consumption`, `weather`, `solar`,
-> `storage`, `charging`, `kpis` and `actions` modules, the format libraries,
+> `battery`, `charging`, `kpis` and `actions` modules, the format libraries,
 > the weather, geocoding and meter data connectors, program connectors in
 > any language with pvlib (Python) as the first, the `nexgen-os` installer,
 > the MCP server, the Python client, the `fr`, `be` and `es` country packs
@@ -44,7 +44,7 @@ that a lender, a reviewer or a client can check it.
   injection, a PV system its production; the core refuses one for the
   other.
 - **Batteries, chargers and energy sharing** in their modules
-  ([`storage`](modules/storage/README.md),
+  ([`battery`](modules/battery/README.md),
   [`charging`](modules/charging/README.md),
   [`community`](modules/README.md)), meter data from Enedis R6x files
   and SGE, and the rules of France, Belgium and Spain as country packs
@@ -270,7 +270,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 
 ```
 supabase/              the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies and the country seeds, the model in one screen
-modules/               one Postgres schema per module (actions, billing, building, charging, community, consumption, grid, kpis, solar, storage, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
+modules/               one Postgres schema per module (actions, billing, building, charging, community, consumption, grid, kpis, solar, battery, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
 packs/                 one folder per country, data only (fr, be, es: identity and regions, identifiers, sources, frames of projects, municipalities, grid operators, defaults, golden cases), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person

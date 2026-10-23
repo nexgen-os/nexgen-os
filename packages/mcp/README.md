@@ -183,7 +183,7 @@ its code as a prefix; a module that is not installed offers none.
 |---|---|
 | `kpis` | `kpis_of` (the indicators of an object, `kpis.of()`), `kpis_compute` (one kept as a figure, `kpis.compute()`) |
 | `solar` | `solar_estimates`, `solar_size` (a named criterion, [0045](../../docs/decisions/0045-to-size-is-one-gesture.md)), `solar_estimate_yield` (a named profile) |
-| `storage` | `storage_estimates`, `storage_size` |
+| `battery` | `battery_estimates`, `battery_size` |
 | `charging` | `charging_sessions`, `charging_limit`, `charging_size` |
 | `community` | `community_settlements`, `community_settle` (by the sharing engine the person configured) |
 | `actions` | `actions_of_project`, `actions_propose` (`source = 'agent'`, resting on an estimate), `actions_validate` |

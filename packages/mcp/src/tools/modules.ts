@@ -78,21 +78,21 @@ export const MODULE_TOOLS: Tool[] = [
     writes: true,
     run: ({ db, computations }, a) => core.compute(db, computations, 'solar.yield', a),
   }),
-  // ---------------------------------------------------------------- storage
+  // ---------------------------------------------------------------- battery
   tool({
-    name: 'storage_estimates',
+    name: 'battery_estimates',
     title: 'Battery estimates',
-    module: 'storage',
-    description: 'The estimates of the storage module about a participant or a battery — dispatches and sizings — with their inputs, provenance and results, latest first.',
+    module: 'battery',
+    description: 'The estimates of the battery module about a participant or a battery — dispatches and sizings — with their inputs, provenance and results, latest first.',
     input: z.object({ participant_id: uuid.optional(), device_id: uuid.optional(), kind: z.string().optional() }),
     writes: false,
-    run: ({ db }, a) => core.estimatesOf(db, 'storage', a),
+    run: ({ db }, a) => core.estimatesOf(db, 'battery', a),
   }),
   tool({
-    name: 'storage_size',
+    name: 'battery_size',
     title: 'Size a battery',
-    module: 'storage',
-    description: 'The battery capacity that best meets a named criterion for a participant or a project (storage.size(), decision 0045), over a period, sweeping the capacities of the bounds. The criterion is the person\'s. Keeps a sizing estimate and returns it.',
+    module: 'battery',
+    description: 'The battery capacity that best meets a named criterion for a participant or a project (battery.size(), decision 0045), over a period, sweeping the capacities of the bounds. The criterion is the person\'s. Keeps a sizing estimate and returns it.',
     input: z.object({
       perimeter: z.object({ kind: z.enum(['participant', 'project']), id: uuid }),
       criterion: z.enum(['self_consumption_rate', 'self_sufficiency', 'payback', 'net_present_value', 'max_power']),
@@ -100,7 +100,7 @@ export const MODULE_TOOLS: Tool[] = [
       bounds: z.object({ minKwh: z.number().optional(), maxKwh: z.number().optional(), stepKwh: z.number().optional(), points: z.number().int().optional() }).optional(),
     }),
     writes: true,
-    run: ({ db, computations }, a) => core.compute(db, computations, 'storage.size', a),
+    run: ({ db, computations }, a) => core.compute(db, computations, 'battery.size', a),
   }),
   // -------------------------------------------------------------- community
   tool({

@@ -49,7 +49,7 @@
           "ref": "battery",
           "type": "battery",
           "name": "Home battery",
-          "storage": {
+          "battery": {
             "usable_capacity_kwh": 5
           }
         }

@@ -147,7 +147,7 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, billing, building, charging, community, consumption, grid, kpis, solar, storage, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, billing, building, charging, community, consumption, grid, kpis, solar, battery, weather/);
   });
 
   it('names the weeks whose values sit in the default partition with no weekly partition, and the weeks to come once it partitions', async () => {

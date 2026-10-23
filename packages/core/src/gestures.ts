@@ -143,8 +143,8 @@ export async function kpisOf(db: Db, kind: string, id: string, from: string, to:
   return rows(db, 'select * from kpis.of($1, $2, $3, $4)', [kind, id, from, to]);
 }
 
-/** The estimates of a module (`solar.estimates`, `storage.estimates`) about a participant or a device. */
-export async function estimatesOf(db: Db, module: 'solar' | 'storage', filters: { participant_id?: string; device_id?: string; kind?: string }, limit = 20) {
+/** The estimates of a module (`solar.estimates`, `battery.estimates`) about a participant or a device. */
+export async function estimatesOf(db: Db, module: 'solar' | 'battery', filters: { participant_id?: string; device_id?: string; kind?: string }, limit = 20) {
   await requireModule(db, module);
   const params: unknown[] = [filters.participant_id ?? null, filters.device_id ?? null, filters.kind ?? null, limit];
   return rows(db, `select id, participant_id, device_id, ${module === 'solar' ? 'kind' : 'criterion as kind'}, provenance, inputs, results, created_at
@@ -357,13 +357,13 @@ export async function revokeApiKey(db: Db, apiKeyId: string): Promise<{ id: stri
  */
 export interface Computations {
   'solar.size'?: (db: Db, request: never) => Promise<unknown>;
-  'storage.size'?: (db: Db, request: never) => Promise<unknown>;
+  'battery.size'?: (db: Db, request: never) => Promise<unknown>;
   'solar.yield'?: (db: Db, request: never) => Promise<unknown>;
   'community.settle'?: (db: Db, request: never) => Promise<unknown>;
   'charging.size'?: (db: Db, request: never) => Promise<unknown>;
 }
 export type ComputationName = keyof Computations;
-export const COMPUTATIONS: ComputationName[] = ['solar.size', 'storage.size', 'solar.yield', 'community.settle', 'charging.size'];
+export const COMPUTATIONS: ComputationName[] = ['solar.size', 'battery.size', 'solar.yield', 'community.settle', 'charging.size'];
 
 /** Runs a module's computation with the request it takes, after checking the module is installed. */
 export async function compute(db: Db, computations: Computations, name: ComputationName, request: Record<string, unknown>): Promise<unknown> {

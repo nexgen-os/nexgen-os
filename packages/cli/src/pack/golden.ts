@@ -57,7 +57,7 @@ export interface GoldenScenario {
     segment?: string;
     place: GoldenPlace;
     meters?: { ref: string; identifier: string; scheme: string; operator?: string; substation?: string }[];
-    devices?: { ref: string; type: string; name: string; rated_power_kw?: number; storage?: Record<string, unknown> }[];
+    devices?: { ref: string; type: string; name: string; rated_power_kw?: number; battery?: Record<string, unknown> }[];
   }[];
   /** Attributes of the objects of the case, each with where it comes from. */
   attributes?: { object: GoldenObject; attribute_type: string; value: unknown; valid_from?: string; valid_to?: string; source: string }[];

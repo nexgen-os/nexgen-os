@@ -65,7 +65,7 @@ describe('plan', () => {
     const names = c.core.map((s) => s.name);
     expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_3_0.sql');
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['actions', 'billing', 'building', 'charging', 'community', 'consumption', 'grid', 'kpis', 'solar', 'storage', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['actions', 'billing', 'building', 'charging', 'community', 'consumption', 'grid', 'kpis', 'solar', 'battery', 'weather']);
     // Every folder of packs/ with a pack.json, whichever countries the release holds.
     const folders = (await readdir(join(repoRoot, 'packs'))).filter((d) => existsSync(join(repoRoot, 'packs', d, 'pack.json'))).sort();
     expect(folders.length).toBeGreaterThan(0);

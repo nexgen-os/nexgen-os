@@ -12,7 +12,7 @@ one transaction away. This page says how, and what each side owns.
 
 | | Nexgen OS | Ekwo OS |
 |---|---|---|
-| Schemas | `nexgen`, and one per module (`actions`, `billing`, `building`, `community`, `consumption`, `grid`, `kpis`, `solar`, `storage`, `weather`) | `public`, and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`) |
+| Schemas | `nexgen`, and one per module (`actions`, `billing`, `building`, `community`, `consumption`, `grid`, `kpis`, `solar`, `battery`, `weather`) | `public`, and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`) |
 | Installer | `npx nexgen-os init`, `migrate`, `doctor` | `npx ekwo-os init`, `migrate`, `doctor` |
 | History of what was applied | `nexgen.schema_migrations` | `supabase_migrations.schema_migrations` |
 | Rights | granted by name, in the migration that creates the object ([0037](decisions/0037-the-schema-grants-its-own-rights.md)) | the same rule (Ekwo OS 0003), and the surface of `public` closed to `anon` (Ekwo OS 0002) |

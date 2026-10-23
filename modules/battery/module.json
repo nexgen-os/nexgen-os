@@ -1,10 +1,10 @@
 {
   "$schema": "../schema/module.1.json",
-  "code": "storage",
-  "name": "Storage",
+  "code": "battery",
+  "name": "Battery",
   "description": "Batteries and their product physics, their dispatch on the interval series of a participant's place or of a project's sharing, and the sizing of a battery, as estimates.",
   "version": "0.3.0",
-  "schema": "storage",
+  "schema": "battery",
   "requires": {
     "core": "0.3.0",
     "modules": []

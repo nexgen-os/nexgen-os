@@ -89,7 +89,7 @@ person, under row level security, in one transaction each:
 | `meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]` | `declare_meter()` |
 | `device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]` | `install_device()` |
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |
-| `size --module solar\|storage --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
+| `size --module solar\|battery --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
 | `kpis --object-kind <k> --object <id> --from <iso> --to <iso>` · `kpis compute … --indicator <code>` | `kpis.of()`, `kpis.compute()` |
 
 `--json` prints what the gesture answered; a refusal is printed by its name

@@ -9,7 +9,7 @@ level: no value chosen by the core for every country. The C-rate and the
 round-trip efficiency of a representative residential battery were then
 published by each country pack, the same two figures from the same
 laboratory under two source codes, and a country without a pack had none:
-a storage sizing there was refused although nothing about the figure
+a battery sizing there was refused although nothing about the figure
 depends on the country.
 
 ## Decision
@@ -21,7 +21,7 @@ the module that reads it (`published_by`). Any level above wins: the
 device, its parents, its organisation, a municipality, a region, a country.
 The answer says `level: generic` and which module published it.
 
-The `storage` module publishes `battery_c_rate` 0.4 and
+The `battery` module publishes `battery_c_rate` 0.4 and
 `round_trip_efficiency` 0.85, read on the page *Residential Battery
 Storage* of the Annual Technology Baseline 2025 (National Laboratory of the
 Rockies, formerly NREL): a representative 5 kW / 12.5 kWh system, and the

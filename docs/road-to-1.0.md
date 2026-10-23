@@ -75,7 +75,7 @@ integration written against one release keeps working against every later
   charging engines as program connectors proposing profiles through
   `charging.limit()`. The central system that holds the WebSocket of each
   station stays an operated service ([services.md](services.md)).
-- **`storage`, next**: the ageing of a battery over its cycles and the
+- **`battery`, next**: the ageing of a battery over its cycles and the
   power price of a peak avoided, in the dispatch; hydrogen.
 - **Program connectors** ([0013](decisions/0013-a-program-connector-reads-one-request.md)):
   a long-running program served over HTTP with the same contract, when a
@@ -200,7 +200,7 @@ both cores reads one way:
   it (`secure_table()` given the expression of a row's project), and so do
   the estimates of `solar` and their rows; the other tables of `building`,
   `solar`, `consumption`, `weather`, `billing`, `charging`, `kpis` and
-  `storage` still read the organisation alone (or the participant's
+  `battery` still read the organisation alone (or the participant's
   account), and gain the expression of their project one by one.
 - **The perimeter beyond a municipality**: the limits of municipalities are
   not in the model, so the Walloon extension around a wind turbine

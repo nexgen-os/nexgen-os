@@ -159,7 +159,7 @@ module's); `performance_ratio` reads the plane-of-array irradiance of the
 `solar` module, whose own IEC 61724-1 indicators of a PV system
 (`modules/solar/src/performance.ts`) count only the hours where every
 series has a value. The battery series are a device's: measured by its
-inverter, or simulated by the `storage` module's dispatch. A day-ahead
+inverter, or simulated by the `battery` module's dispatch. A day-ahead
 price is an `energy_price` series of the project or the organisation;
 read by hour, a market of quarter-hours is read at its hourly mean.
 

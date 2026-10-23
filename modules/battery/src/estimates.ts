@@ -1,4 +1,4 @@
-// The two gestures of the `storage` module, each recorded as estimates:
+// The two gestures of the `battery` module, each recorded as estimates:
 //
 //   dispatch()  runs the batteries of a perimeter — a participant's place,
 //               or a project's sharing — over a period, at the step of its
@@ -11,14 +11,14 @@
 //               one estimate about the participant or the project.
 //
 // What a dispatch reads is said in its inputs, each figure with where it
-// came from: the battery from `storage.battery_of()` (the device, its
+// came from: the battery from `battery.battery_of()` (the device, its
 // product, else `parameter_of()`), the series by their ids, the prices from
 // a price series of the perimeter or from `parameter_of()`. Nothing is a
 // constant of this file.
 
 import { store, type Db } from '@nexgen-os/core';
 import {
-  OBJECTIVES, STORAGE_ENGINE_VERSION, dispatchChain, indicators, round,
+  OBJECTIVES, BATTERY_ENGINE_VERSION, dispatchChain, indicators, round,
   type Battery, type Dispatch, type Flows, type Indicators, type Objective,
 } from './dispatch.js';
 
@@ -69,7 +69,7 @@ interface Described {
   deviceId: string;
   participantId: string;
   battery: Battery;
-  /** What `storage.battery_of()` answered. */
+  /** What `battery.battery_of()` answered. */
   of: BatteryOf;
 }
 
@@ -182,7 +182,7 @@ function localDays(buckets: string[], timeZone: string): string[] {
   return buckets.map((b) => f.format(new Date(b)));
 }
 
-/** What `storage.battery_of()` answers: each figure with where it came from. */
+/** What `battery.battery_of()` answers: each figure with where it came from. */
 interface BatteryOf {
   usable_capacity_kwh: { value: number | string };
   charge_power_kw: { value: number | string };
@@ -194,7 +194,7 @@ interface BatteryOf {
   peak_threshold_kw: number | string | null;
 }
 
-/** A battery as `storage.battery_of()` gives it. */
+/** A battery as `battery.battery_of()` gives it. */
 function batteryFrom(of: BatteryOf): Battery {
   return {
     capacityKwh: Number(of.usable_capacity_kwh.value),
@@ -211,9 +211,9 @@ function batteryFrom(of: BatteryOf): Battery {
 /** The batteries of a perimeter that are not out of service, in the order they were described. */
 async function batteriesOf(db: Db, perimeter: Perimeter, at: string): Promise<Described[]> {
   const r = await db.query<{ id: string; participant_id: string; of: BatteryOf }>(
-    `select d.id, d.participant_id, storage.battery_of(d.id, $3::timestamptz) "of"
+    `select d.id, d.participant_id, battery.battery_of(d.id, $3::timestamptz) "of"
        from devices d
-       join storage.devices s on s.id = d.id
+       join battery.devices s on s.id = d.id
        join participants p on p.id = d.participant_id
       where d.status not in ('out_of_service', 'removed')
         and case $2 when 'participant' then d.participant_id = $1 and s.perimeter = 'site'
@@ -239,7 +239,7 @@ interface Prices {
 }
 
 async function parameter(db: Db, kind: string, id: string, property: string, at: string): Promise<{ value: number; from: unknown } | null> {
-  const r = (await db.query<{ p: Record<string, unknown> | null }>('select storage.parameter_or_null($1, $2, $3, $4::timestamptz) p', [kind, id, property, at])).rows[0].p;
+  const r = (await db.query<{ p: Record<string, unknown> | null }>('select battery.parameter_or_null($1, $2, $3, $4::timestamptz) p', [kind, id, property, at])).rows[0].p;
   return r ? { value: Number(r.value), from: r } : null;
 }
 
@@ -308,7 +308,7 @@ export interface DispatchedBattery {
  * Runs the batteries of a perimeter over a period, chained, and records one
  * estimate per battery with its series. Refuses by name: the perimeter not
  * found, `no_battery`, the series not found or incomplete, a step that
- * does not divide the period, what `storage.battery_of()` and the rule
+ * does not divide the period, what `battery.battery_of()` and the rule
  * refuse; `time_zone_required` for arbitrage on a participant without one.
  */
 export async function dispatch(db: Db, request: PeriodRequest): Promise<DispatchedBattery[]> {
@@ -346,10 +346,10 @@ export async function dispatch(db: Db, request: PeriodRequest): Promise<Dispatch
       },
     };
     const row = (await db.query<{ id: string }>(
-      `insert into storage.estimates (device_id, provenance, inputs, results)
+      `insert into battery.estimates (device_id, provenance, inputs, results)
        values ($1, $2, $3::jsonb, '{}') returning id`,
-      [b.deviceId, STORAGE_ENGINE_VERSION, JSON.stringify(inputs)])).rows[0];
-    const source = `storage.estimates:${row.id}`;
+      [b.deviceId, BATTERY_ENGINE_VERSION, JSON.stringify(inputs)])).rows[0];
+    const source = `battery.estimates:${row.id}`;
     const write = (quantity: string, values: number[], valueKind: 'interval' | 'instant') =>
       store(db, {
         object_kind: 'device', object_id: b.deviceId, device_id: b.deviceId, quantity_code: quantity, kind: 'simulated', value_kind: valueKind,
@@ -364,7 +364,7 @@ export async function dispatch(db: Db, request: PeriodRequest): Promise<Dispatch
     const results_ = {
       ...k, savings, currency: prices.currency, start_level_kwh: round(d.startLevelKwh), iterations: d.iterations, converged: d.converged, series,
     };
-    await db.query('update storage.estimates set results = $2::jsonb where id = $1', [row.id, JSON.stringify(results_)]);
+    await db.query('update battery.estimates set results = $2::jsonb where id = $1', [row.id, JSON.stringify(results_)]);
     out.push({ estimateId: row.id, deviceId: b.deviceId, indicators: k, savings, series });
     seen = { ...read.flows, production: d.injection, consumption: d.offtake };
   }
@@ -562,8 +562,8 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
   };
   const results = { criterion: request.criterion, recommended, reason, curve, currency: prices.currency };
   const row = (await db.query<{ id: string }>(
-    `insert into storage.estimates (participant_id, project_id, criterion, provenance, inputs, results)
+    `insert into battery.estimates (participant_id, project_id, criterion, provenance, inputs, results)
      values ($1, $2, $3, $4, $5::jsonb, $6::jsonb) returning id`,
-    [kind === 'participant' ? id : null, kind === 'project' ? id : null, request.criterion, STORAGE_ENGINE_VERSION, JSON.stringify(inputs), JSON.stringify(results)])).rows[0];
+    [kind === 'participant' ? id : null, kind === 'project' ? id : null, request.criterion, BATTERY_ENGINE_VERSION, JSON.stringify(inputs), JSON.stringify(results)])).rows[0];
   return { estimateId: row.id, curve, recommended, reason };
 }

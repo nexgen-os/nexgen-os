@@ -8,7 +8,7 @@
       "level": "generic",
       "conditions": {},
       "source_code": "atb_2025_residential_battery",
-      "source": "modules/storage: 85 %, the residential battery of the Annual Technology Baseline 2025, published for every country."
+      "source": "modules/battery: 85 %, the residential battery of the Annual Technology Baseline 2025, published for every country."
     },
     {
       "object": "participant:home",
@@ -49,7 +49,7 @@
           "level": "generic"
         }
       },
-      "source": "storage.battery_of(): 5 kWh at the generic C-rate of 0.4, the generic efficiency (Annual Technology Baseline 2025)."
+      "source": "battery.battery_of(): 5 kWh at the generic C-rate of 0.4, the generic efficiency (Annual Technology Baseline 2025)."
     }
   ],
   "operators": [

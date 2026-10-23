@@ -1,52 +1,52 @@
--- Nexgen OS — module `storage`: batteries, what their dispatch is computed
+-- Nexgen OS — module `battery`: batteries, what their dispatch is computed
 -- from, and the estimates computed from them.
 --
--- A battery is a device of type `battery`, derived into `storage.devices`
+-- A battery is a device of type `battery`, derived into `battery.devices`
 -- with the same id (decision 0042): its usable capacity, its charge and
 -- discharge power, its round-trip efficiency, the band of state of charge
--- it is kept in, what it is run for (`storage.objectives`) and the
+-- it is kept in, what it is run for (`battery.objectives`) and the
 -- perimeter whose flows it sees — the place of its participant (individual
 -- self-consumption) or its project (collective: the surplus and the
 -- residual left once the energy is shared). The physics of a battery
--- product is its row of `products` (unit capacity, unit power) and, with
--- the same id, `storage.battery_products` (efficiency, charge and
--- discharge power, cycle life); a column of `storage.devices` overrides
+-- product is its row of the core's `products` (unit capacity, unit power) and, with
+-- the same id, `battery.products` (efficiency, charge and
+-- discharge power, cycle life); a column of `battery.devices` overrides
 -- the product, and what neither says is the parameter `parameter_of()`
 -- resolves for the device (`battery_c_rate`, `round_trip_efficiency`):
 -- its own attribute, its participant's, its project's, its organisation's,
--- then its pack's. `storage.battery_of()` is that one resolution, with
+-- then its pack's. `battery.battery_of()` is that one resolution, with
 -- where each value came from.
 --
--- What the module computes is an estimate (`storage.estimates`, decision
+-- What the module computes is an estimate (`battery.estimates`, decision
 -- 0004): a dispatch of a battery over a period, with the series of its
 -- charge, discharge and state of charge written by `store()` as
 -- `simulated` series of the device, or a sizing of a battery for a
 -- participant or a project, with its curve and its recommended point. The
--- rule is in `modules/storage/src/dispatch.ts`, the gestures in
--- `modules/storage/src/estimates.ts`; both are described in plain words in
+-- rule is in `modules/battery/src/dispatch.ts`, the gestures in
+-- `modules/battery/src/estimates.ts`; both are described in plain words in
 -- the module's README.
 
 set search_path = nexgen, extensions;
 
-create schema storage;
-grant usage on schema storage to authenticated, service_role;
+create schema battery;
+grant usage on schema battery to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- objectives — what a battery is run for, as a vocabulary.
 -- ---------------------------------------------------------------------------
 
-create table storage.objectives (
+create table battery.objectives (
   code          text primary key,
   name          text not null,
   description   text,
-  published_by  text not null default 'storage',
+  published_by  text not null default 'battery',
   constraint objectives_code_format check (code ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table storage.objectives is
+comment on table battery.objectives is
   'What a battery is run for: the rule its dispatch follows. Vocabulary: read by everyone signed in, written by migrations and modules.';
 
-insert into storage.objectives (code, name, description) values
+insert into battery.objectives (code, name, description) values
   ('self_consumption', 'Self-consumption',
    'Charge from the surplus of the perimeter, discharge to its residual consumption, as soon as each appears.'),
   ('peak_shaving', 'Peak shaving',
@@ -54,10 +54,10 @@ insert into storage.objectives (code, name, description) values
   ('arbitrage', 'Arbitrage',
    'Charge in the cheapest intervals of each local day and discharge to the consumption in the dearest ones, by a price series of the perimeter.');
 
-alter table storage.objectives enable row level security;
-create policy storage_objectives_read on storage.objectives for select to authenticated using (true);
-grant select on storage.objectives to authenticated;
-grant select, insert, update, delete on storage.objectives to service_role;
+alter table battery.objectives enable row level security;
+create policy objectives_read on battery.objectives for select to authenticated using (true);
+grant select on battery.objectives to authenticated;
+grant select, insert, update, delete on battery.objectives to service_role;
 
 -- ---------------------------------------------------------------------------
 -- The parameters a sizing reads, resolved by parameter_of() (decision
@@ -68,13 +68,13 @@ grant select, insert, update, delete on storage.objectives to service_role;
 insert into attribute_types (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
   ('battery_cost', 'Installed cost of storage',
    'The installed cost of one MWh of usable storage capacity, in the currency of the country per MWh, read by a sizing.',
-   'number', 'energy_price', 0, null, '{device,participant,project,organisation}', 'storage'),
+   'number', 'energy_price', 0, null, '{device,participant,project,organisation}', 'battery'),
   ('battery_lifetime', 'Lifetime of a battery',
    'The years a battery is counted over by a sizing, as a whole number.',
-   'integer', null, 1, null, '{device,participant,project,organisation}', 'storage'),
+   'integer', null, 1, null, '{device,participant,project,organisation}', 'battery'),
   ('discount_rate', 'Discount rate',
    'The yearly rate future cash flows are discounted at by a net present value, 0 to 1.',
-   'number', 'ratio', 0, 1, '{participant,project,organisation}', 'storage');
+   'number', 'ratio', 0, 1, '{participant,project,organisation}', 'battery');
 
 -- The C-rate and the round-trip efficiency of a representative residential
 -- battery are technology figures, the same in every country: this module
@@ -89,19 +89,19 @@ insert into sources (code, name, description, kind, base_url, docs_url, auth, li
   ('atb_2025_residential_battery', 'Annual Technology Baseline 2025, residential battery storage',
    'The cost and performance of a representative residential lithium-ion battery system (lithium iron phosphate cells) in the Annual Technology Baseline 2025 of the National Laboratory of the Rockies (formerly NREL), a U.S. national laboratory: a technology figure, the same in every country.',
    'text', 'https://atb.nlr.gov/electricity/2025/residential_battery_storage', 'https://atb.nlr.gov/electricity/2025/residential_battery_storage',
-   'none', 'Public data of a U.S. federal laboratory, reuse with attribution', 'Annual Technology Baseline 2025, National Laboratory of the Rockies', true, 'storage');
+   'none', 'Public data of a U.S. federal laboratory, reuse with attribution', 'Annual Technology Baseline 2025, National Laboratory of the Rockies', true, 'battery');
 
 insert into defaults (attribute_type, country, region, condition, value, valid_from, source_code, reference, status, published_by) values
   ('battery_c_rate', null, null, '{}', '0.4', '2025-01-01', 'atb_2025_residential_battery',
-   'ATB 2025, Residential Battery Storage, the representative system: 5 kW / 12.5 kWh (2.5-hour), a C-rate of 5 / 12.5 = 0.4', 'default', 'storage'),
+   'ATB 2025, Residential Battery Storage, the representative system: 5 kW / 12.5 kWh (2.5-hour), a C-rate of 5 / 12.5 = 0.4', 'default', 'battery'),
   ('round_trip_efficiency', null, null, '{}', '0.85', '2025-01-01', 'atb_2025_residential_battery',
-   'ATB 2025, Residential Battery Storage, section Round-Trip Efficiency: 85 %, the representative value of Cole et al. (2025) the 2025 ATB adopts', 'default', 'storage');
+   'ATB 2025, Residential Battery Storage, section Round-Trip Efficiency: 85 %, the representative value of Cole et al. (2025) the 2025 ATB adopts', 'default', 'battery');
 
 -- ---------------------------------------------------------------------------
--- battery_products — the physics of a battery product.
+-- products — the physics of a battery product.
 -- ---------------------------------------------------------------------------
 
-create table storage.battery_products (
+create table battery.products (
   id                     uuid primary key references products(id) on delete cascade,
   -- Copied from the product: null for a shared one.
   organisation_id        uuid references organisations(id) on delete cascade,
@@ -120,18 +120,18 @@ create table storage.battery_products (
   metadata               jsonb not null default '{}',
   created_at             timestamptz not null default now(),
   updated_at             timestamptz not null default now(),
-  constraint battery_products_power check ((charge_power_kw is null or charge_power_kw > 0) and (discharge_power_kw is null or discharge_power_kw > 0)),
-  constraint battery_products_efficiency check (round_trip_efficiency is null or (round_trip_efficiency > 0 and round_trip_efficiency <= 1)),
-  constraint battery_products_cycle_life check (cycle_life is null or cycle_life > 0),
-  constraint battery_products_end_of_life check (end_of_life_capacity is null or (end_of_life_capacity > 0 and end_of_life_capacity <= 1))
+  constraint products_power check ((charge_power_kw is null or charge_power_kw > 0) and (discharge_power_kw is null or discharge_power_kw > 0)),
+  constraint products_efficiency check (round_trip_efficiency is null or (round_trip_efficiency > 0 and round_trip_efficiency <= 1)),
+  constraint products_cycle_life check (cycle_life is null or cycle_life > 0),
+  constraint products_end_of_life check (end_of_life_capacity is null or (end_of_life_capacity > 0 and end_of_life_capacity <= 1))
 );
 
-comment on table storage.battery_products is
+comment on table battery.products is
   'The physics of a battery product of products, same id: charge and discharge power per unit, round-trip efficiency, cycle life; its usable capacity is the product''s unit_capacity_kwh.';
 
 -- The product exists, is a battery (or a refinement of it), and lends its
 -- organisation.
-create or replace function storage.battery_products_check()
+create or replace function battery.products_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, extensions, pg_temp
@@ -151,31 +151,31 @@ begin
 end;
 $$;
 
-comment on function storage.battery_products_check() is
-  'BEFORE INSERT / UPDATE on battery_products: the product exists (product_not_found), is a battery (product_type_mismatch), and lends its organisation.';
+comment on function battery.products_check() is
+  'BEFORE INSERT / UPDATE on battery.products: the product exists (product_not_found), is a battery (product_type_mismatch), and lends its organisation.';
 
-create trigger battery_products_check before insert or update on storage.battery_products
-  for each row execute function storage.battery_products_check();
-create trigger battery_products_set_updated_at before update on storage.battery_products
+create trigger products_check before insert or update on battery.products
+  for each row execute function battery.products_check();
+create trigger products_set_updated_at before update on battery.products
   for each row execute function set_updated_at();
-create index battery_products_organisation_idx on storage.battery_products (organisation_id);
+create index products_organisation_idx on battery.products (organisation_id);
 
 -- As products: a shared product is read by everyone signed in and written
 -- by migrations, modules and packs; an organisation's by its members.
-alter table storage.battery_products enable row level security;
-create policy battery_products_select on storage.battery_products
+alter table battery.products enable row level security;
+create policy products_select on battery.products
   for select to authenticated using (organisation_id is null or has_capability('organisation', organisation_id, 'data.read'));
-create policy battery_products_write on storage.battery_products
+create policy products_write on battery.products
   for all to authenticated
   using (organisation_id is not null and has_capability('organisation', organisation_id, 'data.write'))
   with check (organisation_id is not null and has_capability('organisation', organisation_id, 'data.write'));
-grant select, insert, update, delete on storage.battery_products to authenticated, service_role;
+grant select, insert, update, delete on battery.products to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- devices — the battery, a device of type battery.
 -- ---------------------------------------------------------------------------
 
-create table storage.devices (
+create table battery.devices (
   id                     uuid primary key,
   -- Copied from the device by trigger, for row level security.
   organisation_id        uuid not null references organisations(id) on delete cascade,
@@ -193,7 +193,7 @@ create table storage.devices (
   -- capacity; null: no band below 100 and above 0.
   min_charge_level       numeric(5, 2),
   max_charge_level       numeric(5, 2),
-  objective              text not null default 'self_consumption' references storage.objectives(code),
+  objective              text not null default 'self_consumption' references battery.objectives(code),
   -- site: the flows of its participant's place (individual
   -- self-consumption); project: the surplus and residual of its project,
   -- once the energy is shared (collective self-consumption).
@@ -216,12 +216,12 @@ create table storage.devices (
   constraint devices_peak_threshold check (peak_threshold_kw is null or peak_threshold_kw >= 0)
 );
 
-comment on table storage.devices is
-  'A battery: a device of type battery, with its usable capacity, charge and discharge power, round-trip efficiency, band of state of charge, objective and perimeter (its participant''s place or its project). Read with `from devices join storage.devices using (id)`; storage.battery_of() gives each figure with where it came from.';
+comment on table battery.devices is
+  'A battery: a device of type battery, with its usable capacity, charge and discharge power, round-trip efficiency, band of state of charge, objective and perimeter (its participant''s place or its project). Read with `from devices join battery.devices using (id)`; battery.battery_of() gives each figure with where it came from.';
 
-call derive_devices('storage.devices', 'battery');
+call derive_devices('battery.devices', 'battery');
 
-create or replace function storage.devices_organisation()
+create or replace function battery.devices_organisation()
 returns trigger
 language plpgsql
 set search_path = nexgen, extensions, pg_temp
@@ -232,12 +232,12 @@ begin
 end;
 $$;
 
-create trigger devices_organisation before insert or update of id on storage.devices
-  for each row execute function storage.devices_organisation();
-create trigger devices_set_updated_at before update on storage.devices
+create trigger devices_organisation before insert or update of id on battery.devices
+  for each row execute function battery.devices_organisation();
+create trigger devices_set_updated_at before update on battery.devices
   for each row execute function set_updated_at();
-create index devices_organisation_idx on storage.devices (organisation_id);
-call secure_table('storage.devices');
+create index devices_organisation_idx on battery.devices (organisation_id);
+call secure_table('battery.devices');
 
 -- ---------------------------------------------------------------------------
 -- battery_of — the figures a dispatch reads, and where each came from.
@@ -245,7 +245,7 @@ call secure_table('storage.devices');
 
 -- A parameter_of() that answers null where nobody decided the value,
 -- instead of refusing: the caller decides whether it needs it.
-create or replace function storage.parameter_or_null(p_kind text, p_id uuid, p_attribute_type text, p_at timestamptz)
+create or replace function battery.parameter_or_null(p_kind text, p_id uuid, p_attribute_type text, p_at timestamptz)
 returns jsonb
 language plpgsql
 stable
@@ -258,10 +258,10 @@ exception when no_data_found then
 end;
 $$;
 
-comment on function storage.parameter_or_null(text, uuid, text, timestamptz) is
+comment on function battery.parameter_or_null(text, uuid, text, timestamptz) is
   'parameter_of(), null where the value is missing or not decided (parameter_missing, parameter_not_decided); parameter_ambiguous still raises.';
 
-create or replace function storage.battery_of(p_device_id uuid, p_at timestamptz default now())
+create or replace function battery.battery_of(p_device_id uuid, p_at timestamptz default now())
 returns jsonb
 language plpgsql
 stable
@@ -269,9 +269,9 @@ set search_path = nexgen, extensions, pg_temp
 as $$
 declare
   d        devices%rowtype;
-  s        storage.devices%rowtype;
+  s        battery.devices%rowtype;
   p        products%rowtype;
-  bp       storage.battery_products%rowtype;
+  bp       battery.products%rowtype;
   capacity jsonb;
   c_rate   jsonb;
   eff      jsonb;
@@ -282,12 +282,12 @@ begin
   if not found then
     raise exception 'device_not_found: %', p_device_id using errcode = 'no_data_found';
   end if;
-  select * into s from storage.devices where id = p_device_id;
+  select * into s from battery.devices where id = p_device_id;
   if not found then
-    raise exception 'battery_not_described: % has no row in storage.devices', p_device_id using errcode = 'no_data_found';
+    raise exception 'battery_not_described: % has no row in battery.devices', p_device_id using errcode = 'no_data_found';
   end if;
   select * into p from products where id = d.product_id;
-  select * into bp from storage.battery_products where id = d.product_id;
+  select * into bp from battery.products where id = d.product_id;
 
   capacity := case
     when s.usable_capacity_kwh is not null then jsonb_build_object('value', s.usable_capacity_kwh, 'level', 'device')
@@ -342,17 +342,17 @@ begin
 end;
 $$;
 
-comment on function storage.battery_of(uuid, timestamptz) is
+comment on function battery.battery_of(uuid, timestamptz) is
   'The figures a dispatch of a battery reads at a moment, each {value, level} with where it came from: usable capacity (the device, else its product times its unit count; capacity_required), charge and discharge power (the device, its battery product, its rated power, its product''s unit power, else capacity times the battery_c_rate parameter_of() resolves), round-trip efficiency (the device, its battery product, else parameter_of()), the band of state of charge in percent, the objective, the perimeter, the peak threshold, the cycle life. Refuses device_not_found, battery_not_described, capacity_required, and what parameter_of() refuses.';
 
-grant execute on function storage.parameter_or_null(text, uuid, text, timestamptz) to authenticated, service_role;
-grant execute on function storage.battery_of(uuid, timestamptz) to authenticated, service_role;
+grant execute on function battery.parameter_or_null(text, uuid, text, timestamptz) to authenticated, service_role;
+grant execute on function battery.battery_of(uuid, timestamptz) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- estimates — what the module computed (decision 0004).
 -- ---------------------------------------------------------------------------
 
-create table storage.estimates (
+create table battery.estimates (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from its subject by trigger.
   organisation_id  uuid not null references organisations(id) on delete cascade,
@@ -376,14 +376,14 @@ create table storage.estimates (
   constraint estimates_criterion_subject check (criterion is null or device_id is null)
 );
 
-comment on table storage.estimates is
+comment on table battery.estimates is
   'What the module computed: the dispatch of a battery over a period (about the device; its charge, discharge and state of charge are simulated series of the device naming the estimate in their source) or the sizing of a battery for a participant or a project (about the participant or the project, its criterion, its curve and recommended point). Its inputs, its provenance (the program and version), its results. A new computation adds an estimate.';
 
-create index estimates_device_idx on storage.estimates (device_id);
-create index estimates_participant_idx on storage.estimates (participant_id);
-create index estimates_project_idx on storage.estimates (project_id);
+create index estimates_device_idx on battery.estimates (device_id);
+create index estimates_participant_idx on battery.estimates (participant_id);
+create index estimates_project_idx on battery.estimates (project_id);
 
-create or replace function storage.estimates_organisation()
+create or replace function battery.estimates_organisation()
 returns trigger
 language plpgsql
 set search_path = nexgen, extensions, pg_temp
@@ -398,15 +398,15 @@ begin
 end;
 $$;
 
-comment on function storage.estimates_organisation() is
+comment on function battery.estimates_organisation() is
   'BEFORE INSERT / UPDATE on estimates: copies the organisation of its subject.';
 
-create trigger estimates_organisation before insert or update of device_id, participant_id, project_id on storage.estimates
-  for each row execute function storage.estimates_organisation();
-create trigger estimates_set_updated_at before update on storage.estimates
+create trigger estimates_organisation before insert or update of device_id, participant_id, project_id on battery.estimates
+  for each row execute function battery.estimates_organisation();
+create trigger estimates_set_updated_at before update on battery.estimates
   for each row execute function set_updated_at();
-call secure_table('storage.estimates', null, 'coalesce(participant_id, participant_of(''device'', device_id))');
+call secure_table('battery.estimates', null, 'coalesce(participant_id, participant_of(''device'', device_id))');
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('storage', 'Storage', '0.3.0', 'storage', '0.3.0',
+values ('battery', 'Battery', '0.3.0', 'battery', '0.3.0',
         'Batteries and their product physics, their dispatch on the interval series of a participant''s place or of a project''s sharing, and the sizing of a battery, as estimates.');

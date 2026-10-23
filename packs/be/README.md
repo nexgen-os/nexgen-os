@@ -102,7 +102,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 | `cer_wind_wallonia` | `be_cer` around Liège | the Walloon rule and the 9 km of a wind turbine, said and not decided for a participant of Namur |
 | `cer_same_substation` | `be_cer` | a participant in by the substation it shares with the producer, another out |
 | `sharing_brussels_building` | `be_energy_sharing` in Brussels | no perimeter decided for Brussels (`parameter_missing`), the operator of BE-BRU by region, the shares within a building |
-| `household_pv_battery` | `individual_self_consumption` in Gent | the battery's figures from the generic level of the `storage` module, the household price and fees, self-consumption through a battery |
+| `household_pv_battery` | `individual_self_consumption` in Gent | the battery's figures from the generic level of the `battery` module, the household price and fees, self-consumption through a battery |
 | `sme_pv` | `pv_roof` in Antwerpen | the business price, a PVWatts yield within 0.1 %, specific yield and savings |
 
 ## What to check next
