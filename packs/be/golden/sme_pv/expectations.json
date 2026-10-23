@@ -9,6 +9,19 @@
       "country": "BE",
       "source_code": "be_eurostat_business_prices",
       "source": "packs/be/defaults.json: Eurostat nrg_pc_205_c, 2025."
+    },
+    {
+      "object": "participant:sme",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.21,
+      "level": "country",
+      "country": "BE",
+      "conditions": {
+        "segment": "professional"
+      },
+      "source_code": "be_fps_finance_vat_circular_2023_c_64",
+      "source": "packs/be/defaults.json: 21 % for a professional customer, circular 2023/C/64 of FPS Finance; a business is a professional segment (core segments)."
     }
   ],
   "operators": [

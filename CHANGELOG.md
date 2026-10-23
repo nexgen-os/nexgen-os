@@ -35,6 +35,10 @@ release may break, and says how. How a release is cut:
 
 - Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
 
+### Fixed
+
+- Pack `be` 0.3.1: VAT on electricity for a professional customer, 21 % and the Ekwo OS tax `BE-S-21` (circular 2023/C/64 of FPS Finance). The 6 % row held for every segment, so `billing.tax_of()` gave a business participant `BE-S-06`.
+
 ## [0.3.0] — 2026-10-22
 
 The first release of Nexgen OS: an open digital twin of energy places —
