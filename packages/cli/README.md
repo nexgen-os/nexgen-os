@@ -102,7 +102,12 @@ Every refusal starts with a name: `postgis_required` (with the line to run),
 `not_installed`, `package_too_old` (the database is newer than this package),
 `database_too_old` (the database is below this package's floor: run the
 release named first), `unknown_module`, `unknown_pack`,
-`pack_requires_module`, `db_url_required`. `doctor` adds `rls_disabled`,
+`pack_requires_module`, `db_url_required`, `schema_taken` (a schema a module
+would create is already in the database, as Supabase's own `storage` is:
+`init` refuses before applying anything and names the schema and the module)
+and `module_renamed` (the database holds a module under the code it carried
+in an earlier release, decision 0054). `doctor` adds `schema_taken` and
+`module_renamed` too, `rls_disabled`,
 `migrations_pending`, `module_unregistered`, `unknown_migration`,
 `schema_version_missing`, `history_missing`, `vocabulary_empty` and
 `module_table_detached` (a table of a module schema that carries

@@ -11,6 +11,25 @@ release may break, and says how. How a release is cut:
 ### Added
 
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.
+- `nexgen-os init` reads, before applying anything, the schema each module it installs would create, and refuses one the database already holds by name: `schema_taken`, naming the schema, the module and the objects already in it. `nexgen-os doctor` names the same schemas for the modules not installed yet.
+- A module manifest may list the codes the module carried in an earlier release, `formerly` ([0054](docs/decisions/0054-a-module-that-cannot-install-changes-its-code.md)); `migrate` and `doctor` refuse an installation that holds one as `module_renamed`, naming the new code.
+
+### Changed
+
+- **Breaking:** the batteries module `storage` is now `battery` — its folder, its code, its schema and every name in it: `battery.devices`, `battery.products` (formerly `storage.battery_products`), `battery.objectives`, `battery.estimates`, `battery.battery_of()`, the computation `battery.size`, the MCP tools `battery_estimates` and `battery_size`, `size --module battery`, the `battery` section of a golden scenario's device, the provenance `battery-dispatch-0.3.0` and the rows it publishes (`published_by = 'battery'`). Every Supabase project already holds a schema `storage`, the one of Supabase Storage, so the module installed on none of them ([0054](docs/decisions/0054-a-module-that-cannot-install-changes-its-code.md)). The modules are applied in the order of their folders, `battery` now second.
+
+  **From `storage` to `battery`.** Only a plain Postgres can hold the module of 0.3.0, since a Supabase project could not install it. `nexgen-os migrate` refuses such a database as `module_renamed`. Export what `storage.devices` and `storage.battery_products` hold, and the attributes set on `battery_cost`, `battery_lifetime` and `discount_rate`, then, in one transaction:
+
+  ```sql
+  drop schema storage cascade;
+  delete from nexgen.defaults where published_by = 'storage';
+  delete from nexgen.sources where published_by = 'storage';
+  delete from nexgen.attribute_types where published_by = 'storage';
+  delete from nexgen.modules where code = 'storage';
+  delete from nexgen.schema_migrations where scope = 'module:storage';
+  ```
+
+  then `nexgen-os migrate`, `nexgen-os init --modules battery` with the modules and packs already installed, and load the export into `battery.devices` and `battery.products`. The estimates of `storage` and the series they wrote keep their source `storage.estimates:<id>`.
 
 ## [0.3.0] — 2026-10-22
 

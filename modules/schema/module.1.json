@@ -10,7 +10,7 @@
     "$schema": { "type": "string" },
     "code": {
       "$ref": "#/$defs/identifier",
-      "description": "The module's identifier, the name of its folder and the key of `nexgen.modules`. Immutable once published: a module whose name becomes more precise renames its folder and its schema and keeps its code (decision 0033)."
+      "description": "The module's identifier, the name of its folder and the key of `nexgen.modules`. Immutable once published: a module whose name becomes more precise renames its folder and its schema and keeps its code (decision 0033); a module that could not install changed its code once before 1.0 and lists the former one in `formerly` (decision 0054)."
     },
     "name": { "type": "string", "minLength": 1 },
     "description": {
