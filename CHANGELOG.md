@@ -29,7 +29,7 @@ release may break, and says how. How a release is cut:
   delete from nexgen.schema_migrations where scope = 'module:storage';
   ```
 
-  then `nexgen-os migrate`, `nexgen-os init --modules battery` with the modules and packs already installed, and load the export into `battery.devices` and `battery.products`. The estimates of `storage` and the series they wrote keep their source `storage.estimates:<id>`.
+  then `nexgen-os migrate`, `nexgen-os init --modules battery` with the modules and packs already installed, and load the export into `battery.devices` and `battery.products`. The series the estimates of `storage` wrote keep their source, `storage.estimates:<id>`.
 
 ## [0.3.0] — 2026-10-22
 
