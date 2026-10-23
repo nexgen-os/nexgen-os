@@ -12,6 +12,10 @@ release may break, and says how. How a release is cut:
 
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.
 
+### Fixed
+
+- Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
+
 ## [0.3.0] — 2026-10-22
 
 The first release of Nexgen OS: an open digital twin of energy places —
