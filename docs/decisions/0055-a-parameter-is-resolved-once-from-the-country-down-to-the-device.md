@@ -129,6 +129,17 @@ request; a gap above 1 % that is not explained blocks it.
 - A resolver beside `parameter_of()`, in SQL or in TypeScript.
 - A resolved value shown without its level.
 
+## Where it stands
+
+- `system_loss` is the first parameter moved: the `solar` module publishes
+  it with PVGIS PVcalc's 14 % at the generic level, `pvgis_like` and
+  `pvwatts` name their `system` loss without a value, and an estimate
+  records the fraction and its level. `soiling_loss` already climbed the
+  chain.
+- The temperature coefficient γ of `pvwatts` is read from the module
+  product, else from the request: it has no cascade yet and is the next
+  one to move.
+
 ## See also
 
 - [0021](0021-one-cascade-of-defaults.md) — the cascade and its order.
