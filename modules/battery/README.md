@@ -73,14 +73,14 @@ battery run for **self-consumption**, in each interval, in time order:
 3. what the battery did not take is injected; what it did not serve is
    taken from the grid.
 
-The **round-trip efficiency is applied once, on discharge**, where the rule
-this one was taken from applies it: serving 1 kWh empties the battery of
-1 / efficiency kWh; charging 1 kWh fills it of 1 kWh. That rule served
-`min(residual, power, stock) × efficiency` and emptied the battery of the
-energy served only, so that over a day nothing was lost; here the loss
-leaves the battery. A battery emptied every day therefore serves
-`efficiency` times what that rule served, and exactly what it served
-without losses (`tests/dispatch.test.ts`, on that rule's own fixtures).
+The **round-trip efficiency η is split between the two ways**, √η on
+each, as the hourly engine of the platform this module was taken from
+splits it: charging 1 kWh of surplus fills the battery of √η kWh, and
+serving 1 kWh empties it of 1 / √η kWh. What goes through the battery
+loses 1 − η either way; the split says what a full battery holds against
+the grid: it takes `capacity / √η` of the surplus and serves
+`capacity × √η` (at η = 0.85, a battery of 10 kWh takes 10.85 kWh and
+serves 9.22 kWh). The C-rate powers bound the energy on the grid side.
 
 The **state of charge at the start of the period** is the one it ends
 with: the period is run from the middle of the band, then again from where

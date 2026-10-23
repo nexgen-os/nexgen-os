@@ -14,13 +14,12 @@
 //   3. what the battery did not take is injected, what it did not serve is
 //      taken from the grid.
 //
-// The round-trip efficiency is applied once, on discharge, as the rule this
-// one was taken from applies it: serving 1 kWh empties the battery of
-// 1 / efficiency kWh, and charging 1 kWh fills it of 1 kWh. The rule taken
-// from served `min(residual, power, stock) × efficiency` and emptied the
-// battery of that same energy only, so that over a day no energy was lost;
-// here the loss leaves the battery, and a battery emptied every day serves
-// `efficiency` times what that rule served (the parity test says so).
+// The round-trip efficiency η is split between the two ways, √η on each, as
+// the hourly engine of the platform this one was taken from splits it:
+// charging 1 kWh fills the battery of √η kWh, and serving 1 kWh empties it
+// of 1 / √η kWh. What goes through the battery loses 1 − η either way; the
+// split says what a full battery holds against the grid: it takes
+// capacity / √η of the surplus and serves capacity × √η.
 //
 // The state of charge at the start of the period is the one it ends with:
 // the period is run from the middle of the band of state of charge, then
@@ -48,7 +47,7 @@
 // kWh. No figure is a constant of this file: the battery comes with every
 // one of its own.
 
-export const BATTERY_ENGINE_VERSION = 'battery-dispatch-0.3.0';
+export const BATTERY_ENGINE_VERSION = 'battery-dispatch-0.3.1';
 
 export const OBJECTIVES = ['self_consumption', 'peak_shaving', 'arbitrage'] as const;
 export type Objective = (typeof OBJECTIVES)[number];
@@ -59,7 +58,7 @@ export interface Battery {
   capacityKwh: number;
   chargePowerKw: number;
   dischargePowerKw: number;
-  /** Round-trip efficiency, 0 to 1, applied on discharge. */
+  /** Round-trip efficiency, 0 to 1: √η is lost on charge, √η on discharge. */
   efficiency: number;
   /** The band of state of charge it is kept in, as fractions of its capacity. */
   minLevel: number;
@@ -142,8 +141,9 @@ function arbitrageRoles(flows: Flows, battery: Battery): Int8Array {
   const roles = new Int8Array(n);
   const prices = flows.prices as number[];
   const band = battery.capacityKwh * (battery.maxLevel - battery.minLevel);
-  const toFill = Math.ceil(band / (battery.chargePowerKw * flows.stepHours) - 1e-9);
-  const toEmpty = Math.ceil((band * battery.efficiency) / (battery.dischargePowerKw * flows.stepHours) - 1e-9);
+  const half = Math.sqrt(battery.efficiency);
+  const toFill = Math.ceil(band / half / (battery.chargePowerKw * flows.stepHours) - 1e-9);
+  const toEmpty = Math.ceil((band * half) / (battery.dischargePowerKw * flows.stepHours) - 1e-9);
   const byDay = new Map<string | number, number[]>();
   (flows.days as (string | number)[]).forEach((d, i) => {
     const list = byDay.get(d);
@@ -173,7 +173,8 @@ function passOver(flows: Flows, battery: Battery, start: number, roles: Int8Arra
   const high = battery.capacityKwh * battery.maxLevel;
   const maxIn = battery.chargePowerKw * h;
   const maxOut = battery.dischargePowerKw * h;
-  const eta = battery.efficiency;
+  // Half of the round trip on the way in, half on the way out.
+  const half = Math.sqrt(battery.efficiency);
   const threshold = battery.objective === 'peak_shaving' ? (battery.peakThresholdKw as number) * h : Infinity;
   const out: Dispatch = {
     charge: new Array(n), chargeFromGrid: new Array(n), discharge: new Array(n), level: new Array(n),
@@ -184,21 +185,21 @@ function passOver(flows: Flows, battery: Battery, start: number, roles: Int8Arra
     out.level[i] = level;
     const surplus = Math.max(flows.production[i] - flows.consumption[i], 0);
     const residual = Math.max(flows.consumption[i] - flows.production[i], 0);
-    const fromSurplus = Math.min(surplus, maxIn, high - level);
-    level += fromSurplus;
+    const fromSurplus = Math.min(surplus, maxIn, (high - level) / half);
+    level += fromSurplus * half;
     let fromGrid = 0;
     let served = 0;
     if (battery.objective === 'self_consumption') {
-      served = Math.min(residual, maxOut, (level - low) * eta);
+      served = Math.min(residual, maxOut, (level - low) * half);
     } else if (battery.objective === 'peak_shaving') {
-      if (residual > threshold) served = Math.min(residual - threshold, maxOut, (level - low) * eta);
-      else fromGrid = Math.max(0, Math.min(threshold - residual, maxIn - fromSurplus, high - level));
+      if (residual > threshold) served = Math.min(residual - threshold, maxOut, (level - low) * half);
+      else fromGrid = Math.max(0, Math.min(threshold - residual, maxIn - fromSurplus, (high - level) / half));
     } else {
       const role = (roles as Int8Array)[i];
-      if (role === 1) fromGrid = Math.max(0, Math.min(maxIn - fromSurplus, high - level));
-      else if (role === -1) served = Math.min(residual, maxOut, (level - low) * eta);
+      if (role === 1) fromGrid = Math.max(0, Math.min(maxIn - fromSurplus, (high - level) / half));
+      else if (role === -1) served = Math.min(residual, maxOut, (level - low) * half);
     }
-    level += fromGrid - served / eta;
+    level += fromGrid * half - served / half;
     // The band holds to the rounding of a float.
     level = Math.min(high, Math.max(low, level));
     out.charge[i] = fromSurplus + fromGrid;
@@ -299,7 +300,7 @@ export function indicators(flows: Flows, battery: Battery, d: Dispatch): Indicat
     charge_kwh: round(charge),
     charge_from_grid_kwh: round(fromGrid),
     discharge_kwh: round(discharge),
-    cycles: round(discharge / battery.efficiency / band),
+    cycles: round(discharge / Math.sqrt(battery.efficiency) / band),
     self_consumed_without_kwh: round(without),
     self_consumed_with_kwh: round(withBattery),
     self_consumption_rate_without: ratio(without, production),

@@ -141,7 +141,7 @@ describe('dispatch() on a participant\'s place', () => {
     expect(r.savings).toBe(2.5);
     const e = await one<{ device_id: string; participant_id: string | null; provenance: string; inputs: any; results: any; organisation_id: string }>(
       db, 'select * from battery.estimates where id = $1', [r.estimateId]);
-    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'battery-dispatch-0.3.0']);
+    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'battery-dispatch-0.3.1']);
     expect(e.inputs.period).toEqual({ from: FROM, to: TO, step: '01:00:00', intervals: 24 });
     expect(e.inputs.battery.usable_capacity_kwh).toEqual({ value: 10, level: 'device' });
     expect(e.inputs.prices.read.energy_price_household).toMatchObject({ value: 200, level: 'organisation' });
@@ -234,8 +234,9 @@ describe('dispatch() for arbitrage', () => {
     await store(db, { object_kind: 'participant', object_id: trader, quantity_code: 'energy_price', kind: 'measured', value_kind: 'interval', step: '1 hour' },
       points(prices), { unit: 'EUR-PER-MegaW-HR' });
     const [r] = await dispatch(db, { perimeter: { kind: 'participant', id: trader }, from: FROM, to: TO });
-    expect(r.indicators.charge_from_grid_kwh).toBe(5);
-    expect(r.indicators.discharge_kwh).toBe(4.5);
+    // 5 kWh held take 5 / √0.9 kWh from the grid in the two cheapest hours and serve 5 × √0.9 kWh.
+    expect(r.indicators.charge_from_grid_kwh).toBeCloseTo(5 / Math.sqrt(0.9), 6);
+    expect(r.indicators.discharge_kwh).toBeCloseTo(5 * Math.sqrt(0.9), 6);
     const discharge = await db.query<{ at: Date; value: number }>('select at, value from series_values where series_id = $1 and value > 0', [r.series.discharge]);
     expect(discharge.rows.map((v) => v.at.toISOString())).toEqual([at(19)]);
   });
@@ -261,8 +262,9 @@ describe('size()', () => {
     // min(16 kWh of surplus, 12 kWh of evening load) = 12 kWh, in 40 steps.
     expect(r.curve).toHaveLength(40);
     expect(r.curve.at(-1)!.capacity_kwh).toBe(12);
-    // 12 kWh stored at 0.9 serve 10.8 kWh of the 16 produced.
-    expect(r.recommended).toMatchObject({ capacity_kwh: 12, self_consumption_rate: 0.675 });
+    // 12 kWh held take 12 / √0.9 = 12.65 kWh of the surplus and serve 12 × √0.9 = 11.38 kWh of the 16 produced.
+    expect(r.recommended).toMatchObject({ capacity_kwh: 12 });
+    expect(r.recommended!.self_consumption_rate).toBeCloseTo((12 * Math.sqrt(0.9)) / 16, 6);
     const e = await one<{ participant_id: string; criterion: string; inputs: any }>(db, 'select participant_id, criterion, inputs from battery.estimates where id = $1', [r.estimateId]);
     expect([e.participant_id, e.criterion]).toEqual([roof, 'self_consumption_rate']);
     expect(e.inputs.parameters.battery_c_rate).toMatchObject({ value: 0.5, level: 'organisation' });
@@ -275,12 +277,14 @@ describe('size()', () => {
     await attribute('organisation', org, 'battery_lifetime', 15);
     await attribute('organisation', org, 'discount_rate', 0.05);
     const npv = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'net_present_value' });
-    // Per kWh of capacity, a day saves 0.9 × 0.3 − 0.05 = 0.22, 80.355 a year; 15 years at 5 % make 834.06 against 450.
+    // Per kWh of capacity, a day serves √0.9 kWh at 0.3 and keeps 1 / √0.9 kWh from injection at 0.05:
+    // 0.2319, 84.70 a year; 15 years at 5 % make 879.17 against 450.
+    const perKwhDay = 0.3 * Math.sqrt(0.9) - 0.05 / Math.sqrt(0.9);
     const last = npv.curve.at(-1)!;
-    expect(last.savings_per_year).toBeCloseTo(12 * 0.22 * 365.25, 1);
+    expect(last.savings_per_year).toBeCloseTo(12 * perKwhDay * 365.25, 1);
     expect(npv.recommended!.capacity_kwh).toBe(12);
     const payback = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'payback' });
-    expect(payback.recommended!.payback_years).toBeCloseTo(450 / (0.22 * 365.25), 2);
+    expect(payback.recommended!.payback_years).toBeCloseTo(450 / (perKwhDay * 365.25), 2);
   });
 
   it('counts the operating cost of a year when it is said, and says when it is not', async () => {
@@ -306,8 +310,8 @@ describe('size()', () => {
 
   it('sizes for the peak under a threshold', async () => {
     const r = await size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'max_power', peakThresholdKw: 2 });
-    // One kWh an hour above 2 kW for four hours: 4 kWh to serve, 4 / 0.9 kWh to hold.
-    expect(r.recommended).toMatchObject({ capacity_kwh: 4.444, peak_kw: 2 });
+    // One kWh an hour above 2 kW for four hours: 4 kWh to serve, 4 / √0.9 = 4.216 kWh to hold.
+    expect(r.recommended).toMatchObject({ capacity_kwh: 4.216, peak_kw: 2 });
     expect(r.curve.at(-2)!.peak_kw).toBeGreaterThan(2);
   });
 
@@ -386,7 +390,8 @@ describe('row level security', () => {
     await asUser(db, USER_A, async () => {
       await db.query('update battery.devices set round_trip_efficiency = 0.95 where id = $1', [battery]);
       const [r] = await dispatch(db, { perimeter: { kind: 'participant', id: home }, from: FROM, to: TO });
-      expect(r.indicators.discharge_kwh).toBeCloseTo(9.5, 6);
+      // Full, 10 kWh serve 10 × √0.95 kWh.
+      expect(r.indicators.discharge_kwh).toBeCloseTo(10 * Math.sqrt(0.95), 6);
     });
   });
 });
