@@ -391,6 +391,8 @@ export interface SizePoint {
   self_sufficiency: number | null;
   peak_kw: number;
   savings_per_year: number | null;
+  /** The operating cost of a year at `battery_opex`; null when nobody says it, and none is counted. */
+  opex_per_year: number | null;
   capex: number | null;
   payback_years: number | null;
   net_present_value: number | null;
@@ -460,6 +462,7 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
   const economic = request.criterion === 'payback' || request.criterion === 'net_present_value';
   const optional = async (property: string) => (economic ? need(property) : await parameter(db, kind, id, property, request.from));
   const cost = await optional('battery_cost');
+  const opex = await parameter(db, kind, id, 'battery_opex', request.from);
   const lifetime = request.criterion === 'net_present_value' ? await need('battery_lifetime') : await parameter(db, kind, id, 'battery_lifetime', request.from);
   const discount = request.criterion === 'net_present_value' ? await need('discount_rate') : await parameter(db, kind, id, 'discount_rate', request.from);
   const prices = await pricesOf(db, request.perimeter, place.participantId ?? existing[0]?.participantId ?? null, request.from, request.offtakePrice);
@@ -522,6 +525,9 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     const saved = savingsOf(left, d, prices, fees);
     const perYear = saved === null ? null : round(saved / years, 2);
     const capex = cost ? round((capacity * cost.value) / 1000, 2) : null;
+    const opexPerYear = opex ? round((capacity * opex.value) / 1000, 2) : null;
+    // What a year brings once the battery is kept running.
+    const net = perYear === null ? null : round(perYear - (opexPerYear ?? 0), 2);
     curve.push({
       capacity_kwh: round(capacity, 3),
       discharge_kwh: k.discharge_kwh,
@@ -529,9 +535,10 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
       self_sufficiency: k.self_sufficiency_with,
       peak_kw: k.peak_with_kw,
       savings_per_year: perYear,
+      opex_per_year: opexPerYear,
       capex,
-      payback_years: capex !== null && perYear !== null && perYear > 0 ? round(capex / perYear, 3) : null,
-      net_present_value: capex !== null && perYear !== null && annuity !== null ? round(perYear * annuity - capex, 2) : null,
+      payback_years: capex !== null && net !== null && net > 0 ? round(capex / net, 3) : null,
+      net_present_value: capex !== null && net !== null && annuity !== null ? round(net * annuity - capex, 2) : null,
     });
   }
 
@@ -564,7 +571,7 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     bounds: { min_kwh: round(minKwh, 3), max_kwh: round(maxKwh, 3), step_kwh: round(stepKwh, 3) },
     parameters: {
       battery_c_rate: cRate.from, round_trip_efficiency: efficiency.from,
-      battery_cost: cost?.from ?? null, battery_lifetime: lifetime?.from ?? null, discount_rate: discount?.from ?? null,
+      battery_cost: cost?.from ?? null, battery_opex: opex?.from ?? null, battery_lifetime: lifetime?.from ?? null, discount_rate: discount?.from ?? null,
     },
     prices: { read: prices.read, missing: prices.missing, currency: prices.currency },
   };
