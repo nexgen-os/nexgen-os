@@ -9,7 +9,7 @@ is specific to a trade lives here, one folder and one schema per module.
 modules/<code>/
   module.json            the manifest: code, name, version, description, schema, requires, licence
   supabase/migrations/   the module's schema, applied in the order of the names
-  src/                   its TypeScript, where it computes or imports (building, charging, community, consumption, kpis, solar, battery)
+  src/                   its TypeScript, where it computes or imports (battery, building, charging, community, consumption, kpis, solar)
   tests/                 its tests, run by the suite with every other
   README.md              what it holds and computes, for a reader who has never seen it
 ```

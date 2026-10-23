@@ -6,7 +6,7 @@
  * problem so that the person or the agent reading it knows which.
  */
 import { installedScopes, plan, readCatalogue, type Catalogue } from './catalogue.js';
-import { postgisVersion, recordedSteps, registeredModules, POSTGIS_LINE } from './apply.js';
+import { describeRenamed, describeTaken, postgisVersion, recordedSteps, registeredModules, takenSchemas, POSTGIS_LINE } from './apply.js';
 import type { SqlClient } from '@nexgen-os/core';
 import { checkFloor, databaseVersion } from './version.js';
 
@@ -223,6 +223,13 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
   const schemaVersion = await databaseVersion(db);
   const installed = await exists(db, 'nexgen.organisations');
   const report: DoctorReport = { schemaVersion, postgis, applied: {}, modules: [], packs: [], vocabularies: {}, problems };
+  // The modules not installed yet whose schema the database already holds:
+  // `init` would refuse them as `schema_taken`.
+  const recordedNames = new Set((await recordedSteps(db)).keys());
+  const notInstalled = [...cat.modules.values()].map((steps) => steps[0]).filter((s) => !recordedNames.has(s.name));
+  for (const t of await takenSchemas(db, cat, notInstalled)) {
+    problems.push({ code: 'schema_taken', detail: `${describeTaken(t)}; init refuses ${t.module} until the schema is gone` });
+  }
   if (!installed) {
     problems.push({ code: 'not_installed', detail: 'there is no Nexgen OS in this database; run nexgen-os init' });
     return report;
@@ -245,6 +252,9 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
   const scopes = installedScopes(recorded.values());
   report.packs = scopes.packs;
   const registered = await registeredModules(db);
+  for (const m of [...new Set([...registered, ...scopes.modules])].filter((m) => !cat.modules.has(m) && cat.formerly.has(m))) {
+    problems.push({ code: 'module_renamed', detail: describeRenamed(cat)(m) });
+  }
   for (const m of scopes.modules) {
     if (!registered.has(m)) problems.push({ code: 'module_unregistered', detail: `${m} is recorded as applied but has no row in nexgen.modules` });
   }

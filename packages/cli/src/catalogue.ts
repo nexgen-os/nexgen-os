@@ -36,6 +36,10 @@ export interface Catalogue {
   core: Step[];
   /** Modules with migrations, by code, in the order they are applied. */
   modules: Map<string, Step[]>;
+  /** The schema each module creates, by code, as its `module.json` says. */
+  schemas: Map<string, string>;
+  /** The code a module carried in an earlier release, mapped to its code now (`formerly` in `module.json`). */
+  formerly: Map<string, string>;
   packs: Map<string, Pack>;
 }
 
@@ -67,12 +71,19 @@ export async function readCatalogue(root: string = defaultRoot()): Promise<Catal
   const packSeed = (s: Step) => /^supabase\/seed\/\d+_pack_([a-z]{2})\.sql$/.exec(s.name)?.[1];
   const core = [...(await sqlSteps(root, 'supabase/migrations', 'core')), ...seeds.filter((s) => packSeed(s) === undefined)];
   const modules = new Map<string, Step[]>();
+  const schemas = new Map<string, string>();
+  const formerly = new Map<string, string>();
   for (const code of await folders(root, 'modules')) {
     // A module is a folder with a manifest, `modules/<code>/module.json`
     // (modules/schema/module.1.json); `modules/schema/` is not one.
-    if (!existsSync(join(root, 'modules', code, 'module.json'))) continue;
+    const manifest = join(root, 'modules', code, 'module.json');
+    if (!existsSync(manifest)) continue;
     const steps = await sqlSteps(root, `modules/${code}/supabase/migrations`, `module:${code}`);
-    if (steps.length > 0) modules.set(code, steps);
+    if (steps.length === 0) continue;
+    modules.set(code, steps);
+    const json = JSON.parse(await readFile(manifest, 'utf8')) as { schema?: string; formerly?: string[] };
+    if (json.schema) schemas.set(code, json.schema);
+    for (const old of json.formerly ?? []) formerly.set(old, code);
   }
   const packs = new Map<string, Pack>();
   for (const code of await folders(root, 'packs')) {
@@ -82,7 +93,7 @@ export async function readCatalogue(root: string = defaultRoot()): Promise<Catal
     const json = existsSync(manifest) ? (JSON.parse(await readFile(manifest, 'utf8')) as { modules?: string[] }) : {};
     packs.set(code, { code, modules: json.modules ?? [], steps });
   }
-  return { root, core, modules, packs };
+  return { root, core, modules, schemas, formerly, packs };
 }
 
 /** The SQL of a step. */

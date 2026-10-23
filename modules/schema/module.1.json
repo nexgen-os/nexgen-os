@@ -43,6 +43,12 @@
         }
       }
     },
+    "formerly": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identifier" },
+      "uniqueItems": true,
+      "description": "The codes this module carried in an earlier release, when a code had to change because it could not install (decision 0054). `nexgen-os migrate` recognises an installation that holds a former code and refuses it by name (`module_renamed`) with the way to the new one."
+    },
     "licence": {
       "type": "string",
       "description": "The SPDX identifier of the module's licence: the modules are AGPL-3.0-only, like the core (decision 0005)."

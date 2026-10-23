@@ -34,6 +34,18 @@ describe('doctor', () => {
     expect(r.vocabularies.identifier_schemes).toBeGreaterThan(0);
   });
 
+  it('names the schema a module not installed would create and the database already holds', async () => {
+    await db.exec('begin; create schema battery; create table battery.objects (id int primary key);');
+    try {
+      const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
+      expect(r.problems).toEqual([
+        { code: 'schema_taken', detail: 'schema battery already exists with 1 object of its own, and module battery creates it; init refuses battery until the schema is gone' },
+      ]);
+    } finally {
+      await db.exec('rollback');
+    }
+  });
+
   it('names a table whose row level security was disabled, in the core and in a module, and exits 1', async () => {
     await db.exec('begin; alter table nexgen.participants disable row level security; alter table solar.pv_arrays disable row level security;');
     try {
@@ -147,7 +159,7 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, billing, building, charging, community, consumption, grid, kpis, solar, battery, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, battery, billing, building, charging, community, consumption, grid, kpis, solar, weather/);
   });
 
   it('names the weeks whose values sit in the default partition with no weekly partition, and the weeks to come once it partitions', async () => {

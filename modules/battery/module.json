@@ -5,6 +5,7 @@
   "description": "Batteries and their product physics, their dispatch on the interval series of a participant's place or of a project's sharing, and the sizing of a battery, as estimates.",
   "version": "0.3.0",
   "schema": "battery",
+  "formerly": ["storage"],
   "requires": {
     "core": "0.3.0",
     "modules": []
