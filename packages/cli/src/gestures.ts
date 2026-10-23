@@ -60,7 +60,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
   nexgen-os series import --format homeassistant --file <path> --entity <id> --organisation <id>
                           --object-kind <k> --object <id> --quantity <code> --source <code>
-  nexgen-os size --module solar|storage --request <file.json>                       to size, with a named criterion
+  nexgen-os size --module solar|battery --request <file.json>                       to size, with a named criterion
   nexgen-os kpis --object-kind <k> --object <id> --from <iso> --to <iso>            the indicators of an object
   nexgen-os kpis compute --object-kind <k> --object <id> --indicator <code> --from <iso> --to <iso>
 `;
@@ -152,7 +152,7 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
     }
     case 'size': {
       const module = need(f, 'module');
-      if (module !== 'solar' && module !== 'storage') throw new NexgenError('usage', '--module solar or --module storage');
+      if (module !== 'solar' && module !== 'battery') throw new NexgenError('usage', '--module solar or --module battery');
       const request = JSON.parse(await readFile(need(f, 'request'), 'utf8')) as Record<string, unknown>;
       return compute(db, io.computations ?? {}, `${module}.size`, request);
     }

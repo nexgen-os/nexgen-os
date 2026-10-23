@@ -1,4 +1,4 @@
-// The `storage` module on a database: a household with PV and a battery, a
+// The `battery` module on a database: a household with PV and a battery, a
 // shared battery of a community on the surplus and residual of its
 // sharing, a battery run for arbitrage on a price series, the sizing of a
 // battery for a criterion, and what each refuses by name.
@@ -37,12 +37,12 @@ async function attribute(kind: string, id: string, property: string, value: numb
 
 async function newBattery(participant: string, name: string, fields: Record<string, unknown>, ratedPowerKw: number | null = 5): Promise<string> {
   const id = (await one<{ id: string }>(db, `select install_device($1, 'battery', $2, null, $3, '2026-01-01') id`, [participant, name, ratedPowerKw])).id;
-  await insert(db, 'storage.devices', { id, ...fields });
+  await insert(db, 'battery.devices', { id, ...fields });
   return id;
 }
 
 beforeAll(async () => {
-  db = await freshDatabase(['grid', 'storage'], ['be']);
+  db = await freshDatabase(['grid', 'battery'], ['be']);
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   org = await organisation(db, 'A study office', USER_A);
   await organisation(db, 'Another company', USER_B);
@@ -68,7 +68,7 @@ afterAll(async () => {
 
 describe('a battery and its figures', () => {
   it('says each figure it reads and where it came from: the device, its rated power', async () => {
-    const of = (await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [battery])).b;
+    const of = (await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [battery])).b;
     expect(of.usable_capacity_kwh).toEqual({ value: 10, level: 'device' });
     expect(of.charge_power_kw).toEqual({ value: 5, level: 'rated_power' });
     expect(of.round_trip_efficiency).toEqual({ value: 1, level: 'device' });
@@ -77,10 +77,10 @@ describe('a battery and its figures', () => {
 
   it('reads its product, then the C-rate and the efficiency parameter_of() resolves', async () => {
     const product = await insert(db, 'products', { organisation_id: org, device_type: 'battery', manufacturer: 'Generic', model: 'B5', unit_capacity_kwh: 5 });
-    await insert(db, 'storage.battery_products', { id: product, round_trip_efficiency: 0.95, cycle_life: 6000, discharge_power_kw: 2 });
+    await insert(db, 'battery.products', { id: product, round_trip_efficiency: 0.95, cycle_life: 6000, discharge_power_kw: 2 });
     const id = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Two units', $2, null, null, null, 2) id`, [home, product])).id;
-    await insert(db, 'storage.devices', { id, objective: 'peak_shaving', peak_threshold_kw: 3, perimeter: 'project' });
-    const of = (await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [id])).b;
+    await insert(db, 'battery.devices', { id, objective: 'peak_shaving', peak_threshold_kw: 3, perimeter: 'project' });
+    const of = (await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [id])).b;
     expect(of.usable_capacity_kwh).toMatchObject({ value: 10, level: 'product' });
     expect(of.discharge_power_kw).toMatchObject({ value: 4, level: 'product' });
     // Neither the device, nor its product, nor a rated power gives its charge power: its capacity at its C-rate.
@@ -90,7 +90,7 @@ describe('a battery and its figures', () => {
     await db.query('delete from devices where id = $1', [id]);
 
     const bare = await newBattery(home, 'Bare', { usable_capacity_kwh: 8 }, null);
-    const b = (await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [bare])).b;
+    const b = (await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [bare])).b;
     expect(b.charge_power_kw).toMatchObject({ value: 4, level: 'c_rate' });
     expect(b.round_trip_efficiency).toMatchObject({ value: 0.9, level: 'organisation' });
     await db.query('delete from devices where id = $1', [bare]);
@@ -98,14 +98,14 @@ describe('a battery and its figures', () => {
 
   it('refuses by name what it cannot say', async () => {
     const undescribed = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Undescribed', null, 5) id`, [home])).id;
-    await expect(db.query('select storage.battery_of($1)', [undescribed])).rejects.toThrow(/battery_not_described/);
-    await insert(db, 'storage.devices', { id: undescribed, perimeter: 'project' });
-    await expect(db.query('select storage.battery_of($1)', [undescribed])).rejects.toThrow(/capacity_required/);
+    await expect(db.query('select battery.battery_of($1)', [undescribed])).rejects.toThrow(/battery_not_described/);
+    await insert(db, 'battery.devices', { id: undescribed, perimeter: 'project' });
+    await expect(db.query('select battery.battery_of($1)', [undescribed])).rejects.toThrow(/capacity_required/);
     await db.query('delete from devices where id = $1', [undescribed]);
     const pv = (await one<{ id: string }>(db, `select install_device($1, 'solar', 'Roof', null, 6) id`, [home])).id;
-    await expect(insert(db, 'storage.devices', { id: pv })).rejects.toThrow(/device_type_mismatch/);
-    await expect(db.query(`update storage.devices set objective = 'spot' where id = $1`, [battery])).rejects.toThrow(/foreign key/);
-    await expect(db.query('update storage.devices set min_charge_level = 90, max_charge_level = 80 where id = $1', [battery])).rejects.toThrow(/devices_charge_levels/);
+    await expect(insert(db, 'battery.devices', { id: pv })).rejects.toThrow(/device_type_mismatch/);
+    await expect(db.query(`update battery.devices set objective = 'spot' where id = $1`, [battery])).rejects.toThrow(/foreign key/);
+    await expect(db.query('update battery.devices set min_charge_level = 90, max_charge_level = 80 where id = $1', [battery])).rejects.toThrow(/devices_charge_levels/);
     await db.query('delete from devices where id = $1', [pv]);
   });
 
@@ -114,19 +114,19 @@ describe('a battery and its figures', () => {
     const p = await insert(db, 'projects', { organisation_id: other, name: 'Elsewhere', country: 'BE' });
     const somebody = await insert(db, 'participants', { organisation_id: other, project_id: p, name: 'Somebody', country: 'BE' });
     const id = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Bare', null, null) id`, [somebody])).id;
-    await insert(db, 'storage.devices', { id, usable_capacity_kwh: 10 });
-    const b = (await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [id])).b;
-    expect(b.charge_power_kw).toMatchObject({ value: 4, level: 'c_rate', c_rate: { value: 0.4, level: 'generic', published_by: 'storage', source_code: 'atb_2025_residential_battery' } });
+    await insert(db, 'battery.devices', { id, usable_capacity_kwh: 10 });
+    const b = (await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [id])).b;
+    expect(b.charge_power_kw).toMatchObject({ value: 4, level: 'c_rate', c_rate: { value: 0.4, level: 'generic', published_by: 'battery', source_code: 'atb_2025_residential_battery' } });
     expect(b.round_trip_efficiency).toMatchObject({ value: 0.85, level: 'generic', source_code: 'atb_2025_residential_battery' });
     // A country whose pack decides nothing of a battery reads the same
     // technology figure; an organisation that says otherwise wins.
     await db.query(`insert into countries (code, name, currency, time_zones, region_level, published_by) values ('ZZ', 'Testland', 'EUR', '{UTC}', 'region', 'pack:zz')`);
     const nowhere = await insert(db, 'participants', { organisation_id: other, project_id: p, name: 'Nowhere', country: 'ZZ' });
     const lost = (await one<{ id: string }>(db, `select install_device($1, 'battery', 'Lost', null, null) id`, [nowhere])).id;
-    await insert(db, 'storage.devices', { id: lost, usable_capacity_kwh: 10 });
-    expect((await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [lost])).b.charge_power_kw).toMatchObject({ value: 4, c_rate: { level: 'generic' } });
+    await insert(db, 'battery.devices', { id: lost, usable_capacity_kwh: 10 });
+    expect((await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [lost])).b.charge_power_kw).toMatchObject({ value: 4, c_rate: { level: 'generic' } });
     await db.query(`select set_attribute('organisation', $1, 'battery_c_rate', '0.5'::jsonb, null, 'atb_2025_residential_battery')`, [other]);
-    expect((await one<{ b: Record<string, any> }>(db, 'select storage.battery_of($1) b', [lost])).b.charge_power_kw).toMatchObject({ value: 5, c_rate: { level: 'organisation' } });
+    expect((await one<{ b: Record<string, any> }>(db, 'select battery.battery_of($1) b', [lost])).b.charge_power_kw).toMatchObject({ value: 5, c_rate: { level: 'organisation' } });
     // What nobody decided stays refused by name.
     await expect(db.query(`select parameter_of('device', $1, 'battery_cost')`, [lost])).rejects.toThrow(/parameter_missing: battery_cost/);
   });
@@ -140,15 +140,15 @@ describe('dispatch() on a participant\'s place', () => {
     // 10 kWh not taken at 200 + 100 per MWh, 10 kWh not injected at 50: 3 − 0.5.
     expect(r.savings).toBe(2.5);
     const e = await one<{ device_id: string; participant_id: string | null; provenance: string; inputs: any; results: any; organisation_id: string }>(
-      db, 'select * from storage.estimates where id = $1', [r.estimateId]);
-    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'storage-dispatch-0.3.0']);
+      db, 'select * from battery.estimates where id = $1', [r.estimateId]);
+    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'battery-dispatch-0.3.0']);
     expect(e.inputs.period).toEqual({ from: FROM, to: TO, step: '01:00:00', intervals: 24 });
     expect(e.inputs.battery.usable_capacity_kwh).toEqual({ value: 10, level: 'device' });
     expect(e.inputs.prices.read.energy_price_household).toMatchObject({ value: 200, level: 'organisation' });
     expect(e.results).toMatchObject({ savings: 2.5, currency: 'EUR', converged: true, start_level_kwh: 0 });
     const written = await db.query<{ quantity_code: string; kind: string; object_id: string; total: number }>(
       `select se.quantity_code, se.kind, se.object_id, sum(v.value) total from series se join series_values v on v.series_id = se.id
-        where se.source = $1 group by 1, 2, 3 order by 1`, [`storage.estimates:${r.estimateId}`]);
+        where se.source = $1 group by 1, 2, 3 order by 1`, [`battery.estimates:${r.estimateId}`]);
     expect(written.rows).toEqual([
       { quantity_code: 'battery_charge_energy', kind: 'simulated', object_id: battery, total: 10 },
       { quantity_code: 'battery_discharge_energy', kind: 'simulated', object_id: battery, total: 10 },
@@ -163,7 +163,7 @@ describe('dispatch() on a participant\'s place', () => {
     const [a, b] = await dispatch(db, { perimeter: { kind: 'participant', id: home }, from: FROM, to: TO });
     expect([a.deviceId, b.deviceId]).toEqual([battery, second]);
     expect(b.indicators).toMatchObject({ production_kwh: 6, consumption_kwh: 2, discharge_kwh: 2 });
-    const inputs = (await one<{ inputs: any }>(db, 'select inputs from storage.estimates where id = $1', [b.estimateId])).inputs;
+    const inputs = (await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [b.estimateId])).inputs;
     expect(inputs.chain).toEqual({ position: 2, of: 2, after: [battery] });
     await db.query(`update devices set status = 'out_of_service' where id = $1`, [second]);
   });
@@ -191,11 +191,11 @@ describe('dispatch() on a participant\'s place', () => {
     await series('participant', workshop, 'consumption_energy', hours({ 8: 2, 9: 9, 10: 2 }));
     const b = await newBattery(workshop, 'Peak battery', { usable_capacity_kwh: 10, objective: 'peak_shaving' });
     await expect(dispatch(db, { perimeter: { kind: 'participant', id: workshop }, from: FROM, to: TO })).rejects.toThrow(/peak_threshold_required/);
-    await db.query('update storage.devices set peak_threshold_kw = 5 where id = $1', [b]);
+    await db.query('update battery.devices set peak_threshold_kw = 5 where id = $1', [b]);
     const [r] = await dispatch(db, { perimeter: { kind: 'participant', id: workshop }, from: FROM, to: TO });
     expect([r.indicators.peak_without_kw, r.indicators.peak_with_kw]).toEqual([9, 5]);
     // A business: the business energy price is not set by the organisation, so the pack's answers.
-    const read = (await one<{ inputs: any }>(db, 'select inputs from storage.estimates where id = $1', [r.estimateId])).inputs.prices.read;
+    const read = (await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [r.estimateId])).inputs.prices.read;
     expect(read.energy_price_business).toMatchObject({ level: 'country', source_code: 'be_eurostat_business_prices' });
   });
 });
@@ -263,7 +263,7 @@ describe('size()', () => {
     expect(r.curve.at(-1)!.capacity_kwh).toBe(12);
     // 12 kWh stored at 0.9 serve 10.8 kWh of the 16 produced.
     expect(r.recommended).toMatchObject({ capacity_kwh: 12, self_consumption_rate: 0.675 });
-    const e = await one<{ participant_id: string; criterion: string; inputs: any }>(db, 'select participant_id, criterion, inputs from storage.estimates where id = $1', [r.estimateId]);
+    const e = await one<{ participant_id: string; criterion: string; inputs: any }>(db, 'select participant_id, criterion, inputs from battery.estimates where id = $1', [r.estimateId]);
     expect([e.participant_id, e.criterion]).toEqual([roof, 'self_consumption_rate']);
     expect(e.inputs.parameters.battery_c_rate).toMatchObject({ value: 0.5, level: 'organisation' });
   });
@@ -293,11 +293,11 @@ describe('size()', () => {
   it('refuses a criterion it does not know, in the function and in the table', async () => {
     await expect(size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'beauty' as never })).rejects.toThrow(/sizing_criterion_unknown/);
     await expect(size(db, { perimeter: { kind: 'participant', id: roof }, from: FROM, to: TO, criterion: 'max_power' })).rejects.toThrow(/peak_threshold_required/);
-    await expect(db.query(`insert into storage.estimates (participant_id, criterion, provenance, inputs, results) values ($1, 'beauty', 'test', '{}', '{}')`, [roof]))
+    await expect(db.query(`insert into battery.estimates (participant_id, criterion, provenance, inputs, results) values ($1, 'beauty', 'test', '{}', '{}')`, [roof]))
       .rejects.toThrow(/estimates_criterion_fkey/);
-    await expect(db.query(`insert into storage.estimates (device_id, criterion, provenance, inputs, results) values ($1, 'payback', 'test', '{}', '{}')`, [battery]))
+    await expect(db.query(`insert into battery.estimates (device_id, criterion, provenance, inputs, results) values ($1, 'payback', 'test', '{}', '{}')`, [battery]))
       .rejects.toThrow(/estimates_criterion_subject/);
-    await expect(db.query(`insert into storage.estimates (device_id, participant_id, provenance, inputs, results) values ($1, $2, 'test', '{}', '{}')`, [battery, roof]))
+    await expect(db.query(`insert into battery.estimates (device_id, participant_id, provenance, inputs, results) values ($1, $2, 'test', '{}', '{}')`, [battery, roof]))
       .rejects.toThrow(/estimates_one_subject/);
   });
 
@@ -322,29 +322,29 @@ describe('size()', () => {
 
 describe('row level security', () => {
   it('shows the estimates and batteries of an organisation to its members only', async () => {
-    const mine = await asUser(db, USER_A, async () => (await db.query('select id from storage.estimates')).rows.length);
+    const mine = await asUser(db, USER_A, async () => (await db.query('select id from battery.estimates')).rows.length);
     expect(mine).toBeGreaterThan(0);
     await asUser(db, USER_B, async () => {
-      expect((await db.query('select id from storage.estimates')).rows).toHaveLength(0);
-      expect((await db.query('select id from storage.devices')).rows).toHaveLength(0);
-      expect((await db.query('select code from storage.objectives')).rows).toHaveLength(3);
+      expect((await db.query('select id from battery.estimates')).rows).toHaveLength(0);
+      expect((await db.query('select id from battery.devices')).rows).toHaveLength(0);
+      expect((await db.query('select code from battery.objectives')).rows).toHaveLength(3);
     });
   });
 
   it('goes with its subject', async () => {
-    const before = (await one<{ n: number }>(db, 'select count(*)::int n from storage.estimates where device_id = $1', [battery])).n;
+    const before = (await one<{ n: number }>(db, 'select count(*)::int n from battery.estimates where device_id = $1', [battery])).n;
     expect(before).toBeGreaterThan(0);
     const project = await insert(db, 'projects', { organisation_id: org, name: 'Gone', country: 'BE' });
     const gone = await place(project, 'Gone');
     const b = await newBattery(gone, 'Gone battery', { usable_capacity_kwh: 10 });
-    await insert(db, 'storage.estimates', { device_id: b, provenance: 'test', inputs: '{}', results: '{}' });
+    await insert(db, 'battery.estimates', { device_id: b, provenance: 'test', inputs: '{}', results: '{}' });
     await db.query('delete from devices where id = $1', [b]);
-    expect((await one<{ n: number }>(db, 'select count(*)::int n from storage.estimates where device_id = $1', [b])).n).toBe(0);
+    expect((await one<{ n: number }>(db, 'select count(*)::int n from battery.estimates where device_id = $1', [b])).n).toBe(0);
   });
 
   it('lets a member describe a battery and run its dispatch', async () => {
     await asUser(db, USER_A, async () => {
-      await db.query('update storage.devices set round_trip_efficiency = 0.95 where id = $1', [battery]);
+      await db.query('update battery.devices set round_trip_efficiency = 0.95 where id = $1', [battery]);
       const [r] = await dispatch(db, { perimeter: { kind: 'participant', id: home }, from: FROM, to: TO });
       expect(r.indicators.discharge_kwh).toBeCloseTo(9.5, 6);
     });

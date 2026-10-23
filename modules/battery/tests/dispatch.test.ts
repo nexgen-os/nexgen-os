@@ -1,4 +1,4 @@
-// The dispatch rule of the `storage` module on days checked by hand, and
+// The dispatch rule of the `battery` module on days checked by hand, and
 // its parity with the rule it was taken from, on that rule's own fixtures.
 import { describe, expect, it } from 'vitest';
 import { dispatchBattery, dispatchChain, indicators, type Battery, type Flows } from '../src/dispatch.js';

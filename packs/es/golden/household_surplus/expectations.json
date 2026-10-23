@@ -46,7 +46,7 @@
       "level": "generic",
       "conditions": {},
       "source_code": "atb_2025_residential_battery",
-      "source": "modules/storage: a C-rate of 0.4, the residential battery of the Annual Technology Baseline 2025, published for every country."
+      "source": "modules/battery: a C-rate of 0.4, the residential battery of the Annual Technology Baseline 2025, published for every country."
     }
   ],
   "perimeter": {

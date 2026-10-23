@@ -7,7 +7,7 @@ Schema: `weather`.
 Weather belongs to a place, not to a device: two PV systems of one participant
 share it, a heat pump of the same participant reads the same temperature. So the
 choice of a source and the point it is read at sit at the participant, and every
-other module (`solar`, `heating`, `consumption`, `storage`) reads them here.
+other module (`solar`, `heating`, `consumption`, `battery`) reads them here.
 
 ## What it adds to the core
 

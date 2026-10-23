@@ -124,9 +124,59 @@ export async function install(db: SqlClient, options: InstallOptions = {}): Prom
     packs: options.packs ?? [],
   };
   const p = plan(catalogue, selection, new Set(recorded.keys()));
+  const [taken] = await takenSchemas(db, catalogue, p.pending);
+  if (taken) {
+    throw new NexgenError('schema_taken', `${describeTaken(taken)}; nothing was applied. Install the other modules with --modules, without ${taken.module}`);
+  }
   await applyPlan(db, catalogue, p.pending, { dryRun: options.dryRun, onStep: options.onStep });
   const ekwoKeys = options.dryRun ? [] : await referenceEkwo(db);
   return { from, applied: p.pending, skipped: p.steps.length - p.pending.length, dryRun: options.dryRun ?? false, ekwoKeys };
+}
+
+/** A schema a module would create that the database already holds. */
+export interface TakenSchema {
+  module: string;
+  schema: string;
+  /** Tables, views, sequences and functions already in it. */
+  objects: number;
+}
+
+/**
+ * The schemas the pending steps would create and the database already
+ * holds: those of the modules whose first migration is pending. Every
+ * Supabase project holds `auth`, `storage`, `realtime` and others of its
+ * own, and a module's `create schema` would stop the run halfway; this
+ * reads them before anything is applied.
+ */
+export async function takenSchemas(db: SqlClient, catalogue: Catalogue, pending: Step[]): Promise<TakenSchema[]> {
+  const names = new Set(pending.map((s) => s.name));
+  const wanted = [...catalogue.modules]
+    .filter(([code, steps]) => names.has(steps[0].name) && catalogue.schemas.has(code))
+    .map(([code]) => ({ module: code, schema: catalogue.schemas.get(code)! }));
+  if (wanted.length === 0) return [];
+  const rows = await db.query<{ schema: string; objects: number }>(
+    `select n.nspname as schema,
+            ((select count(*) from pg_class c where c.relnamespace = n.oid and c.relkind in ('r', 'p', 'v', 'm', 'S', 'f'))
+             + (select count(*) from pg_proc f where f.pronamespace = n.oid))::int as objects
+       from pg_namespace n where n.nspname = any($1::text[])`,
+    [wanted.map((w) => w.schema)],
+  );
+  const found = new Map(rows.map((r) => [r.schema, r.objects]));
+  return wanted.filter((w) => found.has(w.schema)).map((w) => ({ ...w, objects: found.get(w.schema)! }));
+}
+
+/** One line for a taken schema, the same for `init` and `doctor`. */
+export function describeTaken(t: TakenSchema): string {
+  return `schema ${t.schema} already exists with ${t.objects} object${t.objects === 1 ? '' : 's'} of its own, and module ${t.module} creates it`;
+}
+
+/** One line for an installation that holds a module under its former code. */
+export function describeRenamed(catalogue: Catalogue): (old: string) => string {
+  return (old) => {
+    const now = catalogue.formerly.get(old)!;
+    return `the database holds module ${old}, which this package ships as ${now} (schema ${catalogue.schemas.get(now)}); `
+      + `it is not renamed in place before 1.0: see the changelog for the way from ${old} to ${now}`;
+  };
 }
 
 /**
@@ -146,6 +196,10 @@ export async function migrate(
   const modules = await registeredModules(db);
   for (const s of scopes) if (s.startsWith('module:')) modules.add(s.slice('module:'.length));
   const catalogue = await readCatalogue(options.root);
+  const renamed = [...modules].filter((m) => !catalogue.modules.has(m) && catalogue.formerly.has(m));
+  if (renamed.length > 0) {
+    throw new NexgenError('module_renamed', renamed.map(describeRenamed(catalogue)).join('; '));
+  }
   const unknown = [...modules].filter((m) => !catalogue.modules.has(m));
   if (unknown.length > 0) {
     throw new NexgenError('package_too_old', `the database has modules this package does not ship (${unknown.join(', ')}); run npx nexgen-os@latest migrate`);

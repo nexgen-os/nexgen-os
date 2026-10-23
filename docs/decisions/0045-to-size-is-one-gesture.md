@@ -10,7 +10,7 @@ platform built on this core calls it sizing, everywhere — its screens say
 engine that sized on a criterion nobody chose (a self-consumption rate of
 60 % implied by default) diverged in silence from every other caller, and
 the platform made the criterion mandatory. Two modules of this core size
-(`solar`, and `storage` next to it); written apart, they would name the
+(`solar`, and `battery` next to it); written apart, they would name the
 same gesture two ways and aim at criteria written two ways.
 
 ## Decision

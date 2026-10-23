@@ -101,7 +101,7 @@ describe('actions', () => {
       .rejects.toThrow(/actions_status/);
     await expect(action({ object_kind: 'participant', object_id: FARM, phase: 'design', name: 'Unknown source', source: 'dream' }))
       .rejects.toThrow(/actions_source/);
-    const fromDetector = await action({ object_kind: 'participant', object_id: FARM, phase: 'study', name: 'Battery sizing study', source: 'detector', source_ref: 'storage_investment' });
+    const fromDetector = await action({ object_kind: 'participant', object_id: FARM, phase: 'study', name: 'Battery sizing study', source: 'detector', source_ref: 'battery_investment' });
     expect((await one<{ source: string }>(db, 'select source from actions.actions where id = $1', [fromDetector])).source).toBe('detector');
   });
 
@@ -122,7 +122,7 @@ describe('the lifecycle of an action', () => {
   it('proposes a recommendation resting on its estimate, then validates, launches and completes it', async () => {
     const estimate = '00000000-0000-4000-8000-0000000000e1';
     const id = (await one<{ id: string }>(db,
-      `select actions.propose('participant', $1, 'study', 'Install a 20 kWh battery', 'agent', 'storage', 'solar.estimates', $2, 1400, 10) id`,
+      `select actions.propose('participant', $1, 'study', 'Install a 20 kWh battery', 'agent', 'battery', 'solar.estimates', $2, 1400, 10) id`,
       [FARM, estimate])).id;
     expect(await one(db, 'select status, source, estimate_kind, estimate_id, expected_gain_per_year::float8 gain, gain_horizon_years from actions.actions where id = $1', [id]))
       .toEqual({ status: 'proposed', source: 'agent', estimate_kind: 'solar.estimates', estimate_id: estimate, gain: 1400, gain_horizon_years: 10 });
@@ -142,7 +142,7 @@ describe('the lifecycle of an action', () => {
     await expect(db.query(`select actions.move($1, 'validated')`, [id])).rejects.toThrow(/^action_status_invalid: .* not dismissed → validated/);
     await db.query(`select actions.move($1, 'proposed')`, [id]);
     expect(await one(db, 'select status from actions.actions where id = $1', [id])).toEqual({ status: 'proposed' });
-    await expect(db.query(`select actions.propose('participant', $1, 'study', 'X', 'agent', null, 'storage.nowhere', $1)`, [FARM])).rejects.toThrow(/^estimate_kind_unknown/);
+    await expect(db.query(`select actions.propose('participant', $1, 'study', 'X', 'agent', null, 'battery.nowhere', $1)`, [FARM])).rejects.toThrow(/^estimate_kind_unknown/);
     await expect(action({ object_kind: 'participant', object_id: FARM, phase: 'study', name: 'Gain alone', expected_gain_per_year: 10 })).rejects.toThrow(/actions_gain_on_estimate/);
     await db.query('delete from actions.actions where id = $1', [id]);
   });
@@ -330,7 +330,7 @@ describe('three kinds, one lifecycle', () => {
 
   it('a recommendation: proposed, resting on the estimate that gives its gain, and only on one', async () => {
     const id = (await one<{ id: string }>(db,
-      `select actions.propose('participant', $1, 'study', 'Add a battery', 'agent', 'storage', 'solar.estimates', $1, 900, 12) id`, [FARM])).id;
+      `select actions.propose('participant', $1, 'study', 'Add a battery', 'agent', 'battery', 'solar.estimates', $1, 900, 12) id`, [FARM])).id;
     made.push(id);
     expect(await one(db, 'select kind, status from actions.actions where id = $1', [id])).toEqual({ kind: 'recommendation', status: 'proposed' });
     await expect(action({ object_kind: 'participant', object_id: FARM, phase: 'study', name: 'Groundless', kind: 'recommendation' }))

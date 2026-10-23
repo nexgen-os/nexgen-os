@@ -42,5 +42,7 @@ the release notes say when it goes.
 
 - Inherits Ekwo OS 0063 (*A module code outlives its names*).
 - [0032](0032-a-module-has-its-own-schema.md) — what a module owns.
+- [0054](0054-a-module-that-cannot-install-changes-its-code.md) — the one
+  exception: a module that could not install changed its code before 1.0.
 - [0040](0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) — the
   release that carries a rename.

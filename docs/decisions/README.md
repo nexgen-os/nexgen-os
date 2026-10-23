@@ -64,6 +64,7 @@ describes; its record is written once the fix has shipped.
 - [0042](0042-a-module-starts-from-an-object-of-the-core.md) · A module starts from an object of the core and enriches it · accepted
 - [0041](0041-a-module-names-one-thing.md) · A module names one thing with its own physics, and there is no catch-all · accepted
 - [0033](0033-a-module-code-outlives-its-names.md) · A module code outlives its names · accepted
+- [0054](0054-a-module-that-cannot-install-changes-its-code.md) · A module that cannot install changes its code, once, before 1.0 · accepted
 
 ## Packs
 

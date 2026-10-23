@@ -10,7 +10,7 @@
     "$schema": { "type": "string" },
     "code": {
       "$ref": "#/$defs/identifier",
-      "description": "The module's identifier, the name of its folder and the key of `nexgen.modules`. Immutable once published: a module whose name becomes more precise renames its folder and its schema and keeps its code (decision 0033)."
+      "description": "The module's identifier, the name of its folder and the key of `nexgen.modules`. Immutable once published: a module whose name becomes more precise renames its folder and its schema and keeps its code (decision 0033); a module that could not install changed its code once before 1.0 and lists the former one in `formerly` (decision 0054)."
     },
     "name": { "type": "string", "minLength": 1 },
     "description": {
@@ -42,6 +42,12 @@
           "description": "The codes of the modules that must be installed before this one. Empty for a module that starts from the core alone, which is the rule: a module table never names a table of another module."
         }
       }
+    },
+    "formerly": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identifier" },
+      "uniqueItems": true,
+      "description": "The codes this module carried in an earlier release, when a code had to change because it could not install (decision 0054). `nexgen-os migrate` recognises an installation that holds a former code and refuses it by name (`module_renamed`) with the way to the new one."
     },
     "licence": {
       "type": "string",

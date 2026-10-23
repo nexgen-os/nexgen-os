@@ -8,7 +8,7 @@
       "level": "generic",
       "conditions": {},
       "source_code": "atb_2025_residential_battery",
-      "source": "modules/storage: 5 kW / 12.5 kWh, the representative residential battery of the Annual Technology Baseline 2025, published for every country."
+      "source": "modules/battery: 5 kW / 12.5 kWh, the representative residential battery of the Annual Technology Baseline 2025, published for every country."
     },
     {
       "object": "participant:home",
@@ -62,7 +62,7 @@
           "level": "generic"
         }
       },
-      "source": "storage.battery_of(): the capacity the device says, its power at the generic C-rate (5 × 0.4 kW), the generic round-trip efficiency."
+      "source": "battery.battery_of(): the capacity the device says, its power at the generic C-rate (5 × 0.4 kW), the generic round-trip efficiency."
     }
   ],
   "perimeter": {

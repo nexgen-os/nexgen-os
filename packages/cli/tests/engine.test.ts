@@ -32,6 +32,8 @@ const synthetic: Catalogue = {
     ['alpha', [step('modules/alpha/supabase/migrations/0001_alpha.sql', 'module:alpha')]],
     ['beta', [step('modules/beta/supabase/migrations/0001_beta.sql', 'module:beta'), step('modules/beta/supabase/migrations/0002_beta.sql', 'module:beta')]],
   ]),
+  schemas: new Map([['alpha', 'alpha'], ['beta', 'beta']]),
+  formerly: new Map(),
   packs: new Map([['xx', { code: 'xx', modules: ['beta'], steps: [step('supabase/seed/12_pack_xx.sql', 'pack:xx')] }]]),
 };
 
@@ -65,7 +67,7 @@ describe('plan', () => {
     const names = c.core.map((s) => s.name);
     expect(names.at(-2)).toBe('supabase/migrations/20261013000000_schema_version_0_3_0.sql');
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['actions', 'billing', 'building', 'charging', 'community', 'consumption', 'grid', 'kpis', 'solar', 'storage', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['actions', 'battery', 'billing', 'building', 'charging', 'community', 'consumption', 'grid', 'kpis', 'solar', 'weather']);
     // Every folder of packs/ with a pack.json, whichever countries the release holds.
     const folders = (await readdir(join(repoRoot, 'packs'))).filter((d) => existsSync(join(repoRoot, 'packs', d, 'pack.json'))).sort();
     expect(folders.length).toBeGreaterThan(0);
@@ -116,6 +118,21 @@ describe('install on a database', () => {
     expect(left.postgis).not.toBeNull();
   });
 
+  it('refuses a module whose schema the database already holds, by name, before applying anything', async () => {
+    // As every Supabase project holds `storage` for Supabase Storage: a
+    // schema of somebody else's, with a table and a function of its own.
+    const db = await track(emptyDatabase());
+    await db.exec(`create schema battery; create table battery.objects (id int primary key);
+      create function battery.search() returns int language sql as 'select 1';`);
+    const refusal = /^schema_taken: schema battery already exists with 2 objects of its own, and module battery creates it; nothing was applied/;
+    await expect(install(sqlClient(db), { root: repoRoot, dryRun: true })).rejects.toThrow(refusal);
+    await expect(install(sqlClient(db), { root: repoRoot })).rejects.toThrow(refusal);
+    expect((await one<{ s: string | null }>(db, `select to_regnamespace('nexgen')::text s`)).s).toBeNull();
+    const r = await install(sqlClient(db), { root: repoRoot, modules: ['grid'] });
+    expect(r.applied.map((s) => s.scope)).toContain('module:grid');
+    expect((await one<{ n: number }>(db, 'select count(*)::int n from battery.objects')).n).toBe(0);
+  });
+
   it('refuses without PostGIS, with the line to run', async () => {
     const db = await track(emptyDatabase({ postgis: false }));
     await expect(install(sqlClient(db), { root: repoRoot })).rejects.toThrow(
@@ -142,6 +159,15 @@ describe('migrate', () => {
     const r = await migrate(sqlClient(db), { root });
     expect(r.applied).toEqual([{ name: 'supabase/migrations/20991231000000_core_later.sql', scope: 'core' }]);
     expect((await migrate(sqlClient(db), { root })).applied).toEqual([]);
+  });
+
+  it('refuses an installation that holds a module under its former code, naming the new one', async () => {
+    const db = await track(freshDatabase(['grid']));
+    await db.exec(`insert into nexgen.modules (code, name, version, schema_name, requires_core_min, description)
+      values ('storage', 'Storage', '0.3.0', 'storage', '0.3.0', 'Batteries, as release 0.3.0 named them.');`);
+    await expect(migrate(sqlClient(db), { root: repoRoot })).rejects.toThrow(
+      /^module_renamed: the database holds module storage, which this package ships as battery \(schema battery\); it is not renamed in place before 1\.0/,
+    );
   });
 
 });

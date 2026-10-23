@@ -276,7 +276,7 @@ create table sizing_criteria (
 );
 
 comment on table sizing_criteria is
-  'The criteria a sizing optimises, shared by every module that sizes (solar.size(), storage.size()): self-consumption rate, self-sufficiency, payback, net present value, maximum power. Vocabulary: written by the core seed, modules and packs.';
+  'The criteria a sizing optimises, shared by every module that sizes (solar.size(), battery.size()): self-consumption rate, self-sufficiency, payback, net present value, maximum power. Vocabulary: written by the core seed, modules and packs.';
 
 -- ---------------------------------------------------------------------------
 -- value_statuses — what kind of value a value is.

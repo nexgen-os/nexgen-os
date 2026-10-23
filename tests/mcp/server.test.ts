@@ -66,7 +66,7 @@ describe('the server', () => {
       'actions_of_project', 'actions_propose', 'actions_validate']) {
       expect(names).toContain(name);
     }
-    expect(names).not.toContain('storage_size');
+    expect(names).not.toContain('battery_size');
     expect(names).not.toContain('community_settle');
     expect(tools.find((t) => t.name === 'read_series')?.annotations?.readOnlyHint).toBe(true);
     expect(tools.find((t) => t.name === 'actions_validate')?.annotations?.destructiveHint).toBe(true);

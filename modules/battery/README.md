@@ -1,6 +1,6 @@
-# `storage` — batteries, their dispatch and their size
+# `battery` — batteries, their dispatch and their size
 
-Status: shipped. Schema: `storage`.
+Status: shipped. Schema: `battery`.
 
 A battery is a device of the core of type `battery`. This module says what
 its dispatch is computed from — its usable capacity, its power, its
@@ -8,17 +8,17 @@ round-trip efficiency, the band of state of charge it is kept in, what it
 is run for and which flows it sees — computes that dispatch on the interval
 series of a participant's place or of a project's sharing, and sizes a
 battery for a named criterion. What it computes is an estimate, kept in
-`storage.estimates` (decision [0004](../../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
-Hydrogen and heat storage come later.
+`battery.estimates` (decision [0004](../../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
+Hydrogen and heat storage are other modules, later.
 
 ## What it adds to the core
 
 | Table | Holds |
 |---|---|
-| `storage.devices` | the battery, a device of type `battery` with the same id (`call derive_devices('storage.devices', 'battery')`): `usable_capacity_kwh`, `charge_power_kw` and `discharge_power_kw` on its AC side, `round_trip_efficiency` (0 to 1), `min_charge_level` and `max_charge_level` (percent of its usable capacity), its `objective`, its `perimeter` (`site`: the flows of its participant's place, individual self-consumption; `project`: the surplus and residual of its project once energy is shared, collective self-consumption), `peak_threshold_kw` for peak shaving. Every figure may be null: the product or `parameter_of()` says it then. |
-| `storage.battery_products` | the physics of a battery product of the core's `products`, same id: charge and discharge power per unit, round-trip efficiency, cycle life and the capacity left at its end, the source of the figures. The usable capacity is the product's `unit_capacity_kwh`. Shared products are read by everyone signed in; an organisation's by its members. |
-| `storage.objectives` | what a battery is run for, a vocabulary: `self_consumption`, `peak_shaving`, `arbitrage`. |
-| `storage.estimates` | what the module computed: a dispatch, about the battery (`device_id`), or a sizing, about the participant or the project (`participant_id` or `project_id`, with its `criterion`); one subject each, by foreign key, the estimate going with it; its `provenance`, `inputs` and `results`. |
+| `battery.devices` | the battery, a device of type `battery` with the same id (`call derive_devices('battery.devices', 'battery')`): `usable_capacity_kwh`, `charge_power_kw` and `discharge_power_kw` on its AC side, `round_trip_efficiency` (0 to 1), `min_charge_level` and `max_charge_level` (percent of its usable capacity), its `objective`, its `perimeter` (`site`: the flows of its participant's place, individual self-consumption; `project`: the surplus and residual of its project once energy is shared, collective self-consumption), `peak_threshold_kw` for peak shaving. Every figure may be null: the product or `parameter_of()` says it then. |
+| `battery.products` | the physics of a battery product of the core's `products`, same id: charge and discharge power per unit, round-trip efficiency, cycle life and the capacity left at its end, the source of the figures. The usable capacity is the product's `unit_capacity_kwh`. Shared products are read by everyone signed in; an organisation's by its members. |
+| `battery.objectives` | what a battery is run for, a vocabulary: `self_consumption`, `peak_shaving`, `arbitrage`. |
+| `battery.estimates` | what the module computed: a dispatch, about the battery (`device_id`), or a sizing, about the participant or the project (`participant_id` or `project_id`, with its `criterion`); one subject each, by foreign key, the estimate going with it; its `provenance`, `inputs` and `results`. |
 
 Five properties are read through `parameter_of()` where neither the
 device nor its product says them — the device's own attribute, its
@@ -47,7 +47,7 @@ them sets them on its organisation, with their source. The cost, the
 lifetime and the discount rate are not shipped: a figure nobody decided is
 refused by name (`parameter_missing`).
 
-`storage.battery_of(device, at)` gives every figure a dispatch reads, each
+`battery.battery_of(device, at)` gives every figure a dispatch reads, each
 with where it came from:
 
 | Figure | Read from, first that says it |
@@ -124,7 +124,7 @@ divides the period; a bucket without a value is refused
 
 Each battery gets one estimate, about the device, and three `simulated`
 series of the device written through `store()`, each naming the estimate in
-its source (`storage.estimates:<id>`): `battery_charge_energy` and
+its source (`battery.estimates:<id>`): `battery_charge_energy` and
 `battery_discharge_energy` per interval, `charge_level` (percent of the
 usable capacity) at the start of each interval. The inputs say the period,
 the step, the series read, the battery as `battery_of()` gave it, its place

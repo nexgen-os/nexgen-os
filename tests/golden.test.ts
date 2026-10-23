@@ -13,7 +13,7 @@
 // Nothing here knows a country. The runner reads `packs/`, installs every
 // module and every pack, builds each case through the gestures a caller
 // uses (`join_project`, `declare_meter`, `install_device`, `store`), and
-// compares what `parameter_of()`, `storage.battery_of()`,
+// compares what `parameter_of()`, `battery.battery_of()`,
 // `community.check_perimeter()`, `grid.operator_of()`, `settleSharing()`,
 // the PVWatts model of `solar` and `kpis.measure()` answer with the file.
 // A new pack only adds files; `nexgen-os pack check` checks their shape.
@@ -100,10 +100,10 @@ async function build({ scenario: s, name }: GoldenCase, pack: string): Promise<I
     for (const d of p.devices ?? []) {
       const device = (await one<{ id: string }>(db, 'select install_device($1, $2, $3, null, $4) id', [id, d.type, d.name, d.rated_power_kw ?? null])).id;
       ids.set(`device:${d.ref}`, device);
-      if (d.storage) {
-        const cols = Object.keys(d.storage);
-        await db.query(`insert into storage.devices (id, ${cols.join(', ')}) values ($1, ${cols.map((_, i) => `$${i + 2}`).join(', ')})`,
-          [device, ...cols.map((c) => d.storage![c])]);
+      if (d.battery) {
+        const cols = Object.keys(d.battery);
+        await db.query(`insert into battery.devices (id, ${cols.join(', ')}) values ($1, ${cols.map((_, i) => `$${i + 2}`).join(', ')})`,
+          [device, ...cols.map((c) => d.battery![c])]);
       }
     }
   }
@@ -152,7 +152,7 @@ describe.each(packs)('the golden cases of packs/%s', (pack) => {
 
     it.runIf(e.batteries)('says every figure of a battery and where it comes from', async () => {
       for (const b of e.batteries!) {
-        const of = (await one<{ b: Record<string, unknown> }>(db, 'select storage.battery_of($1, $2) b', [idOf(ids, `device:${b.device}`), b.at])).b;
+        const of = (await one<{ b: Record<string, unknown> }>(db, 'select battery.battery_of($1, $2) b', [idOf(ids, `device:${b.device}`), b.at])).b;
         expect(of).toMatchObject(b.figures);
       }
     });

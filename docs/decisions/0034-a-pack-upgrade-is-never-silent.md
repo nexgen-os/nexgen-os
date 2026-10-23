@@ -66,7 +66,7 @@ specialist, a building regulation specialist) and the version reviewed.
   says why (`"golden": {"exempt": "…"}`, the fixture pack of the tests).
 - `tests/golden.test.ts` installs every module and every pack, builds each
   case through the gestures a caller uses, and compares what
-  `parameter_of()`, `storage.battery_of()`, `community.check_perimeter()`,
+  `parameter_of()`, `battery.battery_of()`, `community.check_perimeter()`,
   `grid.operator_of()`, `settleSharing()` with the example engine, the
   PVWatts model of `solar` and `kpis.measure()` answer. A new pack adds
   files and no code.

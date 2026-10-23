@@ -89,7 +89,7 @@ person, under row level security, in one transaction each:
 | `meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]` | `declare_meter()` |
 | `device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]` | `install_device()` |
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |
-| `size --module solar\|storage --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
+| `size --module solar\|battery --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
 | `kpis --object-kind <k> --object <id> --from <iso> --to <iso>` · `kpis compute … --indicator <code>` | `kpis.of()`, `kpis.compute()` |
 
 `--json` prints what the gesture answered; a refusal is printed by its name
@@ -102,7 +102,12 @@ Every refusal starts with a name: `postgis_required` (with the line to run),
 `not_installed`, `package_too_old` (the database is newer than this package),
 `database_too_old` (the database is below this package's floor: run the
 release named first), `unknown_module`, `unknown_pack`,
-`pack_requires_module`, `db_url_required`. `doctor` adds `rls_disabled`,
+`pack_requires_module`, `db_url_required`, `schema_taken` (a schema a module
+would create is already in the database, as Supabase's own `storage` is:
+`init` refuses before applying anything and names the schema and the module)
+and `module_renamed` (the database holds a module under the code it carried
+in an earlier release, decision 0054). `doctor` adds `schema_taken` and
+`module_renamed` too, `rls_disabled`,
 `migrations_pending`, `module_unregistered`, `unknown_migration`,
 `schema_version_missing`, `history_missing`, `vocabulary_empty` and
 `module_table_detached` (a table of a module schema that carries

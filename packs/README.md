@@ -136,7 +136,7 @@ beside it, the figures a correct installation must find:
 | Section of `expectations.json` | Compared with |
 |---|---|
 | `defaults` | `parameter_of()`: the value, its level, region or country, its condition and its source; or the refusal (`parameter_missing`) |
-| `batteries` | `storage.battery_of()`: each figure of a battery and where it came from |
+| `batteries` | `battery.battery_of()`: each figure of a battery and where it came from |
 | `perimeter` | `community.check_perimeter()`: the rule and the verdict of each participant, distances within `tolerance_m` |
 | `operators` | `grid.operator_of()`: the operator of a meter and the level that found it, or the refusal |
 | `settlement` | `settleSharing()` with the example engine: the energy shared and each participant's share, within `tolerance_kwh` |
