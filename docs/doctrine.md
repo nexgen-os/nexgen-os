@@ -108,6 +108,7 @@ device belongs to its participant.
 
 - [0020](decisions/0020-a-pack-holds-what-a-function-reads.md) A pack holds what a function reads, and data cannot execute
 - [0021](decisions/0021-one-cascade-of-defaults.md) One cascade of defaults, climbing a municipality and a region to their parents, the most specific condition answering at each level, and no global fallback
+- [0054](decisions/0054-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md) A parameter is resolved once, from the country down to the device, by `parameter_of()` alone; what an owner may choose is a parameter, never a method constant; unset is absent, zero is a value
 - [0034](decisions/0034-a-pack-upgrade-is-never-silent.md) A pack upgrade is never silent, and a golden case is its contract
 - [0049](decisions/0049-the-market-follows-the-place-a-scheme-is-the-countrys-its-contract-the-devices.md) The market follows the place, a market series names its zone; a support scheme is the country's, its contract the device's
 
