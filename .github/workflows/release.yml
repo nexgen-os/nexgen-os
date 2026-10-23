@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 60
     # Trusted publishing names this workflow file; the environment is optional
     # on npmjs.com and can carry a required reviewer if a human gate is wanted.
