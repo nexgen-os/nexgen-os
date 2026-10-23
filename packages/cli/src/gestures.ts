@@ -66,7 +66,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os kpis --object-kind <k> --object <id> --from <iso> --to <iso>            the indicators of an object
   nexgen-os kpis compute --object-kind <k> --object <id> --indicator <code> --from <iso> --to <iso>
   nexgen-os solar estimate --project <id> --name <n> --country <cc> --lon <x> --lat <y>
-                           --kwp <p> --azimuth <deg from north> --tilt <deg> [--year yyyy] [--time-zone tz]
+                           --kwp <p> --azimuth <deg from north> --tilt <deg> [--year yyyy] [--loss pct] [--time-zone tz]
                                                                                     a PV system at a point and its yield by month
 `;
 
@@ -76,7 +76,7 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
-  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value',
+  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value', loss: 'value',
 };
 
 function need(flags: Flags, name: string): string {
@@ -175,7 +175,9 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
       return estimatePvYieldAt(db, io.computations ?? {}, {
         project_id: need(f, 'project'), name: need(f, 'name'), country: need(f, 'country'),
         lon: number(f, 'lon'), lat: number(f, 'lat'), kwp: number(f, 'kwp'), azimuth_deg: number(f, 'azimuth'), tilt_deg: number(f, 'tilt'),
-        year: optional(f, 'year') === undefined ? new Date().getUTCFullYear() - 3 : number(f, 'year'),
+        ...(optional(f, 'year') !== undefined ? { year: number(f, 'year') } : {}),
+        // A percentage, as PVGIS takes it; the attribute holds a fraction.
+        ...(optional(f, 'loss') !== undefined ? { system_loss: number(f, 'loss') / 100 } : {}),
         ...(optional(f, 'time-zone') ? { time_zone: optional(f, 'time-zone')! } : {}),
       });
     default:
