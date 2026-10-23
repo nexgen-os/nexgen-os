@@ -1,4 +1,4 @@
-# 0054 — A parameter is resolved once, from the country down to the device; what an owner may choose is a parameter, never a method constant
+# 0055 — A parameter is resolved once, from the country down to the device; what an owner may choose is a parameter, never a method constant
 
 > Status: accepted · amends [0021](0021-one-cascade-of-defaults.md)
 
