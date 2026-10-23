@@ -67,7 +67,10 @@ describe('nexgen-os solar estimate', () => {
 
     const recordedKwh = recorded.outputs.hourly.reduce((s, h) => s + h.P, 0) / 1000;
     expect(answer.annual_kwh).toBeCloseTo(recordedKwh, 3);
-    expect(answer.months).toEqual([{ month: '2023-01', kwh: Math.round(recordedKwh * 10) / 10 }]);
+    expect(answer.months).toEqual([{ month: 1, kwh: Math.round(recordedKwh * 10) / 10 }]);
+    expect(answer.years).toEqual({ from: 2023, to: 2023 });
+    expect([params.startyear, params.endyear, params.loss]).toEqual(['2023', '2023', '14']);
+    expect(answer.system_loss).toMatchObject({ fraction: 0.14, level: 'generic', source_code: 'pvgis' });
     expect(answer.provenance).toBe('pvgis-5.3+solar-0.3.0');
 
     const written = await one<Record<string, unknown>>(db, `
@@ -81,6 +84,25 @@ describe('nexgen-os solar estimate', () => {
       name: 'Roof of the hall', project_id: project, time_zone: 'Europe/Brussels', location_precision: 'rooftop', lon: 4.35,
       device_type: 'solar', kw: 6, kwp: 6, azimuth: 135, tilt: 25, array_kwp: 6, same_device: true,
     });
+  });
+
+  it('without a year, gives the mean of every year PVGIS covers', async () => {
+    const r = await run(['solar', 'estimate', ...at(project).slice(0, -2), '--json']);
+    expect(r.err).toBe('');
+    const params = new URL(asked.at(-1) as string).searchParams;
+    expect([params.has('startyear'), params.has('endyear')]).toEqual([false, false]);
+    // The recorded answer covers 2023 alone: PVGIS's coverage is what the estimate says it read.
+    expect(JSON.parse(r.out).years).toEqual({ from: 2023, to: 2023 });
+  });
+
+  it('sets the loss given on the participant, where the cascade reads it', async () => {
+    const r = await run(['solar', 'estimate', ...at(project), '--loss', '2.5', '--json']);
+    expect(r.err).toBe('');
+    const answer = JSON.parse(r.out);
+    expect(new URL(asked.at(-1) as string).searchParams.get('loss')).toBe('2.5');
+    expect(answer.system_loss).toMatchObject({ fraction: 0.025, level: 'participant', object_id: answer.participant_id });
+    const set = await one<{ value: number; status: string }>(db, `select value::float8 value, status from attributes where object_id = $1 and attribute_type = 'system_loss'`, [answer.participant_id]);
+    expect(set).toEqual({ value: 0.025, status: 'estimated' });
   });
 
   it('acts as the person: someone outside the organisation writes nothing', async () => {
