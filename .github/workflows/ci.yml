@@ -42,12 +42,14 @@ jobs:
         if: ${{ !vars.CI_RUNNER }}
         with:
           python-version: '3.12'
-      # setup-python cannot install on a self-hosted macOS runner: the Python
-      # of the machine runs the job, in a virtual environment of its own.
-      - name: a virtual environment on a self-hosted runner
+      # setup-python cannot install on a self-hosted macOS runner: uv brings
+      # the same Python into a virtual environment of the job's own.
+      - uses: astral-sh/setup-uv@v6
+        if: ${{ vars.CI_RUNNER }}
+      - name: Python 3.12 on a self-hosted runner
         if: ${{ vars.CI_RUNNER }}
         run: |
-          python3 -m venv "$RUNNER_TEMP/venv"
+          uv venv --seed --python 3.12 "$RUNNER_TEMP/venv"
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - run: npm ci
       - run: pip install -e packages/connectors/pvlib
@@ -69,12 +71,14 @@ jobs:
         if: ${{ !vars.CI_RUNNER }}
         with:
           python-version: '3.12'
-      # setup-python cannot install on a self-hosted macOS runner: the Python
-      # of the machine runs the job, in a virtual environment of its own.
-      - name: a virtual environment on a self-hosted runner
+      # setup-python cannot install on a self-hosted macOS runner: uv brings
+      # the same Python into a virtual environment of the job's own.
+      - uses: astral-sh/setup-uv@v6
+        if: ${{ vars.CI_RUNNER }}
+      - name: Python 3.12 on a self-hosted runner
         if: ${{ vars.CI_RUNNER }}
         run: |
-          python3 -m venv "$RUNNER_TEMP/venv"
+          uv venv --seed --python 3.12 "$RUNNER_TEMP/venv"
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - run: npm ci
       - run: pip install -e "packages/python[binary]"
