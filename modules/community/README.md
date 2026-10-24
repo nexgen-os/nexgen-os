@@ -64,7 +64,8 @@ Refusals before an engine starts: `project_not_found`, `period_empty`,
 (`key_unknown`, `rule_unknown`…), passed on as they come.
 [`packages/connectors/sharing-example`](../../packages/connectors/sharing-example/README.md) shares
 in proportion to offtake and is meant to be copied: the key a community
-applies is its engine, never a function of this module.
+applies is its engine, never a function of this module
+(decision [0056](../../docs/decisions/0056-the-key-a-community-applies-is-its-engine.md)).
 
 ## Consents
 

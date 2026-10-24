@@ -105,6 +105,7 @@ describes; its record is written once the fix has shipped.
 - [0010](0010-the-participant-is-billed-ekwo-os-keeps-the-invoice.md) · The participant is billed, Ekwo OS keeps the invoice: one thin bridge module · accepted
 - [0012](0012-a-yield-says-what-it-was-computed-from.md) · A yield says what it was computed from · accepted
 - [0017](0017-an-action-is-something-to-do.md) · An action is something to do on an object of the core, now or later: a step, a recommendation or a command, in one lifecycle; what a project needs is a template, the same in every country · accepted
+- [0056](0056-the-key-a-community-applies-is-its-engine.md) · The key a community applies is its engine; the module keeps the model and checks the physics · accepted
 - [0045](0045-to-size-is-one-gesture.md) · To size is one gesture, `size()`, with a named criterion · accepted
 - [0047](0047-a-charging-profile-is-a-command.md) · A charging profile is a command of the `actions` module on the charger, its effect a setpoint series · accepted
 - [0049](0049-the-market-follows-the-place-a-scheme-is-the-countrys-its-contract-the-devices.md) · The market follows the place; a support scheme is the country's, its contract the device's · accepted
