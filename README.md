@@ -145,7 +145,7 @@ what is attached to them, in the schema `nexgen`. In plain words:
 ![The six objects of the core: an organisation works on projects, participants take part in a project, a participant carries meters and has devices, meters and devices have series](docs/images/model.svg)
 
 - **the organisation** owns the data and has members;
-- **the project** is what a person works on — a community, a set of buildings, a study, a district plan;
+- **the project** is what a person works on — a community, a self-consumption operation, a rooftop PV project, a portfolio of sites — with the frame it is carried out in when it has one;
 - **the participant** is the node: an actor with its address and its point on the map, every module links to it;
 - **the meter** is its connection point to a network, the frontier between the grid and the place;
 - **the device** is what it has behind the meter — a PV system, a battery, a charger, a heat pump, a probe;

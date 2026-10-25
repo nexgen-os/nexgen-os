@@ -213,7 +213,7 @@ that any program accepting it answers in.
   [`settlement-example`](settlement-example/README.md) is one to copy.
 - `energy_sharing` ([`sharing.ts`](../core/src/connectors/sharing.ts)): the
   participants of a sharing over a period (`from`, `to`, `step`), each with
-  its role, its attributes (`allocation_share`, `allocation_rank`…) and its
+  its category (producer, consumer, prosumer), its attributes (`allocation_share`, `allocation_rank`…) and its
   metered `offtake_energy` and `injection_energy`, kWh per step; the
   allocation key as the project holds it (`method`, `parameters`) and the
   rules of the country or the project passed as they are (`rules`). Out,

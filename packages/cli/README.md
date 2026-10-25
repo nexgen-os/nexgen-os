@@ -85,7 +85,7 @@ person, under row level security, in one transaction each:
 | `key create --organisation <id> --name <n> [--write] [--expires <iso>]` | Issues a key, as a person who holds `members.manage` (an owner), with `data.read`, and `data.write` with `--write`; the secret is printed once |
 | `key list --organisation <id>` · `key revoke <id>` | The keys, never a secret; a withdrawal, at once |
 | `project create --organisation <id> --name <n> --country <cc> [--kind k]` | `create_project()` |
-| `participant add --project <id> --name <n> [--place <json>\|--address <text>] [--country cc] [--time-zone tz]` | `join_project()`; an address through the geocoders of `NEXGEN_GEOCODERS` |
+| `participant add --project <id> --name <n> [--place <json>\|--address <text>] [--country cc] [--time-zone tz] [--category c]` | `join_project()`; an address through the geocoders of `NEXGEN_GEOCODERS` |
 | `meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]` | `declare_meter()` |
 | `device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]` | `install_device()` |
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |

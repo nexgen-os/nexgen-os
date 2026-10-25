@@ -123,7 +123,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 | `acc_rural` | `fr_acc` in Ain | the 20 km of rural municipalities by density class, a participant 23 km away out of the perimeter with the one it is furthest from |
 | `aci_household_battery` | `fr_aci` | the excise of a residential segment, a battery's power at the generic C-rate of the `battery` module, self-consumption through a battery |
 | `school_pv` | `pv_roof` in Grenoble | the excise of a public entity, the operator of FR-38 by region, a PVWatts yield within 0.1 %, specific yield and savings |
-| `pv_farm_injection` | `other` | the reference price of injection, and the value of the energy injected hour by hour at a price series |
+| `pv_farm_injection` | none | the reference price of injection, and the value of the energy injected hour by hour at a price series |
 
 ## What to check next
 

@@ -111,21 +111,22 @@ erDiagram
 
 ## On what
 
-- **projects** — what a person works on, its `kind` a row of
-  `project_kinds`: a study, a rooftop PV project, a set of buildings, a
-  construction site, a district plan, an individual or a collective
-  self-consumption, an energy community — or a legal frame of its country
+- **projects** — what a person works on, its `kind` the frame it is
+  carried out in, a row of `project_kinds`: a rooftop PV project, an
+  individual or a collective self-consumption, an energy community — or a
+  legal frame of its country
   its pack publishes (a collective self-consumption operation, a renewable
   energy community as the law of that country defines them), refining one
   of those and usable in that country only (`project_kind_unknown`,
-  `project_kind_foreign`); with the country whose rules apply, a perimeter on the map, a status from
+  `project_kind_foreign`), and null when it has no particular frame (a
+  study is a project in `simulation`; [0057](decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md)); with the country whose rules apply, a perimeter on the map, a status from
   `simulation` to `archived` and its dates. The allocation key of a
   community, the installed power of a set of buildings are attributes; the actions of
   its works are the `actions` module's.
 - **participants** — the node of a project
   ([0043](decisions/0043-the-participant-is-the-node.md)): an actor — a
-  household, a company, a tenant, a PV plant — `producer`, `consumer` or
-  `prosumer`, its customer `segment` (a row of `segments`: `individual`
+  household, a company, a tenant, a PV plant — its `category`, `producer`,
+  `consumer` or `prosumer`, its customer `segment` (a row of `segments`: `individual`
   and `coproperty` refining `residential`, `business`, `public_entity` and
   `association` refining `professional`; `individual` unless said, refused
   by name outside the vocabulary: `segment_unknown`), with the contact who
@@ -438,7 +439,7 @@ same check.
   foreign keys (`parents_of()`: a device's participant, its group and its
   project), its organisation's attribute, then the default of the
   municipality of the participant's place, of its region, of the regions it
-  is part of (`regions.parent`, nearest first) and of its country; at each
+  is part of (`regions.parent_code`, nearest first) and of its country; at each
   of these levels, the most specific row whose conditions the object meets
   (`pack_value()` through `condition_matches()`: the kind of its project,
   the segment of its participant, the type of the device it is asked for,

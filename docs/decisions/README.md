@@ -33,7 +33,7 @@ describes; its record is written once the fix has shipped.
 - [0027](0027-a-product-is-a-catalogue-entry.md) · A product is a catalogue entry, and a device is an instance of it · accepted
 - [0028](0028-two-objects-that-are-one-are-merged.md) · Two objects that are one are merged, and the absorbed one is retired · accepted
 - [0002](0002-standards-as-vocabulary-mappings.md) · A standard enters as a mapping of a vocabulary row · accepted
-- [0057](0057-one-word-per-thing-in-the-lists-of-the-core.md) · One word per thing in the lists of the core: a value says its quality, `status` is a lifecycle, a closed list is a check · accepted
+- [0057](0057-one-word-per-thing-in-the-lists-of-the-core.md) · One word per thing in the lists of the core: a value says its quality, a project its frame, a participant its category; `status` is a lifecycle, `role` an access preset · accepted
 - [0048](0048-a-value-says-what-kind-of-value-it-is.md) · A value says what kind of value it is · superseded by 0057
 
 ## Places

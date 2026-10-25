@@ -55,7 +55,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
   nexgen-os project create --organisation <id> --name <n> --country <cc> [--kind k]
-  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz]
+  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
   nexgen-os meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
   nexgen-os series import --format homeassistant --file <path> --entity <id> --organisation <id>

@@ -28,6 +28,18 @@ release may break, and says how. How a release is cut:
   ```
 
   A caller that names the old words changes them: `set_attribute(…, p_quality => 'assumed')` where it passed `p_status => 'default'`, `parameter_of(…)->>'quality'` where it read `->>'status'`, `where quality = 'assumed'` where it filtered `status = 'default'`.
+- **Breaking:** a project's kind is the frame it is carried out in, or none ([0057](docs/decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md)). `projects.kind` is nullable, without a default, and `create_project()` takes no kind unless given one; the generic kinds nothing reads are gone — `study` (a project being studied is in `simulation`), `other`, `buildings`, `construction` and `district_plan`. `pv_roof`, `self_consumption`, `individual_self_consumption`, `collective_self_consumption`, `energy_community` and the frames of the packs stay. The golden case `pv_farm_injection` of the pack `fr` has no kind.
+- **Breaking:** what a participant does with energy is its `category`, `producer`, `consumer` or `prosumer` (formerly `participants.role`): `join_project()` takes `p_category`, `add_participant` of the MCP server and `participant add --category` of the command line take `category`, the request of a sharing engine (`energy_sharing`) and `community.check_perimeter()` give `category`, a golden case of a pack writes `category` for each participant, and the GeoJSON of a participant carries it. `role` names an access preset only.
+- **Breaking:** the region a region is part of is `regions.parent_code` (formerly `parent`), as the parent row of every tree of the core; `grid.operator_of()` and the cascade of `parameter_of()` climb by it.
+
+  **From 0.3.0.** `nexgen-os migrate` applies `supabase/migrations/20261025100000_core_what_a_project_is.sql`, then `modules/community/supabase/migrations/0003_participant_category.sql` and `modules/grid/supabase/migrations/0002_region_parent_code.sql` where those modules are installed. A project of a removed kind keeps everything else and has no kind; a kind an installation added under one of them loses its parent. The migration refuses a database where a default holds for a removed kind (`project_kind_in_use`); close those rows or move them first:
+
+  ```sql
+  select id, attribute_type, country, condition from nexgen.defaults
+   where condition->>'project_kind' in ('study', 'other', 'buildings', 'construction', 'district_plan');
+  ```
+
+  A caller changes `participants.role` to `participants.category`, `regions.parent` to `regions.parent_code`, `join_project(…, p_role => …)` to `p_category`, and reads a project's `kind` as possibly null; an action template of an installation whose condition names a removed kind no longer applies.
 - A value `store()` writes in a simulated series without a quality is estimated (1), no longer measured (0): a computation measures nothing. A measured series, a setpoint and a command keep 0 for a value as its source delivered it; a forecast's values carry no quality. Every estimate a module writes from now on stores its series in quality 1, and the worst quality of a bucket of `resample()` says so.
 - `role_capabilities.role` is one of the four presets, `owner`, `editor`, `viewer` and `participant` (`role_capabilities_role`), where it took any word of a given shape.
 - Nexgen OS describes itself as a world model for energy assets and the open source operating system built on it, in the READMEs, the package descriptions and the instructions of the MCP server; the model and its names are unchanged.

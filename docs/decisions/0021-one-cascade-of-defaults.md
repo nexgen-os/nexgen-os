@@ -39,7 +39,7 @@ as each other are a gap of the pack, refused by name
 **A region climbs to its parent.** `region` is the ISO 3166-2 subdivision a
 pack chooses to list (a department in France, a region in Belgium); when
 the pack lists two levels, each subdivision names the one it is part of
-(`regions.parent`). A value decided at the upper level holds in every
+(`regions.parent_code`). A value decided at the upper level holds in every
 subdivision under it without a copy, and a value of the lower level wins
 over it. The answer names the region that decided. A pack with one level
 lists regions without a parent, and its cascade goes from the region to the

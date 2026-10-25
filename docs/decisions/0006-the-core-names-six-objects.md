@@ -28,11 +28,12 @@ page walks them ([0043](0043-the-participant-is-the-node.md)):
 
 - **the organisation**: who owns the data, with its members
   ([0023](0023-an-organisation-is-an-object.md));
-- **the project**: what a person works on — an energy community, a set of
-  buildings, a study, a construction site, a district plan — with its
-  country and its lifecycle;
+- **the project**: what a person works on — an energy community, a
+  self-consumption operation, a rooftop PV project, a portfolio of sites —
+  with the frame it is carried out in when it has one, its country and its
+  lifecycle;
 - **the participant**: the node of a project — an actor, a household, a
-  company, a tenant, a PV plant — as producer, consumer or prosumer, with
+  company, a tenant, a PV plant — in its category, producer, consumer or prosumer, with
   the contact who answers for it and its period. It carries the place: its
   address, its point on the map and its time zone
   ([0025](0025-a-place-has-one-shape.md)), geolocated but not described;
