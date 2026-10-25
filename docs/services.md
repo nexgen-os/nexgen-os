@@ -5,9 +5,10 @@
 says where this repository stops, so that nobody confuses the open
 foundation with a commercial product built on it.*
 
-**Nexgen OS** is the open-source foundation: an open digital twin of energy
-places — organisations, projects, participants, their meters, devices and
-series — driven by AI agents that work as users of the model. It is a
+**Nexgen OS** is the open-source foundation: a world model for energy
+assets — organisations, projects, participants, their meters, devices and
+series — and the open source operating system built on it, driven by AI
+agents that work as users of the model. It is a
 schema, vocabularies, modules, packs, format libraries and connectors — a
 reference language for describing places, what is on them and what they
 produce. It belongs to the project and its organisation on GitHub; anyone

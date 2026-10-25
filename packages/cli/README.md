@@ -1,6 +1,6 @@
 # nexgen-os — the installer of Nexgen OS
 
-Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model.
+Nexgen OS is a world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model.
 
 `nexgen-os` installs Nexgen OS on a Postgres database with PostGIS — an
 empty [Supabase](https://supabase.com) project is the usual one — brings an
