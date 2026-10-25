@@ -109,8 +109,8 @@ integration written against one release keeps working against every later
 ### What the reference platforms of the trades hold
 
 Each where it will live; the market, the support schemes, the status of a
-value, the hourly emission factors, the loss chain and the exceedance levels
-are in 0.3 ([0048](decisions/0048-a-value-says-what-kind-of-value-it-is.md),
+value (its quality since 0.4), the hourly emission factors, the loss chain and the exceedance levels
+are in 0.3 ([0057](decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md),
 [0049](decisions/0049-the-market-follows-the-place-a-scheme-is-the-countrys-its-contract-the-devices.md)).
 
 - **Guarantees of origin and hourly matching (24/7)** — `community`, with

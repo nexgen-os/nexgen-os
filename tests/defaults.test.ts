@@ -132,7 +132,7 @@ describe('the quality of a value', () => {
     expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4350, quality: 'measured', reference: 'meter readings of 2025' });
     await db.query(`select set_attribute('participant', $1, 'annual_consumption', '4000', '2026-02-01', null, 'a typical household', p_quality => 'assumed')`, [shed]);
     expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4000, quality: 'assumed' });
-    expect((await parameterOf('participant', shed, 'annual_consumption')) as Record<string, unknown>).not.toHaveProperty('status');
+    expect((await parameterOf('participant', shed, 'annual_consumption')) as unknown as Record<string, unknown>).not.toHaveProperty('status');
     for (const word of ['guessed', 'default']) {
       await expect(db.query(`select set_attribute('participant', $1, 'annual_consumption', '1', '2026-03-01', null, null, $2)`, [shed, word])).rejects.toThrow(/value_quality_word/);
     }

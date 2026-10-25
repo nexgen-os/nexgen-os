@@ -417,7 +417,7 @@ describe('emission factors, hour by hour or month by month', () => {
     await db.query(`select set_attribute('participant', $1, 'market_co2_factor', '0.05', '2026-02-01', null, 'supplier disclosure 2025', 'published')`, [prosumer]);
     const market = await figure(await compute('participant', prosumer, 'scope2_market_based'));
     expect(market.results.buckets.map((b) => b.value)).toEqual([expect.closeTo(1.35, 9), expect.closeTo(0.15, 9)]);
-    const factor = (market.inputs.parameters as Record<string, { level: string; reference: string; status: string }[]>).factor;
-    expect(factor.map((a) => [a.level, a.reference, a.status])).toEqual([['country', 'residual mix 2025', 'published'], ['object', 'supplier disclosure 2025', 'published']]);
+    const factor = (market.inputs.parameters as Record<string, { level: string; reference: string; quality: string }[]>).factor;
+    expect(factor.map((a) => [a.level, a.reference, a.quality])).toEqual([['country', 'residual mix 2025', 'published'], ['object', 'supplier disclosure 2025', 'published']]);
   });
 });

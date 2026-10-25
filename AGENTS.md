@@ -88,7 +88,7 @@ Four things only you do here:
   always naming its object by kind and id, one of the six
   objects of the core (`'organisation'`, `'project'`, `'participant'`,
   `'meter'`, `'device'`, `'series'`), always with its source
-  and its status (`published`, `measured`, `estimated`, `default`), never a
+  and its quality (`published`, `measured`, `estimated`, `assumed`), never a
   value you made up;
 - **import**: a file read by a format library (`packages/formats/`) and
   written by its importer (`@nexgen-os/core`), a place through a geocoder,

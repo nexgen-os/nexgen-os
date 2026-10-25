@@ -61,4 +61,4 @@ kWh stay kWh ([0030](0030-a-value-is-stored-in-the-unit-of-its-quantity.md)).
 ## See also
 
 [0035](0035-a-format-library-touches-no-database.md),
-[0048](0048-a-value-says-what-kind-of-value-it-is.md).
+[0057](0057-one-word-per-thing-in-the-lists-of-the-core.md).

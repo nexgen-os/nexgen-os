@@ -115,7 +115,7 @@ describe('the fr pack', () => {
     const market = async (kind: string, id: string, at: string) =>
       (await one<{ m: Record<string, Record<string, unknown> | string | null> }>(db, 'select grid.market_of($1, $2, $3) m', [kind, id, at])).m;
     const now = await market('meter', meter, '2026-10-20');
-    expect(now.bidding_zone).toMatchObject({ value: '10YFR-RTE------C', level: 'country', source_code: 'fr_entsoe_eic_codes', status: 'published' });
+    expect(now.bidding_zone).toMatchObject({ value: '10YFR-RTE------C', level: 'country', source_code: 'fr_entsoe_eic_codes', quality: 'published' });
     expect(now.control_area).toMatchObject({ value: '10YFR-RTE------C' });
     expect(now.imbalance_settlement_period).toMatchObject({ value: 'PT15M', source_code: 'fr_cre_imbalance_settlement_15min' });
     expect(now.transmission_operator).toEqual({ operator: 'rte', eic_code: '10XFR-RTE------Q' });

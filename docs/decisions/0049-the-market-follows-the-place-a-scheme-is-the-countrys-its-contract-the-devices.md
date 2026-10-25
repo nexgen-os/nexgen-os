@@ -22,7 +22,7 @@ area (ENTSO-E EIC codes) and the imbalance settlement period are defaults
 of the country, of a region or of a municipality when a country has
 several zones; `grid.market_of(kind, id)` resolves them for a meter, a
 participant or a project through `parameter_of()`, each with its source and
-status, and adds the transmission operator of the country (`grid.operators`
+quality, and adds the transmission operator of the country (`grid.operators`
 of kind `tso`, with its EIC code). A zone that is not interconnected
 decides none and says so.
 
@@ -64,4 +64,4 @@ holds no price that changes within a year.
 
 [0020](0020-a-pack-holds-what-a-function-reads.md),
 [0044](0044-a-condition-has-one-shape.md),
-[0048](0048-a-value-says-what-kind-of-value-it-is.md).
+[0057](0057-one-word-per-thing-in-the-lists-of-the-core.md).

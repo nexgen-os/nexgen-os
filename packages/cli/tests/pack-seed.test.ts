@@ -51,7 +51,7 @@ create table defaults (
   country char(2) not null references countries(code), region text references regions(code),
   condition jsonb not null default '{}',
   value jsonb, valid_from date, valid_to date,
-  source_code text not null references sources(code), reference text, status text not null default 'published', published_by text not null,
+  source_code text not null references sources(code), reference text, quality text not null default 'published', published_by text not null,
   unique nulls not distinct (country, region, attribute_type, condition, valid_from));
 create table grid.operators (
   code text primary key, name text not null, kind text not null, country char(2) not null,

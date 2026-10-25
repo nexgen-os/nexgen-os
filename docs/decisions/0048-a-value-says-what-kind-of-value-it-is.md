@@ -1,6 +1,6 @@
 # 0048 — A value says what kind of value it is
 
-> Status: accepted
+> Status: superseded by [0057](0057-one-word-per-thing-in-the-lists-of-the-core.md), which keeps the rule under one word, `quality`, and calls the conventional value `assumed`.
 
 ## Context
 

@@ -4,7 +4,7 @@ The core names six objects, in the order a page walks them:
 organisation → project → participant → meter and device → series
 ([0006](decisions/0006-the-core-names-six-objects.md)); and what attaches to them, with
 the vocabularies, the countries and the gestures that keep them. The core
-is thirty-seven tables and one view. The participant is the node
+is thirty-six tables and one view. The participant is the node
 ([0043](decisions/0043-the-participant-is-the-node.md)): it carries the
 place, geolocated but not described, the meters and the devices behind
 them, and every module starts from it. Its ground, its buildings, floors,
@@ -385,9 +385,9 @@ same check.
 
 - **attributes** — one row per attribute type and validity period, typed by
   `attribute_types` (datatype, quantity hence unit, range, allowed values,
-  kinds it applies to), with its source and its status (`value_statuses`:
-  published, measured, estimated — the default — or default;
-  [0048](decisions/0048-a-value-says-what-kind-of-value-it-is.md)). A column holds only what every row
+  kinds it applies to), with its source and its quality (`value_quality`:
+  published, measured, estimated — when nobody says — or assumed;
+  [0057](decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md)). A column holds only what every row
   has and every query filters on
   ([0019](decisions/0019-a-column-only-for-what-every-row-has.md)); the rest
   is an attribute. `set_attribute(kind, id, …)` closes the period holding
@@ -427,8 +427,8 @@ same check.
   (`project_kind`), a customer segment (`segment`), a technology
   (`device_type`), a density class (`density_class`, the `density_class`
   default of the municipality), an attribute compared with a number
-  (`attribute`), and its status (published unless the pack says estimated
-  or default); never edited, a new value is a new row and a `valid_to` on
+  (`attribute`), and its quality (published unless the pack says estimated
+  or assumed); never edited, a new value is a new row and a `valid_to` on
   the old one. `condition_check()` checks a condition, `condition_facts()`
   gathers what an object is, `condition_matches()` matches them — the same
   three for `parameter_of()` and `actions.plan()`.
@@ -445,7 +445,7 @@ same check.
   the density class of its municipality, an attribute; a kind, a segment or
   a type matches its refinements) —
   `{value, level, region or country, conditions, source_code, reference,
-  status, valid_from}`. There is no global level: nothing found is
+  quality, valid_from}`. There is no global level: nothing found is
   `parameter_missing` naming the attribute type and the level reached; a place
   that decides no single value answers `parameter_not_decided` with its
   reference; two rows as specific as each other are `parameter_ambiguous`.
@@ -460,10 +460,7 @@ everyone signed in.
 `segments` (each a tree, walked by `is_a(vocabulary, code, ancestor)`),
 `quantities` (one unit each, QUDT), `currencies` (ISO 4217), `sizing_criteria`
 (what a sizing aims at, read by every module that sizes,
-[0045](decisions/0045-to-size-is-one-gesture.md)), `value_statuses` (what kind
-of value an attribute or a default is — published, measured, estimated,
-default — measured and estimated carrying the series quality code that means
-the same, 0 and 1; [0048](decisions/0048-a-value-says-what-kind-of-value-it-is.md)), `units` (QUDT codes and symbols, with the factor and
+[0045](decisions/0045-to-size-is-one-gesture.md)), `units` (QUDT codes and symbols, with the factor and
 offset of each), `attribute_types` (what an attribute may hold: the values
 `parameter_of()` resolves, those the packs publish and those a module
 declares), `identifier_schemes` (with the ISO 6523 code of a register of

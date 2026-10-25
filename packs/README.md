@@ -56,9 +56,9 @@ the most specific row the object meets
   "value": 20000, "unit": "M", "source_code": "fr_arrete_acc_perimeter", "reference": "Article 1", "valid_from": "2023-10-08" }
 ```
 
-Every value says what kind of value it is (`status`, [0048](../docs/decisions/0048-a-value-says-what-kind-of-value-it-is.md)):
-`published` when its source decides it — the default — `estimated` for a
-statistic or a model, `default` for a conventional assumption;
+Every value says what kind of value it is (`quality`, [0057](../docs/decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md)):
+`published` when its source decides it — when the row says nothing —
+`estimated` for a statistic or a model, `assumed` for a conventional value;
 `parameter_of()` returns it with the value.
 
 The market of the country is its defaults, by region or municipality when

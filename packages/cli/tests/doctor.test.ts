@@ -27,11 +27,13 @@ describe('doctor', () => {
     expect(r.problems).toEqual([]);
     expect(r.schemaVersion).toBe('0.3.0');
     expect(r.postgis).toMatch(/^3\./);
-    expect(r.applied).toEqual({ core: 14, 'module:grid': 1, 'module:solar': 3, 'module:weather': 1, 'pack:fr': 1 });
+    expect(r.applied).toEqual({ core: 15, 'module:grid': 1, 'module:solar': 4, 'module:weather': 1, 'pack:fr': 1 });
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);
     expect(r.vocabularies.identifier_schemes).toBeGreaterThan(0);
+    for (const v of ['project_kinds', 'segments', 'capabilities']) expect(r.vocabularies[v], v).toBeGreaterThan(0);
+    expect(r.vocabularies).not.toHaveProperty('value_statuses');
   });
 
   it('names the schema a module not installed would create and the database already holds', async () => {
@@ -144,12 +146,12 @@ describe('status and the command line', () => {
     try {
       const dry = await run(['init', '--modules', 'grid', '--dry-run'], empty);
       expect(dry.code).toBe(0);
-      expect(dry.out).toMatch(/would apply 15 step\(s\), 0 already recorded — dry run, rolled back$/);
+      expect(dry.out).toMatch(/would apply 16 step\(s\), 0 already recorded — dry run, rolled back$/);
       const real = await run(['init', '--modules=grid'], empty);
-      expect(real.out).toMatch(/applied 15 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
+      expect(real.out).toMatch(/applied 16 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
       const again = await run(['init', '--modules=grid'], empty);
-      expect(again.out).toBe('nothing to apply: 15 step(s) already recorded');
-      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 15 step(s) already recorded');
+      expect(again.out).toBe('nothing to apply: 16 step(s) already recorded');
+      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 16 step(s) already recorded');
     } finally {
       await empty.close();
     }

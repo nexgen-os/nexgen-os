@@ -18,6 +18,18 @@ release may break, and says how. How a release is cut:
 
 ### Changed
 
+- **Breaking:** what kind of value a value is has one word, `quality` ([0057](docs/decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md), superseding 0048). The table `value_statuses` is now the domain `nexgen.value_quality`, carried by `attributes.quality`, `defaults.quality` and `solar.estimate_losses.quality` (formerly `status`); the conventional value a study starts from is `assumed` (formerly `default`); `set_attribute()` takes `p_quality`, `parameter_of()`, `grid.market_of()` and `solar.soiling_of()` return the key `quality`; a pack writes `quality` on a value of `defaults.json` (`packs/schema/pack.1.json`), and the packs `fr`, `be` and `es` move to 0.4.0, their values unchanged. `status` names a lifecycle only.
+
+  **From 0.3.0.** `nexgen-os migrate` applies `supabase/migrations/20261025000000_core_value_quality.sql` and, where `solar` is installed, `modules/solar/supabase/migrations/0004_estimate_losses_quality.sql`; every row keeps its word, `default` becoming `assumed`. A database that added its own rows to `value_statuses` maps them to the four words first, then migrates:
+
+  ```sql
+  update nexgen.attributes set status = 'estimated' where status not in ('published', 'measured', 'estimated', 'default');
+  update nexgen.defaults   set status = 'estimated' where status not in ('published', 'measured', 'estimated', 'default');
+  ```
+
+  A caller that names the old words changes them: `set_attribute(…, p_quality => 'assumed')` where it passed `p_status => 'default'`, `parameter_of(…)->>'quality'` where it read `->>'status'`, `where quality = 'assumed'` where it filtered `status = 'default'`.
+- A value `store()` writes in a simulated series without a quality is estimated (1), no longer measured (0): a computation measures nothing. A measured series, a setpoint and a command keep 0 for a value as its source delivered it; a forecast's values carry no quality. Every estimate a module writes from now on stores its series in quality 1, and the worst quality of a bucket of `resample()` says so.
+- `role_capabilities.role` is one of the four presets, `owner`, `editor`, `viewer` and `participant` (`role_capabilities_role`), where it took any word of a given shape.
 - Nexgen OS describes itself as a world model for energy assets and the open source operating system built on it, in the READMEs, the package descriptions and the instructions of the MCP server; the model and its names are unchanged.
 - The battery dispatch splits the round-trip efficiency η between the two ways, √η on charge and √η on discharge, as the hourly engine of the platform it was taken from does: a full battery takes `capacity / √η` of the surplus and serves `capacity × √η`, where it took `capacity` and served `capacity × η`. At η = 0.85 a 10 kWh battery serves 9.22 kWh a full cycle, no longer 8.5. Every dispatch and sizing with an efficiency below 1 moves; the provenance is `battery-dispatch-0.3.1`.
 - **Breaking:** the batteries module `storage` is now `battery` — its folder, its code, its schema and every name in it: `battery.devices`, `battery.products` (formerly `storage.battery_products`), `battery.objectives`, `battery.estimates`, `battery.battery_of()`, the computation `battery.size`, the MCP tools `battery_estimates` and `battery_size`, `size --module battery`, the `battery` section of a golden scenario's device, the provenance `battery-dispatch-0.3.0` and the rows it publishes (`published_by = 'battery'`). Every Supabase project already holds a schema `storage`, the one of Supabase Storage, so the module installed on none of them ([0054](docs/decisions/0054-a-module-that-cannot-install-changes-its-code.md)). The modules are applied in the order of their folders, `battery` now second.
@@ -37,6 +49,7 @@ release may break, and says how. How a release is cut:
 
 ### Fixed
 
+- `nexgen-os doctor` counts the vocabularies `project_kinds`, `segments` and `capabilities`, which it left out, and no longer `value_statuses`.
 - Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
 - Pack `be` 0.3.1: VAT on electricity for a professional customer, 21 % and the Ekwo OS tax `BE-S-21` (circular 2023/C/64 of FPS Finance). The 6 % row held for every segment, so `billing.tax_of()` gave a business participant `BE-S-06`.
 

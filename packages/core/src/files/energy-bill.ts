@@ -10,7 +10,7 @@
  *   - `meterOfBill()`  the connection point, found by its identifier in the
  *                      participant's project, declared when it is not;
  *   - `tariffOfBill()` the contract as the bill prices it, attributes of the
- *                      participant and of the meter, status `published`.
+ *                      participant and of the meter, quality `published`.
  *
  * The energy over the bill's period is the `consumption` module's
  * (`estimateFromBill()`), the record of the invoice the `billing`

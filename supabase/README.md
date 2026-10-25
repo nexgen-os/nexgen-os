@@ -41,7 +41,7 @@ of them by kind and id: an attribute, an identifier, a document or a series
 names its object as `('participant', id)`, `('device', id)`, the kind one of
 the six words, and the hierarchy is the foreign keys
 ([0001](../docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md)). The core is
-twenty-seven tables and one view; a calculation, a design variant, the use of a
+thirty-six tables and one view; a calculation, a design variant, the use of a
 building or a relation of a trade is the module's that needs it.
 The participant carries the place, geolocated but not described: its
 ground, its buildings, floors, rooms and roof faces are the `building`

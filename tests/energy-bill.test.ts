@@ -54,8 +54,8 @@ describe('a bill written into the model', () => {
   });
 
   it('prices the contract as published attributes whose source is the bill, from the first day of its period', async () => {
-    const rows = (await db.query<{ attribute_type: string; object_kind: string; value: unknown; status: string; source: string; valid_from: string }>(
-      `select attribute_type, object_kind, value, status, source, valid_from::text from attributes where object_id in ($1, $2) order by attribute_type`,
+    const rows = (await db.query<{ attribute_type: string; object_kind: string; value: unknown; quality: string; source: string; valid_from: string }>(
+      `select attribute_type, object_kind, value, quality, source, valid_from::text from attributes where object_id in ($1, $2) order by attribute_type`,
       [farm, imported.meterId])).rows;
     expect(rows.map((r) => [r.attribute_type, r.object_kind])).toEqual([
       ['grid_fees_and_taxes', 'participant'],
@@ -63,7 +63,7 @@ describe('a bill written into the model', () => {
       ['supply_energy_price', 'participant'],
       ['supply_tariff', 'participant'],
     ]);
-    expect(rows.every((r) => r.status === 'published' && r.source === `documents:${imported.documentId}`)).toBe(true);
+    expect(rows.every((r) => r.quality === 'published' && r.source === `documents:${imported.documentId}`)).toBe(true);
     expect(new Date(rows[0]!.valid_from).toISOString()).toBe('2026-07-15T22:00:00.000Z');
     // Delivery is inside the energy price: the fees are the excise alone, per MWh.
     expect(rows[0]!.value).toBe(30.74);
@@ -74,8 +74,8 @@ describe('a bill written into the model', () => {
   });
 
   it('is read back as the participant\'s parameters', async () => {
-    const p = await one<{ v: { value: number; status: string; level: string } }>(db, `select parameter_of('participant', $1, 'supply_energy_price', '2026-08-01') v`, [farm]);
-    expect(p.v).toMatchObject({ value: 125.88, status: 'published' });
+    const p = await one<{ v: { value: number; quality: string; level: string } }>(db, `select parameter_of('participant', $1, 'supply_energy_price', '2026-08-01') v`, [farm]);
+    expect(p.v).toMatchObject({ value: 125.88, quality: 'published' });
   });
 
   it('estimates the energy of its period, in kWh, as an estimate that names the bill', async () => {

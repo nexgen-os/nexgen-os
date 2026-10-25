@@ -35,7 +35,7 @@ bookkeeping core built on the same playbook, is the measure.
   earned it in the field — organisation, project, participant, meter, device —
   and when two structures compete, the one the platform runs wins
   ([services.md](services.md), [0006](decisions/0006-the-core-names-six-objects.md)).
-- **Few tables, complete on the functions.** The core is thirty-four
+- **Few tables, complete on the functions.** The core is thirty-six
   tables and one view: the six objects and what they need, nothing a single
   trade needs. A column only for what every
   row has, everything else attached to one of the six; the actions of the trades are
@@ -91,7 +91,7 @@ device belongs to its participant.
 
 - [0018](decisions/0018-one-function-per-gesture.md) One function per gesture
 - [0004](decisions/0004-a-figure-says-where-it-comes-from.md) A figure says where it comes from: a row of the module that computes it, in a plain table named after what it is (an estimate, a settlement), with its provenance, its inputs and its results, written by the module's own function
-- [0048](decisions/0048-a-value-says-what-kind-of-value-it-is.md) A value says what kind of value it is — published, measured, estimated or default — in the words of the series quality
+- [0057](decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md) One word per thing in the lists of the core: a value says its quality — published, measured, estimated or assumed, a code on a series — and `status` is a lifecycle
 - [0013](decisions/0013-a-program-connector-reads-one-request.md) A program connector reads one request and answers one result; "engine" names what computed a figure
 - [0024](decisions/0024-one-language-per-layer.md) One language per layer: SQL for the model, TypeScript for the tools, any language as a connector
 - [0016](decisions/0016-naming-third-party-methods.md) A third party's name goes where its data, its computation or its file is

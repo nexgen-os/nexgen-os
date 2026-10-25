@@ -171,7 +171,7 @@ is in [supabase/README.md](supabase/README.md); the diagram and the rules are in
    hierarchy is their foreign keys. An attribute, an identifier, a document
    or a series names one of the six objects of the core by its kind and its
    id (`('participant', id)`), checked by a plain constraint; the core is
-   thirty-four tables and one view. A new kind of thing is a
+   thirty-six tables and one view. A new kind of thing is a
    module table with its own columns; a new attribute type is a vocabulary row; a
    new API is a source row.
 2. **3D WGS 84 everywhere.** Any CRS is accepted on the way in; geometry is
