@@ -72,7 +72,7 @@ on conflict (code) do update set
   pack_checksum       = excluded.pack_checksum;
 
 -- regions: 3 at the level province and above, parents first.
-insert into regions (code, country, name, kind, parent, time_zone, names, aliases, postal_prefixes, published_by) values
+insert into regions (code, country, name, kind, parent_code, time_zone, names, aliases, postal_prefixes, published_by) values
   ('XA-N', 'XA', 'North', 'subdivision', null, null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:xa'),
   ('XA-S', 'XA', 'South', 'subdivision', null, 'Etc/GMT-1', '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:xa'),
   ('XA-NW', 'XA', 'North-West', 'subdivision', 'XA-N', null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:xa')
@@ -80,7 +80,7 @@ on conflict (code) do update set
   country         = excluded.country,
   name            = excluded.name,
   kind            = excluded.kind,
-  parent          = excluded.parent,
+  parent_code     = excluded.parent_code,
   time_zone       = excluded.time_zone,
   names           = excluded.names,
   aliases         = excluded.aliases,
@@ -88,14 +88,14 @@ on conflict (code) do update set
 where regions.published_by = excluded.published_by;
 
 -- regions: 2 municipalities, each under its province, coded XA-<xa_municipality>.
-insert into regions (code, country, name, kind, parent, published_by) values
+insert into regions (code, country, name, kind, parent_code, published_by) values
   ('XA-20001', 'XA', 'Southport', 'municipality', 'XA-S', 'pack:xa'),
   ('XA-20002', 'XA', 'Dunmoor', 'municipality', 'XA-S', 'pack:xa')
 on conflict (code) do update set
-  country = excluded.country,
-  name    = excluded.name,
-  kind    = excluded.kind,
-  parent  = excluded.parent
+  country     = excluded.country,
+  name        = excluded.name,
+  kind        = excluded.kind,
+  parent_code = excluded.parent_code
 where regions.published_by = excluded.published_by;
 
 -- project_kinds: 1. The frames of projects the law of the country defines, each refining a kind of the core.

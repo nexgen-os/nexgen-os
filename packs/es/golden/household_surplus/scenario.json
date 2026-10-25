@@ -16,7 +16,7 @@
     {
       "ref": "home",
       "name": "House",
-      "role": "prosumer",
+      "category": "prosumer",
       "segment": "individual",
       "place": {
         "country": "ES",

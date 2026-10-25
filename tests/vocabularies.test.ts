@@ -40,8 +40,14 @@ describe('the kind of a project', () => {
       .rejects.toThrow(/project_kind_unknown: solar farm/);
     await expect(db.query(`insert into project_kinds (code, name, country, published_by) values ('zz_uncited', 'Uncited', 'ZZ', 'pack:zz')`))
       .rejects.toThrow(/project_kinds_frame_cited/);
+    // A project with no particular frame has no kind; the generic kinds nothing reads are gone.
     expect(await one(db, `select kind from projects where id = $1`, [await insert(db, 'projects', { organisation_id: org, name: 'Plain', country: 'ZZ' })]))
-      .toEqual({ kind: 'study' });
+      .toEqual({ kind: null });
+    expect(await one(db, `select kind from projects where id = $1`, [(await one<{ id: string }>(db, `select create_project($1, 'Plain too', 'ZZ') id`, [org])).id]))
+      .toEqual({ kind: null });
+    for (const gone of ['study', 'other', 'buildings', 'construction', 'district_plan']) {
+      await expect(insert(db, 'projects', { organisation_id: org, name: gone, kind: gone, country: 'ZZ' })).rejects.toThrow(/project_kind_unknown/);
+    }
   });
 });
 

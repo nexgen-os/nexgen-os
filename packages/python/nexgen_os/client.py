@@ -128,7 +128,7 @@ class Nexgen:
     def participants(self, organisation_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """The participants the connection may read, with their place, of one organisation when given."""
         return self._rows(
-            """select id, organisation_id, project_id, name, role, segment, country, region, municipality, time_zone, location_precision
+            """select id, organisation_id, project_id, name, category, segment, country, region, municipality, time_zone, location_precision
                  from nexgen.participants
                 where %(organisation)s::uuid is null or organisation_id = %(organisation)s::uuid
                 order by name, id""",

@@ -16,7 +16,7 @@
     {
       "ref": "school",
       "name": "Secondary school",
-      "role": "prosumer",
+      "category": "prosumer",
       "segment": "public_entity",
       "place": {
         "country": "FR",

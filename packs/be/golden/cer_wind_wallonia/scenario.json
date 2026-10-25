@@ -16,7 +16,7 @@
     {
       "ref": "wind",
       "name": "Wind cooperative",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "BE",
@@ -50,7 +50,7 @@
     {
       "ref": "neighbour",
       "name": "Neighbour",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "individual",
       "place": {
         "country": "BE",
@@ -76,7 +76,7 @@
     {
       "ref": "namur",
       "name": "Namur school",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "public_entity",
       "place": {
         "country": "BE",

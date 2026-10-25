@@ -93,7 +93,7 @@ export function compilePack(pack: Pack): string {
       `-- regions: ${identity.regions.length} at the level ${identity.region_level} and above, parents first.`,
       ...upsert(
         'regions',
-        ['code', 'country', 'name', 'kind', 'parent', 'time_zone', 'names', 'aliases', 'postal_prefixes', 'published_by'],
+        ['code', 'country', 'name', 'kind', 'parent_code', 'time_zone', 'names', 'aliases', 'postal_prefixes', 'published_by'],
         parentsFirst(identity.regions).map((r) => [
           text(r.code), text(cc), text(r.name), text('subdivision'), text(r.parent), text(r.time_zone),
           jsonb(r.names ?? {}), array(r.aliases ?? []), array(r.postal_prefixes ?? []), text(by),
@@ -110,7 +110,7 @@ export function compilePack(pack: Pack): string {
       `-- regions: ${municipalities.length} municipalities, each under its ${identity.region_level}, coded ${cc}-<${identity.municipality_scheme ?? 'code'}>.`,
       ...upsert(
         'regions',
-        ['code', 'country', 'name', 'kind', 'parent', 'published_by'],
+        ['code', 'country', 'name', 'kind', 'parent_code', 'published_by'],
         [...municipalities]
           .sort((a, b) => compare(a.code, b.code))
           .map((m) => [text(municipalityRegion(cc, m.code)), text(cc), text(m.name), text('municipality'), text(m.parent), text(by)]),

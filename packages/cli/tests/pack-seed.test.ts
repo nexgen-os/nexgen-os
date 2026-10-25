@@ -38,7 +38,7 @@ create table countries (
   published_by text not null);
 create table regions (
   code text primary key, country char(2) not null references countries(code), name text not null,
-  kind text not null default 'subdivision', parent text references regions(code), time_zone text,
+  kind text not null default 'subdivision', parent_code text references regions(code), time_zone text,
   names jsonb not null default '{}', aliases text[] not null default '{}', postal_prefixes text[] not null default '{}', published_by text not null);
 create table project_kinds (
   code text primary key, name text not null, description text, parent_code text, country char(2),

@@ -17,9 +17,9 @@ insert into contacts (id, organisation_id, name, kind) values
   ('00000000-0000-4000-8000-000200000005', '00000000-0000-4000-8000-000200000001', 'Service des bâtiments', 'company');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000200000006', '00000000-0000-4000-8000-000200000001', 'School comfort and heating', 'study', 'BE', 'active');
+  ('00000000-0000-4000-8000-000200000006', '00000000-0000-4000-8000-000200000001', 'School comfort and heating', null, 'BE', 'active');
 
-insert into participants (id, organisation_id, project_id, name, role, contact_id, country, address_line1, postal_code, city, region) values
+insert into participants (id, organisation_id, project_id, name, category, contact_id, country, address_line1, postal_code, city, region) values
   ('00000000-0000-4000-8000-000200000010', '00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000200000006', 'École du Centre', 'consumer',
    '00000000-0000-4000-8000-000200000005', 'BE', 'Rue de l''École 12', '1380', 'Valbrisée', 'BE-WBR');
 

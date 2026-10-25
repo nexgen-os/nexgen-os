@@ -34,7 +34,7 @@ insert into projects (id, organisation_id, name, kind, country, status, start_da
 
 -- The participants carry their place: three warehouses as consumers, a
 -- roof plant as producer, each with the company that answers for it.
-insert into participants (id, organisation_id, project_id, name, role, contact_id, status, join_date, country, address_line1, postal_code, city) values
+insert into participants (id, organisation_id, project_id, name, category, contact_id, status, join_date, country, address_line1, postal_code, city) values
   ('00000000-0000-4000-8000-000300000051', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Logistiek A', 'consumer', '00000000-0000-4000-8000-000300000011', 'active', '2025-01-01', 'NL', 'Voorbeeldkade 12', '3087 BM', 'Rotterdam'),
   ('00000000-0000-4000-8000-000300000052', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Koeltransport B', 'consumer', '00000000-0000-4000-8000-000300000012', 'active', '2025-01-01', 'NL', 'Voorbeeldkade 14', '3087 BM', 'Rotterdam'),
   ('00000000-0000-4000-8000-000300000053', '00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000300000020', 'Verpakkingen C', 'consumer', '00000000-0000-4000-8000-000300000013', 'active', '2025-04-01', 'NL', 'Voorbeeldkade 16', '3087 BM', 'Rotterdam'),
@@ -105,9 +105,9 @@ select billing.record_invoice('00000000-0000-4000-8000-000300000051', '22222222-
 
 -- Queries a page would run
 -- The community as a table:
---   select p.name, p.role, m.identifier, c.name contact, p.join_date
+--   select p.name, p.category, m.identifier, c.name contact, p.join_date
 --     from participants p left join meters m on m.participant_id = p.id left join contacts c on c.id = p.contact_id
---    where p.project_id = '00000000-0000-4000-8000-000300000020' and p.country is not null order by p.role, p.name;
+--    where p.project_id = '00000000-0000-4000-8000-000300000020' and p.country is not null order by p.category, p.name;
 -- Daily offtake of Van Dijk in May:
 --   select r.bucket::date, r.value from series s, resample(s.id, '2026-05-01', '2026-06-01', '1 day') r
 --    where s.object_id = '00000000-0000-4000-8000-000300000041';

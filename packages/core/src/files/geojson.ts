@@ -133,7 +133,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
 
   // The participants with a place: a group has none, and is not a feature.
   const participants = await db.query<Row>(
-    `select p.id, p.name, p.project_id, p.role, p.segment, p.status, p.country, p.address_line1, p.address_line2, p.postal_code, p.city, p.region,
+    `select p.id, p.name, p.project_id, p.category, p.segment, p.status, p.country, p.address_line1, p.address_line2, p.postal_code, p.city, p.region,
             p.municipality, p.time_zone, p.location_precision, p.location_source_code source_code, ${geojson('p.geometry')} geometry
        from participants p
       where (p.id = $1::uuid or p.project_id = $2::uuid) and p.country is not null

@@ -48,12 +48,13 @@ export interface GoldenScenario {
   /** The period the series cover, `[from, to)`, and their step (a Postgres interval). */
   period: { from: string; to: string; step: string };
   organisation: string;
-  project: { name: string; kind: string; country: string };
+  /** The frame of the project (project_kinds), absent when it has none. */
+  project: { name: string; kind?: string; country: string };
   substations?: { ref: string; operator: string; code: string; name: string }[];
   participants: {
     ref: string;
     name: string;
-    role: 'producer' | 'consumer' | 'prosumer';
+    category: 'producer' | 'consumer' | 'prosumer';
     segment?: string;
     place: GoldenPlace;
     meters?: { ref: string; identifier: string; scheme: string; operator?: string; substation?: string }[];
@@ -183,7 +184,7 @@ function checkCase(
     if (typeof s[key] !== 'string' || s[key].trim() === '') say('golden_scenario_invalid', at(`scenario.json: ${key} is required`));
   }
   if (!s.period?.from || !s.period?.to || !s.period?.step) say('golden_scenario_invalid', at('scenario.json: period {from, to, step} is required'));
-  if (!s.project?.kind || !s.project?.name) say('golden_scenario_invalid', at('scenario.json: project {name, kind, country} is required'));
+  if (!s.project?.name) say('golden_scenario_invalid', at('scenario.json: project {name, country} is required, and its kind when it has a frame'));
   if (s.project?.country !== context.country) say('golden_country_mismatch', at(`scenario.json: the project is in ${s.project?.country}, the pack is ${context.country}`));
   // A frame of the country is the pack's; any other kind is the core's, which the database checks.
   const prefix = `${context.country.toLowerCase()}_`;

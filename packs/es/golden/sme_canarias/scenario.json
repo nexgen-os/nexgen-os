@@ -16,7 +16,7 @@
     {
       "ref": "workshop",
       "name": "Workshop",
-      "role": "prosumer",
+      "category": "prosumer",
       "segment": "business",
       "place": {
         "country": "ES",

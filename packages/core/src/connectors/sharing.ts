@@ -32,7 +32,7 @@ export interface SharingParticipant {
   /** The participant's id in the core. */
   id: string;
   name: string;
-  role: 'producer' | 'consumer' | 'prosumer';
+  category: 'producer' | 'consumer' | 'prosumer';
   /** What the participant carries for a key (`allocation_share`, `allocation_rank`…), its attributes over the period as the core holds them. */
   attributes?: Record<string, unknown>;
   /** `offtake_energy` and `injection_energy`, each with a value at every step of the request. */

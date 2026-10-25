@@ -237,8 +237,8 @@ describe('the golden cases of a pack', () => {
   const scenario = {
     name: 'A study of one roof', description: 'A participant and its PV, two hours.', organisation: 'An office',
     period: { from: '2026-06-15T10:00:00Z', to: '2026-06-15T12:00:00Z', step: '1 hour' },
-    project: { name: 'Roof', kind: 'study', country: 'XA' },
-    participants: [{ ref: 'home', name: 'Home', role: 'prosumer', place: { country: 'XA' }, devices: [{ ref: 'pv', type: 'solar', name: 'PV' }] }],
+    project: { name: 'Roof', country: 'XA' },
+    participants: [{ ref: 'home', name: 'Home', category: 'prosumer', place: { country: 'XA' }, devices: [{ ref: 'pv', type: 'solar', name: 'PV' }] }],
     series: [{ object: 'device:pv', quantity: 'production_energy', values: [1, 2] }],
   };
   const expectations = {

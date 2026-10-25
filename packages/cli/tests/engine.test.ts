@@ -90,8 +90,8 @@ describe('install on a database', () => {
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 15 },
-      { scope: 'module:grid', n: 1 },
+      { scope: 'core', n: 16 },
+      { scope: 'module:grid', n: 2 },
       { scope: 'pack:fr', n: 1 },
     ]);
   });

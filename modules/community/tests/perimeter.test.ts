@@ -24,8 +24,8 @@ const check = async (project: string, on = '2026-06-01') =>
 const east = (lon: number, lat: number, km: number) => ({
   type: 'Point', coordinates: [lon + (km * 1000) / (111_320 * Math.cos((lat * Math.PI) / 180)), lat],
 });
-const join = async (project: string, name: string, role: string, place: Record<string, unknown>) =>
-  (await one<{ id: string }>(db, `select join_project($1, $2, $3, $4) id`, [project, name, JSON.stringify(place), role])).id;
+const join = async (project: string, name: string, category: string, place: Record<string, unknown>) =>
+  (await one<{ id: string }>(db, `select join_project($1, $2, $3, $4) id`, [project, name, JSON.stringify(place), category])).id;
 
 beforeAll(async () => {
   db = await freshDatabase(['community', 'grid'], ['fr', 'be']);

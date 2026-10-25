@@ -16,7 +16,7 @@
     {
       "ref": "plant",
       "name": "Barn roof",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "FR",
@@ -50,7 +50,7 @@
     {
       "ref": "farm",
       "name": "Goat farm",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "FR",
@@ -76,7 +76,7 @@
     {
       "ref": "dairy",
       "name": "Dairy",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "FR",
@@ -102,7 +102,7 @@
     {
       "ref": "sawmill",
       "name": "Sawmill",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "FR",

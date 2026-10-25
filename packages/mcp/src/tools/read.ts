@@ -23,7 +23,7 @@ const lists: Tool[] = [
   tool({
     name: 'list_projects',
     title: 'List projects',
-    description: 'The projects of an organisation, or every project you can read: a study, a rooftop PV project, an energy community. Each says its kind and the country whose rules apply. Next: list_participants.',
+    description: 'The projects of an organisation, or every project you can read: a rooftop PV project, an energy community, a study of sites. Each says its kind, the frame it is carried out in (null when none), and the country whose rules apply. Next: list_participants.',
     input: z.object({ organisation_id: uuid.optional(), limit }),
     writes: false,
     run: ({ db }, a) => core.listObjects(db, 'project', { organisation_id: a.organisation_id }, a.limit),

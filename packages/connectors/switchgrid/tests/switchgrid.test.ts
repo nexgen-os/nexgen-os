@@ -119,7 +119,7 @@ describe('the whole path on a database with the fr pack', () => {
     // The country is the one the source row serves, as data.
     const country = switchgridSource.countries![0]!;
     const org = await organisation(db, 'A cooperative');
-    const project = await insert(db, 'projects', { organisation_id: org, name: 'A study', kind: 'study', country });
+    const project = await insert(db, 'projects', { organisation_id: org, name: 'A study', country });
     const site = (await one<{ id: string }>(db, `select join_project($1, 'Warehouse', $2) id`, [project, { country, region: `${country}-75C` }])).id;
     const meter = (await one<{ id: string }>(db, `select declare_meter($1, '00000000000002', 'prm') id`, [site])).id;
     const connector = await insert(db, 'connectors', { organisation_id: org, source_code: 'switchgrid', name: 'Switchgrid', secret_ref: 'switchgrid_token', config: { environment: 'test' } });

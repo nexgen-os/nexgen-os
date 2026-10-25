@@ -25,7 +25,7 @@ beforeAll(async () => {
     `select ST_AsGeoJSON(ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326)) g`,
   );
   district = await insert(db, 'projects', {
-    organisation_id: org, name: 'Plateau', kind: 'district_plan', country: 'SN', geometry: JSON.parse(outline.g),
+    organisation_id: org, name: 'Plateau', country: 'SN', geometry: JSON.parse(outline.g),
   });
   for (const [i, x] of [236100, 236300, 236500].entries()) {
     const plot = await insert(db, 'participants', { organisation_id: org, project_id: district, name: `Plot ${i + 1}`, country: 'SN', city: 'Dakar' });

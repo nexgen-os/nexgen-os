@@ -15,9 +15,9 @@ insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000700000001', 'Beispiel Immobilien GmbH');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000700000005', '00000000-0000-4000-8000-000700000001', 'Heating renewal', 'study', 'DE', 'active');
+  ('00000000-0000-4000-8000-000700000005', '00000000-0000-4000-8000-000700000001', 'Heating renewal', null, 'DE', 'active');
 
-insert into participants (id, organisation_id, project_id, name, role, country, address_line1, postal_code, city, region) values
+insert into participants (id, organisation_id, project_id, name, category, country, address_line1, postal_code, city, region) values
   ('00000000-0000-4000-8000-000700000010', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000005',
    'Beispielstraße 145', 'consumer', 'DE', 'Beispielstraße 145', '81671', 'München', 'DE-BY');
 

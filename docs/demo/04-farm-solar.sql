@@ -15,9 +15,9 @@ insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000400000001', 'GAEC de l''Exemple');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000400000005', '00000000-0000-4000-8000-000400000001', 'Farm solar', 'study', 'FR', 'active');
+  ('00000000-0000-4000-8000-000400000005', '00000000-0000-4000-8000-000400000001', 'Farm solar', null, 'FR', 'active');
 
-insert into participants (id, organisation_id, project_id, name, role, country, address_line1, postal_code, city, region, geometry) values
+insert into participants (id, organisation_id, project_id, name, category, country, address_line1, postal_code, city, region, geometry) values
   ('00000000-0000-4000-8000-000400000010', '00000000-0000-4000-8000-000400000001', '00000000-0000-4000-8000-000400000005', 'Ferme de l''Exemple', 'prosumer', 'FR', 'Chemin de l''Exemple 3', '59270', 'Saint-Jans-Cappel', 'FR-HDF',
    ST_GeomFromText('POLYGON((2.7210 50.7705, 2.7250 50.7705, 2.7250 50.7730, 2.7210 50.7730, 2.7210 50.7705))', 4326));
 

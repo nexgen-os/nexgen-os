@@ -8,7 +8,7 @@
    {
     "id": "a",
     "name": "Warehouse A",
-    "role": "consumer",
+    "category": "consumer",
     "series": [
      {
       "quantity_code": "offtake_energy",
@@ -223,7 +223,7 @@
    {
     "id": "b",
     "name": "Warehouse B",
-    "role": "consumer",
+    "category": "consumer",
     "series": [
      {
       "quantity_code": "offtake_energy",
@@ -438,7 +438,7 @@
    {
     "id": "p",
     "name": "Roof plant",
-    "role": "producer",
+    "category": "producer",
     "series": [
      {
       "quantity_code": "offtake_energy",

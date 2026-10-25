@@ -26,7 +26,7 @@ beforeAll(async () => {
   await db.query(`insert into currencies (code, name) values ('ZZD', 'Testland currency') on conflict do nothing`);
   await db.query(`insert into countries (code, name, currency, region_level, municipality_scheme, published_by) values ('ZZ', 'Testland', 'ZZD', 'region', 'zz_municipality', 'pack:zz')`);
   await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-EA', 'ZZ', 'East', 'pack:zz'), ('ZZ-WE', 'ZZ', 'West', 'pack:zz')`);
-  await db.query(`insert into regions (code, country, name, kind, parent, published_by) values ('ZZ-0042', 'ZZ', 'Millbrook', 'municipality', 'ZZ-WE', 'pack:zz')`);
+  await db.query(`insert into regions (code, country, name, kind, parent_code, published_by) values ('ZZ-0042', 'ZZ', 'Millbrook', 'municipality', 'ZZ-WE', 'pack:zz')`);
   await db.query(`insert into grid.operators (code, name, kind, country, regions, municipalities, identifier_prefixes, identifier_scheme, published_by) values
                     ('zz_tso', 'Transmission', 'tso', 'ZZ', '{}', '{}', '{}', null, 'pack:zz'),
                     ('east_grid', 'East Grid', 'dso', 'ZZ', '{ZZ-EA}', '{}', '{54140, 541401}', 'gs1_gsrn', 'pack:zz'),

@@ -15,9 +15,9 @@ insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000100000001', 'A household');
 
 insert into projects (id, organisation_id, name, kind, country, status) values
-  ('00000000-0000-4000-8000-000100000005', '00000000-0000-4000-8000-000100000001', 'Solar for the house', 'study', 'ES', 'active');
+  ('00000000-0000-4000-8000-000100000005', '00000000-0000-4000-8000-000100000001', 'Solar for the house', null, 'ES', 'active');
 
-insert into participants (id, organisation_id, project_id, name, role, country, address_line1, postal_code, city, geometry) values
+insert into participants (id, organisation_id, project_id, name, category, country, address_line1, postal_code, city, geometry) values
   ('00000000-0000-4000-8000-000100000010', '00000000-0000-4000-8000-000100000001', '00000000-0000-4000-8000-000100000005',
    'Calle del Ejemplo 14', 'prosumer', 'ES', 'Calle del Ejemplo 14', '41010', 'Sevilla',
    ST_GeomFromText('POLYGON((-5.9962 37.3845, -5.9959 37.3845, -5.9959 37.3848, -5.9962 37.3848, -5.9962 37.3845))', 4326));

@@ -28,7 +28,7 @@ export const WRITE_TOOLS: Tool[] = [
   tool({
     name: 'create_project',
     title: 'Create a project',
-    description: 'Opens a project in an organisation (create_project()): its name, the ISO country whose rules apply — the person says it, never assume one — and its kind (project_kinds: study by default). Next: add_participant.',
+    description: 'Opens a project in an organisation (create_project()): its name, the ISO country whose rules apply — the person says it, never assume one — and the frame it is carried out in when it has one (kind, a code of project_kinds: a rooftop PV project, a self-consumption operation, an energy community or a legal frame of the country; none otherwise). Next: add_participant.',
     input: z.object({ organisation_id: uuid, name: z.string().min(1), country: z.string().length(2), kind: z.string().optional(), start_date: date.optional() }),
     writes: true,
     run: ({ db }, a) => core.createProject(db, a),
@@ -40,7 +40,7 @@ export const WRITE_TOOLS: Tool[] = [
     input: z.object({
       project_id: uuid,
       name: z.string().min(1),
-      role: z.string().optional().describe('consumer by default; producer, prosumer…'),
+      category: z.string().optional().describe('What it does with energy: consumer by default, producer or prosumer'),
       time_zone: z.string().optional().describe('An IANA time zone, Europe/Brussels'),
       place: z.record(z.string(), z.unknown()).optional(),
       address: z.string().optional(),

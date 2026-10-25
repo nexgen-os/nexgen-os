@@ -16,7 +16,7 @@
     {
       "ref": "plant",
       "name": "Car-park canopy",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "FR",
@@ -50,7 +50,7 @@
     {
       "ref": "school",
       "name": "Primary school",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "public_entity",
       "place": {
         "country": "FR",
@@ -76,7 +76,7 @@
     {
       "ref": "bakery",
       "name": "Bakery",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "FR",

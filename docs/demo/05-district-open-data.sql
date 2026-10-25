@@ -12,11 +12,11 @@ insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000500000001', 'Urbanisme — exemple');
 
 insert into projects (id, organisation_id, name, kind, country, status, geometry) values
-  ('00000000-0000-4000-8000-000500000020', '00000000-0000-4000-8000-000500000001', 'Plateau — solar rooftops plan', 'district_plan', 'SN', 'simulation',
+  ('00000000-0000-4000-8000-000500000020', '00000000-0000-4000-8000-000500000001', 'Plateau — solar rooftops plan', null, 'SN', 'simulation',
    ST_Transform(ST_MakeEnvelope(236000, 1630000, 237000, 1631000, 32628), 4326));
 
 -- Every plot takes part in the plan through the participant whose it is.
-insert into participants (id, organisation_id, project_id, name, role, status, country, city)
+insert into participants (id, organisation_id, project_id, name, category, status, country, city)
 select ('00000000-0000-4000-8000-0005000000' || (60 + i))::uuid, '00000000-0000-4000-8000-000500000001', '00000000-0000-4000-8000-000500000020',
        'Plot ' || i, 'prosumer', 'simulation', 'SN', 'Dakar'
   from generate_series(1, 6) i;

@@ -396,23 +396,20 @@ insert into sizing_criteria (code, name, aim, description) values
    'The largest power the limit allows: the roof, or the connection.');
 
 -- ---------------------------------------------------------------------------
--- Project kinds: what a project is, in the words every country shares. The
--- legal frames of a country (a collective self-consumption operation, a
+-- Project kinds: the frame a project is carried out in, in the words every
+-- country shares, each read by a condition, an action template or a module.
+-- The legal frames of a country (a collective self-consumption operation, a
 -- renewable energy community as its law defines them) are its pack's
--- rows, each refining one of these.
+-- rows, each refining one of these. A project with no particular frame has
+-- no kind (decision 0057).
 -- ---------------------------------------------------------------------------
 
 insert into project_kinds (code, name, parent_code, description) values
-  ('study',                       'Study',                        null, 'A study of a place or a group of places, before anything is decided.'),
   ('pv_roof',                     'Rooftop PV project',           null, 'The design and installation of a PV system on a roof.'),
-  ('buildings',                   'Set of buildings',             null, 'A portfolio of buildings described and followed together.'),
-  ('construction',                'Construction site',            null, 'A building or a plant being built.'),
-  ('district_plan',               'District plan',                null, 'The energy plan of a district or a territory.'),
   ('self_consumption',            'Self-consumption',             null, 'Energy produced and consumed at or near where it is produced.'),
   ('individual_self_consumption', 'Individual self-consumption',  'self_consumption', 'One participant consuming what it produces behind its own meter.'),
   ('collective_self_consumption', 'Collective self-consumption',  'self_consumption', 'Several participants sharing the energy produced by some of them, through the meters of the grid.'),
-  ('energy_community',            'Energy community',             'collective_self_consumption', 'A legal entity of participants producing, sharing and consuming energy together.'),
-  ('other',                       'Other',                        null, 'A project none of the kinds above describes.');
+  ('energy_community',            'Energy community',             'collective_self_consumption', 'A legal entity of participants producing, sharing and consuming energy together.');
 
 -- ---------------------------------------------------------------------------
 -- Segments: the customer segment of a participant (residential or

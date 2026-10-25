@@ -49,7 +49,7 @@ describe('the fr pack', () => {
     const departments = await one<{ n: number; regions: number }>(db,
       `select count(*) filter (where parent is not null or code ~ '^FR-97')::int n, count(*) filter (where parent is null and code !~ '^FR-97')::int regions from regions where country = 'FR' and kind = 'subdivision'`);
     expect(departments).toEqual({ n: 103, regions: 13 });
-    const finistere = await one<Record<string, unknown>>(db, `select r.name, p.name parent from regions r join regions p on p.code = r.parent where r.code = 'FR-29'`);
+    const finistere = await one<Record<string, unknown>>(db, `select r.name, p.name parent from regions r join regions p on p.code = r.parent_code where r.code = 'FR-29'`);
     expect(finistere).toEqual({ name: 'Finistère', parent: 'Bretagne' });
 
     const org = await organisation(db, 'Une commune', USER_A);

@@ -66,7 +66,7 @@ interface KeyRow {
 interface ParticipantRow {
   id: string;
   name: string;
-  role: SharingParticipant['role'];
+  category: SharingParticipant['category'];
   attributes: Record<string, unknown>;
 }
 
@@ -128,7 +128,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
   // The participants taking part over the period, groups left out: a group carries no meter of its own.
   const participants = (
     await db.query<ParticipantRow>(
-      `select p.id, p.name, p.role, attributes_of(p.id, $2::timestamptz) attributes
+      `select p.id, p.name, p.category, attributes_of(p.id, $2::timestamptz) attributes
          from participants p
         where p.project_id = $1 and p.country is not null
           and (p.join_date is null or p.join_date < $3::timestamptz) and (p.leave_date is null or p.leave_date >= $2::timestamptz)
@@ -206,7 +206,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
       }
     }
     sent.push({
-      id: p.id, name: p.name, role: p.role, attributes: p.attributes,
+      id: p.id, name: p.name, category: p.category, attributes: p.attributes,
       series: SHARING_INPUTS.map((quantity) => ({
         quantity_code: quantity, value_kind: 'interval' as const, step: request.step, unit: 'kWh',
         values: grid.map((g) => ({ at: g.at, value: metered[quantity].get(Date.parse(g.at)) ?? 0 })),
@@ -219,7 +219,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
     key: { method: key.value.method, parameters, valid_from: key.valid_from && iso(key.valid_from), valid_to: key.valid_to && iso(key.valid_to), source: key.source, source_code: key.source_code },
     rules: request.rules ?? {},
     period: { from, to, step: request.step },
-    participants: participants.map((p) => ({ id: p.id, name: p.name, role: p.role, attributes: p.attributes, series: read[p.id] })),
+    participants: participants.map((p) => ({ id: p.id, name: p.name, category: p.category, attributes: p.attributes, series: read[p.id] })),
     conventions: { time: 'interval start, UTC', energy: 'kWh per step', missing_direction: 'zeros' },
   };
 

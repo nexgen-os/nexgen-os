@@ -34,7 +34,7 @@ export const OBJECT_KINDS = Object.keys(OBJECT_TABLES) as ObjectKind[];
 const LIST_COLUMNS: Record<ObjectKind, string> = {
   organisation: 'id, name',
   project: 'id, organisation_id, name, kind, country, status, start_date',
-  participant: 'id, organisation_id, project_id, name, role, segment, country, municipality, time_zone, location_precision',
+  participant: 'id, organisation_id, project_id, name, category, segment, country, municipality, time_zone, location_precision',
   meter: 'id, organisation_id, participant_id, name, identifier, scheme, resource, direction, valid_from, valid_to',
   device: 'id, organisation_id, participant_id, name, device_type, product_id, rated_power_kw, unit_count, status, installation_date',
   series: 'id, organisation_id, object_kind, object_id, quantity_code, kind, value_kind, step::text as step, source_code, name',
@@ -203,7 +203,8 @@ export async function createProject(db: Db, p: ProjectInput): Promise<{ id: stri
 export interface ParticipantInput {
   project_id: string;
   name: string;
-  role?: string;
+  /** producer, consumer or prosumer; consumer when not given. */
+  category?: string;
   time_zone?: string;
   /** A place in the standard shape (`placeFields()`), when the caller has one. */
   place?: Record<string, unknown>;
@@ -227,7 +228,7 @@ export async function addParticipant(db: Db, p: ParticipantInput, geocoder?: Geo
   }
   const { id } = await first<{ id: string }>(db,
     `select join_project($1, $2, $3::jsonb, coalesce($4, 'consumer'), p_time_zone => $5) id`,
-    [p.project_id, p.name, place === null ? null : JSON.stringify(place), p.role ?? null, p.time_zone ?? null]);
+    [p.project_id, p.name, place === null ? null : JSON.stringify(place), p.category ?? null, p.time_zone ?? null]);
   return { id, place };
 }
 

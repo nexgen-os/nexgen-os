@@ -9,14 +9,13 @@
   "organisation": "A PV producer of the case",
   "project": {
     "name": "Arandas PV farm",
-    "kind": "other",
     "country": "FR"
   },
   "participants": [
     {
       "ref": "farm",
       "name": "PV farm",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "FR",

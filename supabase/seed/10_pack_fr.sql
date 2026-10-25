@@ -100,7 +100,7 @@ on conflict (code) do update set
   pack_checksum       = excluded.pack_checksum;
 
 -- regions: 116 at the level department and above, parents first.
-insert into regions (code, country, name, kind, parent, time_zone, names, aliases, postal_prefixes, published_by) values
+insert into regions (code, country, name, kind, parent_code, time_zone, names, aliases, postal_prefixes, published_by) values
   ('FR-20R', 'FR', 'Corse', 'subdivision', null, null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:fr'),
   ('FR-971', 'FR', 'Guadeloupe', 'subdivision', null, 'America/Guadeloupe', '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:fr'),
   ('FR-972', 'FR', 'Martinique', 'subdivision', null, 'America/Martinique', '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:fr'),
@@ -221,7 +221,7 @@ on conflict (code) do update set
   country         = excluded.country,
   name            = excluded.name,
   kind            = excluded.kind,
-  parent          = excluded.parent,
+  parent_code     = excluded.parent_code,
   time_zone       = excluded.time_zone,
   names           = excluded.names,
   aliases         = excluded.aliases,
@@ -229,7 +229,7 @@ on conflict (code) do update set
 where regions.published_by = excluded.published_by;
 
 -- regions: 18 municipalities, each under its department, coded FR-<insee>.
-insert into regions (code, country, name, kind, parent, published_by) values
+insert into regions (code, country, name, kind, parent_code, published_by) values
   ('FR-01001', 'FR', 'L''Abergement-Clémenciat', 'municipality', 'FR-01', 'pack:fr'),
   ('FR-01002', 'FR', 'L''Abergement-de-Varey', 'municipality', 'FR-01', 'pack:fr'),
   ('FR-01004', 'FR', 'Ambérieu-en-Bugey', 'municipality', 'FR-01', 'pack:fr'),
@@ -249,10 +249,10 @@ insert into regions (code, country, name, kind, parent, published_by) values
   ('FR-69123', 'FR', 'Lyon', 'municipality', 'FR-69M', 'pack:fr'),
   ('FR-75056', 'FR', 'Paris', 'municipality', 'FR-75C', 'pack:fr')
 on conflict (code) do update set
-  country = excluded.country,
-  name    = excluded.name,
-  kind    = excluded.kind,
-  parent  = excluded.parent
+  country     = excluded.country,
+  name        = excluded.name,
+  kind        = excluded.kind,
+  parent_code = excluded.parent_code
 where regions.published_by = excluded.published_by;
 
 -- project_kinds: 2. The frames of projects the law of the country defines, each refining a kind of the core.

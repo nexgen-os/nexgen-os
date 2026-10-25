@@ -30,7 +30,7 @@
     {
       "ref": "plant",
       "name": "Office building roof",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "ES",
@@ -65,7 +65,7 @@
     {
       "ref": "flat",
       "name": "Flat",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "individual",
       "place": {
         "country": "ES",
@@ -92,7 +92,7 @@
     {
       "ref": "bakery",
       "name": "Bakery",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "ES",
@@ -119,7 +119,7 @@
     {
       "ref": "office",
       "name": "Office",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "ES",

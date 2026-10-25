@@ -74,7 +74,7 @@ describe('parameter_of', () => {
   it('climbs from the region to the region it is part of before the country: a value decided above holds below without a copy', async () => {
     // Two levels, as a pack listing departments under their regions does.
     await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-E', 'ZZ', 'East', 'pack:zz')`);
-    await db.query(`insert into regions (code, country, name, parent, published_by) values ('ZZ-E1', 'ZZ', 'East One', 'ZZ-E', 'pack:zz'), ('ZZ-E2', 'ZZ', 'East Two', 'ZZ-E', 'pack:zz')`);
+    await db.query(`insert into regions (code, country, name, parent_code, published_by) values ('ZZ-E1', 'ZZ', 'East One', 'ZZ-E', 'pack:zz'), ('ZZ-E2', 'ZZ', 'East Two', 'ZZ-E', 'pack:zz')`);
     await db.query(`insert into defaults (attribute_type, country, region, value, valid_from, source_code, reference, published_by) values
                       ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E', '1200', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 6', 'pack:zz'),
                       ('pv_specific_yield_fallback', 'ZZ', 'ZZ-E2', '1250', '2020-01-01', 'zz_statistics', 'yearbook 2025, table 7', 'pack:zz'),
@@ -86,8 +86,8 @@ describe('parameter_of', () => {
     await expect(parameterOf('participant', east1, 'offpeak_hours')).rejects.toThrow(/parameter_not_decided: offpeak_hours in ZZ-E: decided by each operator/);
     // A region whose parents nobody decided for reads the country, even when its pack lists a loop.
     await db.query(`insert into regions (code, country, name, published_by) values ('ZZ-W', 'ZZ', 'West', 'pack:zz')`);
-    await db.query(`insert into regions (code, country, name, parent, published_by) values ('ZZ-W1', 'ZZ', 'West One', 'ZZ-W', 'pack:zz')`);
-    await db.query(`update regions set parent = 'ZZ-W1' where code = 'ZZ-W'`);
+    await db.query(`insert into regions (code, country, name, parent_code, published_by) values ('ZZ-W1', 'ZZ', 'West One', 'ZZ-W', 'pack:zz')`);
+    await db.query(`update regions set parent_code = 'ZZ-W1' where code = 'ZZ-W'`);
     const west = await participant(db, { organisation_id: org, name: 'Dairy', country: 'ZZ', region: 'ZZ-W1' });
     expect(await parameterOf('participant', west, 'pv_specific_yield_fallback')).toMatchObject({ value: 980, level: 'country', country: 'ZZ' });
   });
@@ -181,7 +181,7 @@ describe('a default that holds for a condition', () => {
     // says the class of one in its density grid.
     await db.query(`insert into identifier_schemes (code, name, pattern, published_by) values ('zz_municipality', 'Testland municipality code', '^[0-9]{4}$', 'pack:zz')`);
     await db.query(`update countries set municipality_scheme = 'zz_municipality' where code = 'ZZ'`);
-    await db.query(`insert into regions (code, country, name, kind, parent, published_by) values
+    await db.query(`insert into regions (code, country, name, kind, parent_code, published_by) values
                       ('ZZ-0001', 'ZZ', 'Hamlet', 'municipality', 'ZZ-NO', 'pack:zz'),
                       ('ZZ-0002', 'ZZ', 'Harbour', 'municipality', 'ZZ-NO', 'pack:zz')`);
     await db.query(`insert into defaults (attribute_type, country, region, value, valid_from, source_code, reference, published_by) values
@@ -231,7 +231,7 @@ describe('a default that holds for a condition', () => {
     expect(await parameterOf('participant', town, 'sharing_max_distance_m')).toMatchObject({ value: 1200, level: 'municipality', region: 'ZZ-0002' });
     // The region's value wins over the country's, however specific the country's.
     expect(await parameterOf('participant', village, 'sharing_max_distance_m')).toMatchObject({ value: 1500, level: 'region', region: 'ZZ-NO' });
-    const study = await insert(db, 'projects', { organisation_id: org, name: 'A study', kind: 'study', country: 'ZZ' });
+    const study = await insert(db, 'projects', { organisation_id: org, name: 'A study', status: 'simulation', country: 'ZZ' });
     const alone = await insert(db, 'participants', { organisation_id: org, project_id: study, name: 'Alone', country: 'ZZ', region: 'ZZ-NO' });
     await expect(parameterOf('participant', alone, 'sharing_max_distance_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_m for .*, reached country ZZ/);
   });
@@ -261,7 +261,7 @@ describe('a default that holds for a condition', () => {
   });
 
   it('lists a municipality under its subdivision, coded by the scheme of its country', async () => {
-    await expect(db.query(`insert into regions (code, country, name, kind, parent, published_by) values ('ZZ-12', 'ZZ', 'Short', 'municipality', 'ZZ-NO', 'pack:zz')`))
+    await expect(db.query(`insert into regions (code, country, name, kind, parent_code, published_by) values ('ZZ-12', 'ZZ', 'Short', 'municipality', 'ZZ-NO', 'pack:zz')`))
       .rejects.toThrow(/invalid_identifier: 12 is not a valid zz_municipality/);
     await expect(db.query(`insert into regions (code, country, name, kind, published_by) values ('ZZ-0003', 'ZZ', 'Orphan', 'municipality', 'pack:zz')`))
       .rejects.toThrow(/regions_code_format/);

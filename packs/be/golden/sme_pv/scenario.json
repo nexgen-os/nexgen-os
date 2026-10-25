@@ -16,7 +16,7 @@
     {
       "ref": "sme",
       "name": "Workshop",
-      "role": "prosumer",
+      "category": "prosumer",
       "segment": "business",
       "place": {
         "country": "BE",

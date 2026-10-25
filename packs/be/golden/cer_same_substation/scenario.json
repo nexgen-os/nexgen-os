@@ -30,7 +30,7 @@
     {
       "ref": "solar",
       "name": "Warehouse roof",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "BE",
@@ -65,7 +65,7 @@
     {
       "ref": "school",
       "name": "Namur school",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "public_entity",
       "place": {
         "country": "BE",
@@ -92,7 +92,7 @@
     {
       "ref": "shop",
       "name": "Charleroi shop",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "BE",

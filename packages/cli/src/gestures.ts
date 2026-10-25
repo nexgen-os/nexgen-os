@@ -68,7 +68,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
 /** The flags these commands take, beside those of the installer. */
 export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   organisation: 'value', name: 'value', country: 'value', kind: 'value', project: 'value', place: 'value', address: 'value',
-  'time-zone': 'value', role: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
+  'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
   write: 'switch', expires: 'value',
@@ -129,7 +129,7 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
         ...(optional(f, 'address') ? { address: optional(f, 'address')! } : {}),
         ...(optional(f, 'country') ? { country: optional(f, 'country')! } : {}),
         ...(optional(f, 'time-zone') ? { time_zone: optional(f, 'time-zone')! } : {}),
-        ...(optional(f, 'role') ? { role: optional(f, 'role')! } : {}),
+        ...(optional(f, 'category') ? { category: optional(f, 'category')! } : {}),
       }, geocoder);
     }
     case 'meter declare':

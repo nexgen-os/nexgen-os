@@ -192,15 +192,15 @@ describe('a moment, a project', () => {
 
   it('exports a project: its perimeter first, then every participant taking part', async () => {
     const project = await insert(db, 'projects', {
-      organisation_id: ORG, name: 'Farm solar plan', kind: 'study', country: 'FR', start_date: '2026-03-01',
+      organisation_id: ORG, name: 'Farm solar plan', kind: 'pv_roof', country: 'FR', start_date: '2026-03-01',
       geometry: { type: 'Polygon', coordinates: [[[2.72, 50.77], [2.73, 50.77], [2.73, 50.775], [2.72, 50.775], [2.72, 50.77]]] },
     });
     const farm = await insert(db, 'participants', {
-      organisation_id: ORG, project_id: project, name: 'The farm', role: 'prosumer', country: 'FR', city: 'Saint-Jans-Cappel',
+      organisation_id: ORG, project_id: project, name: 'The farm', category: 'prosumer', country: 'FR', city: 'Saint-Jans-Cappel',
       geometry: { type: 'Point', coordinates: [2.723, 50.771] },
     });
     const fc = await exportGeoJson(db, { projectId: project }, { open: true });
-    expect(fc.features[0]).toMatchObject({ id: project, properties: { kind: 'project', project_kind: 'study', country: 'FR', start_date: '2026-03-01' } });
+    expect(fc.features[0]).toMatchObject({ id: project, properties: { kind: 'project', project_kind: 'pv_roof', country: 'FR', start_date: '2026-03-01' } });
     expect(fc.features[1].id).toBe(farm);
     expect(fc.features.filter((f) => f.properties.kind === 'participant')).toHaveLength(1);
     expect(fc.bbox).toEqual([2.72, 50.77, 2.73, 50.775]);

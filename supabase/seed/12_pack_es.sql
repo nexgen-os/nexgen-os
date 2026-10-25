@@ -83,7 +83,7 @@ on conflict (code) do update set
   pack_checksum       = excluded.pack_checksum;
 
 -- regions: 69 at the level province and above, parents first.
-insert into regions (code, country, name, kind, parent, time_zone, names, aliases, postal_prefixes, published_by) values
+insert into regions (code, country, name, kind, parent_code, time_zone, names, aliases, postal_prefixes, published_by) values
   ('ES-AN', 'ES', 'Andalucía', 'subdivision', null, null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:es'),
   ('ES-AR', 'ES', 'Aragón', 'subdivision', null, null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:es'),
   ('ES-AS', 'ES', 'Asturias, Principado de', 'subdivision', null, null, '{}'::jsonb, '{}'::text[], '{}'::text[], 'pack:es'),
@@ -157,7 +157,7 @@ on conflict (code) do update set
   country         = excluded.country,
   name            = excluded.name,
   kind            = excluded.kind,
-  parent          = excluded.parent,
+  parent_code     = excluded.parent_code,
   time_zone       = excluded.time_zone,
   names           = excluded.names,
   aliases         = excluded.aliases,
@@ -165,7 +165,7 @@ on conflict (code) do update set
 where regions.published_by = excluded.published_by;
 
 -- regions: 17 municipalities, each under its province, coded ES-<ine>.
-insert into regions (code, country, name, kind, parent, published_by) values
+insert into regions (code, country, name, kind, parent_code, published_by) values
   ('ES-07040', 'ES', 'Palma', 'municipality', 'ES-PM', 'pack:es'),
   ('ES-08019', 'ES', 'Barcelona', 'municipality', 'ES-B', 'pack:es'),
   ('ES-15078', 'ES', 'Santiago de Compostela', 'municipality', 'ES-C', 'pack:es'),
@@ -184,10 +184,10 @@ insert into regions (code, country, name, kind, parent, published_by) values
   ('ES-51001', 'ES', 'Ceuta', 'municipality', 'ES-CE', 'pack:es'),
   ('ES-52001', 'ES', 'Melilla', 'municipality', 'ES-ML', 'pack:es')
 on conflict (code) do update set
-  country = excluded.country,
-  name    = excluded.name,
-  kind    = excluded.kind,
-  parent  = excluded.parent
+  country     = excluded.country,
+  name        = excluded.name,
+  kind        = excluded.kind,
+  parent_code = excluded.parent_code
 where regions.published_by = excluded.published_by;
 
 -- project_kinds: 4. The frames of projects the law of the country defines, each refining a kind of the core.

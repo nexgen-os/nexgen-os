@@ -41,20 +41,20 @@ afterAll(async () => {
 
 describe('an energy community', () => {
   it('lists its participants with their place, their meter and who answers for them', async () => {
-    const r = await db.query<{ participant: string; role: string; address_line1: string; meter: string; contact: string | null }>(
-      `select p.name participant, p.role, p.address_line1, m.identifier meter, c.name contact
+    const r = await db.query<{ participant: string; category: string; address_line1: string; meter: string; contact: string | null }>(
+      `select p.name participant, p.category, p.address_line1, m.identifier meter, c.name contact
          from participants p
          join meters m on m.participant_id = p.id
          left join contacts c on c.id = p.contact_id
         where p.project_id = $1
-        order by p.role, p.name`,
+        order by p.category, p.name`,
       [project],
     );
     expect(r.rows).toEqual([
-      { participant: 'Tenant 1', role: 'consumer', address_line1: 'Harbour 1', meter: '871000000000000001', contact: 'Tenant 1' },
-      { participant: 'Tenant 2', role: 'consumer', address_line1: 'Harbour 2', meter: '871000000000000002', contact: 'Tenant 2' },
-      { participant: 'Tenant 3', role: 'consumer', address_line1: 'Harbour 3', meter: '871000000000000003', contact: 'Tenant 3' },
-      { participant: 'Roof plant', role: 'producer', address_line1: 'Harbour 9', meter: '871000000000000009', contact: null },
+      { participant: 'Tenant 1', category: 'consumer', address_line1: 'Harbour 1', meter: '871000000000000001', contact: 'Tenant 1' },
+      { participant: 'Tenant 2', category: 'consumer', address_line1: 'Harbour 2', meter: '871000000000000002', contact: 'Tenant 2' },
+      { participant: 'Tenant 3', category: 'consumer', address_line1: 'Harbour 3', meter: '871000000000000003', contact: 'Tenant 3' },
+      { participant: 'Roof plant', category: 'producer', address_line1: 'Harbour 9', meter: '871000000000000009', contact: null },
     ]);
   });
 
@@ -125,7 +125,7 @@ describe('an energy community', () => {
   });
 
   it('lets the same place take part in a second project, as a participant of that project', async () => {
-    const study = await insert(db, 'projects', { organisation_id: org, name: 'Harbour study', kind: 'study', country: 'NL' });
+    const study = await insert(db, 'projects', { organisation_id: org, name: 'Harbour study', country: 'NL' });
     const again = (await one<{ id: string }>(db, `select join_project($1, 'Unit 1', $2) id`, [study, unit(1)])).id;
     const r = await one<{ n: number }>(db, `select count(*)::int n from participants where address_line1 = 'Harbour 1'`);
     expect(again).toBeTruthy();
@@ -133,7 +133,7 @@ describe('an energy community', () => {
   });
 
   it('lets a study project describe the same meter as the project that runs it, one open participant per meter within each', async () => {
-    const study = await insert(db, 'projects', { organisation_id: org, name: 'Scenario study', kind: 'study', country: 'NL' });
+    const study = await insert(db, 'projects', { organisation_id: org, name: 'Scenario study', country: 'NL' });
     const variant = (await one<{ id: string }>(db, `select join_project($1, 'Unit 2 (scenario)', $2) id`, [study, unit(2)])).id;
     const copy = (await one<{ id: string }>(db, `select declare_meter($1, '871000000000000002', 'gs1_gsrn') id`, [variant])).id;
     expect(await one(db, 'select project_id from meters where id = $1', [copy])).toEqual({ project_id: study });

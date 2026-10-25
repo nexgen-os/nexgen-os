@@ -92,7 +92,7 @@ on conflict (code) do update set
   pack_checksum       = excluded.pack_checksum;
 
 -- regions: 3 at the level region and above, parents first.
-insert into regions (code, country, name, kind, parent, time_zone, names, aliases, postal_prefixes, published_by) values
+insert into regions (code, country, name, kind, parent_code, time_zone, names, aliases, postal_prefixes, published_by) values
   ('BE-BRU', 'BE', 'Bruxelles-Capitale / Brussel-Hoofdstad', 'subdivision', null, null, '{"fr":"Région de Bruxelles-Capitale","nl":"Brussels Hoofdstedelijk Gewest"}'::jsonb, '{}'::text[], '{}'::text[], 'pack:be'),
   ('BE-VLG', 'BE', 'Vlaanderen', 'subdivision', null, null, '{"nl":"Vlaams Gewest","fr":"Région flamande"}'::jsonb, '{}'::text[], '{}'::text[], 'pack:be'),
   ('BE-WAL', 'BE', 'Wallonie', 'subdivision', null, null, '{"fr":"Région wallonne","nl":"Waals Gewest","de":"Wallonische Region"}'::jsonb, '{}'::text[], '{}'::text[], 'pack:be')
@@ -100,7 +100,7 @@ on conflict (code) do update set
   country         = excluded.country,
   name            = excluded.name,
   kind            = excluded.kind,
-  parent          = excluded.parent,
+  parent_code     = excluded.parent_code,
   time_zone       = excluded.time_zone,
   names           = excluded.names,
   aliases         = excluded.aliases,
@@ -108,7 +108,7 @@ on conflict (code) do update set
 where regions.published_by = excluded.published_by;
 
 -- regions: 6 municipalities, each under its region, coded BE-<nis>.
-insert into regions (code, country, name, kind, parent, published_by) values
+insert into regions (code, country, name, kind, parent_code, published_by) values
   ('BE-11002', 'BE', 'Antwerpen', 'municipality', 'BE-VLG', 'pack:be'),
   ('BE-21004', 'BE', 'Bruxelles', 'municipality', 'BE-BRU', 'pack:be'),
   ('BE-44021', 'BE', 'Gent', 'municipality', 'BE-VLG', 'pack:be'),
@@ -116,10 +116,10 @@ insert into regions (code, country, name, kind, parent, published_by) values
   ('BE-62063', 'BE', 'Liège', 'municipality', 'BE-WAL', 'pack:be'),
   ('BE-92094', 'BE', 'Namur', 'municipality', 'BE-WAL', 'pack:be')
 on conflict (code) do update set
-  country = excluded.country,
-  name    = excluded.name,
-  kind    = excluded.kind,
-  parent  = excluded.parent
+  country     = excluded.country,
+  name        = excluded.name,
+  kind        = excluded.kind,
+  parent_code = excluded.parent_code
 where regions.published_by = excluded.published_by;
 
 -- project_kinds: 4. The frames of projects the law of the country defines, each refining a kind of the core.

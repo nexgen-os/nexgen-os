@@ -36,7 +36,7 @@
     {
       "ref": "field",
       "name": "Solar field",
-      "role": "producer",
+      "category": "producer",
       "segment": "business",
       "place": {
         "country": "ES",
@@ -71,7 +71,7 @@
     {
       "ref": "coop",
       "name": "Farming cooperative",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "business",
       "place": {
         "country": "ES",
@@ -98,7 +98,7 @@
     {
       "ref": "school",
       "name": "Village school",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "public_entity",
       "place": {
         "country": "ES",

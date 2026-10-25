@@ -80,14 +80,14 @@ async function build({ scenario: s, name }: GoldenCase, pack: string): Promise<I
   const ids: Ids = new Map();
   const org = await organisation(db, s.organisation);
   ids.set('project', (await one<{ id: string }>(db, 'insert into projects (organisation_id, name, kind, country) values ($1, $2, $3, $4) returning id',
-    [org, s.project.name, s.project.kind, s.project.country])).id);
+    [org, s.project.name, s.project.kind ?? null, s.project.country])).id);
   for (const st of s.substations ?? []) {
     ids.set(`substation:${st.ref}`, (await one<{ id: string }>(db,
       `insert into grid.substations (operator, code, name, voltage_levels, published_by) values ($1, $2, $3, '{}', $4) returning id`,
       [st.operator, st.code, st.name, `golden:${pack}/${name}`])).id);
   }
   for (const p of s.participants) {
-    const id = (await one<{ id: string }>(db, 'select join_project($1, $2, $3, $4) id', [ids.get('project'), p.name, JSON.stringify(p.place), p.role])).id;
+    const id = (await one<{ id: string }>(db, 'select join_project($1, $2, $3, $4) id', [ids.get('project'), p.name, JSON.stringify(p.place), p.category])).id;
     ids.set(`participant:${p.ref}`, id);
     if (p.segment) await db.query('update participants set segment = $2 where id = $1', [id, p.segment]);
     for (const m of p.meters ?? []) {

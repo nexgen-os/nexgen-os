@@ -16,7 +16,7 @@
     {
       "ref": "roof",
       "name": "Common parts",
-      "role": "producer",
+      "category": "producer",
       "segment": "coproperty",
       "place": {
         "country": "BE",
@@ -49,7 +49,7 @@
     {
       "ref": "flat_a",
       "name": "Flat A",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "individual",
       "place": {
         "country": "BE",
@@ -74,7 +74,7 @@
     {
       "ref": "flat_b",
       "name": "Flat B",
-      "role": "consumer",
+      "category": "consumer",
       "segment": "individual",
       "place": {
         "country": "BE",

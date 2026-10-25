@@ -34,7 +34,7 @@ describe('the es pack', () => {
          from regions where country = 'ES' and kind = 'subdivision'`);
     // 50 provinces; 17 autonomous communities and the autonomous cities of Ceuta and Melilla.
     expect(counts).toEqual({ provinces: 50, communities: 19 });
-    expect(await one(db, `select r.name, p.name parent from regions r join regions p on p.code = r.parent where r.code = 'ES-SO'`))
+    expect(await one(db, `select r.name, p.name parent from regions r join regions p on p.code = r.parent_code where r.code = 'ES-SO'`))
       .toEqual({ name: 'Soria', parent: 'Castilla y León' });
 
     const org = await organisation(db, 'Un ayuntamiento', USER_A);
