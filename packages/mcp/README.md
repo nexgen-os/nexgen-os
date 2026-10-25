@@ -2,7 +2,7 @@
 
 The [Model Context Protocol](https://modelcontextprotocol.io) server for
 [Nexgen OS](https://github.com/nexgen-os/nexgen-os). It lets an AI agent
-work on the energy places in your own Postgres: find an organisation and its
+work on the energy assets in your own Postgres: find an organisation and its
 projects, add a participant with its place, declare its meter, install its
 devices, import its readings, size a PV system or a battery, estimate a
 yield, settle a sharing, read the indicators and propose what to do —
