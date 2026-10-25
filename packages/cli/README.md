@@ -24,6 +24,15 @@ for, in order, each file in its own transaction, and records every file in
    export NEXGEN_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
    ```
 
+   Or give the project's ref and region, with the database password in the
+   environment, and the installer finds the session pooler itself (the same
+   flags as Ekwo OS):
+
+   ```sh
+   export NEXGEN_DB_PASSWORD='<password>'
+   npx nexgen-os init --dry-run --project-ref <ref> --db-region <region>
+   ```
+
 3. See what would be applied, without applying it:
 
    ```sh
@@ -59,7 +68,19 @@ anonymous role: everything is read signed in, under row level security.
 | `pack check <cc>\|--all [--root dir] [--json]` | The same in memory: exits 1 with one named line per problem when a pack fails its checks, its golden cases do not hold their shape (`golden_missing`, `golden_source_missing`, `golden_tolerance_missing`…) or a committed seed is not its exact output. The CI runs `pack check --all`. What a pack holds and the checks: [`packs/README.md`](../../packs/README.md). |
 | `try [--year yyyy] [--json]` | No database, no account: installs the core and the `solar` module in a Postgres in memory (PGlite with PostGIS, optional dependencies loaded by this command only, `pglite_required` when they are missing; `dataset_missing` when the assets of an older build lack example 01), loads the house of example 01 with its PV system, computes its yield for one calendar year (default: the last full one but two) as an estimate of `solar` and prints it by month, with the estimate's provenance and the weather it read. The yield is the module's code: run it from a clone, `npx tsx modules/cli.ts try`; started without it, the command refuses with `computation_not_loaded`. |
 
-Every command but `try` and `pack` reads the connection string from `--db` or `NEXGEN_DB_URL`.
+Every command but `try` and `pack` reads the connection string from `--db`,
+then from `--project-ref` with `--db-region`, then from `NEXGEN_DB_URL`.
+With a project's ref, the connection string is the session pooler of a
+Supabase project, on port 5432; its host carries a generation
+(`aws-0-<region>`, `aws-1-<region>`) that nothing says before asking, so both
+are tried and the one that holds the project is kept. The password is read
+from `NEXGEN_DB_PASSWORD`, or `--db-password`, which a shell's history keeps.
+Each missing piece is refused by name: `invalid_project_ref`,
+`db_region_required`, `invalid_region`, `db_password_required`, and
+`pooler_not_found` when neither generation holds the project in that region;
+any other refusal of the pooler, a wrong password for one, is printed as it
+came. No address of the direct connection is built from a ref: it resolves to
+IPv6 only on recent projects; pass it with `--db`.
 A remote host is reached over TLS; pass `--ca <file>` (on Supabase, the
 certificate under *Database settings → SSL configuration*) to verify the
 server's certificate, or put `sslmode` in the connection string to decide
