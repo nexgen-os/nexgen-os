@@ -91,11 +91,11 @@ insert into sources (code, name, description, kind, base_url, docs_url, auth, li
    'text', 'https://atb.nlr.gov/electricity/2025/residential_battery_storage', 'https://atb.nlr.gov/electricity/2025/residential_battery_storage',
    'none', 'Public data of a U.S. federal laboratory, reuse with attribution', 'Annual Technology Baseline 2025, National Laboratory of the Rockies', true, 'battery');
 
-insert into defaults (attribute_type, country, region, condition, value, valid_from, source_code, reference, status, published_by) values
+insert into defaults (attribute_type, country, region, condition, value, valid_from, source_code, reference, quality, published_by) values
   ('battery_c_rate', null, null, '{}', '0.4', '2025-01-01', 'atb_2025_residential_battery',
-   'ATB 2025, Residential Battery Storage, the representative system: 5 kW / 12.5 kWh (2.5-hour), a C-rate of 5 / 12.5 = 0.4', 'default', 'battery'),
+   'ATB 2025, Residential Battery Storage, the representative system: 5 kW / 12.5 kWh (2.5-hour), a C-rate of 5 / 12.5 = 0.4', 'assumed', 'battery'),
   ('round_trip_efficiency', null, null, '{}', '0.85', '2025-01-01', 'atb_2025_residential_battery',
-   'ATB 2025, Residential Battery Storage, section Round-Trip Efficiency: 85 %, the representative value of Cole et al. (2025) the 2025 ATB adopts', 'default', 'battery');
+   'ATB 2025, Residential Battery Storage, section Round-Trip Efficiency: 85 %, the representative value of Cole et al. (2025) the 2025 ATB adopts', 'assumed', 'battery');
 
 -- ---------------------------------------------------------------------------
 -- products — the physics of a battery product.

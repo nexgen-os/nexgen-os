@@ -478,7 +478,7 @@
         },
         "source_code": { "$ref": "#/$defs/code", "description": "The source, declared in sources.json, the value was read from." },
         "reference": { "$ref": "#/$defs/text", "description": "Where in that source: the article, the table, the page." },
-        "status": { "enum": ["published", "measured", "estimated", "default"], "description": "What kind of value it is (value_statuses): published when the source decides it, estimated for a statistic or a model, default for a conventional assumption. Absent: published." },
+        "quality": { "enum": ["published", "measured", "estimated", "assumed"], "description": "What kind of value it is, a word of the domain value_quality: published when the source decides it, estimated for a statistic or a model, assumed for a conventional value. Absent: published." },
         "valid_from": { "$ref": "#/$defs/date" },
         "valid_to": { "$ref": "#/$defs/date", "description": "The first day the value does not hold, as everywhere in the model: a period is [valid_from, valid_to). The row that replaces it starts that day. Absent: it still holds." }
       }

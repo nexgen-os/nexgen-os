@@ -3,7 +3,7 @@
 The values Spain decides that a function of the model reads, compiled by
 `nexgen-os pack build es` into
 [`supabase/seed/12_pack_es.sql`](../../supabase/seed/12_pack_es.sql).
-Version 0.3.0, certification `community`: checked by the toolchain, read by
+Version 0.4.0, certification `community`: checked by the toolchain, read by
 no Spanish professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads a
 Spanish register yet, and an address is found by the open geocoders of the

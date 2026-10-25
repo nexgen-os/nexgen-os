@@ -137,7 +137,7 @@ do $seed$
 declare
   refused text;
 begin
-  with pack (attribute_type, region, condition, value, unit, valid_from, valid_to, source_code, reference, status) as (
+  with pack (attribute_type, region, condition, value, unit, valid_from, valid_to, source_code, reference, quality) as (
     values
       ('connection_max_power_lv'::text, null::text, '{}'::jsonb, '250'::jsonb, 'KiloW'::text, '2020-01-01'::date, null::date, 'xa_grid_code'::text, 'Article 7, table 1'::text, 'published'::text),
       ('density_class'::text, 'XA-20001'::text, '{}'::jsonb, '"dense"'::jsonb, 'code'::text, '2026-01-01'::date, null::date, 'xa_statistics'::text, 'Density grid 2026'::text, 'published'::text),
@@ -174,16 +174,16 @@ begin
   ),
   written as (
     insert into defaults (attribute_type, country, region, condition, value, valid_from, valid_to,
-                          source_code, reference, status, published_by)
+                          source_code, reference, quality, published_by)
     select p.attribute_type, 'XA', p.region, p.condition, p.value, p.valid_from, p.valid_to,
-           p.source_code, p.reference, p.status, 'pack:xa'
+           p.source_code, p.reference, p.quality, 'pack:xa'
       from pack p
      where not exists (select 1 from problems)
     on conflict (country, region, attribute_type, condition, valid_from) do update set
       valid_to    = excluded.valid_to,
       source_code = excluded.source_code,
       reference   = excluded.reference,
-      status      = excluded.status
+      quality     = excluded.quality
     returning 1
   )
   select string_agg(problem, '; ' order by problem) into refused from problems;

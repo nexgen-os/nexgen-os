@@ -236,7 +236,7 @@ function defaultsBlock(values: PackDefault[], cc: string, by: string): string[] 
   const rows = values.map(
     (v) =>
       `      (${text(v.attribute_type)}::text, ${text(v.region)}::text, ${jsonb(v.condition ?? {})}, ${jsonb(v.value)}, ${text(v.unit)}::text, ` +
-      `${date(v.valid_from)}, ${date(v.valid_to)}, ${text(v.source_code)}::text, ${text(v.reference)}::text, ${text(v.status ?? 'published')}::text)`,
+      `${date(v.valid_from)}, ${date(v.valid_to)}, ${text(v.source_code)}::text, ${text(v.reference)}::text, ${text(v.quality ?? 'published')}::text)`,
   );
   return [
     `-- defaults: ${values.length} value(s)${regional > 0 ? `, ${regional} of them for a region or a municipality` : ''}` +
@@ -246,7 +246,7 @@ function defaultsBlock(values: PackDefault[], cc: string, by: string): string[] 
     'declare',
     '  refused text;',
     'begin',
-    '  with pack (attribute_type, region, condition, value, unit, valid_from, valid_to, source_code, reference, status) as (',
+    '  with pack (attribute_type, region, condition, value, unit, valid_from, valid_to, source_code, reference, quality) as (',
     '    values',
     rows.join(',\n'),
     '  ),',
@@ -274,16 +274,16 @@ function defaultsBlock(values: PackDefault[], cc: string, by: string): string[] 
     '  ),',
     '  written as (',
     '    insert into defaults (attribute_type, country, region, condition, value, valid_from, valid_to,',
-    '                          source_code, reference, status, published_by)',
+    '                          source_code, reference, quality, published_by)',
     `    select p.attribute_type, ${text(cc)}, p.region, p.condition, p.value, p.valid_from, p.valid_to,`,
-    `           p.source_code, p.reference, p.status, ${text(by)}`,
+    `           p.source_code, p.reference, p.quality, ${text(by)}`,
     '      from pack p',
     '     where not exists (select 1 from problems)',
     '    on conflict (country, region, attribute_type, condition, valid_from) do update set',
     '      valid_to    = excluded.valid_to,',
     '      source_code = excluded.source_code,',
     '      reference   = excluded.reference,',
-    '      status      = excluded.status',
+    '      quality     = excluded.quality',
     '    returning 1',
     '  )',
     "  select string_agg(problem, '; ' order by problem) into refused from problems;",

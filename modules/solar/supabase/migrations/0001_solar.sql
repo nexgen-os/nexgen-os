@@ -733,7 +733,7 @@ create table solar.estimate_losses (
   fraction         numeric,
   source_code      text references sources(code),
   reference        text,
-  status           text not null references value_statuses(code),
+  status           value_quality not null,
   primary key (estimate_id, position),
   constraint estimate_losses_fraction check (fraction is null or (fraction > -1 and fraction < 1))
 );

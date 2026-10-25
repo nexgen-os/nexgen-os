@@ -22,7 +22,6 @@ const CORE_TABLES = [
   'devices', 'documents', 'forecast_values', 'identifier_schemes', 'identifiers', 'invitations', 'meters', 'modules',
   'organisation_members', 'organisations', 'participants', 'products', 'project_kinds', 'project_shares', 'projects', 'quantities', 'regions', 'role_capabilities',
   'schema_migrations', 'segments', 'series', 'series_rollups', 'series_values', 'sizing_criteria', 'sources', 'units',
-  'value_statuses',
 ];
 
 describe('the nexgen schema', () => {

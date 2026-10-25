@@ -178,8 +178,8 @@ export interface PackDefault {
   unit: string;
   source_code: string;
   reference: string;
-  /** What kind of value it is (value_statuses); absent: published. */
-  status?: 'published' | 'measured' | 'estimated' | 'default';
+  /** What kind of value it is (the domain value_quality); absent: published. */
+  quality?: 'published' | 'measured' | 'estimated' | 'assumed';
   valid_from: string;
   valid_to?: string;
 }

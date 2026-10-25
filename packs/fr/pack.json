@@ -2,8 +2,8 @@
   "$schema": "../schema/pack.1.json",
   "country": "FR",
   "name": "France",
-  "version": "0.3.0",
-  "checksum": "sha256:a17fe65f7b1c704340b524abe98139e9388e47f39ece5a6e03c700e1b6619993",
+  "version": "0.4.0",
+  "checksum": "sha256:3f1f26706ad25e61495e13af552500554b4597d250f867ec14b1ceb0fee454ef",
   "schema_min": "0.3.0",
   "seed_sequence": 10,
   "certification": {

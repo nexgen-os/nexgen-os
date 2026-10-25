@@ -28,7 +28,7 @@ describe('the es pack', () => {
     const es = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version from countries where code = 'ES'`);
     expect(es).toEqual({ name: 'Spain', currency: 'EUR', languages: ['es', 'ca', 'eu', 'gl'], time_zones: ['Europe/Madrid', 'Atlantic/Canary'],
-      region_level: 'province', municipality_scheme: 'ine', pack_version: '0.3.0' });
+      region_level: 'province', municipality_scheme: 'ine', pack_version: '0.4.0' });
     const counts = await one<{ provinces: number; communities: number }>(db,
       `select count(*) filter (where parent is not null)::int provinces, count(*) filter (where parent is null)::int communities
          from regions where country = 'ES' and kind = 'subdivision'`);
@@ -139,6 +139,6 @@ describe('the es pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'es' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'es', version: '0.3.0', file: 'supabase/seed/12_pack_es.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'es', version: '0.4.0', file: 'supabase/seed/12_pack_es.sql', state: 'up_to_date' }]);
   });
 });

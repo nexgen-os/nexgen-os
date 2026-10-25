@@ -35,12 +35,14 @@ export const VOCABULARIES = [
   'units',
   'currencies',
   'sizing_criteria',
-  'value_statuses',
   'attribute_types',
   'identifier_schemes',
   'sources',
   'countries',
   'regions',
+  'project_kinds',
+  'segments',
+  'capabilities',
 ] as const;
 
 /** The six objects of the core an attachment names by kind, and the table of each (decision 0001). */

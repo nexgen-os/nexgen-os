@@ -113,26 +113,29 @@ describe('parameter_of', () => {
   });
 });
 
-describe('the status of a value', () => {
-  it('says with every value whether it is published, measured, estimated or a default, in the words of the series quality', async () => {
-    const words = await db.query<{ code: string; series_quality: number | null }>('select code, series_quality from value_statuses order by code');
-    expect(words.rows).toEqual([
-      { code: 'default', series_quality: null }, { code: 'estimated', series_quality: 1 },
-      { code: 'measured', series_quality: 0 }, { code: 'published', series_quality: null },
-    ]);
+describe('the quality of a value', () => {
+  it('says with every value whether it is published, measured, estimated or assumed, a word of one domain', async () => {
+    const words = await one<{ check: string }>(db, `select pg_get_constraintdef(c.oid) "check" from pg_constraint c
+      join pg_type t on t.oid = c.contypid join pg_namespace n on n.oid = t.typnamespace where n.nspname = 'nexgen' and t.typname = 'value_quality'`);
+    expect(words.check).toMatch(/'published'.*'measured'.*'estimated'.*'assumed'/);
     // A pack value is published unless the pack says otherwise; a statistic applied to a place is estimated.
-    await db.query(`insert into defaults (attribute_type, country, value, valid_from, source_code, reference, status, published_by)
+    await db.query(`insert into defaults (attribute_type, country, value, valid_from, source_code, reference, quality, published_by)
                       values ('energy_price_household', 'ZZ', '180', '2020-01-01', 'zz_statistics', 'survey 2024, table 2', 'estimated', 'pack:zz'),
                              ('energy_price_business', 'ZZ', '150', '2020-01-01', 'zz_statistics', 'regulated tariff 2024', 'published', 'pack:zz')`);
     const shed = await participant(db, { organisation_id: org, name: 'Shed', country: 'ZZ', region: 'ZZ-SO' });
-    expect(await parameterOf('participant', shed, 'energy_price_business')).toMatchObject({ value: 150, level: 'country', status: 'published' });
-    expect(await parameterOf('participant', shed, 'energy_price_household')).toMatchObject({ value: 180, status: 'estimated' });
-    // An attribute nobody qualified is estimated; a reading says measured.
+    expect(await parameterOf('participant', shed, 'energy_price_business')).toMatchObject({ value: 150, level: 'country', quality: 'published' });
+    expect(await parameterOf('participant', shed, 'energy_price_household')).toMatchObject({ value: 180, quality: 'estimated' });
+    // An attribute nobody qualified is estimated; a reading says measured; a conventional value is assumed.
     await db.query(`select set_attribute('participant', $1, 'annual_consumption', '4200', null, null, 'an estimate of the owner')`, [shed]);
-    expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4200, status: 'estimated' });
+    expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4200, quality: 'estimated' });
     await db.query(`select set_attribute('participant', $1, 'annual_consumption', '4350', '2026-01-01', null, 'meter readings of 2025', 'measured')`, [shed]);
-    expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4350, status: 'measured', reference: 'meter readings of 2025' });
-    await expect(db.query(`select set_attribute('participant', $1, 'annual_consumption', '1', '2026-03-01', null, null, 'guessed')`, [shed])).rejects.toThrow(/foreign key|violates/);
+    expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4350, quality: 'measured', reference: 'meter readings of 2025' });
+    await db.query(`select set_attribute('participant', $1, 'annual_consumption', '4000', '2026-02-01', null, 'a typical household', p_quality => 'assumed')`, [shed]);
+    expect(await parameterOf('participant', shed, 'annual_consumption')).toMatchObject({ value: 4000, quality: 'assumed' });
+    expect((await parameterOf('participant', shed, 'annual_consumption')) as Record<string, unknown>).not.toHaveProperty('status');
+    for (const word of ['guessed', 'default']) {
+      await expect(db.query(`select set_attribute('participant', $1, 'annual_consumption', '1', '2026-03-01', null, null, $2)`, [shed, word])).rejects.toThrow(/value_quality_word/);
+    }
   });
 });
 

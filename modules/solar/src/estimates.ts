@@ -46,30 +46,30 @@ export interface EstimateWrite {
   levels?: { probability: number; energy_kwh: number }[];
 }
 
-/** One loss of a chain: a code of `solar.loss_kinds`, a fraction (null: a model computes it), where it was read, its status. */
+/** One loss of a chain: a code of `solar.loss_kinds`, a fraction (null: a model computes it), where it was read, its quality. */
 export interface LossRow {
   array_name: string | null;
   code: string;
   fraction: number | null;
   source_code: string | null;
   reference: string;
-  status: 'published' | 'measured' | 'estimated' | 'default';
+  quality: 'published' | 'measured' | 'estimated' | 'assumed';
 }
 
-/** A soiling as `solar.soiling_of()` gives it: the place's value, where it was found and its status. */
+/** A soiling as `solar.soiling_of()` gives it: the place's value, where it was found and its quality. */
 export interface FoundLoss {
   value: number;
   level: string;
   source_code: string | null;
   reference: string | null;
-  status?: string;
+  quality?: string;
 }
 
 /**
  * The loss chain of a yield as rows: the profile's losses in their order,
- * each a default of the profile (`solar.yield_profiles:<code>`), the
+ * each an assumption of the profile (`solar.yield_profiles:<code>`), the
  * soiling the place says in place of the profile's when it says one, with
- * its source and status. Arrays whose chains are the same give one chain
+ * its source and quality. Arrays whose chains are the same give one chain
  * (`array_name` null); otherwise one per array.
  */
 export function lossChain(
@@ -83,12 +83,12 @@ export function lossChain(
         return {
           array_name: arrayName, code: l.code, fraction: soiling.value, source_code: soiling.source_code,
           reference: soiling.reference ?? `soiling_loss of the ${soiling.level}`,
-          status: (soiling.status as LossRow['status'] | undefined) ?? 'estimated',
+          quality: (soiling.quality as LossRow['quality'] | undefined) ?? 'estimated',
         };
       }
       return {
         array_name: arrayName, code: l.code, fraction: l.pct === null ? null : Number(l.pct) / 100, source_code: null,
-        reference: `solar.yield_profiles:${profileCode}${l.pct === null ? ', computed by the engine\'s model' : ''}`, status: 'default',
+        reference: `solar.yield_profiles:${profileCode}${l.pct === null ? ', computed by the engine\'s model' : ''}`, quality: 'assumed',
       };
     });
   const key = (a: { soiling: FoundLoss | null }) => JSON.stringify(a.soiling ? [a.soiling.value, a.soiling.source_code, a.soiling.reference] : null);
@@ -125,9 +125,9 @@ export async function writeEstimate(db: Db, write: EstimateWrite): Promise<{ est
   await db.query('delete from solar.estimate_losses where estimate_id = $1', [row.id]);
   if (write.losses && write.losses.length > 0) {
     await db.query(
-      `insert into solar.estimate_losses (estimate_id, array_name, position, code, fraction, source_code, reference, status)
-       select $1, l.array_name, l.position, l.code, l.fraction, l.source_code, l.reference, l.status
-         from jsonb_to_recordset($2::jsonb) l(array_name text, position integer, code text, fraction numeric, source_code text, reference text, status text)`,
+      `insert into solar.estimate_losses (estimate_id, array_name, position, code, fraction, source_code, reference, quality)
+       select $1, l.array_name, l.position, l.code, l.fraction, l.source_code, l.reference, l.quality
+         from jsonb_to_recordset($2::jsonb) l(array_name text, position integer, code text, fraction numeric, source_code text, reference text, quality text)`,
       [row.id, JSON.stringify(write.losses.map((l, i) => ({ ...l, position: i + 1 })))]);
   }
   await db.query('delete from solar.estimate_levels where estimate_id = $1', [row.id]);

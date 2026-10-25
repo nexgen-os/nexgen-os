@@ -107,13 +107,13 @@ describe('a yield estimate with the soiling of the place', () => {
       expect.objectContaining({ fraction: 0.05, level: 'participant', applied: true }),
     ]);
 
-    // The chain as rows, in order: each loss with its fraction, where it was read and its status.
+    // The chain as rows, in order: each loss with its fraction, where it was read and its quality.
     const chain = await db.query<Record<string, unknown>>(
-      'select position, code, fraction::float8 fraction, array_name, source_code, reference, status from solar.estimate_losses where estimate_id = $1 order by position', [result.estimateId]);
+      'select position, code, fraction::float8 fraction, array_name, source_code, reference, quality from solar.estimate_losses where estimate_id = $1 order by position', [result.estimateId]);
     expect(chain.rows.map((r) => r.code)).toEqual(['iam', 'soiling', 'lid', 'module_quality', 'mismatch', 'dc_wiring', 'ac_wiring', 'availability']);
-    expect(chain.rows[0]).toMatchObject({ fraction: null, array_name: null, reference: "solar.yield_profiles:pvsyst_like, computed by the engine's model", status: 'default' });
-    expect(chain.rows[1]).toMatchObject({ fraction: 0.05, reference: 'dust from the farmyard, survey of 2026-06', status: 'estimated' });
-    expect(chain.rows[3]).toMatchObject({ code: 'module_quality', fraction: -0.0075, status: 'default' });
+    expect(chain.rows[0]).toMatchObject({ fraction: null, array_name: null, reference: "solar.yield_profiles:pvsyst_like, computed by the engine's model", quality: 'assumed' });
+    expect(chain.rows[1]).toMatchObject({ fraction: 0.05, reference: 'dust from the farmyard, survey of 2026-06', quality: 'estimated' });
+    expect(chain.rows[3]).toMatchObject({ code: 'module_quality', fraction: -0.0075, quality: 'assumed' });
   });
 
   it('refuses an engine estimate whose arrays have different soiling: the request carries one list of losses', async () => {
