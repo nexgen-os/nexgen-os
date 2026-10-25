@@ -6,7 +6,7 @@ need to do that without guessing. Humans are welcome to read it too.
 
 ## What Nexgen OS is
 
-Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model
+Nexgen OS is a world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model
 ([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
 It is **open source software** (AGPL-3.0 for the core and the modules,
 MIT for the format libraries and the connectors), in a Postgres database

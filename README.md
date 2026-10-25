@@ -1,6 +1,6 @@
 # Nexgen OS
 
-Nexgen OS is an open digital twin of energy places — organisations, projects, participants, their meters, devices and series — driven by AI agents that work as users of the model
+Nexgen OS is a world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model
 ([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
 
 Nexgen OS is the open foundation and the reference language; commercial

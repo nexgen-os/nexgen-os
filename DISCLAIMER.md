@@ -2,7 +2,7 @@
 
 Nexgen OS is open source data infrastructure: a database schema, rules
 written as data, format libraries, connectors and modules. It is built for
-the people who study, equip, operate and finance energy places — engineering
+the people who study, equip, operate and finance energy assets — engineering
 offices, surveyors, installers, energy suppliers, grid operators, energy
 communities and the people who fund them — and with them. It is software:
 it gives them shared data and tools, and the judgement stays theirs.
@@ -13,7 +13,7 @@ of this repository.*
 ## 1. What the project is
 
 Nexgen OS gives an organisation a place to hold the data of its energy
-places — a PostgreSQL schema it installs on a database it controls —
+assets — a PostgreSQL schema it installs on a database it controls —
 together with:
 
 - **a core** for organisations, projects, participants, their meters, their
@@ -29,7 +29,7 @@ together with:
   which a person, a script or an AI agent works on that data.
 
 The mission of the project is to provide that infrastructure, openly, in
-every country, to the professions that make energy places work. The tools
+every country, to the professions that make energy assets work. The tools
 are built to be used by those professionals, and to be read and checked by
 them.
 
