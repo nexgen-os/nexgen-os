@@ -56,9 +56,13 @@ worse than one not cut.
    ```
 
 7. **The run against a real Supabase project.** The test suite runs on
-   PGlite; this run covers what PGlite does not: the published binary over a
-   pooler, a hosted project's roles, extensions and TLS. On a throwaway
-   project, with PostGIS enabled:
+   PGlite. It installs every module and every pack over the schemas a new
+   Supabase project already holds (`tests/fixtures/supabase-project.sql`), so
+   a module whose schema the host takes is refused there before anywhere
+   else; a schema Supabase adds to its projects goes into that file. This run
+   covers what PGlite does not: the published binary over a pooler, a hosted
+   project's roles, extensions and TLS. On a throwaway project, with PostGIS
+   enabled:
 
    ```sh
    export NEXGEN_DB_URL=…                       # never written to a file
