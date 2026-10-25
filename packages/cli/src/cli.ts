@@ -14,6 +14,7 @@ import { readCatalogue, type Step } from './catalogue.js';
 import { doctor, status, type DoctorReport, type StatusReport } from './doctor.js';
 import { install, migrate, postgisVersion, type InstallReport } from './apply.js';
 import { NexgenError } from './errors.js';
+import { DB_PASSWORD_ENV, databaseUrl } from './connection.js';
 import { buildPacks, checkPacks, type PackReport } from './pack/command.js';
 import { GestureError, connect, type Computations, type SqlClient } from '@nexgen-os/core';
 import { GESTURE_COMMANDS, GESTURE_FLAGS, GESTURE_USAGE, printGesture, runGesture } from './gestures.js';
@@ -33,6 +34,9 @@ Usage:
 
 Options:
   --db <url>     the connection string (or NEXGEN_DB_URL); on Supabase, the session pooler or direct connection
+  --project-ref <ref> --db-region <region>
+                 on Supabase, instead of --db: the session pooler of the project, found by trying both
+                 generations of its host; the password in ${DB_PASSWORD_ENV} (or --db-password)
   --ca <file>    the certificate authority to verify the server against
   --modules      modules to install, comma-separated (default: every module shipped)
   --packs        country packs to install, comma-separated (default: none)
@@ -44,6 +48,9 @@ ${GESTURE_USAGE}`;
 
 const FLAGS: Record<string, 'value' | 'switch'> = {
   db: 'value',
+  'project-ref': 'value',
+  'db-region': 'value',
+  'db-password': 'value',
   ca: 'value',
   modules: 'value',
   packs: 'value',
@@ -211,9 +218,11 @@ export async function main(argv: string[], io: Io): Promise<number> {
       if (subs.length > 0 && !subs.includes(first ?? '')) throw new NexgenError('usage', `${command} ${subs.filter(Boolean).join('|')}`);
       const caFile = flags.get('ca') as string | undefined;
       const ca = caFile === undefined ? undefined : await readFile(caFile, 'utf8');
+      const open = (u: string) => (io.open ?? ((v, c) => connect(v, { ca: c })))(u, ca);
+      const url = await databaseUrl(flags, io.env, open);
       const value = await runGesture(command, sub, sub === undefined ? first : second, flags, {
-        env: io.env,
-        open: (u) => (io.open ?? ((v, c) => connect(v, { ca: c })))(u, ca),
+        env: { ...io.env, NEXGEN_DB_URL: url },
+        open,
         ...(io.computations ? { computations: io.computations } : {}),
         ...(io.fetch ? { fetch: io.fetch } : {}),
       });
@@ -224,11 +233,12 @@ export async function main(argv: string[], io: Io): Promise<number> {
     if (!['init', 'migrate', 'doctor', 'status'].includes(command)) {
       throw new NexgenError('usage', `unknown command ${command}; run nexgen-os --help`);
     }
-    const url = (flags.get('db') as string | undefined) ?? io.env.NEXGEN_DB_URL;
-    if (!url) throw new NexgenError('db_url_required', 'pass --db <connection string> or set NEXGEN_DB_URL');
     const caFile = flags.get('ca') as string | undefined;
     const ca = caFile === undefined ? undefined : await readFile(caFile, 'utf8');
-    const db = await (io.open ?? ((u, c) => connect(u, { ca: c })))(url, ca);
+    const open = (u: string) => (io.open ?? ((v, c) => connect(v, { ca: c })))(u, ca);
+    const url = await databaseUrl(flags, io.env, open);
+    if (!url) throw new NexgenError('db_url_required', `pass --db <connection string>, set NEXGEN_DB_URL, or give --project-ref and --db-region with ${DB_PASSWORD_ENV}`);
+    const db = await open(url);
     try {
       const json = flags.has('json');
       const dryRun = flags.has('dry-run');
