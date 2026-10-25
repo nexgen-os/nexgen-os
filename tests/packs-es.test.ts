@@ -30,7 +30,7 @@ describe('the es pack', () => {
     expect(es).toEqual({ name: 'Spain', currency: 'EUR', languages: ['es', 'ca', 'eu', 'gl'], time_zones: ['Europe/Madrid', 'Atlantic/Canary'],
       region_level: 'province', municipality_scheme: 'ine', pack_version: '0.4.0' });
     const counts = await one<{ provinces: number; communities: number }>(db,
-      `select count(*) filter (where parent is not null)::int provinces, count(*) filter (where parent is null)::int communities
+      `select count(*) filter (where parent_code is not null)::int provinces, count(*) filter (where parent_code is null)::int communities
          from regions where country = 'ES' and kind = 'subdivision'`);
     // 50 provinces; 17 autonomous communities and the autonomous cities of Ceuta and Melilla.
     expect(counts).toEqual({ provinces: 50, communities: 19 });

@@ -72,7 +72,7 @@ describe('the be pack', () => {
     // Its names in the languages of the country, as ISO 3166-2 writes them.
     expect(await one(db, `select names from regions where code = 'BE-BRU'`)).toEqual({ names: { fr: 'Région de Bruxelles-Capitale', nl: 'Brussels Hoofdstedelijk Gewest' } });
     // One level: a region has no parent, and parameter_of() goes from the region to the country.
-    expect(await one<{ n: number }>(db, `select count(*)::int n from regions where country = 'BE' and kind = 'subdivision' and parent is not null`)).toEqual({ n: 0 });
+    expect(await one<{ n: number }>(db, `select count(*)::int n from regions where country = 'BE' and kind = 'subdivision' and parent_code is not null`)).toEqual({ n: 0 });
     const org = await organisation(db, 'Une commune', USER_A);
     const home = await inRegion(org, 'BE-WAL');
     expect((await one<{ time_zone: string }>(db, 'select time_zone from participants where id = $1', [home])).time_zone).toBe('Europe/Brussels');
@@ -290,7 +290,7 @@ describe('what Belgium decides per frame and municipality', () => {
   it('publishes the frames of its regions and lists municipalities by their NIS code', async () => {
     const kinds = await db.query<{ code: string }>(`select code from project_kinds where country = 'BE' order by code`);
     expect(kinds.rows.map((k) => k.code)).toEqual(['be_cec', 'be_cel', 'be_cer', 'be_energy_sharing']);
-    expect(await one(db, `select name, kind, parent from regions where code = 'BE-62063'`)).toEqual({ name: 'Liège', kind: 'municipality', parent: 'BE-WAL' });
+    expect(await one(db, `select name, kind, parent_code from regions where code = 'BE-62063'`)).toEqual({ name: 'Liège', kind: 'municipality', parent_code: 'BE-WAL' });
   });
 
   it('decides no sharing perimeter yet: the regional rules wait for their texts to be read', async () => {

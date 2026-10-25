@@ -47,7 +47,7 @@ describe('the fr pack', () => {
     expect(fr).toEqual({ name: 'France', currency: 'EUR', languages: ['fr'], tz: 'Europe/Paris', region_level: 'department',
       municipality_scheme: 'insee', pack_version: '0.4.0' });
     const departments = await one<{ n: number; regions: number }>(db,
-      `select count(*) filter (where parent is not null or code ~ '^FR-97')::int n, count(*) filter (where parent is null and code !~ '^FR-97')::int regions from regions where country = 'FR' and kind = 'subdivision'`);
+      `select count(*) filter (where parent_code is not null or code ~ '^FR-97')::int n, count(*) filter (where parent_code is null and code !~ '^FR-97')::int regions from regions where country = 'FR' and kind = 'subdivision'`);
     expect(departments).toEqual({ n: 103, regions: 13 });
     const finistere = await one<Record<string, unknown>>(db, `select r.name, p.name parent from regions r join regions p on p.code = r.parent_code where r.code = 'FR-29'`);
     expect(finistere).toEqual({ name: 'Finistère', parent: 'Bretagne' });
@@ -240,7 +240,7 @@ describe('what France decides per frame, segment and municipality', () => {
   });
 
   it('lists municipalities under their department with their class of the INSEE density grid, which sets the perimeter of a collective self-consumption', async () => {
-    expect(await one(db, `select name, kind, parent from regions where code = 'FR-01013'`)).toEqual({ name: 'Arandas', kind: 'municipality', parent: 'FR-01' });
+    expect(await one(db, `select name, kind, parent_code from regions where code = 'FR-01013'`)).toEqual({ name: 'Arandas', kind: 'municipality', parent_code: 'FR-01' });
     const org = await organisation(db, 'Une PMO', USER_A);
     const acc = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'ACC du Bugey', 'fr_acc', 'FR') returning id`, [org])).id;
     const lyon = await memberOf(acc, 'Lyon', '69123', 'FR-69M');
