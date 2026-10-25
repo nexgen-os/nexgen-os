@@ -3,6 +3,11 @@
 Nexgen OS is a world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model
 ([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
 
+*OS* reads both ways: it is open source, and it is an operating system for
+energy, for every actor who monitors a site, supplies energy, develops a
+renewable project, manages a building, shares energy in a community or
+studies any of them.
+
 Nexgen OS is the open foundation and the reference language; commercial
 platforms may be built on it, and this repository describes the
 foundation. Why the foundation exists and what it promises:
@@ -80,6 +85,56 @@ The path from an empty database to a house with its yearly yield is
 format libraries are MIT and can live inside any product; the
 [licence](#licence) says what the AGPL asks of the core.
 
+## For an energy supplier
+
+Nexgen OS is the foundation a supplier builds its customer relationship
+on: a customer app under its own brand, energy insights on meter data, a
+portal for the connection points of its customers — with the customer base
+and its data in the supplier's own database, and an engine that stays open.
+
+- **An account for each customer**: the end customer is a participant
+  with an account of their own, who reads their meters, devices and series
+  and nothing of their neighbours, gives and withdraws consents, chooses how
+  they are notified and validates the recommendations made to them
+  ([docs/access.md](docs/access.md),
+  [0052](docs/decisions/0052-the-end-customer-is-a-participant.md)).
+- **Insights on meter data**: load curves read under mandate through the
+  meter data connectors, or from the operator's files; devices recognised in
+  a curve by a disaggregation source and confirmed by the customer; a curve
+  estimated from a bill when none is measured yet
+  ([`consumption`](modules/consumption/README.md),
+  [`packages/formats/energy-bill`](packages/formats/energy-bill/README.md)).
+- **A meter portal**: every connection point under the identifier its
+  operator gives it, checked against its scheme, with its operator, its
+  voltage level, its substation and its market
+  ([`grid`](modules/grid/README.md)).
+- **Indicators as data**: self-consumption, peak offtake, savings, injection
+  value, CO₂ and Scope 2, computed hour by hour and written back
+  as series ([`kpis`](modules/kpis/README.md)); recommendations and
+  commands to a heat pump, a charger or a battery in one lifecycle
+  ([`actions`](modules/actions/README.md)).
+- **Solar, batteries, charging and energy sharing** for the customers who
+  produce, store, charge or share, sized and settled by their modules, and
+  invoiced through the [billing bridge](#invoicing-and-ekwo-os).
+- **Data and engine that stay the supplier's**: the database, the keys and
+  the export are its own; the core and the modules are AGPL, the connectors
+  and format libraries MIT ([licence](#licence)). The app, its hosting and
+  its support are services built on the foundation
+  ([docs/services.md](docs/services.md)).
+
+## For monitoring and building management
+
+Meters, devices and series under one model, whichever system measured
+them: a smart meter, a Home Assistant export, an OCPP charger, a weather
+file. Measured and estimated values are told apart by their status, a
+series is read at any step through one function (`resample()`), indicators
+are formulas held as data, and a setpoint sent to a device follows the same
+lifecycle as a recommendation. The `building` module describes the ground,
+buildings, floors, rooms, zones and roof faces, read from IFC, CityJSON or
+Home Assistant, and example
+[`02-school.sql`](docs/demo/02-school.sql) is a school with its rooms,
+multisensors and a heat pump with its setpoints.
+
 ## The model in one screen
 
 Six objects, in the order a page walks them — the organisation, the
@@ -100,11 +155,10 @@ The physical description of a place — its ground, buildings, floors, rooms
 and roof faces — enriches the participant in the `building` module; a
 device belongs to its participant ([0043](docs/decisions/0043-the-participant-is-the-node.md)).
 
-Three rules shaped this structure, and settle every new question about it:
-**keep it simple**; **few words** — one word per thing across schemas,
-folders and documents (the meter is `meters` in the core and `grid.meters`
-in the grid module); and **stay close to the platform this core was taken
-from**, whose structure has proven itself in the field. The table that groups the
+The structure is the one of the platform this core was taken from, which
+has proven itself in the field, and each thing keeps one name everywhere (the meter is `meters` in the core and
+`grid.meters` in the grid module); how a contribution names and shapes
+things is in [CONTRIBUTING.md](CONTRIBUTING.md#how-we-name-and-shape-things). The table that groups the
 core's tables, the functions that act on them and the standards they follow
 is in [supabase/README.md](supabase/README.md); the diagram and the rules are in
 [docs/model.md](docs/model.md); the rules and why in
