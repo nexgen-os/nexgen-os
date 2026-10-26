@@ -18,6 +18,8 @@ const OF_0_4_0 = [
   'modules/solar/supabase/migrations/0004_estimate_losses_quality.sql',
   'modules/community/supabase/migrations/0003_participant_category.sql',
 ];
+/** Written after 0.4.0, applied by the same `migrate`. */
+const SINCE_0_4_0 = ['modules/solar/supabase/migrations/0005_system_loss.sql'];
 
 let old: string;
 let db: PGlite;
@@ -31,7 +33,7 @@ beforeAll(async () => {
   old = await mkdtemp(join(tmpdir(), 'nexgen-0.3.0-'));
   await cp(join(repoRoot, 'supabase'), join(old, 'supabase'), { recursive: true });
   for (const m of ['solar', 'community']) await cp(join(repoRoot, 'modules', m), join(old, 'modules', m), { recursive: true });
-  for (const file of OF_0_4_0) await rm(join(old, file));
+  for (const file of [...OF_0_4_0, ...SINCE_0_4_0]) await rm(join(old, file));
   const solar = join(old, 'modules/solar/supabase/migrations/0001_solar.sql');
   await writeFile(solar, (await readFile(solar, 'utf8')).replace(
     'status           value_quality not null,', 'status           text not null references value_statuses(code),'));
@@ -65,8 +67,8 @@ afterAll(async () => {
 });
 
 describe('an installation of 0.3.0, migrated', () => {
-  it('applies the migrations of 0.4.0 of the core and of the modules installed, and nothing else', () => {
-    expect([...applied].sort()).toEqual([...OF_0_4_0].sort());
+  it('applies the migrations of 0.4.0 of the core and of the modules installed, those written since, and nothing else', () => {
+    expect([...applied].sort()).toEqual([...OF_0_4_0, ...SINCE_0_4_0].sort());
   });
 
   it('keeps the quality of every value, a default of 0.3.0 read as assumed', async () => {
