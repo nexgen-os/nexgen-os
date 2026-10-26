@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/mapbox",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Mapbox (Geocoding API v6) as a Nexgen OS geocoder: forward, search as you type and reverse, the commercial service of the chain, in the permanent mode.",
   "license": "MIT",
   "repository": {
@@ -33,6 +33,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/core": "^0.3.0"
+    "@nexgen-os/core": "^0.4.0"
   }
 }

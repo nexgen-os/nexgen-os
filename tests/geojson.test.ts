@@ -80,7 +80,7 @@ describe('the GeoJSON export of a participant', () => {
       'participant', 'site', 'building', 'building', 'building', 'surface', 'surface', 'surface', 'surface', 'surface',
       'device', 'device', 'device', 'device', 'device', 'device',
     ]);
-    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.3.0', at: null, open: false, withheld: 0 });
+    expect(fc.nexgen_os).toMatchObject({ schema_version: '0.4.0', at: null, open: false, withheld: 0 });
   });
 
   it('writes WGS 84 positions with their height, outer rings counter-clockwise, and the box around them', () => {

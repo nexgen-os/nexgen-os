@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/energy-bill",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The energy of a bill: an EN 16931 invoice as a generic reader returns it, plus the energy facts it cannot know, read into a meter, periods, energy per band, prices by band and season, network, taxes and totals reconciled with warnings. No database, no model call.",
   "license": "MIT",
   "repository": {

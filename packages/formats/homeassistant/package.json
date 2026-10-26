@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/homeassistant",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Home Assistant floors, areas, devices, entities and recorder states read into plain shapes and written back, with no field lost. No database, no dependency.",
   "license": "MIT",
   "repository": {

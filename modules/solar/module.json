@@ -3,7 +3,7 @@
   "code": "solar",
   "name": "Solar",
   "description": "PV systems and arrays, module and inverter product physics, horizons, named yield profiles and design variants: what a PV yield is computed from, and the estimates computed from them, with their loss chain and exceedance levels as rows.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "schema": "solar",
   "requires": {
     "core": "0.3.0",

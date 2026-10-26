@@ -3,7 +3,7 @@
   "code": "community",
   "name": "Community",
   "description": "Energy sharing among the participants of a project of the core: the allocation key of the project and what it reads about each participant, as attributes, and the shares an engine computes, recorded as settlements; the consents of its participants and the perimeter of the operation, checked against the rule of its pack.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "schema": "community",
   "requires": {
     "core": "0.3.0",

@@ -18,7 +18,7 @@ import { WRITE_TOOLS } from './tools/write.js';
 
 export const SERVER_NAME = '@nexgen-os/mcp';
 /** Repeated from `package.json`, so that a bundle without a manifest still says what it is; a test keeps them equal. */
-export const SERVER_VERSION = '0.3.0';
+export const SERVER_VERSION = '0.4.0';
 
 export const INSTRUCTIONS = [
   'Nexgen OS is a world model for energy assets in the person\'s own Postgres: organisations, projects, participants, their meters, devices and series. You act as that person: what you see and change is what row level security lets them see and change. There is no agent role and no back door. Dates are ISO, identifiers uuids, a value is dated at the start of its interval, an azimuth in degrees clockwise from true north.',

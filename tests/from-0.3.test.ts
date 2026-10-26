@@ -14,6 +14,7 @@ import { USER_A, emptyDatabase, insert, one, organisation, repoRoot, sqlClient }
 const OF_0_4_0 = [
   'supabase/migrations/20261025000000_core_value_quality.sql',
   'supabase/migrations/20261025100000_core_what_a_project_is.sql',
+  'supabase/migrations/20261026000000_schema_version_0_4_0.sql',
   'modules/solar/supabase/migrations/0004_estimate_losses_quality.sql',
   'modules/community/supabase/migrations/0003_participant_category.sql',
 ];

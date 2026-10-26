@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/enedis-r6x",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The R63 (load curve) and R64 (index) files of Enedis, JSON and XML, read into plain series: every step at its start in UTC, the time zone and the quality table given by the caller, problems by name. No database, no network.",
   "license": "MIT",
   "repository": {

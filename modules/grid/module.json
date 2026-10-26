@@ -3,7 +3,7 @@
   "code": "grid",
   "name": "Grid",
   "description": "The grid side of a connection point of the core: the operators who run the grid and their substations, written by the country packs and connectors, for each meter the operator that runs it, the voltage level and the substation it is connected at, the mandates that allow reading it at the operator's hub, the market it trades in (bidding zone, control area, transmission operator, imbalance settlement period) the roles market parties hold, and the support schemes of a country with the contract of a producing device under one.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "schema": "grid",
   "requires": {
     "core": "0.3.0",

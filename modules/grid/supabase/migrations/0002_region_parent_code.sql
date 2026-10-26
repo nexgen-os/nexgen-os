@@ -76,3 +76,5 @@ $$;
 
 comment on function grid.operator_of(uuid) is
   'The operator that runs a connection point of the core, from the most precise level up: the one named on the point (grid.meters), the longest identifier prefix an operator of its country issues, an operator serving the municipality of its participant''s place, the one distribution operator of its region or of a region above it — {operator, by, and the prefix, municipality or region that decided}. Refuses meter_not_found, grid_operator_not_found.';
+
+update nexgen.modules set version = '0.4.0' where code = 'grid';

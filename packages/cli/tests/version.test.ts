@@ -17,7 +17,7 @@ describe('versions', () => {
     const pkg = JSON.parse(await readFile(join(repoRoot, 'packages/cli/package.json'), 'utf8'));
     expect(pkg.version).toBe(PACKAGE_VERSION);
     expect(pkg.nexgenOs).toEqual({ schemaVersion: SCHEMA_VERSION, schemaMin: SCHEMA_MIN });
-    const sql = await readFile(join(repoRoot, `supabase/migrations/20261013000000_schema_version_${SCHEMA_VERSION.replaceAll('.', '_')}.sql`), 'utf8');
+    const sql = await readFile(join(repoRoot, `supabase/migrations/20261026000000_schema_version_${SCHEMA_VERSION.replaceAll('.', '_')}.sql`), 'utf8');
     expect(sql).toContain(`select '${SCHEMA_VERSION}'::text;`);
   });
 });

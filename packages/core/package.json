@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "What the code of Nexgen OS shares: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue, and the importers and exporters of the file formats.",
   "license": "AGPL-3.0-only",
   "repository": {
@@ -32,11 +32,11 @@
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
   },
   "dependencies": {
-    "@nexgen-os/enedis-r6x": "^0.3.0",
-    "@nexgen-os/energy-bill": "^0.3.0",
-    "@nexgen-os/geojson": "^0.3.0",
-    "@nexgen-os/homeassistant": "^0.3.0",
-    "@nexgen-os/weather-files": "^0.3.0"
+    "@nexgen-os/enedis-r6x": "^0.4.0",
+    "@nexgen-os/energy-bill": "^0.4.0",
+    "@nexgen-os/geojson": "^0.4.0",
+    "@nexgen-os/homeassistant": "^0.4.0",
+    "@nexgen-os/weather-files": "^0.4.0"
   },
   "peerDependencies": {
     "pg": "^8.23.1"

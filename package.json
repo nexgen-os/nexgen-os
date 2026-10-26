@@ -1,8 +1,8 @@
 {
   "name": "nexgen-os-monorepo",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "A world model for energy assets \u2014 organisations, projects, participants, their meters, devices and series \u2014 and the open source operating system built on it, driven by AI agents that work as users of the model.",
+  "description": "A world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "engines": {

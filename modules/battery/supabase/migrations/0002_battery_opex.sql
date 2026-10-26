@@ -13,3 +13,5 @@ insert into attribute_types (code, name, description, datatype, quantity_code, m
   ('battery_opex', 'Operating cost of storage',
    'The yearly operating cost of one MWh of usable storage capacity (maintenance, insurance, monitoring), in the currency of the country per MWh and per year, read by a sizing.',
    'number', 'energy_price', 0, null, '{device,participant,project,organisation}', 'battery');
+
+update nexgen.modules set version = '0.4.0' where code = 'battery';

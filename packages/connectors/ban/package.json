@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/ban",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The French national address base (BAN) as a Nexgen OS geocoder.",
   "license": "MIT",
   "repository": {
@@ -32,6 +32,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/core": "^0.3.0"
+    "@nexgen-os/core": "^0.4.0"
   }
 }

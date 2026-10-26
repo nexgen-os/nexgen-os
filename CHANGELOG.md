@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-26
+
+The first version published to npm: `npx nexgen-os init` installs it, and the libraries are published under `@nexgen-os/*`. Release 0.3.0 was cut in the repository and never published.
+
 ### Added
 
 - `battery.size()` says in `warnings` when its period is under a year (`period_under_a_year`, with the number of days): the savings of the period are scaled to a year, so the season it covers weighs on the savings, the payback, the net present value and the rates. On one site, a 5 kWh battery saved 318 a year sized on a whole year, 374 on June alone and 94 on December alone.
@@ -41,6 +45,7 @@ release may break, and says how. How a release is cut:
 
   A caller changes `participants.role` to `participants.category`, `regions.parent` to `regions.parent_code`, `join_project(…, p_role => …)` to `p_category`, and reads a project's `kind` as possibly null; an action template of an installation whose condition names a removed kind no longer applies.
 - A value `store()` writes in a simulated series without a quality is estimated (1), no longer measured (0): a computation measures nothing. A measured series, a setpoint and a command keep 0 for a value as its source delivered it; a forecast's values carry no quality. Every estimate a module writes from now on stores its series in quality 1, and the worst quality of a bucket of `resample()` says so.
+- The schema is 0.4.0 (`supabase/migrations/20261026000000_schema_version_0_4_0.sql`): `nexgen_schema_version()` answers it once the migrations of this release are applied. `nexgen-os` brings a database of 0.3.0 forward, its floor staying 0.3.0; `@nexgen-os/mcp` reads a participant's `category`, which a database of 0.3.0 does not have, and its floor rises to 0.4.0 — run `nexgen-os migrate` first. The modules `battery`, `community`, `grid` and `solar` move to 0.4.0.
 - `role_capabilities.role` is one of the four presets, `owner`, `editor`, `viewer` and `participant` (`role_capabilities_role`), where it took any word of a given shape.
 - Nexgen OS describes itself as a world model for energy assets and the open source operating system built on it, in the READMEs, the package descriptions and the instructions of the MCP server; the model and its names are unchanged.
 - The battery dispatch splits the round-trip efficiency η between the two ways, √η on charge and √η on discharge, as the hourly engine of the platform it was taken from does: a full battery takes `capacity / √η` of the surplus and serves `capacity × √η`, where it took `capacity` and served `capacity × η`. At η = 0.85 a 10 kWh battery serves 9.22 kWh a full cycle, no longer 8.5. Every dispatch and sizing with an efficiency below 1 moves; the provenance is `battery-dispatch-0.3.1`.

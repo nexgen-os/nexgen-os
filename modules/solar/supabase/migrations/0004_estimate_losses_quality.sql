@@ -18,3 +18,5 @@ alter table solar.estimate_losses alter column quality type value_quality
 
 comment on column solar.estimate_losses.quality is
   'What kind of value the loss is (value_quality): assumed for the usual starting value of a yield profile, the quality of the place''s value for a soiling read from it.';
+
+update nexgen.modules set version = '0.4.0' where code = 'solar';

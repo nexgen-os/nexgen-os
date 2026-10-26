@@ -15,7 +15,8 @@ foundation. Why the foundation exists and what it promises:
 services around it begin: [docs/services.md](docs/services.md). What the
 figures are and are not: [DISCLAIMER.md](DISCLAIMER.md).
 
-> Status: **0.3.0**, the first release — the core schema, the `building`,
+> Status: **0.4.0**, the first release published on npm: `npx nexgen-os init`
+> installs it — the core schema, the `building`,
 > `grid`, `community`, `billing`, `consumption`, `weather`, `solar`,
 > `battery`, `charging`, `kpis` and `actions` modules, the format libraries,
 > the weather, geocoding and meter data connectors, program connectors in

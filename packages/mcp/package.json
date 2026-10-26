@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP server for Nexgen OS: let an AI agent describe, equip and study energy assets, as the person who asked it, under row level security.",
   "keywords": [
     "mcp",
@@ -24,7 +24,7 @@
     "node": ">=20"
   },
   "nexgenOs": {
-    "schemaMin": "0.3.0"
+    "schemaMin": "0.4.0"
   },
   "files": [
     "dist",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.31.0",
-    "@nexgen-os/core": "^0.3.0",
+    "@nexgen-os/core": "^0.4.0",
     "zod": "4.6.2",
     "pg": "^8.23.1"
   }

@@ -166,3 +166,5 @@ comment on function community.check_perimeter(uuid, date) is
   'Whether each participant of a project taking part on a day is within the perimeter of the operation: the rule (sharing_perimeter, criteria any one of which suffices) and its values (sharing_max_distance_m, sharing_radius_m, the smallest any participant''s place gives) are pack data read by parameter_of(); per participant, its category and {in_perimeter, criteria: [{criterion, in, value_m, distance_m, value_from…}], rule: {criteria, level, conditions, source_code, reference}}. A criterion that cannot be decided answers null. Refuses project_not_found, participants_missing, producer_missing, perimeter_rule_differs, perimeter_rule_unknown, parameter_missing.';
 
 grant execute on function community.check_perimeter(uuid, date) to authenticated, service_role;
+
+update nexgen.modules set version = '0.4.0' where code = 'community';
