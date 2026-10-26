@@ -14,6 +14,7 @@ release may break, and says how. How a release is cut:
 - A `pvgis_like` yield estimate without years reads every year PVGIS covers and gives their mean annual.
 - `nexgen-os solar estimate`: a PV system at a point and its yield by month, in one command, as a person — the mean of every year PVGIS covers unless `--year` names one, the system loss given by `--loss` set on the participant; `describePvSystem()` in the core and the MCP tool `solar_describe_system` describe a system and its arrays as the `solar` module reads them.
 
+- `importGeoJsonParticipants()` of `@nexgen-os/core`: the participants of a GeoJSON FeatureCollection — the export's, or any file whose features carry its properties — join a project at their place, with their category, address, time zone and identifiers. The file is attached to the project with its checksum and imported once (`already_imported`), whole or not at all; a feature without a name or a country refuses it by its index (`name_required`, `country_required`).
 ### Changed
 
 - The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
