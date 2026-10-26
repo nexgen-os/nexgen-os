@@ -104,7 +104,7 @@ describe('install on a database', () => {
     expect(order.slice(0, firstModule).every((s) => s === 'core')).toBe(true);
     expect(order.lastIndexOf('module:weather')).toBeLessThan(order.indexOf('pack:fr'));
     const later = await install(sqlClient(db), { root: repoRoot, modules: ['solar'], packs: [] });
-    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar']);
+    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar', 'module:solar']);
     const modules = await db.query<{ code: string }>('select code from nexgen.modules order by code');
     expect(modules.rows.map((r) => r.code)).toEqual(['grid', 'solar', 'weather']);
   });
