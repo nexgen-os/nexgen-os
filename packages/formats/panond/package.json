@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/panond",
   "version": "0.4.1",
-  "description": "PVsyst PAN and OND files read into plain products: the module one-diode model in pvlib's keys, the inverter efficiency curves. No database, no dependency.",
+  "description": "PVsyst PAN and OND files read into plain products: the module one-diode model in pvlib's keys and its reference point, the inverter efficiency curves. No database, no dependency.",
   "license": "MIT",
   "repository": {
     "type": "git",
