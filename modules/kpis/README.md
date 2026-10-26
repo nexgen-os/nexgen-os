@@ -54,7 +54,10 @@ A variable reads one of two things:
   smallest gap between two of its readings), and the figure says the step
   read (`steps`); `per` (a duration under a day) to read the amount of each
   read bucket over its length — an energy per `1 hour`, a mean power in kW;
-  `shift` to read the same bucket shifted (`-1 year`). A quantity is checked when the
+  `shift` to read the same bucket shifted (`-1 year`); `"missing": "zero"`
+  to count zero a bucket its series leave without any value — the
+  production of a year before the panels — the figure listing those
+  buckets (`zeroed`). Without it, a missing value is never a zero. A quantity is checked when the
   indicator is computed (`quantity_unknown`): a module installed after this
   one publishes it.
   Without a `kind`, a variable reads the measured series, and the
@@ -152,7 +155,8 @@ place's own production is `direct + discharge`; what is not injected is
 | `scope2_market_based` | `offtake * factor`, `market_co2_factor`: the supplier's disclosed mix as an attribute over the contract's period, else the residual mix of the country (its pack) | kg, GHG Protocol Scope 2, market-based |
 | `self_consumption_savings_household`, `_business` | `(direct + discharge) * (energy_price + grid_fees) / 1000`, the household or business energy price and `grid_fees_and_taxes` per MWh | an `amount` in the currency of the place |
 | `injection_value` | `injection * price / 1000`, `injection_price_reference` | an amount |
-| `offtake_change_rate` | `offtake / offtake_year_before` | ratio: below 1 the place saves, above it rebounds |
+| `offtake_change_rate` | `offtake / offtake_year_before` | ratio: below 1 the place takes less from the grid, above more; panels added count as less |
+| `consumption_change_rate` | `(offtake + direct + discharge) / (offtake_year_before + direct_year_before + discharge_year_before)` | ratio, E1 over E0: below 1 the place saves, above it rebounds; panels added are not savings. A production, an injection or a battery without a value a year before counts zero (`zeroed`); the offtake of the year before never does |
 | `battery_charged_energy`, `battery_discharged_energy` | `charge`, `discharge` | kWh, of a battery, a participant's, a project's |
 | `battery_boost_rate` | `charge / production` | ratio: the points of self-consumption the batteries add; for a project, every battery of its participants, a community battery among them |
 | `injection_day_ahead_value` | `injection / 1000`, the injection of each hour times the `energy_price` of that hour | an amount |

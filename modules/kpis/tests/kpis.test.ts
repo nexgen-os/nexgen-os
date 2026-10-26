@@ -488,3 +488,55 @@ describe('a peak at the step the meters keep', () => {
     expect(await add('{"a": {"quantity": "offtake_energy", "step": "15 minutes", "per": "1 day", "combine": "max"}}')).toBe('variable_invalid');
   });
 });
+
+describe('consumption against the year before', () => {
+  const JUNE = ['2026-06-01T00:00:00Z', '2026-06-02T00:00:00Z'] as const;
+  let house: string;
+  let newcomer: string;
+  const total = async (id: string, code: string) =>
+    (await one<{ m: { total: { value: number | null }; zeroed: Record<string, string[]> } }>(db,
+      `select kpis.measure('participant', $1, $2, $3, $4) m`, [id, code, ...JUNE])).m;
+
+  beforeAll(async () => {
+    const roof = await insert(db, 'projects', { organisation_id: org, name: 'A house that added panels', country: 'ZZ' });
+    house = await insert(db, 'participants', { organisation_id: org, project_id: roof, name: 'The house', country: 'ZZ', time_zone: 'UTC' });
+    newcomer = await insert(db, 'participants', { organisation_id: org, project_id: roof, name: 'The newcomer', country: 'ZZ', time_zone: 'UTC' });
+    // 2025: 10 kWh taken from the grid, no panels. 2026: the same 10 kWh, 7 from the grid and 3 produced and kept.
+    await storeAll('participant', house, 'offtake_energy', [['2025-06-01T12:00:00Z', 10], ['2026-06-01T12:00:00Z', 7]]);
+    await storeAll('participant', house, 'production_energy', [['2026-06-01T12:00:00Z', 3]]);
+    await storeAll('participant', house, 'injection_energy', [['2026-06-01T12:00:00Z', 0]]);
+    // A participant with no year before.
+    await storeAll('participant', newcomer, 'offtake_energy', [['2026-06-01T12:00:00Z', 7]]);
+  });
+
+  it('reads the consumption, not the offtake: panels added are not savings', async () => {
+    expect((await total(house, 'offtake_change_rate')).total.value).toBeCloseTo(0.7, 9);
+    expect((await total(house, 'consumption_change_rate')).total.value).toBeCloseTo(1, 9);
+  });
+
+  it('counts zero the production of the year before the panels, and lists those buckets', async () => {
+    const m = await total(house, 'consumption_change_rate');
+    expect(Object.keys(m.zeroed).sort()).toEqual(['injection_year_before', 'production_year_before']);
+    expect(m.zeroed.production_year_before).toHaveLength(1);
+    const f = await figure(await compute('participant', house, 'consumption_change_rate', JUNE[0], JUNE[1], null));
+    expect(Object.keys(f.inputs.zeroed as Row).sort()).toEqual(['injection_year_before', 'production_year_before']);
+    // Without "missing": "zero", a missing value is never a zero, and the rate has no value.
+    const variables = await one<{ v: Record<string, Record<string, unknown>> }>(db, `select variables v from kpis.indicators where code = 'consumption_change_rate'`);
+    for (const spec of Object.values(variables.v)) delete spec.missing;
+    await db.query(`insert into kpis.indicators (code, name, quantity_code, applies_to, formula, variables)
+                    select 'consumption_change_strict', 'Strict', quantity_code, applies_to, formula, $1 from kpis.indicators where code = 'consumption_change_rate'`,
+      [JSON.stringify(variables.v)]);
+    expect((await total(house, 'consumption_change_strict')).total.value).toBeNull();
+  });
+
+  it('has no value without the offtake of the year before', async () => {
+    expect((await total(newcomer, 'consumption_change_rate')).total.value).toBeNull();
+  });
+
+  it('counts a missing value as zero or not at all, and sits next to the offtake in the community report', async () => {
+    expect(await refusal(`insert into kpis.indicators (code, name, quantity_code, applies_to, formula, variables)
+                          values ('m_rate', 'M', 'ratio', '{participant}', 'a', '{"a": {"quantity": "offtake_energy", "missing": "mean"}}')`)).toBe('variable_invalid');
+    const t = await one<{ s: string[] }>(db, `select layout #> '{sheets,1,sections,2,indicators}' s from kpis.templates where code = 'energy_community_report'`);
+    expect(t.s).toEqual(['offtake_change_rate', 'consumption_change_rate']);
+  });
+});
