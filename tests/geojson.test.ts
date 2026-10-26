@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { bbox, type Feature } from '@nexgen-os/geojson';
-import { exportGeoJson, type FeatureProperties, type GeoJsonExport as FeatureCollection } from '@nexgen-os/core';
+import { exportGeoJson, importGeoJsonParticipants, type FeatureProperties, type GeoJsonExport as FeatureCollection } from '@nexgen-os/core';
 import { USER_A, USER_B, asUser, freshDatabase, insert, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
@@ -217,5 +217,49 @@ describe('what it refuses', () => {
     const mine = await asUser(db, USER_A, () => exportGeoJson(db, { participantId: FARM }));
     expect(mine.features.length).toBeGreaterThan(10);
     await expect(asUser(db, USER_B, () => exportGeoJson(db, { participantId: FARM }))).rejects.toThrow(/^participant_not_found/);
+  });
+});
+
+describe('participants read back from GeoJSON', () => {
+  const file = (n: string) => ({ name: 'farm.geojson', uri: 'storage://files/farm.geojson', checksum: `sha256:${n.repeat(64)}` });
+  const COLUMNS = 'name, category, country, address_line1, address_line2, postal_code, city, region, municipality, time_zone, location_precision, location_source_code, ST_AsText(geometry) geometry';
+  let project: string;
+  let fc: FeatureCollection;
+
+  beforeAll(async () => {
+    fc = await exportGeoJson(db, { participantId: FARM });
+    project = await insert(db, 'projects', { organisation_id: ORG, name: 'Farm, again', country: 'FR' });
+  });
+
+  it('joins the project at the place the export wrote, leaves the other kinds out, and attaches the file', async () => {
+    const r = await asUser(db, USER_A, () => importGeoJsonParticipants(db, project, fc.features as Feature[], file('a')));
+    expect(r.participants.map((p) => [p.index, p.name])).toEqual([[0, byId(fc, FARM).properties.name]]);
+    expect(r.skipped.length).toBe(fc.features.length - 1);
+    expect(new Set(r.skipped.map((s) => s.kind))).toEqual(new Set(['site', 'building', 'surface', 'device']));
+    const [again, before] = await Promise.all([r.participants[0]!.id, FARM].map(async (id) => (await db.query(`select ${COLUMNS} from participants where id = $1`, [id])).rows[0]));
+    expect(again).toEqual(before);
+    const identifiers = async (id: string) => (await db.query('select scheme, value from identifiers where object_id = $1 order by scheme, value', [id])).rows;
+    expect(await identifiers(r.participants[0]!.id)).toEqual(await identifiers(FARM));
+    expect((await db.query(`select media_type, checksum from documents where id = $1`, [r.documentId])).rows).toEqual([{ media_type: 'application/geo+json', checksum: file('a').checksum }]);
+  });
+
+  it('imports a file once, and writes nothing of a file refused half way', async () => {
+    await expect(asUser(db, USER_A, () => importGeoJsonParticipants(db, project, fc.features as Feature[], file('a')))).rejects.toThrow(/^already_imported/);
+    const count = async () => (await db.query<{ n: number }>('select count(*)::int n from participants where project_id = $1', [project])).rows[0]!.n;
+    const before = await count();
+    const farm = byId(fc, FARM);
+    const twice = [farm, { ...farm, properties: { ...farm.properties, country: 'XX' } }] as Feature[];
+    await expect(asUser(db, USER_A, () => importGeoJsonParticipants(db, project, twice, file('b')))).rejects.toThrow();
+    expect(await count()).toBe(before);
+    expect((await db.query('select 1 from documents where checksum = $1', [file('b').checksum])).rows).toEqual([]);
+  });
+
+  it('refuses a participant without a name or a country, by the index of its feature', async () => {
+    const point = { type: 'Point', coordinates: [2.72, 50.77] };
+    const nameless = [{ type: 'Feature', geometry: point, properties: { country: 'FR' } }] as Feature[];
+    const countryless = [{ type: 'Feature', geometry: point, properties: { name: 'Barn' } }] as Feature[];
+    await expect(importGeoJsonParticipants(db, project, nameless, file('c'))).rejects.toThrow(/^name_required: feature 0/);
+    await expect(importGeoJsonParticipants(db, project, countryless, file('c'))).rejects.toThrow(/^country_required: feature 0 \(Barn\)/);
+    await expect(importGeoJsonParticipants(db, project, countryless, { ...file('c'), checksum: 'abc' })).rejects.toThrow(/^checksum_required/);
   });
 });
