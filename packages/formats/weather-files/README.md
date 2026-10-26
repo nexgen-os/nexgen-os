@@ -40,8 +40,8 @@ Into Nexgen OS, `importWeatherFile()` of `@nexgen-os/core` stores the series
 on the object named — a weather point of the `weather` module or a participant —
 through `store()`, converted by the `units` vocabulary, with the `sources`
 row the caller names: a typical year `simulated` and named
-`typical year <first>-<last>`, a real year `measured`; importing the same
-file again replaces the values. `exportWeatherYear()` reads an object's
+`typical year <first>-<last>`, a real year `measured`, the whole file or
+nothing of it; importing the same file again replaces the values. `exportWeatherYear()` reads an object's
 series back through `resample()` for `writeEpw()`.
 
 ## The time offset is checked

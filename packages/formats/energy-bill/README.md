@@ -96,7 +96,8 @@ published attributes of the participant whose source is the document:
 `supply_contract_type`, and the meter's `subscribed_power` or
 `subscribed_apparent_power`. A bill in another currency than its
 participant's country is refused (`currency_mismatch`) before anything is
-written.
+written, and a bill refused half way writes nothing either: the import is
+one transaction, or a savepoint of the caller's.
 
 ## Ported from
 

@@ -19,7 +19,7 @@
  * participant's country, which must be the bill's.
  */
 import { meanProjectedPrice, type EnergyBillReading } from '@nexgen-os/energy-bill';
-import type { Db } from '../db.js';
+import { atomically, type Db } from '../db.js';
 
 /** The file of the bill: where it is kept and its checksum, `sha256:<hex>`. */
 export interface BillFile {
@@ -161,8 +161,9 @@ export async function tariffOfBill(
 
 /**
  * The three gestures of the core in their order: the bill attached, its
- * meter found or declared, its contract priced. What `tariffOfBill()`
- * refuses is checked first. Returns what was written.
+ * meter found or declared, its contract priced, in one transaction (or
+ * under a savepoint of the caller's): a bill refused writes nothing. What
+ * `tariffOfBill()` refuses is checked first. Returns what was written.
  */
 export async function importEnergyBill(
   db: Db,
@@ -170,8 +171,11 @@ export async function importEnergyBill(
 ): Promise<{ documentId: string; meterId: string | null; meterFound: boolean; attributes: BillAttribute[] }> {
   // Checked before anything is written: a bill refused writes nothing.
   await placeOfBill(db, request.participantId, request.reading);
-  const documentId = await attachBill(db, request.participantId, request.reading, request.file);
-  const meter = request.reading.meter ? await meterOfBill(db, request.participantId, request.reading) : null;
-  const attributes = await tariffOfBill(db, { participantId: request.participantId, meterId: meter?.meterId ?? null, reading: request.reading, documentId });
-  return { documentId, meterId: meter?.meterId ?? null, meterFound: meter?.found ?? false, attributes };
+  // And one refused half way neither: its document would refuse it again as already imported.
+  return atomically(db, async () => {
+    const documentId = await attachBill(db, request.participantId, request.reading, request.file);
+    const meter = request.reading.meter ? await meterOfBill(db, request.participantId, request.reading) : null;
+    const attributes = await tariffOfBill(db, { participantId: request.participantId, meterId: meter?.meterId ?? null, reading: request.reading, documentId });
+    return { documentId, meterId: meter?.meterId ?? null, meterFound: meter?.found ?? false, attributes };
+  });
 }
