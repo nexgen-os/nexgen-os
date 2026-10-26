@@ -17,6 +17,7 @@ release may break, and says how. How a release is cut:
 ### Changed
 
 - The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
+- **Breaking:** `@nexgen-os/panond` computes no figure ([0035](docs/decisions/0035-a-format-library-touches-no-database.md)): `readPan()` gives the file's one-diode model without the light current and the saturation current PVsyst does not store (`PvsystFileParameters`), and the point the file states them by, `reference` (`isc`, `voc`, `t_ref`); `diodeCurrents()` leaves the library. The `solar` module solves them: `pvsystModel()` of `modules/solar/src/products.ts`, which `importProduct()` calls, gives the same `I_L_ref` and `I_o_ref` as 0.4.0, and `pan_inconsistent` is now its refusal. A caller that read `readPan(…).parameters.I_L_ref` reads `pvsystModel(readPan(…)).I_L_ref`.
 
 ## [0.4.2] — 2026-11-02
 

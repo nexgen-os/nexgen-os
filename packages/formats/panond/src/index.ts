@@ -7,11 +7,11 @@
 //
 // A module reads as a product (manufacturer, model, unit power, surface)
 // and its physics: the PVsyst one-diode model in pvlib's key names, so that
-// pvlib uses it as it is. PVsyst does not store the light current
-// and the saturation current of the diode; they are solved here from the
-// short-circuit current and the open-circuit voltage at standard test
-// conditions, with the file's series and shunt resistances and diode factor,
-// so that the model gives back the file's Isc and Voc exactly.
+// pvlib uses it as it is, and the reference point the file gives it at
+// (short-circuit current, open-circuit voltage, cell temperature). PVsyst
+// does not store the light current and the saturation current of the
+// diode; the library computes no figure, so they are left to the importer,
+// which solves them from that point.
 //
 // An inverter reads the same way, with the model `ond`: the file's own
 // keys, efficiency curves included, as pvlib's `read_panond` gives them.
@@ -31,12 +31,15 @@ export interface PanOndObject {
 }
 export type PanOndValue = string | number | number[] | PanOndObject;
 
-/** The pvlib parameters of the PVsyst one-diode model (`pvlib.pvsystem.calcparams_pvsyst`). */
-export interface PvsystModuleParameters {
+/**
+ * The pvlib parameters of the PVsyst one-diode model
+ * (`pvlib.pvsystem.calcparams_pvsyst`) a PAN file holds: all but the light
+ * current `I_L_ref` and the saturation current `I_o_ref`, which PVsyst
+ * does not store.
+ */
+export interface PvsystFileParameters {
   gamma_ref: number;
   mu_gamma: number;
-  I_L_ref: number;
-  I_o_ref: number;
   R_sh_ref: number;
   R_sh_0: number;
   R_sh_exp: number;
@@ -59,7 +62,9 @@ export interface ModuleFile extends ProductFile {
   kind: 'module';
   /** The electrical model its parameters are written for. */
   physics_model: 'pvsyst';
-  parameters: PvsystModuleParameters;
+  parameters: PvsystFileParameters;
+  /** The point the file gives the model at: `Isc` (A) and `Voc` (V) at `TRef` (°C, 25 when the file says none). */
+  reference: { isc: number; voc: number; t_ref: number };
   /** `metadata.pan`: the whole file as read, prices left out. */
   metadata: { pan: PanOndObject };
 }
@@ -74,8 +79,6 @@ export interface InverterFile extends ProductFile {
   metadata: { ond: PanOndObject };
 }
 
-const BOLTZMANN = 1.380649e-23;
-const ELEMENTARY_CHARGE = 1.602176634e-19;
 const SILICON_BAND_GAP_EV = 1.121;
 const PRICE_KEYS = /^(Price|Currency|PriceDate)/i;
 
@@ -149,7 +152,7 @@ export function profilePoints(block: PanOndValue | undefined): [number, number][
 // PAN: a PV module
 // ---------------------------------------------------------------------------
 
-/** A PAN file as a module of the catalogue with its PVsyst one-diode physics in pvlib's keys. */
+/** A PAN file as a module of the catalogue with its PVsyst one-diode physics in pvlib's keys and its reference point. */
 export function readPan(text: string): ModuleFile {
   const pan = parsePanOnd(text);
   if (pan._type !== 'pvModule') throw new Error(`pan_unreadable: the file describes a ${pan._type}, not a pvModule`);
@@ -159,28 +162,21 @@ export function readPan(text: string): ModuleFile {
     if (typeof v !== 'number') throw new Error(`pan_unreadable: no ${key} in the file`);
     return v;
   };
-  const isc = n('Isc');
-  const voc = n('Voc');
   const rs = n('RSerie');
   const rsh = n('RShunt');
-  const gamma = n('Gamma');
-  const cells = n('NCelS');
-  const tref = (typeof pan.TRef === 'number' ? pan.TRef : 25) + 273.15;
-  const { I_L_ref, I_o_ref } = diodeCurrents({ isc, voc, rs, rsh, nNsVth: gamma * cells * (BOLTZMANN * tref) / ELEMENTARY_CHARGE });
+  const reference = { isc: n('Isc'), voc: n('Voc'), t_ref: typeof pan.TRef === 'number' ? pan.TRef : 25 };
 
   const technology = typeof pan.Technol === 'string' ? pan.Technol : '';
-  const parameters: PvsystModuleParameters = {
-    gamma_ref: gamma,
+  const parameters: PvsystFileParameters = {
+    gamma_ref: n('Gamma'),
     mu_gamma: typeof pan.muGamma === 'number' ? pan.muGamma : 0,
-    I_L_ref: round(I_L_ref, 8),
-    I_o_ref: Number(I_o_ref.toPrecision(8)),
     R_sh_ref: rsh,
     // PVsyst's defaults when an older file leaves them out: Rsh(0) = 4 Rsh, exponent 5.5.
     R_sh_0: typeof pan.Rp_0 === 'number' ? pan.Rp_0 : rsh * 4,
     R_sh_exp: typeof pan.Rp_Exp === 'number' ? pan.Rp_Exp : 5.5,
     R_s: rs,
     alpha_sc: round(n('muISC') / 1000, 9),
-    cells_in_series: cells,
+    cells_in_series: n('NCelS'),
   };
   if (/^mtSi|^mtHIT/i.test(technology)) parameters.EgRef = SILICON_BAND_GAP_EV;
 
@@ -194,22 +190,9 @@ export function readPan(text: string): ModuleFile {
     unit_surface_m2: width !== null && height !== null ? round(width * height, 3) : null,
     physics_model: 'pvsyst',
     parameters,
+    reference,
     metadata: { pan: withoutPrices(pan) },
   };
-}
-
-/**
- * The light current and the diode's saturation current at the reference
- * conditions, from the two points every PAN file gives: at short circuit
- * (V = 0, I = Isc) and at open circuit (V = Voc, I = 0), the one-diode
- * equation is linear in both currents.
- */
-export function diodeCurrents(p: { isc: number; voc: number; rs: number; rsh: number; nNsVth: number }): { I_L_ref: number; I_o_ref: number } {
-  const atShortCircuit = Math.expm1((p.isc * p.rs) / p.nNsVth);
-  const atOpenCircuit = Math.expm1(p.voc / p.nNsVth);
-  const I_o_ref = (p.isc - (p.voc - p.isc * p.rs) / p.rsh) / (atOpenCircuit - atShortCircuit);
-  if (!(I_o_ref > 0)) throw new Error('pan_inconsistent: the file\'s Isc, Voc and resistances give no diode');
-  return { I_L_ref: I_o_ref * atOpenCircuit + p.voc / p.rsh, I_o_ref };
 }
 
 // ---------------------------------------------------------------------------
