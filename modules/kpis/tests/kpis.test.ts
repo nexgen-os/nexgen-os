@@ -421,3 +421,70 @@ describe('emission factors, hour by hour or month by month', () => {
     expect(factor.map((a) => [a.level, a.reference, a.quality])).toEqual([['country', 'residual mix 2025', 'published'], ['object', 'supplier disclosure 2025', 'published']]);
   });
 });
+
+describe('a peak at the step the meters keep', () => {
+  const DAY = ['2026-03-02T00:00:00Z', '2026-03-03T00:00:00Z'] as const;
+  const at = (minutes: number) => new Date(Date.parse(DAY[0]) + minutes * 60_000).toISOString();
+  // 96 quarter-hours of 0.25 kWh, 1 kW, but 2.5 kWh at 18:45: 10 kW for 15 minutes, an hour of 3.25 kWh.
+  const quarters: [string, number][] = Array.from({ length: 96 }, (_, i) => [at(i * 15), i === 18 * 4 + 3 ? 2.5 : 0.25]);
+  const hours: [string, number][] = Array.from({ length: 24 }, (_, h) => [at(h * 60), quarters.slice(h * 4, h * 4 + 4).reduce((a, x) => a + x[1], 0)]);
+  let site: string;
+  let shop: string;
+  let office: string;
+  let kiosk: string;
+
+  const storeStep = (id: string, points: [string, number][], step: string | null) => db.query(
+    `select store(null, $1::timestamptz[], $2::float8[], null, null, null,
+                  jsonb_build_object('object_kind', 'participant', 'object_id', $3::uuid, 'quantity_code', 'offtake_energy', 'step', $4::text))`,
+    [points.map((p) => p[0]), points.map((p) => p[1]), id, step]);
+  const peak = async (kind: string, id: string) =>
+    (await one<{ m: { total: { value: number }; steps: Record<string, string> } }>(db,
+      `select kpis.measure($1, $2, 'peak_offtake_power', $3, $4) m`, [kind, id, ...DAY])).m;
+
+  beforeAll(async () => {
+    site = await insert(db, 'projects', { organisation_id: org, name: 'A row of shops', country: 'ZZ' });
+    shop = await insert(db, 'participants', { organisation_id: org, project_id: site, name: 'The bakery', country: 'ZZ', time_zone: 'UTC' });
+    office = await insert(db, 'participants', { organisation_id: org, project_id: site, name: 'The office', country: 'ZZ', time_zone: 'UTC' });
+    const corner = await insert(db, 'projects', { organisation_id: org, name: 'A corner kiosk', country: 'ZZ' });
+    kiosk = await insert(db, 'participants', { organisation_id: org, project_id: corner, name: 'The kiosk', country: 'ZZ', time_zone: 'UTC' });
+    await storeStep(shop, quarters, '15 minutes');
+    await storeStep(office, hours, '1 hour');
+    // An irregular series, its step not given: the quarter-hours its readings are apart.
+    await storeStep(kiosk, quarters, null);
+  });
+
+  it('reads a meter kept by quarter-hours by quarter-hours: the 10 kW a capacity tariff reads', async () => {
+    const m = await peak('participant', shop);
+    expect(m.total.value).toBeCloseTo(10, 9);
+    expect(m.steps).toEqual({ offtake: '00:15:00' });
+  });
+
+  it('reads an hourly series by hours, never finer: 3.25 kW, not 13', async () => {
+    const m = await peak('participant', office);
+    expect(m.total.value).toBeCloseTo(3.25, 9);
+    expect(m.steps).toEqual({ offtake: '01:00:00' });
+  });
+
+  it('finds the step of an irregular series from its readings', async () => {
+    expect((await peak('participant', kiosk)).total.value).toBeCloseTo(10, 9);
+  });
+
+  it('reads a project at the coarsest step of its participants, the same hour for all', async () => {
+    const m = await peak('project', site);
+    expect(m.total.value).toBeCloseTo(3.25 + 3.25, 9);
+    expect(m.steps).toEqual({ offtake: '01:00:00' });
+  });
+
+  it('keeps the step it read in the figure', async () => {
+    const f = await figure(await compute('participant', shop, 'peak_offtake_power', DAY[0], DAY[1], '1 day'));
+    expect(f.results.total.value).toBeCloseTo(10, 9);
+    expect(f.inputs.steps).toEqual({ offtake: '00:15:00' });
+  });
+
+  it('refuses an amount per a duration without a step, or over a day', async () => {
+    const add = (variables: string) => refusal(
+      `insert into kpis.indicators (code, name, quantity_code, applies_to, formula, variables) values ('p_power', 'P', 'power', '{participant}', 'a', $1)`, [variables]);
+    expect(await add('{"a": {"quantity": "offtake_energy", "per": "1 hour", "combine": "max"}}')).toBe('variable_invalid');
+    expect(await add('{"a": {"quantity": "offtake_energy", "step": "15 minutes", "per": "1 day", "combine": "max"}}')).toBe('variable_invalid');
+  });
+});
