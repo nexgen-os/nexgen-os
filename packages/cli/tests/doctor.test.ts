@@ -146,12 +146,12 @@ describe('status and the command line', () => {
     try {
       const dry = await run(['init', '--modules', 'grid', '--dry-run'], empty);
       expect(dry.code).toBe(0);
-      expect(dry.out).toMatch(/would apply 18 step\(s\), 0 already recorded — dry run, rolled back$/);
+      expect(dry.out).toMatch(/would apply 19 step\(s\), 0 already recorded — dry run, rolled back$/);
       const real = await run(['init', '--modules=grid'], empty);
-      expect(real.out).toMatch(/applied 18 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
+      expect(real.out).toMatch(/applied 19 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
       const again = await run(['init', '--modules=grid'], empty);
-      expect(again.out).toBe('nothing to apply: 18 step(s) already recorded');
-      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 18 step(s) already recorded');
+      expect(again.out).toBe('nothing to apply: 19 step(s) already recorded');
+      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 19 step(s) already recorded');
     } finally {
       await empty.close();
     }
