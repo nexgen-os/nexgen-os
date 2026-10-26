@@ -35,7 +35,8 @@
     "README.md"
   ],
   "bin": {
-    "nexgen-os": "./dist/bin.js"
+    "nexgen-os": "./dist/bin.js",
+    "nexgen": "./dist/bin.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

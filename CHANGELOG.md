@@ -14,6 +14,7 @@ The first version published to npm: `npx nexgen-os init` installs it, and the li
 
 ### Added
 
+- The command is also `nexgen`: once installed (`npm install -g nexgen-os`), `nexgen init`, `nexgen doctor` and every other command of `nexgen-os` answer under the shorter name.
 - `battery.size()` says in `warnings` when its period is under a year (`period_under_a_year`, with the number of days): the savings of the period are scaled to a year, so the season it covers weighs on the savings, the payback, the net present value and the rates. On one site, a 5 kWh battery saved 318 a year sized on a whole year, 374 on June alone and 94 on December alone.
 - `battery_opex`, the yearly operating cost of one MWh of usable storage capacity, an attribute type of the `battery` module: `battery.size()` takes it off the savings of a year for the payback and the net present value, gives `opex_per_year` on each point of its curve, and records it in its inputs, null when nobody says it and none is counted.
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.

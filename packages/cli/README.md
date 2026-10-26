@@ -9,6 +9,10 @@ core's migrations and vocabularies, the modules and the country packs asked
 for, in order, each file in its own transaction, and records every file in
 `nexgen.schema_migrations` so that a second pass applies only what is missing.
 
+The examples below run it with `npx nexgen-os`, with nothing installed. Once
+installed (`npm install -g nexgen-os`), the same commands answer under the
+shorter name `nexgen`: `nexgen init`, `nexgen doctor`, `nexgen migrate`.
+
 ## On an empty Supabase project, in five commands
 
 1. In the project's SQL editor, enable PostGIS:
