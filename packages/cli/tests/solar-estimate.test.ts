@@ -101,8 +101,8 @@ describe('nexgen-os solar estimate', () => {
     const answer = JSON.parse(r.out);
     expect(new URL(asked.at(-1) as string).searchParams.get('loss')).toBe('2.5');
     expect(answer.system_loss).toMatchObject({ fraction: 0.025, level: 'participant', object_id: answer.participant_id });
-    const set = await one<{ value: number; status: string }>(db, `select value::float8 value, status from attributes where object_id = $1 and attribute_type = 'system_loss'`, [answer.participant_id]);
-    expect(set).toEqual({ value: 0.025, status: 'estimated' });
+    const set = await one<{ value: number; quality: string }>(db, `select value::float8 value, quality from attributes where object_id = $1 and attribute_type = 'system_loss'`, [answer.participant_id]);
+    expect(set).toEqual({ value: 0.025, quality: 'estimated' });
   });
 
   it('acts as the person: someone outside the organisation writes nothing', async () => {

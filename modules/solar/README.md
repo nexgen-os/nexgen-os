@@ -128,9 +128,9 @@ yield estimate reads it through `parameter_of('device', …)` on the PV
 system at the start of the first year asked — the system's own, its
 participant's, its project's, its organisation's, its country's, then the
 generic level this module publishes, PVGIS PVcalc's 14 % (source `pvgis`,
-status `default`). The estimate keeps the fraction and where it was found
+quality `assumed`). The estimate keeps the fraction and where it was found
 in `inputs.system_loss`, and its row of `solar.estimate_losses` carries
-that source and status. Unset is absent; a `0` set is a value.
+that source and quality. Unset is absent; a `0` set is a value.
 
 A `pvgis_like` estimate may leave its years out: PVGIS then reads every
 year its radiation database covers, and the annual is their mean, as its
