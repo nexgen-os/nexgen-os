@@ -66,9 +66,9 @@ describe('system_loss', () => {
     expect(lossAsked()).toBe('14');
     const { inputs } = await one<{ inputs: Record<string, unknown> }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
     expect(inputs.losses).toEqual([{ code: 'system', pct: 14 }]);
-    expect(inputs.system_loss).toMatchObject({ fraction: 0.14, level: 'generic', source_code: 'pvgis', status: 'default' });
-    const chain = await one<Record<string, unknown>>(db, 'select code, fraction::float8, source_code, status from solar.estimate_losses where estimate_id = $1', [result.estimateId]);
-    expect(chain).toEqual({ code: 'system', fraction: 0.14, source_code: 'pvgis', status: 'default' });
+    expect(inputs.system_loss).toMatchObject({ fraction: 0.14, level: 'generic', source_code: 'pvgis', quality: 'assumed' });
+    const chain = await one<Record<string, unknown>>(db, 'select code, fraction::float8, source_code, quality from solar.estimate_losses where estimate_id = $1', [result.estimateId]);
+    expect(chain).toEqual({ code: 'system', fraction: 0.14, source_code: 'pvgis', quality: 'assumed' });
   });
 
   it('is the organisation\'s, then the project\'s, then the participant\'s, then the system\'s, the most specific answering', async () => {
@@ -83,9 +83,9 @@ describe('system_loss', () => {
       const result = await estimateYield(db, { deviceId: system, years: { from: 2023, to: 2023 } }, answering(recorded));
       expect(lossAsked()).toBe(pct);
       const { inputs } = await one<{ inputs: { system_loss: Record<string, unknown> } }>(db, 'select inputs from solar.estimates where id = $1', [result.estimateId]);
-      expect(inputs.system_loss).toMatchObject({ fraction, level: kind === 'device' ? 'object' : kind, object_id: id, status: 'measured' });
-      const chain = await one<{ reference: string; status: string }>(db, 'select reference, status from solar.estimate_losses where estimate_id = $1', [result.estimateId]);
-      expect(chain).toEqual({ reference: 'measured on its installations', status: 'measured' });
+      expect(inputs.system_loss).toMatchObject({ fraction, level: kind === 'device' ? 'object' : kind, object_id: id, quality: 'measured' });
+      const chain = await one<{ reference: string; quality: string }>(db, 'select reference, quality from solar.estimate_losses where estimate_id = $1', [result.estimateId]);
+      expect(chain).toEqual({ reference: 'measured on its installations', quality: 'measured' });
     }
   });
 
