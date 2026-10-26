@@ -452,7 +452,7 @@ export interface PvYieldAtInput {
  */
 export async function estimatePvYieldAt(db: Db, computations: Computations, p: PvYieldAtInput) {
   const place = { country: p.country, geometry: { type: 'Point', coordinates: [p.lon, p.lat, 0] }, location_precision: 'rooftop' };
-  const participant = await addParticipant(db, { project_id: p.project_id, name: p.name, place, role: 'prosumer', ...(p.time_zone ? { time_zone: p.time_zone } : {}) });
+  const participant = await addParticipant(db, { project_id: p.project_id, name: p.name, place, category: 'prosumer', ...(p.time_zone ? { time_zone: p.time_zone } : {}) });
   if (p.system_loss !== undefined) {
     await db.query(`select set_attribute('participant', $1, 'system_loss', $2::jsonb, null, null, 'said by the person', 'estimated')`, [participant.id, JSON.stringify(p.system_loss)]);
   }

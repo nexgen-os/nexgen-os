@@ -94,7 +94,7 @@ number borrowed from elsewhere.
 
 **6. The answer says where it comes from, and the figure keeps it.** Every
 answer carries its level, the object or place that held it, its source,
-status and date. A figure records them in its inputs
+quality and date. A figure records them in its inputs
 ([0004](0004-a-figure-says-where-it-comes-from.md)): a change at the
 organisation applies to the figures computed after it, and a past figure
 still says which number it read. A surface that shows a resolved value
@@ -145,4 +145,4 @@ request; a gap above 1 % that is not explained blocks it.
 - [0021](0021-one-cascade-of-defaults.md) — the cascade and its order.
 - [0053](0053-a-technology-figure-holds-everywhere-below-every-place.md) — the generic level.
 - [0012](0012-a-yield-says-what-it-was-computed-from.md) — a yield says what it was computed from.
-- [0048](0048-a-value-says-what-kind-of-value-it-is.md) — the status of a value.
+- [0057](0057-one-word-per-thing-in-the-lists-of-the-core.md) — the quality of a value.
