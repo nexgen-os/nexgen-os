@@ -41,7 +41,7 @@ const open = await exportGeoJson(db, { projectId }, { open: true });    // what 
 | Nexgen OS | Feature | Properties |
 |---|---|---|
 | the project (`projectId`) | its perimeter, first | `kind: "project"`, `project_kind`, `country`, `status`, `start_date`, `end_date` |
-| each participant with a place | its point or outline | `project_id`, `role`, `segment`, `status`, address fields with the `municipality` code, `time_zone`, `location_precision`, `location_source_code` |
+| each participant with a place | its point or outline | `project_id`, `category`, `segment`, `status`, address fields with the `municipality` code, `time_zone`, `location_precision`, `location_source_code` |
 | its ground, with the `building` module | its parcel, or `null` | `kind: "site"`, `participant_id`, `use`, `area_m2`, `global_id`, `source_code` |
 | each building, with the `building` module | its footprint | `participant_id`, `site_id`, `use`, `elevation_m`, `height_m`, `year_built`, `floors_above_ground`, `floors_below_ground`, `floor_area_m2`, `energy_label`, `status`, `global_id`, `source_code` |
 | each surface, with the `building` module | its face, or `null` | `surface_kind`, `participant_id`, `site_id`, `building_id`, `azimuth_deg`, `tilt_deg`, `area_m2`, `material`, `u_value`, `is_external`, `global_id`, `source_code` |
@@ -87,4 +87,24 @@ Every refusal starts with its name: `target_required` (a `participantId` or a
 `projectId`, not both), `participant_not_found`, `project_not_found` (absent, or
 not readable under row level security).
 
-Not yet: importing GeoJSON places into participants, meters, series.
+Not yet: importing the meters, the devices and the series of an export.
+
+## Participants read back
+
+`importGeoJsonParticipants()` of `@nexgen-os/core` reads the other way: each
+feature of kind `participant`, or without a kind, joins a project at its
+geometry, with the properties the export writes (`name`, `category`,
+`country`, the address fields, `region`, `municipality`, `time_zone`,
+`location_precision`, `location_source_code`, `identifiers`). The other
+kinds are left out and listed. The file is attached to the project with its
+checksum and imported once (`already_imported`), whole or not at all; a
+feature without a name or a country refuses the file by its index
+(`name_required`, `country_required`): a country is never assumed.
+
+```ts
+import { readGeoJson } from '@nexgen-os/geojson';
+import { importGeoJsonParticipants } from '@nexgen-os/core';
+
+const { features } = readGeoJson(text);
+const { participants, skipped } = await importGeoJsonParticipants(db, projectId, features, { name, uri, checksum });
+```

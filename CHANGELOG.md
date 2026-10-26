@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `importGeoJsonParticipants()` of `@nexgen-os/core`: the participants of a GeoJSON FeatureCollection — the export's, or any file whose features carry its properties — join a project at their place, with their category, address, time zone and identifiers. The file is attached to the project with its checksum and imported once (`already_imported`), whole or not at all; a feature without a name or a country refuses it by its index (`name_required`, `country_required`).
+
 ### Fixed
 
 - `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
