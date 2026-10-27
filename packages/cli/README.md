@@ -51,6 +51,24 @@ Then expose the schema `nexgen` (and one schema per module) to the API in
 *Project settings → Data API → Exposed schemas*. No schema is given to the
 anonymous role: everything is read signed in, under row level security.
 
+## Then, an organisation and the people in it
+
+An installation holds no organisation. The first one is created by a person
+of the project's Supabase Auth, who becomes its owner, and who then gives
+the others their roles and issues the keys of the machines and the agents —
+the gestures below, run as that person:
+
+```sh
+export NEXGEN_ACT_AS_USER_ID=<the owner's auth.users id>
+npx nexgen-os organisation create --name "<name>"
+npx nexgen-os member add --organisation <id> --user <a colleague's id> --role editor
+npx nexgen-os key create --organisation <id> --name "<an agent>" --write
+```
+
+A person is named by their id in *Authentication → Users*: they sign up
+first, then an owner gives them a role. Who may do what with each role:
+[`docs/access.md`](../../docs/access.md).
+
 ## Commands
 
 | Command | What it does |
@@ -86,6 +104,10 @@ person, under row level security, in one transaction each:
 
 | Command | What it does |
 |---|---|
+| `organisation create --name <n>` | `create_organisation()`: an organisation, the person its owner |
+| `member add --organisation <id> --user <id> [--role owner\|editor\|viewer]` | `add_member()`, as an owner; `viewer` when no role is given, `already_member` when the person has one |
+| `member list --organisation <id>` | The members and their roles: an id and a role, nothing more of an account |
+| `member role --organisation <id> --user <id> --role <r>` · `member remove --organisation <id> --user <id>` | `set_member_role()`, `remove_member()`, as an owner; `last_owner` when the organisation would have none left |
 | `key create --organisation <id> --name <n> [--write] [--expires <iso>]` | Issues a key, as a person who holds `members.manage` (an owner), with `data.read`, and `data.write` with `--write`; the secret is printed once |
 | `key list --organisation <id>` · `key revoke <id>` | The keys, never a secret; a withdrawal, at once |
 | `project create --organisation <id> --name <n> --country <cc> [--kind k]` | `create_project()` |

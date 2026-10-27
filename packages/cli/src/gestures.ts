@@ -11,10 +11,12 @@
  */
 import { readFile } from 'node:fs/promises';
 import {
+  addMember,
   addParticipant,
   compute,
   computeKpi,
   createApiKey,
+  createOrganisation,
   createProject,
   declareMeter,
   geocoderChain,
@@ -23,10 +25,13 @@ import {
   installDevice,
   kpisOf,
   listApiKeys,
+  listMembers,
   loadGeocoders,
   personSession,
   readSurfaceConfig,
+  removeMember,
   revokeApiKey,
+  setMemberRole,
   verifyAccessToken,
   type Computations,
   type Db,
@@ -39,6 +44,8 @@ type Flags = Map<string, string | true>;
 
 /** The commands of this file and their subcommands; `size` and `kpis` take none or one. */
 export const GESTURE_COMMANDS: Record<string, string[]> = {
+  organisation: ['create'],
+  member: ['add', 'list', 'role', 'remove'],
   key: ['create', 'list', 'revoke'],
   project: ['create'],
   participant: ['add'],
@@ -51,6 +58,11 @@ export const GESTURE_COMMANDS: Record<string, string[]> = {
 
 export const GESTURE_USAGE = `
 Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER_ID), under row level security:
+  nexgen-os organisation create --name <n>                                          an organisation, the person its owner
+  nexgen-os member add --organisation <id> --user <id> [--role owner|editor|viewer]  give a person a role (an owner)
+  nexgen-os member list --organisation <id>                                         the members and their roles
+  nexgen-os member role --organisation <id> --user <id> --role <r>                  change a member's role
+  nexgen-os member remove --organisation <id> --user <id>                           remove a member
   nexgen-os key create --organisation <id> --name <n> [--write] [--expires <iso>]   issue a key (an owner)
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
@@ -71,7 +83,7 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
-  write: 'switch', expires: 'value',
+  write: 'switch', expires: 'value', user: 'value', role: 'value',
 };
 
 function need(flags: Flags, name: string): string {
@@ -108,6 +120,16 @@ export async function runGesture(command: string, sub: string | undefined, opera
 
 async function gesture(db: Db, command: string, sub: string | undefined, operand: string | undefined, f: Flags, io: GestureIo): Promise<unknown> {
   switch (`${command} ${sub ?? ''}`.trim()) {
+    case 'organisation create':
+      return createOrganisation(db, need(f, 'name'));
+    case 'member add':
+      return addMember(db, { organisation_id: need(f, 'organisation'), user_id: need(f, 'user'), ...(optional(f, 'role') ? { role: optional(f, 'role')! } : {}) });
+    case 'member list':
+      return listMembers(db, need(f, 'organisation'));
+    case 'member role':
+      return setMemberRole(db, { organisation_id: need(f, 'organisation'), user_id: need(f, 'user'), role: need(f, 'role') });
+    case 'member remove':
+      return removeMember(db, need(f, 'organisation'), need(f, 'user'));
     case 'key create':
       return createApiKey(db, {
         organisation_id: need(f, 'organisation'), name: need(f, 'name'),

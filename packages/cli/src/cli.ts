@@ -101,7 +101,7 @@ const list = (v: string | true | undefined): string[] | undefined =>
 
 /** Said once, after an init that installed something: what to do next. */
 const HELP_LINE =
-  'next: nexgen-os doctor, then a demo dataset (docs/demo/README.md); questions on the foundation go to the issues of its repository';
+  'next: nexgen-os doctor, then as a person nexgen-os organisation create and key create, or a demo dataset (docs/demo/README.md); questions on the foundation go to the issues of its repository';
 
 function printInstall(out: (line: string) => void, r: InstallReport): void {
   const verb = r.dryRun ? 'would apply' : 'applied';
