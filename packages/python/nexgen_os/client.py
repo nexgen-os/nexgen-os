@@ -41,6 +41,19 @@ class Bucket:
 
 
 @dataclass(frozen=True)
+class AggregateBucket:
+    """One step of several series added up: its start, the total in the quantity's unit, how many of the series
+    held a value in it, their readings, how many they expect, and the worst quality among them."""
+
+    start: datetime
+    value: Optional[float]
+    series: int
+    samples: int
+    expected: Optional[int] = None
+    quality: Optional[int] = None
+
+
+@dataclass(frozen=True)
 class Reading:
     """One stored value: its instant (UTC), its value in the quantity's unit, its quality code."""
 
@@ -162,6 +175,28 @@ class Nexgen:
             (series_id, start, end, step, time_zone, issued_before),
         )
         return Rows(Bucket(r["bucket"], r["value"], r["samples"], r["expected"], r["quality"]) for r in rows)
+
+    def aggregate(
+        self,
+        series_ids: Iterable[str],
+        start: datetime,
+        end: datetime,
+        step: Step,
+        time_zone: Optional[str] = None,
+    ) -> List[AggregateBucket]:
+        """Several series of one quantity that adds up, summed on a regular step over ``[start, end)``,
+        each read as ``resample`` reads it; ``series`` says how many held a value in each bucket.
+
+        A step of a day or more is cut in the time zone the series share (or ``time_zone``).
+        """
+        rows = self._rows(
+            """select bucket, value, series, samples, expected, quality
+                 from nexgen.aggregate(%s::uuid[], %s::timestamptz, %s::timestamptz, %s::interval, %s)""",
+            ([str(i) for i in series_ids], start, end, step, time_zone),
+        )
+        return Rows(
+            AggregateBucket(r["bucket"], r["value"], r["series"], r["samples"], r["expected"], r["quality"]) for r in rows
+        )
 
     def window(self, series_id: str, start: datetime, end: datetime, limit: int = 100000) -> List[Reading]:
         """The stored values over ``[start, end)`` in time order: how a register's index is read."""

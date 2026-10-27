@@ -57,6 +57,13 @@ class ClientTest(unittest.TestCase):
         )
         self.assertEqual([(h.value, h.samples) for h in hours], [(4.0, 4)] * 3)
 
+    def test_adds_up_several_series_and_counts_those_in_each_bucket(self):
+        hours = self.nexgen.aggregate(
+            [FIXTURE["series"], FIXTURE["series_without_time_zone"]],
+            datetime(2026, 6, 1, 10, tzinfo=UTC), datetime(2026, 6, 1, 12, tzinfo=UTC), "1 hour",
+        )
+        self.assertEqual([(h.value, h.series, h.samples) for h in hours], [(8.0, 2, 8)] * 2)
+
     def test_names_the_refusals_of_the_database(self):
         with self.assertRaises(NexgenError) as refused:
             self.nexgen.resample(FIXTURE["series_without_time_zone"], datetime(2026, 6, 1, tzinfo=UTC), datetime(2026, 6, 3, tzinfo=UTC), "1 day")

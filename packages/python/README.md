@@ -48,6 +48,7 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | `organisations()`, `participants(organisation_id=None)` | the organisations and the participants, with their place, the connection may read |
 | `attributes_of(object_id, at=None)` | every attribute holding at a moment |
 | `resample(series_id, start, end, step, time_zone=None, issued_before=None)` | a series on a regular step over `[start, end)`, the amount of each bucket (a register's consumption), as `Bucket(start, value, samples, expected, quality)`; `step` is an interval (`"15 minutes"`, `"1 day"`) or a `timedelta` |
+| `aggregate(series_ids, start, end, step, time_zone=None)` | several series of one quantity that adds up, summed on a regular step, each read as `resample` reads it, as `AggregateBucket(start, value, series, samples, expected, quality)`: `series` is how many held a value in the bucket |
 | `window(series_id, start, end, limit=100000)`, `latest(series_ids)` | the stored values in time order (a register's index); the last value of each series |
 | `fill(series_id, start, end, step, method="linear")`, `coverage(series_id, start, end)` | every bucket with its gaps filled on read and flagged estimated; the gaps of a regular series |
 | `forecast_at(series_id, start, end, as_of=None, horizon=None)`, `export_rows(series_ids, start, end)` | a forecast as it was known; the rows of a Parquet file |
