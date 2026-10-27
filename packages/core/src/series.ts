@@ -1,7 +1,7 @@
 // Series: the SQL functions of the core, typed for TypeScript.
 //
 // One way to write (`store()`), one family of reads (`resample()`,
-// `window()`, `latest()`, `fill()`, `coverage()`, `forecastAt()`,
+// `aggregate()`, `window()`, `latest()`, `fill()`, `coverage()`, `forecastAt()`,
 // `exportRows()`), each a thin call of the function of the same name in
 // schema `nexgen` (decision 0031). Nothing here computes a bucket, converts
 // a unit or fills a gap: the database does, so that a page, a module, the
@@ -44,6 +44,11 @@ export interface Bucket {
   /** The count of values a regular series should have in the bucket; null for an irregular one. */
   expected: number | null;
   quality: number | null;
+}
+
+/** One bucket of several series added up (`aggregate()`): `series` is how many of them held a value in it. */
+export interface AggregateBucket extends Bucket {
+  series: number;
 }
 
 export interface Reading {
@@ -114,6 +119,22 @@ export async function resample(
   const r = await db.query<Omit<Bucket, 'bucket'> & { bucket: string | Date }>(
     `select bucket, value, samples, expected, quality from resample($1, $2::timestamptz, $3::timestamptz, $4::interval, $5, $6::timestamptz)`,
     [seriesId, from, to, step, options.timeZone ?? null, options.issuedBefore ?? null],
+  );
+  return r.rows.map((b) => ({ ...b, bucket: iso(b.bucket) }));
+}
+
+/** Several series of one summable quantity added up on a regular step (`aggregate()`), each read as `resample()` reads it. */
+export async function aggregate(
+  db: Db,
+  seriesIds: string[],
+  from: string,
+  to: string,
+  step: string,
+  options: { timeZone?: string | null } = {},
+): Promise<AggregateBucket[]> {
+  const r = await db.query<Omit<AggregateBucket, 'bucket'> & { bucket: string | Date }>(
+    `select bucket, value, series, samples, expected, quality from aggregate($1::uuid[], $2::timestamptz, $3::timestamptz, $4::interval, $5)`,
+    [seriesIds, from, to, step, options.timeZone ?? null],
   );
   return r.rows.map((b) => ({ ...b, bucket: iso(b.bucket) }));
 }
