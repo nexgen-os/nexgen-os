@@ -16,9 +16,13 @@
  * `open: true` is the export meant for the public: no street line, no
  * serial number, no metadata of a described object, and nothing that came from a source whose
  * licence forbids passing it on.
+ *
+ * `importGeoJsonParticipants()` reads the other way: the participants of a
+ * FeatureCollection — this export's, or any file whose features carry the
+ * same properties — join a project at their place.
  */
 import { writeGeoJson, type Feature, type FeatureCollection, type Geometry } from '@nexgen-os/geojson';
-import type { Db } from '../db.js';
+import { atomically, type Db } from '../db.js';
 
 /** A figure a module computed on the object, as the module's table keeps it. */
 export interface CalculationSummary {
@@ -330,5 +334,77 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
       sources: sources.rows.filter((s) => used.has(s.code)).map(({ code, name, license, attribution }) => ({ code, name, license, attribution })),
       withheld: withheldIds.size,
     },
+  });
+}
+
+/** The file a collection was read from: where it is kept and its checksum, `sha256:<hex>`. */
+export interface GeoJsonFile {
+  name: string;
+  uri: string;
+  checksum: string;
+  byteSize?: number | null;
+}
+
+export interface GeoJsonImport {
+  /** The file, a document of the project. */
+  documentId: string;
+  /** The participants that joined, by the index of their feature. */
+  participants: { index: number; id: string; name: string }[];
+  /** The features of another kind (`project`, `building`, `device`…), left out. */
+  skipped: { index: number; kind: string }[];
+}
+
+const PLACE_PROPERTIES = ['address_line1', 'address_line2', 'postal_code', 'city', 'region', 'municipality', 'country', 'location_precision', 'location_source_code'] as const;
+
+/**
+ * The participants of a FeatureCollection read by `@nexgen-os/geojson`
+ * join a project, each at its place: the feature's geometry, and its
+ * properties named as the export writes them — `name`, `category`,
+ * `country`, the address, `region`, `municipality`, `time_zone`,
+ * `location_precision`, `location_source_code`, `identifiers`. A feature
+ * without `kind`, or of kind `participant`, is one; the others are left
+ * out and listed. The file is attached to the project with its checksum
+ * and imported once (`already_imported`, decision 0036), whole or not at
+ * all. Refuses `checksum_required`, and by the index of the feature
+ * `name_required` and `country_required`: a country is never assumed.
+ */
+export async function importGeoJsonParticipants(db: Db, projectId: string, features: Feature[], file: GeoJsonFile): Promise<GeoJsonImport> {
+  if (!/^sha256:[0-9a-f]{64}$/.test(file.checksum)) throw new Error('checksum_required: a file is imported with its checksum, sha256:<hex>');
+  const participants: { index: number; feature: Feature }[] = [];
+  const skipped: GeoJsonImport['skipped'] = [];
+  features.forEach((feature, index) => {
+    const kind = feature.properties?.kind;
+    if (kind === undefined || kind === null || kind === 'participant') participants.push({ index, feature });
+    else skipped.push({ index, kind: String(kind) });
+  });
+  for (const { index, feature } of participants) {
+    const p = (feature.properties ?? {}) as Record<string, unknown>;
+    if (typeof p.name !== 'string' || p.name.trim() === '') throw new Error(`name_required: feature ${index} has no name`);
+    if (typeof p.country !== 'string' || p.country === '') throw new Error(`country_required: feature ${index} (${p.name}) names no country`);
+  }
+
+  return atomically(db, async () => {
+    const existing = (await db.query<{ id: string }>(
+      `select id from documents where object_kind = 'project' and object_id = $1 and checksum = $2`, [projectId, file.checksum])).rows[0];
+    if (existing) throw new Error(`already_imported: the file is document ${existing.id} of the project`);
+    const documentId = (await db.query<{ id: string }>(
+      `select attach_document('project', $1, $2, 'document', $3, 'application/geo+json', null, $4, null, $5, $6) id`,
+      [projectId, file.name, file.uri, `GeoJSON file ${file.name}`, file.byteSize ?? null, file.checksum])).rows[0]!.id;
+
+    const joined: GeoJsonImport['participants'] = [];
+    for (const { index, feature } of participants) {
+      const p = (feature.properties ?? {}) as Record<string, unknown>;
+      const place: Record<string, unknown> = {};
+      for (const key of PLACE_PROPERTIES) if (p[key] !== undefined && p[key] !== null) place[key] = p[key];
+      if (feature.geometry) place.geometry = feature.geometry;
+      if (Array.isArray(p.identifiers) && p.identifiers.length > 0) {
+        place.identifiers = p.identifiers.map((i: { scheme: string; value: string }) => ({ scheme: i.scheme, value: i.value }));
+      }
+      const { id } = (await db.query<{ id: string }>(
+        `select join_project($1, $2, $3::jsonb, coalesce($4, 'consumer'), p_time_zone => $5) id`,
+        [projectId, p.name, JSON.stringify(place), (p.category as string | undefined) ?? null, (p.time_zone as string | undefined) ?? null])).rows[0]!;
+      joined.push({ index, id, name: p.name as string });
+    }
+    return { documentId, participants: joined, skipped };
   });
 }
