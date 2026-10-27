@@ -29,7 +29,10 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    # Always a GitHub-hosted runner, whatever CI_RUNNER says for the other
+    # workflows: npm refuses a provenance statement signed on a self-hosted
+    # runner (E422, "Unsupported GitHub Actions runner environment").
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     # Trusted publishing names this workflow file; the environment is optional
     # on npmjs.com and can carry a required reviewer if a human gate is wanted.
