@@ -8,6 +8,16 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `system_loss`, the aggregate loss of a PV system, a parameter of the `solar` module resolved by `parameter_of()` from the system up to the organisation and the country, with PVGIS PVcalc's 14 % at the generic level ([0055](docs/decisions/0055-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md)); an estimate records it in `inputs.system_loss` and in its loss chain.
+- A `pvgis_like` yield estimate without years reads every year PVGIS covers and gives their mean annual.
+- `nexgen-os solar estimate`: a PV system at a point and its yield by month, in one command, as a person — the mean of every year PVGIS covers unless `--year` names one, the system loss given by `--loss` set on the participant; `describePvSystem()` in the core and the MCP tool `solar_describe_system` describe a system and its arrays as the `solar` module reads them.
+
+### Changed
+
+- The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.

@@ -194,12 +194,15 @@ describe.each(packs)('the golden cases of packs/%s', (pack) => {
       const sol = s.solar!;
       const profile = await one<{ temperature_params: { u0: number; u1: number }; losses: { code: string; pct: number | null }[] }>(
         db, 'select temperature_params, losses from solar.yield_profiles where code = $1', [sol.profile]);
+      // The aggregate loss a profile names without a value is the place's, as parameter_of() resolves it for the project (decision 0055).
+      const { loss } = await one<{ loss: { value: number } }>(db, `select parameter_of('project', $1, 'system_loss', $2) loss`, [ids.get('project'), s.period.from]);
+      const losses = profile.losses.map((l) => (l.code === 'system' && l.pct === null ? { ...l, pct: Number(loss.value) * 100 } : l));
       const from = Date.parse(s.period.from);
       const at = (i: number) => new Date(from + i * stepMs(s.period.step)).toISOString();
       // The hours of the case are means over each hour, as the model reads them once aligned.
       const hours = sol.hours.map((h, i) => ({ at: at(i), ...h }));
       const energy = arrayEnergy(hours, { kwp: sol.kwp, gammaPdc: sol.gamma_pdc },
-        { ...profile.temperature_params, remainingFraction: remainingAfterLosses(profile.losses) }).reduce((sum, h) => sum + h.value, 0);
+        { ...profile.temperature_params, remainingFraction: remainingAfterLosses(losses) }).reduce((sum, h) => sum + h.value, 0);
       close(energy, e.solar!.energy_kwh, (e.solar!.energy_kwh * e.solar!.tolerance_pct) / 100);
     });
 

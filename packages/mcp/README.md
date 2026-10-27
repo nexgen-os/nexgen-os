@@ -182,7 +182,7 @@ its code as a prefix; a module that is not installed offers none.
 | Module | Tools |
 |---|---|
 | `kpis` | `kpis_of` (the indicators of an object, `kpis.of()`), `kpis_compute` (one kept as a figure, `kpis.compute()`) |
-| `solar` | `solar_estimates`, `solar_size` (a named criterion, [0045](../../docs/decisions/0045-to-size-is-one-gesture.md)), `solar_estimate_yield` (a named profile) |
+| `solar` | `solar_estimates`, `solar_describe_system` (a PV system and its arrays, each with its azimuth and tilt), `solar_size` (a named criterion, [0045](../../docs/decisions/0045-to-size-is-one-gesture.md)), `solar_estimate_yield` (a named profile) |
 | `battery` | `battery_estimates`, `battery_size` |
 | `charging` | `charging_sessions`, `charging_limit`, `charging_size` |
 | `community` | `community_settlements`, `community_settle` (by the sharing engine the person configured) |

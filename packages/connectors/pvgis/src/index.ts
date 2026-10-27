@@ -75,11 +75,15 @@ export function pvgis(options: { baseUrl?: string; fetch?: Fetch } = {}) {
   return {
     source_code: SOURCE_CODE,
 
-    /** Hourly series of a system over whole years: what a yield estimate of the `pvgis_like` profile stores. */
-    async hourly(where: Point, system: PvgisSystem, years: { from: number; to: number }, extra: { raddatabase?: string } = {}): Promise<PvgisHourly> {
+    /**
+     * Hourly series of a system over whole years: what a yield estimate of
+     * the `pvgis_like` profile stores. Without years, every year the radiation
+     * database covers, as PVGIS's PV calculator averages them; `meta` says which.
+     */
+    async hourly(where: Point, system: PvgisSystem, years?: { from: number; to: number }, extra: { raddatabase?: string } = {}): Promise<PvgisHourly> {
       const params = new URLSearchParams({
         lat: String(where.lat), lon: String(where.lon),
-        startyear: String(years.from), endyear: String(years.to),
+        ...(years ? { startyear: String(years.from), endyear: String(years.to) } : {}),
         pvcalculation: '1', ...systemParams(system), outputformat: 'json',
       });
       if (extra.raddatabase) params.set('raddatabase', extra.raddatabase);

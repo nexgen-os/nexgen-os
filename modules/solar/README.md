@@ -115,6 +115,29 @@ list of losses: arrays whose soiling differs throw a named error
 (`losses_differ_between_arrays`); say the soiling on the system or the participant
 for an engine estimate. A fraction outside [0, 1) throws `soiling_out_of_range`.
 
+## System loss of a place
+
+PVGIS and PVWatts fold every loss their model leaves out — wiring,
+mismatch, soiling, availability, the inverter — into one aggregate loss,
+and two owners of the same modules under the same sky rightly choose two
+values for it. `system_loss` (a fraction, `0.14` for 14 %) is therefore a
+parameter of the place, never a number of the profile
+([0055](../../docs/decisions/0055-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md)):
+`pvgis_like` and `pvwatts` name their `system` loss without a value, and a
+yield estimate reads it through `parameter_of('device', …)` on the PV
+system at the start of the first year asked — the system's own, its
+participant's, its project's, its organisation's, its country's, then the
+generic level this module publishes, PVGIS PVcalc's 14 % (source `pvgis`,
+quality `assumed`). The estimate keeps the fraction and where it was found
+in `inputs.system_loss`, and its row of `solar.estimate_losses` carries
+that source and quality. Unset is absent; a `0` set is a value.
+
+A `pvgis_like` estimate may leave its years out: PVGIS then reads every
+year its radiation database covers, and the annual is their mean, as its
+PV calculator gives it; `inputs.weather.years` says which years. The other
+profiles and the engines compute the years they are given
+(`years_required`).
+
 ## The parameters of a study, and where they live here
 
 What a PVsyst, PV\*SOL or PVWatts study declares about the place and its
@@ -128,6 +151,7 @@ losses, and where it is held in this module:
 | ground albedo | `solar.pv_arrays.albedo` | engines (ground-reflected irradiance); `pvwatts` reads a plane-of-array irradiance the weather source transposed with its own ground reflection, and its estimate says the array's albedo is not applied |
 | bifacial modules | `solar.pv_arrays.bifacial` | recorded `not modelled` by every estimate: no rear-side gain is applied |
 | soiling | `soiling_loss` on the array, the system or the participant | every estimate, in place of the profile's `soiling` loss |
+| system loss (PVGIS, PVWatts) | `system_loss` on the system, the participant, the project, the organisation; 14 % at the generic level | `pvgis_like`, `pvwatts` |
 | mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every estimate |
 | temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
 | degradation | `solar.devices.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to an estimate |
@@ -136,8 +160,8 @@ losses, and where it is held in this module:
 
 | Code | Imitates | Choices |
 |---|---|---|
-| `pvgis_like` | PVGIS PVcalc | SARAH / ERA5 components, Muneer, DEM horizon, Faiman 26.9 / 6.2, `system` 14 %, no clipping |
-| `pvwatts` | PVWatts v8, as `estimateYield` computes it | transposition by the weather source (Open-Meteo's `global_tilted_irradiance`), Faiman 25 / 6.84, PVWatts DC model, `system` 14 %; no inverter model, no clipping |
+| `pvgis_like` | PVGIS PVcalc | SARAH / ERA5 components, Muneer, DEM horizon, Faiman 26.9 / 6.2, `system` = the place's `system_loss`, no clipping |
+| `pvwatts` | PVWatts v8, as `estimateYield` computes it | transposition by the weather source (Open-Meteo's `global_tilted_irradiance`), Faiman 25 / 6.84, PVWatts DC model, `system` = the place's `system_loss`; no inverter model, no clipping |
 | `pvsyst_like` | PVsyst 8 | transposition not verified (null), Uc 29 / Uv 0, losses in the loss-diagram order: iam, soiling 2, lid 2, module_quality −0.75, mismatch 2, dc_wiring 1.5, ac_wiring 1, availability 0 (usual starting values, not verified defaults) |
 | `pvsol_like` | PV\*SOL premium 2026 | Hofmann, Hay-Davies, ΔT per mounting (22 / 29 / 32 / 43 / 20 K), losses without values (PV\*SOL's defaults not verified) |
 
