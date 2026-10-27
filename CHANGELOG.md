@@ -26,6 +26,10 @@ release may break, and says how. How a release is cut:
 
 - `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
 
+### Changed
+
+- `settleSharing()` of the `community` module adds up the meters of a participant with `aggregate()`, where it summed their `resample()` itself: the same figures, from the one sum of the core.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
