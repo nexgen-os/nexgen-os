@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/switchgrid",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Switchgrid (API v0) as a Nexgen OS meter data connector: the customer's consent, R63 load curves ordered and read from the operator's raw files, under mandate.",
   "license": "MIT",
   "repository": {

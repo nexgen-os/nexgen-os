@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-27
+
+The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
+
 ## [0.4.0] — 2026-10-26
 
 The first version published to npm: `npx nexgen-os init` installs it, and the libraries are published under `@nexgen-os/*`. Release 0.3.0 was cut in the repository and never published.

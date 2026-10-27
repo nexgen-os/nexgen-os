@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/enedis-sge",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Enedis SGE, the operator's web services for a third party under contract, as a Nexgen OS meter data connector: point search, technical data, detailed measures, collection orders, under mandate. A skeleton until homologation.",
   "license": "MIT",
   "repository": {

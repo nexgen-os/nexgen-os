@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "What the code of Nexgen OS shares: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces, the engine glue, and the importers and exporters of the file formats.",
   "license": "AGPL-3.0-only",
   "repository": {

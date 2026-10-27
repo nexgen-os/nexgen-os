@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/pvgis",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "PVGIS hourly PV energy and irradiance as a Nexgen OS connector.",
   "license": "MIT",
   "repository": {

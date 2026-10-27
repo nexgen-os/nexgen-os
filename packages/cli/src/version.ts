@@ -12,7 +12,7 @@ import { compareVersions, type SqlClient } from '@nexgen-os/core';
 
 export { compareVersions };
 
-export const PACKAGE_VERSION = '0.4.0';
+export const PACKAGE_VERSION = '0.4.1';
 export const SCHEMA_VERSION = '0.4.0';
 export const SCHEMA_MIN = '0.3.0';
 

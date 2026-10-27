@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "MCP server for Nexgen OS: let an AI agent describe, equip and study energy assets, as the person who asked it, under row level security.",
   "keywords": [
     "mcp",
