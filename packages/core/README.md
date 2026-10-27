@@ -7,7 +7,7 @@ it speaks to.
 |---|---|
 | `src/db.ts` | `Db`, the one thing a package needs from a database driver: a query with positional parameters that answers with rows |
 | `src/address.ts` | the standard shape of a place (`Address`, `Place`, precision, source), the `Geocoder` interface, `placeFields()`, `addressLines()` and `geocoderFor()`, the chain: the country's register, the open fallback, a commercial service |
-| `src/series.ts` | the series API, each function one call of the SQL function of the same name: `store()`, `seriesEnsure()`, `resample()`, `window()`, `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`, `convertUnit()` |
+| `src/series.ts` | the series API, each function one call of the SQL function of the same name: `store()`, `seriesEnsure()`, `resample()`, `aggregate()`, `window()`, `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`, `convertUnit()` |
 | `src/connectors/` | the interfaces of the clients of external APIs (`WeatherProvider`, `MeterDataProvider`, `PlacesProvider`) and `storeSeries()` (`interfaces.ts`); the runner of the JSON contract of the program connectors (`runner.ts`) and the request and result types of the `pv_yield`, `settlement` and `energy_sharing` kinds |
 | `src/geometry.ts` | WKT, the normal of a face, azimuth and tilt |
 | `src/sql.ts` | `SqlClient` and `connect()`, the one way the installer, the command line and the MCP server reach Postgres (node-postgres, an optional peer, loaded lazily) |

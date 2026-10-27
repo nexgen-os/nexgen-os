@@ -27,7 +27,7 @@ describe('doctor', () => {
     expect(r.problems).toEqual([]);
     expect(r.schemaVersion).toBe('0.4.0');
     expect(r.postgis).toMatch(/^3\./);
-    expect(r.applied).toEqual({ core: 17, 'module:grid': 2, 'module:solar': 4, 'module:weather': 1, 'pack:fr': 1 });
+    expect(r.applied).toEqual({ core: 18, 'module:grid': 2, 'module:solar': 4, 'module:weather': 1, 'pack:fr': 1 });
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);
@@ -146,12 +146,12 @@ describe('status and the command line', () => {
     try {
       const dry = await run(['init', '--modules', 'grid', '--dry-run'], empty);
       expect(dry.code).toBe(0);
-      expect(dry.out).toMatch(/would apply 19 step\(s\), 0 already recorded — dry run, rolled back$/);
+      expect(dry.out).toMatch(/would apply 20 step\(s\), 0 already recorded — dry run, rolled back$/);
       const real = await run(['init', '--modules=grid'], empty);
-      expect(real.out).toMatch(/applied 19 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
+      expect(real.out).toMatch(/applied 20 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
       const again = await run(['init', '--modules=grid'], empty);
-      expect(again.out).toBe('nothing to apply: 19 step(s) already recorded');
-      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 19 step(s) already recorded');
+      expect(again.out).toBe('nothing to apply: 20 step(s) already recorded');
+      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 20 step(s) already recorded');
     } finally {
       await empty.close();
     }

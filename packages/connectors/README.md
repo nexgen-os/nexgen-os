@@ -47,7 +47,7 @@ issue time.
 One package per service, `@nexgen-os/<service>`, MIT, with its own `package.json`
 and `README`; the interfaces, the standard shape of a place and `storeSeries()` come
 from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same calls for any TypeScript client:
-`store()`, `seriesEnsure()`, and the reads `resample()`, `window()`,
+`store()`, `seriesEnsure()`, and the reads `resample()`, `aggregate()`, `window()`,
 `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`,
 `convertUnit()` — each one call of the SQL function of the same name.
 
