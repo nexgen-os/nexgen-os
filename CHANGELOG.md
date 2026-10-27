@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `@nexgen-os/panond` computes no figure ([0035](docs/decisions/0035-a-format-library-touches-no-database.md)): `readPan()` gives the file's one-diode model without the light current and the saturation current PVsyst does not store (`PvsystFileParameters`), and the point the file states them by, `reference` (`isc`, `voc`, `t_ref`); `diodeCurrents()` leaves the library. The `solar` module solves them: `pvsystModel()` of `modules/solar/src/products.ts`, which `importProduct()` calls, gives the same `I_L_ref` and `I_o_ref` as 0.4.0, and `pan_inconsistent` is now its refusal. A caller that read `readPan(…).parameters.I_L_ref` reads `pvsystModel(readPan(…)).I_L_ref`.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
