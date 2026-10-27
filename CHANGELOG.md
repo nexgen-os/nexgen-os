@@ -72,6 +72,7 @@ The first version published to npm: `npx nexgen-os init` installs it, and the li
 ### Fixed
 
 - `nexgen-os doctor` counts the vocabularies `project_kinds`, `segments` and `capabilities`, which it left out, and no longer `value_statuses`.
+- A battery that also charges from the grid no longer counts that charge as production kept. The core adds the quantity `battery_grid_charge_energy`, the part of `battery_charge_energy` taken from the grid; the `battery` module writes it for a battery run for peak shaving or arbitrage; `self_consumption_rate` reads `(direct + charge - grid_charge) / production` and `battery_boost_rate` `(charge - grid_charge) / production`. A self-consumption rate measured with a battery charged at night could exceed 1.
 - Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
 - Pack `be` 0.3.1: VAT on electricity for a professional customer, 21 % and the Ekwo OS tax `BE-S-21` (circular 2023/C/64 of FPS Finance). The 6 % row held for every segment, so `billing.tax_of()` gave a business participant `BE-S-06`.
 
