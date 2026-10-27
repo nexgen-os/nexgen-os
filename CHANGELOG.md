@@ -71,6 +71,7 @@ The first version published to npm: `npx nexgen-os init` installs it, and the li
 
 ### Fixed
 
+- `peak_offtake_power` reads the step the meters keep: the highest mean power over a quarter of an hour for a meter read every 15 minutes, as a capacity tariff or the peaks of a supply contract read it, over an hour for an hourly series. It read by hour, and gave 3.25 kW for a peak of 10 kW over 15 minutes. A variable of an indicator that names a `step` never reads its series finer than they are kept — an hourly series read by quarter-hours put its hour whole in one of them, 13 kW for the same hour — the figure says the step read (`steps`), and a variable may read its amount `per` a duration (`kpis.own_step()`, migration `modules/kpis/supabase/migrations/0003_peak_at_the_step_kept.sql`).
 - `nexgen-os doctor` counts the vocabularies `project_kinds`, `segments` and `capabilities`, which it left out, and no longer `value_statuses`.
 - Text files are checked out with LF on every platform (`.gitattributes`): on Windows, Git's line-ending conversion changed the bytes of the pack seeds and `nexgen-os pack check` refused them.
 - Pack `be` 0.3.1: VAT on electricity for a professional customer, 21 % and the Ekwo OS tax `BE-S-21` (circular 2023/C/64 of FPS Finance). The 6 % row held for every segment, so `billing.tax_of()` gave a business participant `BE-S-06`.
