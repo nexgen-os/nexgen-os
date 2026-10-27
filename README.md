@@ -205,6 +205,7 @@ export NEXGEN_DB_URL='postgresql://…'   # the project's connection string
 npx nexgen-os init --dry-run            # what would be applied
 npx nexgen-os init                      # the core and every module; --packs <cc> for a country
 npx nexgen-os doctor                    # what is wrong, by name
+npx nexgen-os organisation create --name "My organisation"   # as a person (NEXGEN_ACT_AS_USER_ID), its owner
 ```
 
 Program connectors are optional: a yield computed by pvlib needs Python and

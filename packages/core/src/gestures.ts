@@ -325,6 +325,41 @@ export async function moveAction(db: Db, actionId: string, toStatus: string, on?
 }
 
 // ---------------------------------------------------------------------------
+// Organisations and their members — what follows an installation
+// ---------------------------------------------------------------------------
+
+/** An organisation; the person this acts as becomes its owner (`create_organisation()`). */
+export async function createOrganisation(db: Db, name: string): Promise<{ id: string }> {
+  return first(db, 'select create_organisation($1) id', [name]);
+}
+
+/** Who is a member of an organisation, with their role: a person's id, never more of their account. */
+export async function listMembers(db: Db, organisationId: string) {
+  return rows<{ user_id: string; role: string; created_at: string }>(db,
+    'select user_id, role::text as role, created_at from organisation_members where organisation_id = $1 order by created_at, user_id',
+    [organisationId]);
+}
+
+/** Gives a person a role in an organisation (`add_member()`); viewer when no role is given. */
+export async function addMember(db: Db, m: { organisation_id: string; user_id: string; role?: string }): Promise<{ organisation_id: string; user_id: string; role: string }> {
+  const role = m.role ?? 'viewer';
+  await db.query('select add_member($1, $2, $3::member_role)', [m.organisation_id, m.user_id, role]);
+  return { organisation_id: m.organisation_id, user_id: m.user_id, role };
+}
+
+/** Changes a member's role (`set_member_role()`); an organisation keeps an owner. */
+export async function setMemberRole(db: Db, m: { organisation_id: string; user_id: string; role: string }): Promise<{ organisation_id: string; user_id: string; role: string }> {
+  await db.query('select set_member_role($1, $2, $3::member_role)', [m.organisation_id, m.user_id, m.role]);
+  return { organisation_id: m.organisation_id, user_id: m.user_id, role: m.role };
+}
+
+/** Removes a member (`remove_member()`); an organisation keeps an owner. */
+export async function removeMember(db: Db, organisationId: string, userId: string): Promise<{ organisation_id: string; user_id: string; removed: true }> {
+  await db.query('select remove_member($1, $2)', [organisationId, userId]);
+  return { organisation_id: organisationId, user_id: userId, removed: true };
+}
+
+// ---------------------------------------------------------------------------
 // Keys — an owner's gestures (decision 0046)
 // ---------------------------------------------------------------------------
 

@@ -79,6 +79,24 @@ describe('the gestures as commands', () => {
       .toMatch(/^api_key_revoked:/);
   });
 
+  it('creates an organisation and gives its members their roles, as its owner', async () => {
+    const created = await json(['organisation', 'create', '--name', 'A new installation'], { NEXGEN_ACT_AS_USER_ID: USER_B });
+    expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
+    const asB = { NEXGEN_ACT_AS_USER_ID: USER_B };
+    expect(await json(['member', 'list', '--organisation', created.id], asB)).toEqual([expect.objectContaining({ user_id: USER_B, role: 'owner' })]);
+
+    expect((await run(['member', 'list', '--organisation', created.id])).out).toBe('nothing');
+    const added = await json(['member', 'add', '--organisation', created.id, '--user', USER_A], asB);
+    expect(added).toEqual({ organisation_id: created.id, user_id: USER_A, role: 'viewer' });
+    expect((await run(['member', 'add', '--organisation', created.id, '--user', USER_A], asB)).err).toMatch(/^already_member:/);
+    expect((await run(['member', 'role', '--organisation', created.id, '--user', USER_B, '--role', 'editor'], asB)).err).toMatch(/^last_owner:/);
+    expect((await run(['member', 'remove', '--organisation', created.id, '--user', USER_B], asB)).err).toMatch(/^last_owner:/);
+
+    expect((await json(['member', 'role', '--organisation', created.id, '--user', USER_A, '--role', 'owner'], asB)).role).toBe('owner');
+    expect((await json(['member', 'remove', '--organisation', created.id, '--user', USER_B])).removed).toBe(true);
+    expect(await json(['member', 'list', '--organisation', created.id])).toEqual([expect.objectContaining({ user_id: USER_A, role: 'owner' })]);
+  });
+
   it('refuses by name: nobody to act as, a stranger, a computation not loaded, an address without a geocoder', async () => {
     expect((await run(['project', 'create', '--organisation', org, '--name', 'X', '--country', 'ZZ'], {})).err).toMatch(/^missing_credentials:/);
     const stranger = await run(['project', 'create', '--organisation', org, '--name', 'X', '--country', 'ZZ'], { NEXGEN_ACT_AS_USER_ID: USER_B });

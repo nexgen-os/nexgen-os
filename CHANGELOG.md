@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- After `init`, an organisation and the people in it are commands, run as a person under row level security: `nexgen-os organisation create` (the person becomes its owner), `member add`, `member list`, `member role` and `member remove`, through `create_organisation()`, `add_member()`, `set_member_role()` and `remove_member()`, and as `createOrganisation()`, `listMembers()`, `addMember()`, `setMemberRole()` and `removeMember()` of `@nexgen-os/core`. `init` names them in what to do next, and the installer's README follows an installation with them.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
