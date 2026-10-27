@@ -20,8 +20,8 @@ import {
   ENGINE_CONTRACT,
   SHARING_INPUTS,
   SHARING_OUTPUTS,
+  aggregate,
   describeEngine,
-  resample,
   runEngine,
   store,
   type Db,
@@ -164,11 +164,9 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
         )
       ).rows.map((r) => r.id);
       const sum = new Map<number, number>();
-      for (const id of ids[quantity]) {
-        for (const b of await resample(db, id, from, to, request.step)) {
-          if (b.value === null || b.samples === 0) continue;
-          const at = Date.parse(b.bucket);
-          sum.set(at, (sum.get(at) ?? 0) + Number(b.value));
+      if (ids[quantity].length > 0) {
+        for (const b of await aggregate(db, ids[quantity], from, to, request.step)) {
+          if (b.value !== null) sum.set(Date.parse(b.bucket), Number(b.value));
         }
       }
       const missing = ids[quantity].length === 0 ? 0 : grid.filter((g) => !sum.has(Date.parse(g.at))).length;
