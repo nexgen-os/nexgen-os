@@ -33,7 +33,9 @@ open and what is a service: [docs/services.md](docs/services.md).
 ## Installing it
 
 On the person's own Supabase project, with PostGIS enabled, from their
-connection string (`NEXGEN_DB_URL`, never written to a file):
+connection string (`NEXGEN_DB_URL`, never written to a file) or their
+project's ref and region (`--project-ref`, `--db-region`, the password in
+`NEXGEN_DB_PASSWORD`):
 `npx nexgen-os init --dry-run`, then `npx nexgen-os init` with the packs of
 the countries they named (`--packs`; there is no default country), then
 `npx nexgen-os doctor`. Every refusal and every problem starts with a name

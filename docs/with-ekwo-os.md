@@ -44,7 +44,10 @@ npx nexgen-os doctor
 ```
 
 `EKWO_DB_URL` and `NEXGEN_DB_URL` are the same connection string; neither is
-written to a file. Then, in *Project settings → Data API → Exposed schemas*,
+written to a file. Both installers also find the session pooler from the
+project's ref and region, under the same flags (`--project-ref`,
+`--db-region`, `--db-password`; the password in `EKWO_DB_PASSWORD` and
+`NEXGEN_DB_PASSWORD`). Then, in *Project settings → Data API → Exposed schemas*,
 keep `public` and add `nexgen` and the module schemas, so that one client
 reaches both cores with the same signed-in session.
 
