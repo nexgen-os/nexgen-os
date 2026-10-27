@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Fixed
+
+- `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.

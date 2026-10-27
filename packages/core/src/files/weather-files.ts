@@ -9,7 +9,7 @@
  * `writeEpw()` writes.
  */
 import { WEATHER_QUANTITIES, type WeatherFile, type WeatherFileLocation, type WeatherFileWarning, type WeatherSeries, type WeatherYear } from '@nexgen-os/weather-files';
-import type { Db } from '../db.js';
+import { atomically, type Db } from '../db.js';
 import { storeSeries } from '../connectors/interfaces.js';
 
 const HOUR_MS = 3_600_000;
@@ -27,7 +27,8 @@ export interface WeatherTarget {
  * station network, a licensed model). A typical year is `simulated` and
  * named after its years (`typical year 2005-2020`); real years are
  * `measured` and unnamed, unless told otherwise. Importing the same file
- * again replaces the values.
+ * again replaces the values. The file is stored whole or not at all: one
+ * series refused leaves none of the others.
  */
 export async function importWeatherFile(
   db: Db,
@@ -37,12 +38,14 @@ export async function importWeatherFile(
 ): Promise<{ series: { quantity_code: string; seriesId: string; inserted: number }[]; warnings: WeatherFileWarning[] }> {
   const kind = options.kind ?? (file.typical ? 'simulated' : 'measured');
   const name = options.name !== undefined ? options.name : file.typical ? `typical year ${file.years[0]}-${file.years[file.years.length - 1]}` : null;
-  const series = [];
-  for (const s of file.series) {
-    const stored = await storeSeries(db, { organisationId: target.organisationId, objectKind: target.objectKind, objectId: target.objectId, sourceCode: options.sourceCode, kind, name }, s);
-    series.push({ quantity_code: s.quantity_code, ...stored });
-  }
-  return { series, warnings: file.warnings };
+  return atomically(db, async () => {
+    const series = [];
+    for (const s of file.series) {
+      const stored = await storeSeries(db, { organisationId: target.organisationId, objectKind: target.objectKind, objectId: target.objectId, sourceCode: options.sourceCode, kind, name }, s);
+      series.push({ quantity_code: s.quantity_code, ...stored });
+    }
+    return { series, warnings: file.warnings };
+  });
 }
 
 /**
