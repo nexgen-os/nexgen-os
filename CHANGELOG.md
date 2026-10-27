@@ -12,6 +12,10 @@ release may break, and says how. How a release is cut:
 
 - `aggregate(series[], from, to, step, time_zone?)`, a read of the core: several series of one quantity that adds up — the meters of a community, the registers of one participant — summed bucket by bucket, each read as `resample()` reads it (a register by its consumption), with the count of series that held a value in each bucket so that a missing one shows instead of a smaller total. Days are cut in the time zone the series share, or the one given; it refuses `quantities_differ`, `quantity_not_summable` (a power, a temperature, a state) and `time_zone_required` (series in several time zones). `aggregate()` of `@nexgen-os/core` calls it. `nexgen-os migrate` applies `supabase/migrations/20261028000000_core_series_aggregate.sql`.
 
+### Changed
+
+- `settleSharing()` of the `community` module adds up the meters of a participant with `aggregate()`, where it summed their `resample()` itself: the same figures, from the one sum of the core.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
