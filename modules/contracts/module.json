@@ -1,0 +1,13 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "contracts",
+  "name": "Contracts",
+  "description": "The contracts of a participant — supply, injection, physical or virtual PPA, internal tariff of a community, market — with the other party, the flow they price, their cascade and their prices as signals, fixed or indexed on a price series.",
+  "version": "0.4.0",
+  "schema": "contracts",
+  "requires": {
+    "core": "0.4.0",
+    "modules": []
+  },
+  "licence": "AGPL-3.0-only"
+}
