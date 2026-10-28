@@ -33,17 +33,18 @@ create table contracts.kinds (
   -- grid), `injection` (what it injects).
   flows        text[] not null,
   -- Whether the energy is delivered under the contract (false: a financial
-  -- contract settled against a price, the energy sold elsewhere).
-  delivered    boolean not null,
+  -- contract settled against a price, the energy sold elsewhere), as the
+  -- `physical` of a settlement request.
+  physical     boolean not null,
   description  text,
   constraint kinds_code_format check (code ~ '^[a-z][a-z0-9_]*$'),
   constraint kinds_flows check (cardinality(flows) > 0 and flows <@ array['offtake', 'injection'])
 );
 
 comment on table contracts.kinds is
-  'What a contract is: the flows of the participant''s meter it may price (offtake, injection) and whether the energy is delivered under it. Read by everyone signed in.';
+  'What a contract is: the flows of the participant''s meter it may price (offtake, injection) and whether the energy is delivered under it (physical). Read by everyone signed in.';
 
-insert into contracts.kinds (code, name, flows, delivered, description) values
+insert into contracts.kinds (code, name, flows, physical, description) values
   ('supply', 'Supply contract', '{offtake}', true,
    'The energy a participant takes from the grid, bought from a supplier.'),
   ('injection', 'Injection contract', '{injection}', true,
@@ -74,11 +75,10 @@ create table contracts.volume_modes (
 );
 
 comment on table contracts.volume_modes is
-  'How the energy of a contract is counted on each interval. Read by everyone signed in.';
+  'How the energy of a contract is counted on each interval, the volume_basis of a settlement request. Read by everyone signed in.';
 
 insert into contracts.volume_modes (code, name, description) values
-  ('metered', 'Metered', 'All the energy of the flow measured at the meter, or what the contracts before it in the cascade left.'),
-  ('pay_as_consumed', 'Pay as consumed', 'The energy produced under the contract that the participant consumed on the interval.'),
+  ('pay_as_consumed', 'Pay as consumed', 'The energy of the flow the participant took or gave on the interval, or what the contracts before it in the cascade left of it.'),
   ('pay_as_produced', 'Pay as produced', 'All the energy produced under the contract on the interval, consumed or not.'),
   ('allocated_power', 'Allocated power', 'At most the power allocated to the contract over the interval.');
 
@@ -108,7 +108,7 @@ create table contracts.contracts (
   -- The meter of the participant the energy is counted at; null for all its
   -- meters.
   meter_id                    uuid references meters(id) on delete cascade,
-  volume_mode                 text not null default 'metered' references contracts.volume_modes(code),
+  volume_mode                 text not null default 'pay_as_consumed' references contracts.volume_modes(code),
   -- The power allocated to the contract, for `allocated_power`.
   allocated_power_kw          numeric,
   -- The order of the cascade: on an interval, the contracts of a flow take

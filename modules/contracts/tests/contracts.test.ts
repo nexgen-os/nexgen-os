@@ -62,7 +62,7 @@ describe('a contract', () => {
     const kinds = (await db.query<{ code: string }>('select code from contracts.kinds order by code')).rows.map((r) => r.code);
     expect(kinds).toEqual(['community_tariff', 'injection', 'market', 'ppa_physical', 'ppa_virtual', 'supply']);
     const modes = (await db.query<{ code: string }>('select code from contracts.volume_modes order by code')).rows.map((r) => r.code);
-    expect(modes).toEqual(['allocated_power', 'metered', 'pay_as_consumed', 'pay_as_produced']);
+    expect(modes).toEqual(['allocated_power', 'pay_as_consumed', 'pay_as_produced']);
   });
 
   it('takes the organisation of its participant and the currency of its country', async () => {
