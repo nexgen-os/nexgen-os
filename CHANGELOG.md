@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- The `contracts` module ([README](modules/contracts/README.md)): the contracts of a participant — `supply`, `injection`, `ppa_physical`, `ppa_virtual`, `community_tariff`, `market` (`contracts.kinds`) — each with the flow of its meter it prices (`offtake`, `injection`), the other party (a participant of its project or a contact of the organisation), the meter, how its volume is counted (`pay_as_consumed`, `pay_as_produced`, `allocated_power`), its priority in the cascade of its flow, its period, the currency of its prices (that of the participant's country when none is named), its reference and its signed document (`contracts.contracts`); the prices it sets over ISO 8601 periods (`valid_from`, `duration`), a priced quantity of the core, fixed or indexed on a price series of the core (`factor` × index + `value`, within `floor` and `cap`) (`contracts.price_signals`). `contracts.in_force(participant, flow, on)` lists the contracts of a flow in the order of the cascade, `contracts.price_at(contract, component, at)` reads a price at an instant. Every refusal is named; row level security by the participant's organisation, project and account. Install it with `npx nexgen-os init --modules contracts`; nothing changes for a database that does not.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.

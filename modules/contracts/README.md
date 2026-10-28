@@ -18,8 +18,8 @@ stays the grid's (`grid.support_contracts`,
 
 | Table | Holds |
 |---|---|
-| `contracts.kinds` | what a contract is — `supply`, `injection`, `ppa_physical`, `ppa_virtual`, `community_tariff`, `market` — with the flows it may price and whether the energy is delivered under it |
-| `contracts.volume_modes` | how its energy is counted on an interval — `metered`, `pay_as_consumed`, `pay_as_produced`, `allocated_power` |
+| `contracts.kinds` | what a contract is — `supply`, `injection`, `ppa_physical`, `ppa_virtual`, `community_tariff`, `market` — with the flows it may price and whether the energy is delivered under it (`physical`) |
+| `contracts.volume_modes` | how its energy is counted on an interval — `pay_as_consumed`, `pay_as_produced`, `allocated_power` |
 | `contracts.contracts` | a contract of a participant: its kind, the flow of its meter it prices from the participant's point of view (`offtake` or `injection`), the other party (a participant of the same project, or a contact of the organisation), the meter (null for all of the participant's), how its volume is counted and the power allocated to it, its `priority` in the cascade of its flow, its period (`valid_from`, `valid_to` the day after its last), the currency of its prices (that of the participant's country when none is named), its reference and its signed document |
 | `contracts.price_signals` | a price a contract sets over an ISO 8601 period (`valid_from` and `duration`, none while it runs): its component, a priced quantity of the core (`energy_price` per MWh, `power_price` per kW and per year, `fixed_price` per month) in the contract's currency; `fixed` (`value`) or `indexed` on a price series of the core (`factor` × index + `value`, within `floor` and `cap`) |
 
@@ -27,6 +27,14 @@ stays the grid's (`grid.support_contracts`,
 |---|---|
 | `contracts.in_force(participant, flow, on)` | the contracts of a participant that price a flow on a day, in the order of the cascade |
 | `contracts.price_at(contract, component, at)` | the price a contract sets for a component at an instant, with its unit, its currency, the signal and the index read; null when no signal holds then |
+
+**What a settlement program reads.** The words are those of the
+`settlement` request ([`settlement.ts`](../../packages/core/src/connectors/settlement.ts)):
+a kind is its `type`, with `physical`; a flow its `direction`; a volume mode
+its `volume_basis`; a price signal its `fixed` or `indexed` signal, from
+`valid_from` to `valid_from + duration`, the floor and the cap of an indexed
+price its `floor` and `cap` signals over the same period, and the index
+series its `indices`.
 
 A market price stays a series of the core — the day-ahead price of a
 bidding zone is an `energy_price` series of the organisation that reads it

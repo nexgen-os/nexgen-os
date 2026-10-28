@@ -197,8 +197,8 @@ that any program accepting it answers in.
 - `settlement` ([`settlement.ts`](../core/src/connectors/settlement.ts)): the contracts in force
   over a period (`from`, `to`, `step`), each with its parties, its type,
   its volume basis, its priority, its price signals
-  (`SettlementPriceSignal`, the shape the proposed `contracts` module
-  would keep them in) and the series its volume is read from (a
+  (`SettlementPriceSignal`, read from the `price_signals` of the
+  [`contracts`](../../modules/contracts/README.md) module) and the series its volume is read from (a
   point of the request and one of its quantities, kWh per step); the
   values of the indices a price follows (`indices`) and the rules of the
   country or the project passed as they are (`rules`). Out, the settlement
