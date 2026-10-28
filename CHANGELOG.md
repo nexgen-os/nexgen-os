@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/utilityrate5`, a format library for the electricity rates of SAM (NREL): the `ur_` inputs of its `utilityrate5` module read into plain rates — energy charges by period and tier, the 12 × 24 weekday and weekend schedules, time-series buy and sell rates, every other input as read — and written back to the same inputs; `hourlyRates()` gives the rate of each hour of SAM's year, and `rateFromHourly()` folds an hourly year back into its schedules, or keeps it as time-series rates when no schedule holds it. No database, no currency named.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.

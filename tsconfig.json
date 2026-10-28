@@ -75,6 +75,9 @@
       "@nexgen-os/parquet": [
         "./packages/formats/parquet/src/index.ts"
       ],
+      "@nexgen-os/utilityrate5": [
+        "./packages/formats/utilityrate5/src/index.ts"
+      ],
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"
       ],
