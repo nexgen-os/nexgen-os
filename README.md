@@ -330,7 +330,7 @@ packs/                 one folder per country, data only (fr, be, es: identity a
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
-packages/formats/      one MIT package per file format (cityjson, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, weather-files)
+packages/formats/      one MIT package per file format (cityjson, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, utilityrate5, weather-files)
 packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis), geocoders (nominatim, photon, ban, geopunt, urbis, icar, mapbox), meter data under mandate (switchgrid, enedis-sge), and the programs in other languages, JSON in and out (pvlib, optional)
 packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
 docs/                  the model, the doctrine and its decisions, the road to 1.0, how a release is cut, and in `demo/` one loadable dataset per domain (house, school, community, farm, district, drone survey, office)

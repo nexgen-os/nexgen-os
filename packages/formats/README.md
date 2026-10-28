@@ -31,6 +31,7 @@ tables it fills; an exporter reads the rows back into the same shapes.
 | [`panond`](panond/README.md) | PVsyst PAN, OND | a module's one-diode model, an inverter's curves | — | `importProduct` (`modules/solar/src/products.ts`) |
 | [`enedis-r6x`](enedis-r6x/README.md) | Enedis R63 (load curve) and R64 (index), JSON and XML | active and reactive power, voltage, index dials, each step at its start in UTC from the operator's legal time, quality letters by the caller's table | — | `collectMeterReadings` (core), through the connectors `switchgrid` and `enedis-sge` |
 | [`energy-bill`](energy-bill/README.md) | An energy bill: an EN 16931 invoice (`ReceivedInvoice` of `@ekwo-ai/factur-x`) and its energy facts | meter, consumption period, kWh per band, prices by band and season, network, taxes, totals reconciled | — | `importEnergyBill` (core), `estimateFromBill` (`modules/consumption/src`) |
+| [`utilityrate5`](utilityrate5/README.md) | SAM `utilityrate5` electricity rates (NREL) | energy charges by period and tier, 12 × 24 weekday and weekend schedules, time-series rates, every other `ur_` input as read; the rate of each hour of SAM's year | the same inputs; an hourly year folded back to its schedules | — |
 
 The geocoders are not formats: they speak to services, which are sources,
 and live with the [connectors](../connectors/README.md).
