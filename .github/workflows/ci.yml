@@ -60,7 +60,7 @@ jobs:
       - name: wait for this machine to be free of another test suite
         if: ${{ vars.CI_RUNNER }}
         run: sh scripts/wait-for-a-free-machine.sh
-      - run: npx vitest run tests/connectors-pvlib.test.ts tests/connectors-runner.test.ts
+      - run: npx vitest run tests/connectors-pvlib.test.ts tests/connectors-runner.test.ts tests/compared-yields.test.ts
         env:
           NEXGEN_ENGINE_PVLIB: python -m nexgen_pvlib
 
