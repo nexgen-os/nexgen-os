@@ -5,3 +5,6 @@
 # Fixtures are files as their tools write them (PVsyst, PVGIS…), line endings
 # included: their bytes are kept as committed.
 packages/formats/*/tests/fixtures/** -text
+
+# Recorded answers too large to read are kept compressed.
+*.gz binary

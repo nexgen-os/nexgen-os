@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`a compared yield, PVGIS against the module's PVWatts > prints the table the README shows 1`] = `
+"| Month | PVGIS (kWh) | PVWatts (kWh) | PVWatts vs PVGIS |
+|---:|---:|---:|---:|
+| 1 | 28.0 | 38.1 | +36.1 % |
+| 2 | 56.5 | 61.3 | +8.5 % |
+| 3 | 71.6 | 76.1 | +6.3 % |
+| 4 | 99.3 | 111.4 | +12.2 % |
+| 5 | 136.1 | 139.6 | +2.6 % |
+| 6 | 150.6 | 156.2 | +3.7 % |
+| 7 | 113.5 | 124.9 | +10.0 % |
+| 8 | 107.1 | 126.3 | +17.9 % |
+| 9 | 105.1 | 109.7 | +4.4 % |
+| 10 | 62.7 | 76.0 | +21.2 % |
+| 11 | 30.2 | 37.5 | +24.2 % |
+| 12 | 17.2 | 24.3 | +41.3 % |
+| Year | **977.9** | **1081.4** | **+10.6 %** |
+| kWh/kWp | 977.9 | 1081.4 |  |"
+`;
