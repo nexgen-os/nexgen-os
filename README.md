@@ -325,7 +325,7 @@ and what each estimate records: [modules/solar/README.md](modules/solar/README.m
 
 ```
 supabase/              the core: migrations in the schema `nexgen` (`public` stays the installation's), the vocabularies and the country seeds, the model in one screen
-modules/               one Postgres schema per module (actions, battery, billing, building, charging, community, consumption, grid, kpis, solar, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
+modules/               one Postgres schema per module (actions, battery, billing, building, charging, community, consumption, contracts, grid, kpis, solar, weather): its manifest `module.json`, its `supabase/migrations/`, its `src/` and its `tests/`
 packs/                 one folder per country, data only (fr, be, es: identity and regions, identifiers, sources, frames of projects, municipalities, grid operators, defaults, golden cases), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
