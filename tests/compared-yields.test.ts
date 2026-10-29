@@ -13,6 +13,9 @@ import { openMeteo } from '@nexgen-os/open-meteo';
 import type { Fetch } from '@nexgen-os/core';
 import { compareYields, comparisonTable, type Comparison } from '../docs/demo/compared.js';
 import { USER_A, freshDatabase, insert, organisation, participant, repoRoot } from './helpers/db.js';
+import { installed, pvlibEngine } from './helpers/engines.js';
+
+const pvlib = await installed(pvlibEngine);
 
 // PVWatts v5's temperature coefficient of a standard crystalline module (NREL's manual, 2014).
 const GAMMA_STANDARD_MODULE = -0.0037;
@@ -117,6 +120,20 @@ describe('a compared yield, PVGIS against the module\'s PVWatts', () => {
   it('prints the table the README shows', () => {
     expect(comparisonTable(comparison)).toMatchSnapshot();
   });
+});
+
+describe('a compared yield, the module\'s PVWatts against pvlib\'s', () => {
+  it.skipIf(!pvlib)(`gives the same months by both programs, to a tenth of a kWh${pvlib ? '' : ` (skipped: the pvlib engine is not installed; ${pvlibEngine.install})`}`, async () => {
+    const weather = await recorded('open-meteo-era5-brussels-2023-south35');
+    const c = await compareYields(db, system, 2023, {
+      gammaPdc: GAMMA_STANDARD_MODULE,
+      methods: [{ name: 'PVWatts', profileCode: 'pvwatts' }, { name: 'PVWatts by pvlib', profileCode: 'pvwatts', engine: { ...pvlibEngine, timeoutMs: 120_000 } }],
+      clients: { weather: openMeteo({ fetch: serving(weather, []) }) },
+    });
+    const [ours, theirs] = c.yields;
+    theirs.monthlyKwh.forEach((kwh, m) => expect(Math.abs(kwh - ours.monthlyKwh[m])).toBeLessThanOrEqual(0.1));
+    expect(Math.abs(c.gaps[0].annual)).toBeLessThan(0.001);
+  }, 180_000);
 });
 
 describe('a compared yield against another tool\'s report', () => {

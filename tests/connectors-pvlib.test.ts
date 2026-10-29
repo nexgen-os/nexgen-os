@@ -3,7 +3,6 @@
 // choices, day by day; pvlib's own transposition against the source's; its
 // named refusals; and a yield estimate through it. Without the engine, every test
 // is skipped and says how to install it.
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -17,13 +16,9 @@ import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '.
 import { estimateYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';
+import { pvlibEngine } from './helpers/engines.js';
 
-// The caller gives the command: the environment's, else the local virtual environment, else the Python on the path.
-const localVenv = `${repoRoot}/.venv-pvlib/bin/python`;
-const spec: EngineSpec = {
-  ...PVLIB_ENGINE,
-  command: process.env.NEXGEN_ENGINE_PVLIB ? undefined : [existsSync(localVenv) ? localVenv : 'python3', '-m', 'nexgen_pvlib'],
-};
+const spec: EngineSpec = pvlibEngine;
 const installed = await describeEngine(spec).catch(() => null);
 const skipped = installed ? '' : ` (skipped: the pvlib engine is not installed; ${PVLIB_ENGINE.install})`;
 

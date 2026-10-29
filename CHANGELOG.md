@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `docs/demo/compared.ts`: the yield of one PV system by several methods of the `solar` module (PVGIS, PVWatts, PVWatts computed by an engine such as pvlib), month by month in the participant's local year, and the gap of each month and of the year against the first method or against another tool's report (PVsyst, PV*SOL) given with its source. The case of a roof in Brussels in 2023 is published in `docs/demo/README.md` and held by a test on recorded answers.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
