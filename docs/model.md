@@ -482,6 +482,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 | `community` | `community` | energy sharing among the participants of a project of the core: the allocation key and what it reads of each participant, as attributes, the `consents` of the participants, the perimeter of the operation checked against the rule of its pack (`check_perimeter`), and the shares an engine computes, as its `settlements`, kept to physics |
 | `building` | `building` | the physical description of the place of a participant: `uses` (the uses of a building or a place), `sites` (its ground), `buildings`, `spaces` (floors, rooms, zones, units, one tree, with the participant that occupies one) and `surfaces` (roof faces, facades, ground areas), each described in its columns, the importers of CityJSON, IFC and Home Assistant homes; it places no device |
 | `billing` | `billing` | the billing bridge: the Ekwo company of an organisation, how a contact is reached and which Ekwo contact it is, the Ekwo invoices issued for or to a participant; where Nexgen OS stops and Ekwo OS starts is in the [README](../README.md#invoicing-and-ekwo-os) |
+| `contracts` | `contracts` | the contracts of a participant (`contracts`: supply, injection, physical or virtual PPA, internal tariff of a community, market; the flow of its meter it prices, the other party, how its volume is counted, its priority in a cascade, its period and currency) and the prices they set over ISO 8601 periods, fixed or indexed on a price series of the core (`price_signals`); `in_force()`, the contracts of a flow on a day in the order of the cascade, `price_at()`, a price at an instant ([README](../modules/contracts/README.md)) |
 | `solar` | `solar` | PV systems and arrays, horizons, yield profiles, design variants (`variants`) and the `estimates` of yields, performance and exceedance of a system, with the loss chain of a yield (`estimate_losses`, by the codes of `loss_kinds`) and the exceedance levels (`estimate_levels`: P50, P75, P90, P95, P99) as rows, and of the potential and the sizing of a participant (`size()`); its production read measured first (`curve_series`) |
 | `consumption` | `consumption` | load profiles, activity hours and the curves it estimated (`estimates`) |
 | `kpis` | `kpis` | indicators as data — a formula over the amounts of quantities in an object's series and over parameters resolved by `parameter_of()`, read by one evaluator that never builds SQL — their `targets`, the `figures` computed for a participant, a project, a meter or a device, whose buckets are a simulated series of the object, and export `templates`; a rate over a period is the formula over the period's amounts, an additive figure the sum of its buckets; an energy weighted hour by hour by a series of its bidding zone (a grid carbon intensity), the monthly default of the pack when there is none, said in the figure (`co2_avoided`, `scope2_location_based`, `scope2_market_based`) |
@@ -532,9 +533,11 @@ participant's project, or declared; the contract the participant's
 estimate of `consumption`; the invoice a `purchase` of
 `billing.invoices` by its id in Ekwo OS. A bill in another currency than
 the participant's country is refused (`currency_mismatch`).
-Until the proposed `contracts` module holds a supply contract with its
-parties and its price signals, the contract of a bill is the participant's
-attributes; that module will take the same reading as a contract row.
+The `contracts` module keeps a participant's contracts with their other
+party and their price signals ([README](../modules/contracts/README.md));
+until the importer of a bill writes one, the contract of a bill is the
+participant's attributes, and that module will take the same reading as a
+contract row.
 
 ## Security
 
