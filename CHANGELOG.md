@@ -11,6 +11,7 @@ release may break, and says how. How a release is cut:
 ### Added
 
 - `@nexgen-os/dsmr`: what the P1 port of a smart meter says, read into plain values — the DSMR telegram (2.2 to 5.0.2, and the Belgian e-MUCS variant) and the JSON message of the open P1M5 dongle. Each value says what it measures from its OBIS code (energy, power, voltage, current, volume), in which direction (offtake or injection), on which phase and in which tariff register, in the unit the meter writes; the reading is dated by the meter's clock, local time with its season letter, in UTC with the zone the caller gives, never by the time it was received. The CRC16 of DSMR 4 and 5 is checked; every object is kept as written; problems by name (`crc_mismatch`, `time_missing`, `season_mismatch`…). MIT, no database, no network.
+- `meterSeriesOfDsmr()` in `@nexgen-os/core`: the readings of a P1 port as the series of a meter, ready for `storeSeries()` — the energy registers as cumulative `offtake_energy` / `injection_energy` series named by tariff, the power and the voltage as instants by phase, and with `channel` the volume of a gas, water or heat meter of the bus at the stamp it sent. A reading that cannot be dated or whose checksum does not match is left out and said in `skipped`; a stream is never refused for one bad telegram.
 
 ## [0.4.1] — 2026-10-27
 

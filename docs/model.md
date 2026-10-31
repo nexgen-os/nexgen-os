@@ -516,7 +516,7 @@ into the same shapes, and the library writes the file.
 | EPW, TMY3 | `weather-files`: `readEpw`, `readTmy3`, `writeEpw` | `importWeatherFile`, `exportWeatherYear` (core) |
 | Parquet | `parquet`: `writeSeriesParquet` | `exportSeriesParquet` (core) |
 | PVsyst PAN, OND | `panond`: `readPan`, `readOnd` | `importProduct` (`modules/solar/src/products.ts`) |
-| DSMR P1 telegram, P1M5 dongle message | `dsmr`: `readTelegram`, `readP1m5` | the `mqtt` connector, to come (`packages/connectors/`) |
+| DSMR P1 telegram, P1M5 dongle message | `dsmr`: `readTelegram`, `readP1m5` | `meterSeriesOfDsmr` (core: the series of the electricity meter, or of a gas meter on its bus) |
 | An energy bill, read once as an EN 16931 invoice | `energy-bill`: `readEnergyBill` | `importEnergyBill` (core: the document, the meter, the contract's attributes), `estimateFromBill` (`modules/consumption/src`), `billing.record_invoice()` |
 
 An energy bill is read once, by a generic invoice reader, into the EN 16931
