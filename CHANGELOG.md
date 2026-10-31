@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/dsmr`: what the P1 port of a smart meter says, read into plain values — the DSMR telegram (2.2 to 5.0.2, and the Belgian e-MUCS variant) and the JSON message of the open P1M5 dongle. Each value says what it measures from its OBIS code (energy, power, voltage, current, volume), in which direction (offtake or injection), on which phase and in which tariff register, in the unit the meter writes; the reading is dated by the meter's clock, local time with its season letter, in UTC with the zone the caller gives, never by the time it was received. The CRC16 of DSMR 4 and 5 is checked; every object is kept as written; problems by name (`crc_mismatch`, `time_missing`, `season_mismatch`…). MIT, no database, no network.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
