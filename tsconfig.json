@@ -51,6 +51,9 @@
       "@nexgen-os/cityjson": [
         "./packages/formats/cityjson/src/index.ts"
       ],
+      "@nexgen-os/dsmr": [
+        "./packages/formats/dsmr/src/index.ts"
+      ],
       "@nexgen-os/enedis-r6x": [
         "./packages/formats/enedis-r6x/src/index.ts"
       ],
