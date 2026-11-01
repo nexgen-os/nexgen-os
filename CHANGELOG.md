@@ -8,6 +8,12 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- Georeferenced models in the `building` module, 0.4.0 ([0008](docs/decisions/0008-the-building-module-describes-what-is-built.md)): `building.models` holds a model of a building or a ground — an IFC, a CityJSON, a glTF, a point cloud — by the address, format, size and checksum of its file, never its bytes, and places it by data: its frame (an EPSG code, or a local frame at its origin with true north up), its origin in WGS 84, the heading of its +Y axis, its scale, the length of a model unit, its up axis, its vertical datum, its bounds and the source's georeferencing block as it came. `building.model_to_world()` places any geometry of a model in WGS 84 and `building.model_footprint()` gives the plan of its bounds; `building.add_model()` refuses `model_host_kind`, `model_origin_required`, `crs_unknown` and `already_imported` (one checksum, one model of an organisation). `addModel()` writes one from `placementOfIfc()` or `placementOfCityJson()`, and `@nexgen-os/ifc` gives its placement as values (`georeference.placement`). An IFC and a CityJSON of one house land as two models of its building, on its footprint to the centimetre.
+
+  **From 0.4.0.** `nexgen-os migrate` applies `modules/building/supabase/migrations/0002_models.sql` where `building` is installed; nothing that exists changes.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.
