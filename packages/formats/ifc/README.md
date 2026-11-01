@@ -13,8 +13,10 @@ here but has not been tested on a file yet.
 | `IfcMapConversion` + `IfcProjectedCRS` | `georeference` `map_conversion`: the transform from model metres to the projected CRS (`srid`) | |
 | else `IfcSite.RefLatitude` / `RefLongitude` / `RefElevation` | `site_coordinates`: a transverse Mercator centred on the site's origin (`proj`); north from the context's `TrueNorth`, else the site's X axis taken as east | |
 | else `options.origin` | `none`: the same, from `{ lon, lat, rotationDeg, elevation }` | without it, `georeference_missing` |
+| (each of the three) | `georeference.placement`: the same transform as values — where the model's origin lands, the direction of its X axis and the scale — for a row that places the model | |
 | `IfcUnitAssignment` | `units`: length and area factors | millimetres, feet and every SI prefix |
 | `IfcSite` | `site`: its origin and its description | |
+| every mesh | `bounds`: the box they fit in, in model metres before placement | null without geometry |
 | `IfcBuilding` | `IfcBuilding` | name, `ElevationOfRefHeight` (else the lowest storey) as `elevation`, `height` to the top of its geometry, `yearOfConstruction` from `Pset_BuildingCommon` as the file says it |
 | ground-floor `IfcSlab` (`FLOOR`, `BASESLAB`), else exterior `IfcWall` boxes | `footprint`: its `source` and plan pieces to union | `none` without either |
 | `IfcBuildingStorey` | `floors` | `level` 0 at the storey closest to the building's 0.00, `elevation`, `height` to the next storey |
