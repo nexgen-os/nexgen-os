@@ -55,13 +55,9 @@ integration written against one release keeps working against every later
   as an accelerator when a self-hosted installation has it.
 - **Models in the `building` module**
   ([0008](decisions/0008-the-building-module-describes-what-is-built.md)):
-  `models` (one georeferenced model of a building or a ground: format, file
-  address and checksum, reference system, origin on the globe, rotation,
-  scale, up axis, units, vertical datum, bounding box, level of detail, the
-  source's georeferencing block), `drawings` and `tilesets` (3D Tiles built
-  by a calculation), and one function placing a model in the world. The acceptance
-  test: an IFC and a CityJSON of one building land as two models placed on
-  the same footprint.
+  `drawings` and `tilesets` (3D Tiles built by a calculation), beside the
+  georeferenced `models` and `model_to_world()` the module holds since
+  0.4.0.
 - **Modules** ([`modules/README.md`](../modules/README.md)):
   `heating`, `thermal`, `monitoring`, `sensors`,
   `wind`, each starting from the participant and its devices
