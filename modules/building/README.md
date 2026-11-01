@@ -1,6 +1,6 @@
 # `building` — the shape of what is built
 
-Status: shipped, version 0.3.0, needs core 0.3.0 — decisions
+Status: shipped, version 0.4.0, needs core 0.3.0 — decisions
 [0008](../../docs/decisions/0008-the-building-module-describes-what-is-built.md),
 [0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md) and
 [0043](../../docs/decisions/0043-the-participant-is-the-node.md).
@@ -23,13 +23,14 @@ device belongs to its participant, behind its meters. Install it with
 | `building.buildings` | a building of a participant, on its ground when that is described: footprint, elevation, height, use, status, year of construction, floors above and below ground, gross floor area, energy label, the source it was described from and the identifier that source gives it (CityGML `Building`, `IfcBuilding`, `Pset_BuildingCommon`) |
 | `building.spaces` | the inside of a building, one tree: floors (with their level), rooms, zones and units (a flat, an office lot), each with its parent space, its floor area and the participant that occupies it (`occupant_id`) (`IfcBuildingStorey`, `IfcSpace`, CityGML `Storey`, `BuildingRoom`) |
 | `building.surfaces` | roof faces, facades, ground areas and carports, on a building or straight on the ground, with azimuth (degrees clockwise from true north) and tilt, measured area, material, U-value and whether it faces outside (CityGML `RoofSurface`, `WallSurface`, `Pset_WallCommon`) |
+| `building.models` | a georeferenced model of a building or of a ground — an IFC, a CityJSON, a CityGML, a glTF, an OBJ, a point cloud: the file by address, format, size and checksum (never its bytes), its frame (the EPSG code of its projected reference system, or a local frame at its origin, true north up), its origin in WGS 84, the heading of its +Y axis, its scale, the length of a model unit, its up axis, its vertical datum, its bounds, its level of detail and the source's georeferencing block as it came |
 
-Sites, buildings, spaces and surfaces are the module's objects, each
+Sites, buildings, spaces, surfaces and models are the module's objects, each
 described in its own columns: the attachments of the core (attributes,
 identifiers, documents, series) name the six objects of the core only
 ([0001](../../docs/decisions/0001-the-hierarchy-is-the-foreign-keys.md)). One identifier
 names one site, building, space or surface of an organisation
-(`global_id`), so that a file is imported once.
+(`global_id`), and one checksum one model, so that a file is imported once.
 `building.participant_of(kind, id)` follows their foreign keys to the
 participant; `building.building_of(kind, id)` gives the building a space
 or a surface is in or on.
@@ -50,6 +51,14 @@ so that an export gives it back as it came.
   one of its 3D polygon (`building.surface_orientation()`)
 - `building.building_volume(building)`, `building.participant_of(kind, id)`,
   `building.building_of(kind, id)`
+- `building.add_model(host, name, format, uri, origin, srid, heading, scale, unit, up_axis, vertical_datum, bounds, lod, checksum, …)` —
+  of a building or a ground; the origin in the frame `srid` names, else in
+  WGS 84; refuses `model_host_kind`, `model_origin_required`,
+  `crs_unknown`, `already_imported`
+- `building.model_to_world(model, geometry)`: a geometry in a model's
+  coordinates and units, placed in WGS 84 — to metres and z up, turned by
+  the heading and scaled in the plane, moved to the origin in the model's
+  frame; `building.model_footprint(model)`: the plan of its bounds, placed
 
 A PV array of the `solar` module keeps its own azimuth and tilt; this module
 does not say which face it stands on.
@@ -65,15 +74,17 @@ participant, which it places again when the model is georeferenced more
 precisely; the building, room and position a model gives a device stay in
 the device's `file_record`), `importHomeAssistant` and `exportHomeAssistant`
 (`@nexgen-os/homeassistant`: floors and areas as spaces of a building, the
-devices under the participant). The GeoJSON export of `@nexgen-os/core` adds
+devices under the participant), and `addModel` with `placementOfIfc` and
+`placementOfCityJson` (a model of a building or a ground, placed by what its
+file says: the map conversion or the site's coordinates of an IFC, the
+transform and the reference system of a CityJSON). The GeoJSON export of `@nexgen-os/core` adds
 the ground, the buildings and the surfaces of a participant when this
 module is installed.
 
 ## Not here yet
 
-Georeferenced models (`building.models`: glTF, IFC, CityJSON, meshes, with
-CRS, origin, rotation, scale, up axis and units), drawings and 3D Tiles
-tilesets, `building.model_to_world(model_id)`, extrusion tiles with
+Drawings and 3D Tiles tilesets, the bounds of an IFC model (its reader
+does not give them yet), extrusion tiles with
 `ST_AsMVT` and 3D Tiles from the surfaces with pg2b3dm
 ([road to 1.0](../../docs/road-to-1.0.md)).
 
