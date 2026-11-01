@@ -144,6 +144,8 @@ export interface IfcModel {
      */
     placement: { origin: Point; xAxis: [number, number]; scale: number };
   };
+  /** The box every mesh of the model fits in, in model metres before placement: min x, y, z, max x, y, z; null without geometry. */
+  bounds: [number, number, number, number, number, number] | null;
   /** The origin of the first IfcSite (else of the model), and its description. */
   site: { origin: Point; description: IfcDescription | null };
   buildings: IfcBuilding[];
@@ -454,6 +456,7 @@ function read(m: Model, options: ReadOptions): IfcModel {
       kind: placement.kind, crs: placement.crs, srid: placement.srid, proj: placement.proj, block: placement.block,
       placement: affineOf(placement.toTarget),
     },
+    bounds: boundsOf(meshes),
     site: { origin: placement.toTarget(siteFrame?.o ?? [0, 0, 0]), description: siteIds.length ? describe(siteIds[0]) : null },
     buildings,
     products,
@@ -792,6 +795,15 @@ function enumOf(v: any): string | null {
  * Every mesh web-ifc computes, as triangles in the model's frame: metres,
  * Z up (web-ifc hands them over Y up, the way 3D viewers draw).
  */
+/** The box all meshes fit in, in model metres. */
+function boundsOf(meshes: Map<number, Mesh>): [number, number, number, number, number, number] | null {
+  if (meshes.size === 0) return null;
+  const all = [...meshes.values()];
+  const low = (k: number) => Math.min(...all.map((mesh) => mesh.min[k]));
+  const high = (k: number) => Math.max(...all.map((mesh) => mesh.max[k]));
+  return [low(0), low(1), low(2), high(0), high(1), high(2)];
+}
+
 function meshesOf(m: Model): Map<number, Mesh> {
   const out = new Map<number, Mesh>();
   m.ifc.StreamAllMeshes(m.id, (mesh) => {

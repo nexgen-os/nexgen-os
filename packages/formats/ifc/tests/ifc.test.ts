@@ -30,6 +30,10 @@ describe('an IFC4 model with an IfcMapConversion', () => {
     expect(scale).toBeCloseTo(1, 9);
   });
 
+  it('gives the box its meshes fit in, in model metres: the slab 0.3 m below the ground floor, the roof\'s top at 9.464 m', () => {
+    expect(model.bounds!.map((v) => Math.round(v * 1000) / 1000 + 0)).toEqual([0, 0, -0.3, 10, 6, 9.464]);
+  });
+
   it('reads the building, its storeys and rooms in metres, and its year as the file says it', () => {
     expect(b).toMatchObject({ globalId: '0K7w7JWBL5QOdBzu3Yz7Ts', name: 'Canal house', elevation: 0, yearOfConstruction: 1962 });
     expect(b.height).toBeCloseTo(9.464, 3);
