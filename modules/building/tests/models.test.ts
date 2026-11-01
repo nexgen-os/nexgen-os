@@ -160,13 +160,19 @@ describe('one function places every model', () => {
     expect(await apart(slab, await placed(mapped, polygon([[0, 0, 0], [10, 0, 0], [10, 6, 0], [0, 6, 0]])))).toBeLessThan(0.5);
   });
 
-  it('gives the plan of a model\'s bounds, which holds its building', async () => {
-    const covers = await one<{ ok: boolean }>(
-      db, `select ST_Covers(ST_Buffer(ST_Transform(ST_Force2D(building.model_footprint($1)), 28992), 0.01),
+  it('gives the plan of a model\'s bounds, which holds its building, an IFC\'s from its meshes in the file\'s unit', async () => {
+    const covers = async (model: string, metres = 0.01) => (await one<{ ok: boolean }>(
+      db, `select ST_Covers(ST_Buffer(ST_Transform(ST_Force2D(building.model_footprint($1)), 28992), $3),
                             ST_Transform(ST_Force2D(b.footprint), 28992)) ok
-             from building.buildings b where b.id = $2`, [city, house]);
-    expect(covers.ok).toBe(true);
-    expect((await one<{ g: string | null }>(db, 'select building.model_footprint($1) g', [mapped])).g).toBeNull();
+             from building.buildings b where b.id = $2`, [model, house, metres])).ok;
+    expect(await covers(city)).toBe(true);
+    expect(await covers(mapped)).toBe(true);
+    // Placed by its site's coordinates, to the datum shift.
+    expect(await covers(sited, 0.5)).toBe(true);
+    const bounds = async (model: string) => (await one<{ b: number[] }>(db, 'select bounds::float8[] b from building.models where id = $1', [model])).b;
+    // The base slab from 0 to 10 m along X and 0 to 6 m along Y, 0.3 m below the ground floor; the top of the roof at 9.464 m.
+    expect((await bounds(mapped)).map((v) => Math.round(v * 1000) / 1000 + 0)).toEqual([0, 0, -0.3, 10, 6, 9.464]);
+    expect((await bounds(sited)).slice(3, 5).map(Math.round)).toEqual([10000, 6000]);
   });
 
   it('turns a y-up model in a local frame: its north is -z, its heading clockwise from true north', async () => {
