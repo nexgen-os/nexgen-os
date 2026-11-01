@@ -83,8 +83,7 @@ module is installed.
 
 ## Not here yet
 
-Drawings and 3D Tiles tilesets, the bounds of an IFC model (its reader
-does not give them yet), extrusion tiles with
+Drawings and 3D Tiles tilesets, extrusion tiles with
 `ST_AsMVT` and 3D Tiles from the surfaces with pg2b3dm
 ([road to 1.0](../../docs/road-to-1.0.md)).
 

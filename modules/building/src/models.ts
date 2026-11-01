@@ -10,7 +10,8 @@
  *             (in its projected CRS), else from the IfcSite's coordinates or
  *             the caller's origin (a local frame, true north up); the
  *             heading from the direction of the model's X axis, the scale
- *             of the conversion, the file's length unit
+ *             of the conversion, the file's length unit, the box its
+ *             meshes fit in
  *   CityJSON  its `transform`: the translation is the origin and the scale
  *             the length of one vertex unit, in the CRS its metadata names;
  *             its bounds from its vertices
@@ -95,7 +96,8 @@ export function placementOfIfc(model: IfcModel): ModelPlacement {
     unitM: model.units.length,
     upAxis: 'z',
     verticalDatum: typeof vertical === 'string' && vertical.trim() ? vertical : null,
-    bounds: null,
+    // In the file's own length unit, as its coordinates are written.
+    bounds: model.bounds ? (model.bounds.map((v) => v / model.units.length) as ModelPlacement['bounds']) : null,
     lod: null,
     georeference: { kind: g.kind, crs: g.crs, ...g.block },
   };
