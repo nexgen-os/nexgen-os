@@ -12,21 +12,36 @@ one transaction away. This page says how, and what each side owns.
 
 | | Nexgen OS | Ekwo OS |
 |---|---|---|
-| Schemas | `nexgen`, and one per module (`actions`, `battery`, `billing`, `building`, `community`, `consumption`, `grid`, `kpis`, `solar`, `weather`) | `public`, and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`) |
+| Schemas | `nexgen`, and one per module (`actions`, `battery`, `billing`, `building`, `charging`, `community`, `consumption`, `grid`, `kpis`, `solar`, `weather`) | `ekwo` since Ekwo OS 0.23 (`public` from 0.17 to 0.22), and one per module (`crm`, `assets`, `tax`, `budgets`, `einvoicing`…) |
 | Installer | `npx nexgen-os init`, `migrate`, `doctor` | `npx ekwo-os init`, `migrate`, `doctor` |
 | History of what was applied | `nexgen.schema_migrations` | `supabase_migrations.schema_migrations` |
-| Rights | granted by name, in the migration that creates the object ([0037](decisions/0037-the-schema-grants-its-own-rights.md)) | the same rule (Ekwo OS 0003), and the surface of `public` closed to `anon` (Ekwo OS 0002) |
-| Who belongs | `nexgen.organisation_members` | `public.company_members` |
+| Rights | granted by name, in the migration that creates the object ([0037](decisions/0037-the-schema-grants-its-own-rights.md)) | the same rule (Ekwo OS 0003), and the surface of its schema closed to `anon` (Ekwo OS 0002) |
+| Who belongs | `nexgen.organisation_members` | `ekwo.company_members` |
 
 Each installer applies only its own files, reads only its own history and
-checks only its own schemas: `nexgen-os doctor` reads `public` only through
-the `billing` module's `billing.unlinked_keys()`, and `ekwo doctor` never
-looks at `nexgen`. Neither creates, alters or grants
+checks only its own schemas: `nexgen-os doctor` reads Ekwo's tables only
+through the `billing` module's `billing.unlinked_keys()`, and `ekwo doctor`
+never looks at `nexgen`. Neither creates, alters or grants
 anything in the other's schemas.
 
 **Reserved.** The schema name `ekwo` belongs to Ekwo OS, and so does the
 prefix `ekwo.` of the settings its functions read. No module of Nexgen OS
-takes it, nor the name of a schema an Ekwo OS module uses.
+takes it, nor the name of a schema an Ekwo OS module uses. `public` is the
+installation's: Nexgen OS creates nothing there, and Ekwo OS kept its core
+there until its 0.23.
+
+**Where Ekwo OS lives.** Ekwo OS moved its core from `public` to `ekwo` in
+its 0.23.0 (its decision 0090, migration
+`20261028040000_the_socle_moves_to_its_schema`). Nexgen OS never assumes
+either: the `billing` module finds the schema by Ekwo's own marker, its
+`ekwo_schema_version()` function beside its `instance` table, looked for in
+`ekwo` first and then in `public`, and in no other schema
+(`billing.ekwo_schema()`, the rule Ekwo OS gives its own clients). Every
+function of the module that reads an Ekwo table names it there
+(`billing.ekwo_table()`), so an installation of Ekwo OS 0.17 to 0.22, in
+`public`, and one of 0.23 or later, in `ekwo`, both work. The module's
+migration `0002_ekwo_schema` brought this; before it, the module looked in
+`public` only.
 
 ## Installing both
 
@@ -34,19 +49,31 @@ The order does not matter: the test below installs both ways and finds the
 same objects on each side. On one Supabase project, with PostGIS enabled:
 
 ```sh
-# The invoicing and bookkeeping core, in public; it asks for what it needs (its guide lists the flags).
-npx ekwo-os init --db-url "$EKWO_DB_URL"
+# The invoicing and bookkeeping core, in ekwo; it asks for what it needs (its guide lists the flags).
+npx ekwo-os init
+npx ekwo-os doctor
 
 # The description of places, in nexgen, with the bridge module.
-npx nexgen-os init --dry-run
+npx nexgen-os init --dry-run --modules billing --packs <cc>
 npx nexgen-os init --modules billing --packs <cc>
 npx nexgen-os doctor
 ```
 
 `EKWO_DB_URL` and `NEXGEN_DB_URL` are the same connection string; neither is
-written to a file. Then, in *Project settings → Data API → Exposed schemas*,
-keep `public` and add `nexgen` and the module schemas, so that one client
-reaches both cores with the same signed-in session.
+written to a file. `--packs` names the countries of the installation's
+places, and there is no default; without `--modules`, `init` installs every
+module shipped. Then, in *Project settings → Data API → Exposed schemas*,
+add `ekwo`, `nexgen` and the module schemas, so that one client reaches both
+cores with the same signed-in session; `ekwo doctor` names `ekwo` while it
+is not exposed (`ekwo_exposed`).
+
+**An installation that holds Ekwo OS in `public`.** Bring Nexgen OS to the
+release that carries `billing` 0002 (`npx nexgen-os migrate`) before, or
+with, the `ekwo migrate` that moves Ekwo OS to `ekwo`: the module reads
+either layout, and the foreign keys it added follow Ekwo's tables when they
+move. With an older `billing` beside a moved Ekwo OS, the module finds no
+Ekwo OS: `billing.tax_of()` answers the pack's rate, and a link is not
+checked against Ekwo's rows.
 
 ## One source on a shared database
 
@@ -105,8 +132,8 @@ of one reads the same in the other:
 ## One list of currencies
 
 Both cores hold a `currencies` table with the same columns and constraints
-(code, name, symbol, decimal places from 0 to 6, active): Ekwo OS in
-`public`, Nexgen OS in `nexgen`, each read by its own functions through its
+(code, name, symbol, decimal places from 0 to 6, active): Ekwo OS in its
+schema, Nexgen OS in `nexgen`, each read by its own functions through its
 own search path. They stay one source because **the installers seed both
 from one list**: the core seed of Nexgen OS holds, row for row, the ISO 4217
 currencies Ekwo OS seeds (ISO 4217 list one as SIX publishes it for the
@@ -136,13 +163,15 @@ The participant is the one who is billed, and its billing contact is the
 core's `participants.contact_id`; the amounts, the currency, the tax and the
 lines are read from Ekwo by the invoice's id.
 
-When both share the database, the Ekwo ids are real foreign keys:
-`ekwo_company_id` to `public.companies`, `ekwo_contact_id` to
-`public.contacts`, and the id of `billing.invoices` to `public.documents`.
-Ekwo OS is recognised by its own marker — its `public.instance` table and
-its `public.installed_schema_version()` function (`billing.ekwo_present()`)
-— never by a table name: a database holding another application's
-`public.contacts` or `public.documents` binds to nothing. The migration of
+When both share the database, the Ekwo ids are real foreign keys, to the
+tables of the schema Ekwo OS lives in: `ekwo_company_id` to
+`ekwo.companies`, `ekwo_contact_id` to `ekwo.contacts`, and the id of
+`billing.invoices` to `ekwo.documents` (to `public.…` for Ekwo OS 0.17 to
+0.22). Ekwo OS is recognised by its own marker — its `instance` table and
+its `ekwo_schema_version()` function, in `ekwo` or in `public`
+(`billing.ekwo_schema()`, `billing.ekwo_present()`) — never by a table
+name: a database holding another application's `public.contacts` or
+`public.documents` binds to nothing. The migration of
 the module adds no key; `nexgen-os init` and `migrate` add them once the
 migrations are applied, when Ekwo OS is there; when Ekwo OS is installed
 second, the installation adds them with one statement:
@@ -165,29 +194,34 @@ row level security; a member of one side only sees nothing of the other.
 [`tests/cross-install.test.ts`](../tests/cross-install.test.ts) installs, on
 PGlite with PostGIS in `extensions` as a Supabase project places it, the
 Ekwo OS core migrations from the published `ekwo-os` package (pinned in
-`package.json`, applied by Ekwo's own migration runner) and the Nexgen OS
-core with the `billing` module (applied by `nexgen-os init`), in both
-orders. It asserts that:
+`package.json`, 0.24.0, applied by Ekwo's own migration runner) and the
+Nexgen OS core with the `billing` module (applied by `nexgen-os init`), in
+both orders, with Ekwo OS in `ekwo` (all its migrations) and in `public`
+(its migrations before the one that moves it, as Ekwo OS 0.17 to 0.22
+leaves a database). It asserts, in each of the four cases, that:
 
 - each side creates the same objects whichever installs first, and no
   schema, relation, function or type is created by both;
-- `public` (and `supabase_migrations`) hold only Ekwo's objects, `nexgen` and
-  `billing` only Nexgen OS's;
+- `ekwo`, `public` and `supabase_migrations` hold only Ekwo's objects,
+  `nexgen` and `billing` only Nexgen OS's;
+- the `billing` module finds Ekwo OS where it lives, and `nexgen-os doctor`
+  reports no problem;
 - the second installation leaves every grant of the first as it was, Ekwo's
-  revocations on `public` and its default privileges included, and each
+  revocations on its schemas and its default privileges included, and each
   `doctor` reads the same before and after;
 - the short names both use (`contacts`, `currencies`, `documents`,
   `modules`, `products`, `schema_migrations`, `member_role`,
   `set_updated_at`, `accept_invitation`, `revoke_invitation`) live apart,
   each in its own schema;
-- with Ekwo's seed applied, `nexgen.currencies` and `public.currencies`
+- with Ekwo's seed applied, `nexgen.currencies` and Ekwo's `currencies`
   hold the same rows, `XXX` aside;
-- the module schemas of both releases are disjoint, and none is `ekwo`;
+- the module schemas of both releases are disjoint, and none of Nexgen OS
+  is `ekwo`;
 - a member of both sides reads its organisation and its company, a stranger
   neither; `billing.organisations` points at an Ekwo company;
 - with Ekwo OS installed first, `nexgen-os init` adds the foreign keys to
-  `public.companies`, `public.contacts` and `public.documents`; with
-  Nexgen OS first, `billing.reference_ekwo()` adds them; a participant's
+  Ekwo's `companies`, `contacts` and `documents`; with Nexgen OS first,
+  `billing.reference_ekwo()` adds them; a participant's
   invoice is recorded against an Ekwo document, an unknown one is refused,
   and `nexgen-os doctor` names a row whose Ekwo id is gone;
 - one source for each fact: a linked organisation's legal numbers are read
@@ -197,7 +231,10 @@ orders. It asserts that:
   tax of a participant is Ekwo's tax of the code its pack names, at Ekwo's
   rate, an Ekwo tax out of force is refused rather than replaced by the
   pack's rate, and the invoice of a settlement taxed by another code is
-  refused; `nexgen-os doctor` names what is held on both sides.
+  refused; `nexgen-os doctor` names what is held on both sides;
+- Ekwo OS moving from `public` to `ekwo` with Nexgen OS beside it keeps the
+  links and their foreign keys, which follow its tables; the module then
+  finds it in `ekwo`, and `nexgen-os doctor` reports no problem.
 
 Everything above runs on PGlite: Ekwo OS needs no extension. What the test
 does not cover: Ekwo OS's seeds and country packs, its own modules, and the

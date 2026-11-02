@@ -370,7 +370,8 @@ data, and the Ekwo invoices of each participant, who is the one billed
 The invoice is issued in Ekwo OS, and the bridge records it.
 
 The two install side by side on one database: Nexgen OS takes the schema
-`nexgen` and its modules; `public`, and `ekwo` from Ekwo OS 1.0, stay Ekwo's.
+`nexgen` and its modules; Ekwo OS takes `ekwo` (since its 0.23; `public`
+before), and the bridge finds it in either by its marker.
 How to install both, and what the bridge needs when they share a database:
 [docs/with-ekwo-os.md](docs/with-ekwo-os.md).
 
