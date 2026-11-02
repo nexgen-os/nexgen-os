@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- The `forecast` module: a series of the core forecast by a method of `forecast.methods`, over a horizon, from a history (`forecast.forecasts`). `forecast.issue()` writes the forecast as known at a time into a forecast series of the same object, through `store()` with its issue time: every step after the last value observed, up to the horizon; an issue in the past is a backtest. `forecast.accuracy()` gives the mean absolute error, root mean square error and bias of a forecast against its series, at a horizon. The module ships the two benchmarks every forecast is measured against, `naive` and `seasonal_naive` ([README](modules/forecast/README.md)).
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
