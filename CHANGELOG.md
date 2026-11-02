@@ -26,6 +26,12 @@ release may break, and says how. How a release is cut:
 
   **From 0.4.0.** `nexgen-os migrate` applies `modules/building/supabase/migrations/0002_models.sql` where `building` is installed; nothing that exists changes.
 - The `forecast` module: a series of the core forecast by a method of `forecast.methods`, over a horizon, from a history (`forecast.forecasts`). `forecast.issue()` writes the forecast as known at a time into a forecast series of the same object, through `store()` with its issue time: every step after the last value observed, up to the horizon; an issue in the past is a backtest. `forecast.accuracy()` gives the mean absolute error, root mean square error and bias of a forecast against its series, at a horizon. The module ships the two benchmarks every forecast is measured against, `naive` and `seasonal_naive` ([README](modules/forecast/README.md)).
+- An account opened by an invitation: `before_user_created(event)`, the
+  Before User Created hook of Supabase Auth, lets in the email address an
+  open invitation was sent to, and the installation's first person while
+  no organisation has a member, and refuses every other sign-up as
+  `invitation_required`. It does nothing until the installation enables it
+  (docs/access.md).
 ### Changed
 
 - The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
