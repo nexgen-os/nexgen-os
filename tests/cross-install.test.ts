@@ -607,3 +607,50 @@ describe.each<Layout>(['ekwo', 'public'])('Nexgen OS and Ekwo OS in %s, whicheve
     ]);
   });
 });
+
+describe('Ekwo OS moves its core to ekwo with Nexgen OS beside it', () => {
+  let db: PGlite;
+
+  beforeAll(async () => {
+    // An installation of Ekwo OS 0.17 to 0.22, in public, and Nexgen OS with the bridge.
+    db = await project();
+    await installEkwo(db, 'public');
+    await installNexgen(db);
+  }, 300_000);
+
+  afterAll(async () => {
+    await db?.close();
+  });
+
+  it('keeps the links and their foreign keys, and finds Ekwo OS in ekwo once it has moved', async () => {
+    await db.exec('set search_path = nexgen, public, extensions');
+    const organisationId = (await one<{ id: string }>(db, `insert into nexgen.organisations (name) values ('Cooperative') returning id`)).id;
+    const companyId = (await one<{ id: string }>(db,
+      `insert into public.companies (name, country, fiscal_country, currency_code, language) values ('Cooperative', 'BE', 'BE', 'EUR', 'fr') returning id`)).id;
+    await db.query('select billing.link_organisation($1, $2)', [organisationId, companyId]);
+    expect((await one(db, 'select billing.ekwo_schema() s'))).toEqual({ s: 'public' });
+
+    // `ekwo migrate` of Ekwo OS 0.23 or later: the move and what follows it.
+    await newSession(db);
+    const applied = new Set((await db.query<{ version: string }>('select version from supabase_migrations.schema_migrations')).rows.map((r) => r.version));
+    await ekwo.applyMigrations(ekwoClient(db), (await ekwoMigrations('ekwo')).filter((m) => !applied.has(m.version)));
+
+    await newSession(db);
+    expect((await one(db, 'select billing.ekwo_schema() s'))).toEqual({ s: 'ekwo' });
+    const keys = await db.query<{ k: string }>(
+      `select c.conname || ' ' || c.confrelid::regclass::text || ' ' || c.convalidated as k
+         from pg_constraint c join pg_namespace n on n.oid = c.connamespace
+        where n.nspname = 'billing' and c.contype = 'f' and c.confrelid::regclass::text like 'ekwo.%' order by 1`);
+    expect(keys.rows.map((r) => r.k)).toEqual([
+      'contacts_ekwo_contact_fk ekwo.contacts true',
+      'invoices_ekwo_invoice_fk ekwo.documents true',
+      'organisations_ekwo_company_fk ekwo.companies true',
+    ]);
+    // The keys followed the tables: none is added again.
+    expect((await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k).toEqual([]);
+    expect((await db.query('select * from billing.unlinked_keys()')).rows).toEqual([]);
+    expect((await doctor(sqlClient(db))).problems).toEqual([]);
+    expect((await db.query('select ekwo_company_id from billing.organisations where organisation_id = $1', [organisationId])).rows)
+      .toEqual([{ ekwo_company_id: companyId }]);
+  });
+});
