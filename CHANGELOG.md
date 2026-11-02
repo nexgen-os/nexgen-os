@@ -8,6 +8,18 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.4.2] — 2026-11-02
+
+The `billing` module finds Ekwo OS in the schema it lives in.
+
+### Fixed
+
+- On a database where Ekwo OS 0.23 or later keeps its core in `ekwo`, `billing` saw no Ekwo OS: no foreign key, no legal number, no tax read from it. Migration `0002_ekwo_schema` finds Ekwo OS by its own marker, in `ekwo` then `public`. Installations with Ekwo OS in `public` keep working, and `nexgen-os migrate` adds the missing foreign keys.
+
+### Added
+
+- 32 currencies in the core seed, following Ekwo OS 0.24.
+
 ### Fixed
 
 - `billing` finds Ekwo OS in the schema it lives in: `ekwo` since Ekwo OS 0.23, `public` from 0.17 to 0.22, by Ekwo's own marker (`ekwo_schema_version()` beside its `instance` table), looked for in `ekwo` then `public` and never assumed (`billing.ekwo_schema()`, `billing.ekwo_table()`, migration `0002_ekwo_schema`). Before it, the module looked in `public` only, and beside Ekwo OS 0.23 or later it added no foreign key and read no legal number, reach or tax from Ekwo OS. The foreign keys added beside an Ekwo OS in `public` follow its tables when it moves. Run `nexgen-os migrate` before or with the `ekwo migrate` that moves Ekwo OS ([docs/with-ekwo-os.md](docs/with-ekwo-os.md)).
