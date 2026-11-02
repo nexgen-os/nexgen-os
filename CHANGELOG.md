@@ -8,6 +8,11 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Fixed
+
+- `billing` finds Ekwo OS in the schema it lives in: `ekwo` since Ekwo OS 0.23, `public` from 0.17 to 0.22, by Ekwo's own marker (`ekwo_schema_version()` beside its `instance` table), looked for in `ekwo` then `public` and never assumed (`billing.ekwo_schema()`, `billing.ekwo_table()`, migration `0002_ekwo_schema`). Before it, the module looked in `public` only, and beside Ekwo OS 0.23 or later it added no foreign key and read no legal number, reach or tax from Ekwo OS. The foreign keys added beside an Ekwo OS in `public` follow its tables when it moves. Run `nexgen-os migrate` before or with the `ekwo migrate` that moves Ekwo OS ([docs/with-ekwo-os.md](docs/with-ekwo-os.md)).
+- The core's currencies hold, row for row, the ISO 4217 currencies Ekwo OS 0.24 seeds (32 more, from the same ISO 4217 list one), so that a database holding both cores keeps one list.
+
 ## [0.4.1] — 2026-10-27
 
 The same code as 0.4.0, published by the release workflow of this repository through npm trusted publishing, with provenance: every package of `@nexgen-os/*` and `nexgen-os` now comes from a tag of `nexgen-os/nexgen-os`, built and published by GitHub Actions. Nothing changes for a database: the schema stays at 0.4.0, and `nexgen-os migrate` has nothing to apply.

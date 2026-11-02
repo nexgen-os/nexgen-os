@@ -34,7 +34,8 @@ ledger.
 
 **One schema per core, one per module, `public` for the installation.** The
 core of Nexgen OS lives in the schema `nexgen`, so that it shares a database
-with Ekwo OS in `public` when an installation wants one transaction from
+with Ekwo OS (in `ekwo` since its 0.23, in `public` before) when an
+installation wants one transaction from
 settlement to invoice; a connection reads it with `nexgen` on its search
 path.
 
@@ -58,8 +59,10 @@ id. The invoice is issued in Ekwo OS, and the bridge records it.
 
 **The keys are direct when the cores share a database.** When Ekwo's tables
 are there, `billing.reference_ekwo()` adds real foreign keys from the
-module's Ekwo ids to `public.companies`, `public.contacts` and
-`public.documents`, the table where Ekwo OS keeps its invoices; the
+module's Ekwo ids to Ekwo's `companies`, `contacts` and `documents`, the
+table where Ekwo OS keeps its invoices, in the schema Ekwo OS lives in —
+`ekwo` since its 0.23, `public` before, found by its own marker and never
+assumed (`billing.ekwo_schema()`); the
 module's migration runs it, and the installation runs it again when Ekwo OS
 is installed second. Otherwise the ids are plain uuids, and
 `nexgen-os doctor` names every row whose Ekwo id is not in Ekwo OS
@@ -83,8 +86,9 @@ database: `billing.verify_remote_invoice()` refuses with
 
 - [The README, "Invoicing, and Ekwo OS"](../../README.md#invoicing-and-ekwo-os) — where the line is, in plain words.
 - Inherits Ekwo OS 0051 (*A module has its own schema*), with a reasoned
-  divergence: the core of Nexgen OS is in `nexgen`, where Ekwo's is in
-  `public`.
+  divergence: the core of Nexgen OS is in `nexgen`, where Ekwo's was in
+  `public`; Ekwo OS took a schema of its own, `ekwo`, in its 0.23 (Ekwo OS
+  0090).
 - [0032](0032-a-module-has-its-own-schema.md) — the rules of a module.
 - [0042](0042-a-module-starts-from-an-object-of-the-core.md) — a module
   starts from an object of the core; `billing.invoices` is a secondary table

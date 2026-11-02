@@ -39,10 +39,12 @@ elsewhere; linking moves the fact to Ekwo OS
 | `billing.held_twice()` | what is held both here and in Ekwo OS for a linked party, read by `nexgen-os doctor` (`billing_held_twice`) |
 | `billing.verify_remote_invoice(source, ekwo_invoice)` | the same check against an Ekwo OS on another database, through its API: raises `ekwo_remote_not_supported`: this module does not reach an Ekwo OS on another database |
 
-**When Ekwo OS shares the database**, the Ekwo ids are real foreign keys:
-`billing.organisations.ekwo_company_id` to `public.companies`,
-`billing.contacts.ekwo_contact_id` to `public.contacts`, and
-`billing.invoices.id` to `public.documents`, the one table where Ekwo OS
+**When Ekwo OS shares the database**, the Ekwo ids are real foreign keys,
+to the tables of the schema Ekwo OS lives in — `ekwo` since Ekwo OS 0.23,
+`public` from 0.17 to 0.22, found by its marker (`billing.ekwo_schema()`):
+`billing.organisations.ekwo_company_id` to `ekwo.companies`,
+`billing.contacts.ekwo_contact_id` to `ekwo.contacts`, and
+`billing.invoices.id` to `ekwo.documents`, the one table where Ekwo OS
 keeps its sales and purchase invoices and credit notes. The gestures check
 the Ekwo id under the signed-in person's rights on Ekwo's side as well: a
 person who records an invoice is a member of the Ekwo company that issued
