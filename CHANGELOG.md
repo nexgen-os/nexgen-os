@@ -8,6 +8,15 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- An account opened by an invitation: `before_user_created(event)`, the
+  Before User Created hook of Supabase Auth, lets in the email address an
+  open invitation was sent to, and the installation's first person while
+  no organisation has a member, and refuses every other sign-up as
+  `invitation_required`. It does nothing until the installation enables it
+  (docs/access.md).
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
