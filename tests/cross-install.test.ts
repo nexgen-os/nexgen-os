@@ -1,14 +1,19 @@
-// Nexgen OS and Ekwo OS installed on one database, in both orders.
+// Nexgen OS and Ekwo OS installed on one database, in both orders, with
+// Ekwo OS in either of the schemas it has lived in.
 //
 // Ekwo OS, the invoicing and bookkeeping core built on the same playbook,
-// lives in `public`; Nexgen OS lives in `nexgen` and one schema per module
-// (decision 0010). This file installs both on one PGlite with PostGIS, each by its own installer —
+// lives in `ekwo` since its 0.23 and lived in `public` before; Nexgen OS
+// lives in `nexgen` and one schema per module (decision 0010). This file
+// installs both on one PGlite with PostGIS, each by its own installer —
 // Ekwo's migration runner from the published `ekwo-os` package, which carries
 // its migrations, and `nexgen-os init` — and checks that neither touches what
 // the other created: no name collides, each side keeps its schemas, Ekwo's
-// revocations on `public` leave Nexgen OS's grants as they were, a person who
-// belongs to both sides reads both, and the `billing` module points at an
-// Ekwo company, contact and invoice by real foreign keys. Ekwo OS needs no
+// revocations leave Nexgen OS's grants as they were, a person who belongs to
+// both sides reads both, and the `billing` module finds Ekwo OS by its marker
+// and points at an Ekwo company, contact and invoice by real foreign keys.
+// The layout `public` is Ekwo's migrations up to the one that moves its core
+// (`20261028040000`), as an installation of Ekwo OS 0.17 to 0.22 holds it;
+// the last case moves it with Nexgen OS beside it. Ekwo OS needs no
 // extension, so all of it runs on PGlite; what it leaves to a real project
 // is in `docs/with-ekwo-os.md`.
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
@@ -16,11 +21,19 @@ import type { PGlite } from '@electric-sql/pglite';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as ekwo from 'ekwo-os';
+import { FORMER_SOCLE_SCHEMA, SOCLE_SCHEMA, socleMarkerInCatalogue } from '@ekwo-ai/core';
 import { doctor, install } from '../packages/cli/src/index.js';
 import { asUser, emptyDatabase, one, repoRoot, sqlClient, USER_A, USER_B } from './helpers/db.js';
 
 const NEXGEN_SCHEMAS = ['nexgen', 'billing'];
-const EKWO_SCHEMAS = ['public', 'supabase_migrations'];
+// Ekwo's schemas: its core's, of today and of before its move (Ekwo OS 0.22
+// creates `ekwo` empty before it moves), and its history.
+const EKWO_SCHEMAS = ['ekwo', 'public', 'supabase_migrations'];
+
+/** Where Ekwo OS keeps its core: `ekwo` from 0.23, `public` from 0.17 to 0.22. */
+type Layout = 'ekwo' | 'public';
+/** The migration of Ekwo OS that moves its core from `public` to `ekwo`. */
+const EKWO_MOVE = '20261028040000';
 
 /**
  * A Supabase project as both installers find it: the roles and `auth` of the
@@ -52,10 +65,28 @@ async function newSession(db: PGlite) {
   await db.exec('reset all');
 }
 
-async function installEkwo(db: PGlite) {
+/** Ekwo's migrations for a layout: all of them, or those before the move. */
+async function ekwoMigrations(layout: Layout) {
+  const all = await ekwo.listMigrations(ekwo.migrationsDir());
+  return layout === 'ekwo' ? all : all.filter((m) => m.version < EKWO_MOVE);
+}
+
+async function installEkwo(db: PGlite, layout: Layout) {
   await newSession(db);
-  const migrations = await ekwo.listMigrations(ekwo.migrationsDir());
-  await ekwo.applyMigrations(ekwoClient(db), migrations);
+  await ekwo.applyMigrations(ekwoClient(db), await ekwoMigrations(layout));
+}
+
+/**
+ * A connection as Ekwo's command line opens one: its core's schema, found by
+ * its marker, first on the search path (Ekwo OS's `useSocleSchema()`).
+ */
+async function ekwoSession(db: PGlite): Promise<string> {
+  await newSession(db);
+  const socle = (await socleMarkerInCatalogue((sql, params) => ekwoClient(db).query(sql, params), SOCLE_SCHEMA))
+    ? SOCLE_SCHEMA
+    : FORMER_SOCLE_SCHEMA;
+  await db.query(`select set_config('search_path', $1 || ', ' || current_setting('search_path'), false)`, [socle]);
+  return socle;
 }
 
 async function installNexgen(db: PGlite) {
@@ -130,7 +161,7 @@ interface Side {
 }
 
 /** Installs both in the given order; returns the database and what each side created. */
-async function both(order: 'ekwo-first' | 'nexgen-first') {
+async function both(order: Order, layout: Layout) {
   const db = await project();
   const base = await objects(db);
   const side: Side = { ekwo: new Set(), nexgen: new Set() };
@@ -139,8 +170,8 @@ async function both(order: 'ekwo-first' | 'nexgen-first') {
   let doctorBefore: unknown;
   let doctorAfter: unknown;
   const ekwoDoctor = async () => {
-    await newSession(db);
-    return (await ekwo.doctor(ekwoClient(db), await ekwo.listMigrations(ekwo.migrationsDir()))).checks
+    await ekwoSession(db);
+    return (await ekwo.doctor(ekwoClient(db), await ekwoMigrations(layout))).checks
       .map((c) => `${c.severity} ${c.name}`)
       .sort();
   };
@@ -149,7 +180,7 @@ async function both(order: 'ekwo-first' | 'nexgen-first') {
     return (await doctor(sqlClient(db))).problems.map((p) => p.code).sort();
   };
   if (order === 'ekwo-first') {
-    await installEkwo(db);
+    await installEkwo(db, layout);
     const mid = await objects(db);
     side.ekwo = minus(mid, base);
     before = await grants(db, EKWO_SCHEMAS);
@@ -164,42 +195,46 @@ async function both(order: 'ekwo-first' | 'nexgen-first') {
     side.nexgen = minus(mid, base);
     before = await grants(db, NEXGEN_SCHEMAS);
     doctorBefore = await nexgenDoctor();
-    await installEkwo(db);
+    await installEkwo(db, layout);
     side.ekwo = minus(await objects(db), mid);
     after = await grants(db, NEXGEN_SCHEMAS);
     doctorAfter = await nexgenDoctor();
   }
   const all = await objects(db);
   await newSession(db);
-  await db.exec('set search_path = nexgen, public, extensions');
+  await db.exec(`set search_path = nexgen, ${layout}, extensions`);
   return { db, side, all, before, after, doctorBefore, doctorAfter };
 }
 
 type Order = 'ekwo-first' | 'nexgen-first';
 type Run = Omit<Awaited<ReturnType<typeof both>>, 'db'>;
-const runs: Partial<Record<Order, Run>> = {};
+const runs: Partial<Record<`${Layout} ${Order}`, Run>> = {};
+const CASES: [Layout, Order][] = [['ekwo', 'ekwo-first'], ['ekwo', 'nexgen-first'], ['public', 'ekwo-first'], ['public', 'nexgen-first']];
 
-// One database at a time: each order is built, read and closed before the next.
-describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on one database, %s', (order) => {
+// One database at a time: each case is built, read and closed before the next.
+describe.each(CASES)('Nexgen OS and Ekwo OS on one database, Ekwo OS in %s, %s', (layout, order) => {
   let db: PGlite;
   let run: Run;
+  // The schema Ekwo OS lives in, for the SQL this test writes in Ekwo's tables.
+  const E = layout;
 
   beforeAll(async () => {
-    const { db: built, ...read } = await both(order);
+    const { db: built, ...read } = await both(order, layout);
     db = built;
-    run = runs[order] = read;
+    run = runs[`${layout} ${order}`] = read;
   }, 300_000);
 
   afterAll(async () => {
     await db?.close();
   });
 
-  it('public holds only Ekwo, nexgen and its module schemas only Nexgen OS', () => {
+  it("Ekwo's schemas hold only Ekwo, nexgen and its module schemas only Nexgen OS", () => {
     const { ekwo: e, nexgen: n } = run.side;
     expect(e.size).toBeGreaterThan(500);
     expect(n.size).toBeGreaterThan(150);
     expect(new Set([...n].map(schemaOf))).toEqual(new Set(NEXGEN_SCHEMAS));
     expect([...e].filter((o) => !EKWO_SCHEMAS.includes(schemaOf(o)))).toEqual([]);
+    expect(e.has(`relation ${layout}.companies`)).toBe(true);
     for (const o of run.all) {
       if (EKWO_SCHEMAS.includes(schemaOf(o))) expect(e.has(o) || o === 'schema public', o).toBe(true);
       if (NEXGEN_SCHEMAS.includes(schemaOf(o))) expect(n.has(o), o).toBe(true);
@@ -207,14 +242,20 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
   });
 
   it("the second installation leaves the grants of the first as they were", () => {
-    // Ekwo first: Ekwo's rights on public; Nexgen OS first: Nexgen OS's on nexgen
-    // and billing, through every revocation Ekwo makes on public.
+    // Ekwo first: Ekwo's rights on its schemas; Nexgen OS first: Nexgen OS's on
+    // nexgen and billing, through every revocation Ekwo makes on its own.
     expect(Object.keys(run.before).length).toBeGreaterThan(100);
     expect(run.after).toEqual(run.before);
   });
 
   it("the first one's doctor reads the same after the second installation", () => {
     expect(run.doctorAfter).toEqual(run.doctorBefore);
+  });
+
+  it('the billing module finds Ekwo OS by its marker, where it lives, and nexgen-os doctor reports no problem', async () => {
+    expect(await one(db, 'select billing.ekwo_schema() s, billing.ekwo_present() p', [])).toEqual({ s: layout, p: true });
+    expect((await doctor(sqlClient(db))).problems).toEqual([]);
+    await db.exec(`set search_path = nexgen, ${E}, extensions`);
   });
 
   describe('a member of both sides', () => {
@@ -228,32 +269,32 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       companyId = (
         await one<{ id: string }>(
           db,
-          `insert into public.companies (name, country, fiscal_country, currency_code, language)
+          `insert into ${E}.companies (name, country, fiscal_country, currency_code, language)
            values ('Cooperative', 'BE', 'BE', 'EUR', 'fr') returning id`,
         )
       ).id;
-      await db.query(`insert into public.company_members (company_id, user_id, role) values ($1, $2, 'owner')`, [companyId, USER_A]);
+      await db.query(`insert into ${E}.company_members (company_id, user_id, role) values ($1, $2, 'owner')`, [companyId, USER_A]);
     });
 
     it('keeps one list of currencies: the core seeds the rows Ekwo OS seeds, and XXX', async () => {
       // Ekwo's own seed, as its installer writes it.
-      await db.exec(`set search_path = public; ${await readFile(join(ekwo.migrationsDir(), '..', 'seed', '00_currencies.sql'), 'utf8')}; reset search_path`);
+      await db.exec(`set search_path = ${E}; ${await readFile(join(ekwo.migrationsDir(), '..', 'seed', '00_currencies.sql'), 'utf8')}; reset search_path`);
       const rows = async (schema: string) =>
         (await db.query<{ r: string }>(`select format('%s|%s|%s|%s|%s', code, name, symbol, decimal_places, active) r from ${schema}.currencies where code <> 'XXX' order by code`)).rows.map((x) => x.r);
-      const [ours, theirs] = [await rows('nexgen'), await rows('public')];
+      const [ours, theirs] = [await rows('nexgen'), await rows(E)];
       expect(ours.length).toBeGreaterThan(50);
       expect(ours).toEqual(theirs);
     });
 
-    it('reads its organisation in nexgen and its company in public', async () => {
+    it("reads its organisation in nexgen and its company in Ekwo's schema", async () => {
       const seen = await asUser(db, USER_A, async () => ({
         organisations: (await db.query<{ name: string }>('select name from nexgen.organisations')).rows,
-        companies: (await db.query<{ name: string }>('select name from public.companies')).rows,
+        companies: (await db.query<{ name: string }>(`select name from ${E}.companies`)).rows,
       }));
       expect(seen).toEqual({ organisations: [{ name: 'Cooperative' }], companies: [{ name: 'Cooperative' }] });
       const stranger = await asUser(db, USER_B, async () => ({
         organisations: (await db.query('select 1 from nexgen.organisations')).rows.length,
-        companies: (await db.query('select 1 from public.companies')).rows.length,
+        companies: (await db.query(`select 1 from ${E}.companies`)).rows.length,
       }));
       expect(stranger).toEqual({ organisations: 0, companies: 0 });
     });
@@ -267,13 +308,13 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
           `select o.name as organisation, c.name as company
              from billing.organisations a
              join nexgen.organisations o on o.id = a.organisation_id
-             join public.companies c on c.id = a.ekwo_company_id`,
+             join ${E}.companies c on c.id = a.ekwo_company_id`,
         ),
       );
       expect(joined.rows).toEqual([{ organisation: 'Cooperative', company: 'Cooperative' }]);
     });
 
-    it('takes real foreign keys to public.companies, public.contacts and public.documents', async () => {
+    it("takes real foreign keys to Ekwo's companies, contacts and documents, where they live", async () => {
       const keys = async () =>
         (
           await db.query<{ k: string }>(
@@ -281,7 +322,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
                from pg_constraint c
                join pg_class t on t.oid = c.conrelid join pg_namespace n on n.oid = t.relnamespace
                join pg_class f on f.oid = c.confrelid join pg_namespace fn on fn.oid = f.relnamespace
-              where n.nspname = 'billing' and c.contype = 'f' and fn.nspname = 'public' order by 1`,
+              where n.nspname = 'billing' and c.contype = 'f' and fn.nspname = '${E}' order by 1`,
           )
         ).rows.map((r) => r.k);
       // Ekwo first: the module's migration added them. Nexgen OS first: the
@@ -289,9 +330,9 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
       const added = (await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k;
       expect(added).toEqual(order === 'ekwo-first' ? [] : ['organisations_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);
       expect(await keys()).toEqual([
-        'billing.contacts public.contacts true',
-        'billing.invoices public.documents true',
-        'billing.organisations public.companies true',
+        `billing.contacts ${E}.contacts true`,
+        `billing.invoices ${E}.documents true`,
+        `billing.organisations ${E}.companies true`,
       ]);
       await expect(
         db.query('update billing.organisations set ekwo_company_id = gen_random_uuid() where organisation_id = $1', [organisationId]),
@@ -315,18 +356,18 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
           )
         ).id;
         // Ekwo's own functions read its tables on its own search path.
-        await db.exec('set search_path = public, extensions');
+        await db.exec(`set search_path = ${E}, extensions`);
         // The currency of the company, as Ekwo's seed would declare it.
-        await db.query(`insert into public.currencies (code, name) values ('EUR', 'Euro') on conflict do nothing`);
-        const ekwoContactId = (await one<{ id: string }>(db, `insert into public.contacts (company_id, name) values ($1, 'Warehouse tenant') returning id`, [companyId])).id;
+        await db.query(`insert into ${E}.currencies (code, name) values ('EUR', 'Euro') on conflict do nothing`);
+        const ekwoContactId = (await one<{ id: string }>(db, `insert into ${E}.contacts (company_id, name) values ($1, 'Warehouse tenant') returning id`, [companyId])).id;
         documentId = (
           await one<{ id: string }>(
             db,
-            `insert into public.documents (company_id, doc_type, contact_id, document_date) values ($1, 'sale_invoice', $2, '2026-06-01') returning id`,
+            `insert into ${E}.documents (company_id, doc_type, contact_id, document_date) values ($1, 'sale_invoice', $2, '2026-06-01') returning id`,
             [companyId, ekwoContactId],
           )
         ).id;
-        await db.exec('set search_path = nexgen, public, extensions');
+        await db.exec(`set search_path = nexgen, ${E}, extensions`);
         await asUser(db, USER_A, () => db.query('select billing.link_contact($1, $2)', [contactId, ekwoContactId]));
       });
 
@@ -339,7 +380,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
             `select p.name as participant, d.doc_type::text as doc_type
                from billing.invoices_of($1) i
                join nexgen.participants p on p.id = i.participant_id
-               join public.documents d on d.id = i.id`,
+               join ${E}.documents d on d.id = i.id`,
             [participantId],
           ),
         );
@@ -362,7 +403,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         const unlinked = (await doctor(sqlClient(db))).problems.filter((p) => p.code === 'billing_key_unlinked');
         expect(unlinked).toEqual([{ code: 'billing_key_unlinked', detail: `billing.invoices ${dangling}: Ekwo id ${dangling} is not in Ekwo OS` }]);
         await db.query('delete from billing.invoices where id = $1', [dangling]);
-        await db.exec('set search_path = nexgen, public, extensions');
+        await db.exec(`set search_path = nexgen, ${E}, extensions`);
       });
     });
 
@@ -373,12 +414,12 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         // The pack of the country and the module it needs, as a later `nexgen-os init` adds them.
         await newSession(db);
         await install(sqlClient(db), { root: repoRoot, modules: ['billing', 'grid'], packs: ['be'] });
-        await db.exec('set search_path = public, extensions');
+        await db.exec(`set search_path = ${E}, extensions`);
         // What Ekwo's pack for Belgium sets for the country (packs/be/pack.json, `einvoicing` and `defaults.roles`).
-        await db.query(`insert into public.country_defaults (country, name, currency_code, receivable_code, payable_code, party_scheme, vat_scheme)
+        await db.query(`insert into ${E}.country_defaults (country, name, currency_code, receivable_code, payable_code, party_scheme, vat_scheme)
                         values ('BE', 'Belgium', 'EUR', '400000', '440000', '0208', '9925')
                         on conflict (country) do update set party_scheme = excluded.party_scheme, vat_scheme = excluded.vat_scheme`);
-        await db.exec('set search_path = nexgen, public, extensions');
+        await db.exec(`set search_path = nexgen, ${E}, extensions`);
         const projectId = (await one<{ id: string }>(db, `select id from nexgen.projects where organisation_id = $1`, [organisationId])).id;
         place = (await one<{ id: string }>(db,
           `insert into nexgen.participants (organisation_id, project_id, name, country, status) values ($1, $2, 'Bakery', 'BE', 'active') returning id`,
@@ -387,7 +428,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
 
       const ekwoCompany = async (name: string, registration: string) =>
         (await one<{ id: string }>(db,
-          `insert into public.companies (name, country, fiscal_country, currency_code, language, registration_number, vat_number)
+          `insert into ${E}.companies (name, country, fiscal_country, currency_code, language, registration_number, vat_number)
            values ($1, 'BE', 'BE', 'EUR', 'fr', $2, 'BE' || regexp_replace($2, '[^0-9]', '', 'g')) returning id`, [name, registration])).id;
       const nexgenOrganisation = async (name: string, enterpriseNumber: string) => {
         const id = (await one<{ id: string }>(db, `insert into nexgen.organisations (name) values ($1) returning id`, [name])).id;
@@ -416,7 +457,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         expect((await db.query('select table_name, what from billing.held_twice()')).rows).toEqual([{ table_name: 'nexgen.identifiers', what: 'enterprise_number 0123456749' }]);
         expect((await doctor(sqlClient(db))).problems.map((p) => p.code)).toContain('billing_held_twice');
         await db.query(`delete from nexgen.identifiers where object_id = $1`, [org]);
-        await db.exec('set search_path = nexgen, public, extensions');
+        await db.exec(`set search_path = nexgen, ${E}, extensions`);
       });
 
       it('reads how a linked contact is reached from Ekwo OS, and keeps it here only while it is not linked', async () => {
@@ -424,13 +465,13 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         await db.query(`insert into billing.contacts (id, email, phone) values ($1, 'desk@example.org', '+00 0 000 00 00')`, [desk]);
         expect(await one(db, 'select * from billing.reach_of($1)', [desk])).toEqual({ email: 'desk@example.org', phone: '+00 0 000 00 00', held_by: 'nexgen' });
         const theirs = (await one<{ id: string }>(db,
-          `insert into public.contacts (company_id, name, email, phone) values ($1, 'Bakery desk', 'Desk@example.org', '+00 0 000 00 00') returning id`, [companyId])).id;
+          `insert into ${E}.contacts (company_id, name, email, phone) values ($1, 'Bakery desk', 'Desk@example.org', '+00 0 000 00 00') returning id`, [companyId])).id;
         await asUser(db, USER_A, () => db.query('select billing.link_contact($1, $2)', [desk, theirs]));
         expect(await one(db, 'select email, phone from billing.contacts where id = $1', [desk])).toEqual({ email: null, phone: null });
         // One reading function, under each side's row level security.
         expect(await asUser(db, USER_A, () => one(db, 'select * from billing.reach_of($1)', [desk])))
           .toEqual({ email: 'Desk@example.org', phone: '+00 0 000 00 00', held_by: 'ekwo' });
-        await db.query(`update public.contacts set email = 'orders@example.org' where id = $1`, [theirs]);
+        await db.query(`update ${E}.contacts set email = 'orders@example.org' where id = $1`, [theirs]);
         expect((await one<{ email: string }>(db, 'select email from billing.reach_of($1)', [desk])).email).toBe('orders@example.org');
         await expect(db.query(`update billing.contacts set email = 'desk@example.org' where id = $1`, [desk])).rejects.toThrow(/^contact_reach_held_by_ekwo/);
         // A reach Ekwo does not hold is written there first.
@@ -443,7 +484,7 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         await db.exec('set session_replication_role = origin');
         expect((await db.query('select table_name, id, what from billing.held_twice()')).rows).toEqual([{ table_name: 'billing.contacts', id: desk, what: 'phone' }]);
         await db.query(`update billing.contacts set phone = null where id = $1`, [desk]);
-        await db.exec('set search_path = nexgen, public, extensions');
+        await db.exec(`set search_path = nexgen, ${E}, extensions`);
       });
 
       describe('a settlement invoiced in Ekwo', () => {
@@ -453,27 +494,27 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
         let customer: string;
 
         beforeAll(async () => {
-          await db.exec('set search_path = public, extensions');
+          await db.exec(`set search_path = ${E}, extensions`);
           // Two sale taxes of Ekwo's pack for Belgium (packs/be/taxes.json), as its installation writes them for a company.
           reduced = (await one<{ id: string }>(db,
-            `insert into public.taxes (company_id, code, name, amount, applies_to, country, vat_category, valid_from, legal_reference)
+            `insert into ${E}.taxes (company_id, code, name, amount, applies_to, country, vat_category, valid_from, legal_reference)
              values ($1, 'BE-S-06', 'Vente 6 %', 6, 'sale', 'BE', 'S', '1996-01-01', 'AR n. 20, tableau A') returning id`, [companyId])).id;
           standard = (await one<{ id: string }>(db,
-            `insert into public.taxes (company_id, code, name, amount, applies_to, country, vat_category, valid_from, legal_reference)
+            `insert into ${E}.taxes (company_id, code, name, amount, applies_to, country, vat_category, valid_from, legal_reference)
              values ($1, 'BE-S-21', 'Vente 21 %', 21, 'sale', 'BE', 'S', '1996-01-01', 'AR n. 20, art. 1') returning id`, [companyId])).id;
-          account = (await one<{ id: string }>(db, `insert into public.accounts (company_id, code, name, account_type) values ($1, '700000', 'Sales', 'income') returning id`, [companyId])).id;
-          customer = (await one<{ id: string }>(db, `insert into public.contacts (company_id, name) values ($1, 'Bakery') returning id`, [companyId])).id;
-          await db.exec('set search_path = nexgen, public, extensions');
+          account = (await one<{ id: string }>(db, `insert into ${E}.accounts (company_id, code, name, account_type) values ($1, '700000', 'Sales', 'income') returning id`, [companyId])).id;
+          customer = (await one<{ id: string }>(db, `insert into ${E}.contacts (company_id, name) values ($1, 'Bakery') returning id`, [companyId])).id;
+          await db.exec(`set search_path = nexgen, ${E}, extensions`);
           await db.query(`update nexgen.participants set contact_id = (select contact_id from nexgen.participants where name = 'Warehouse' and organisation_id = $1) where id = $2`, [organisationId, place]);
         });
 
         const invoice = async (taxId: string) => {
-          await db.exec('set search_path = public, extensions');
+          await db.exec(`set search_path = ${E}, extensions`);
           const id = (await one<{ id: string }>(db,
-            `insert into public.documents (company_id, doc_type, contact_id, document_date) values ($1, 'sale_invoice', $2, '2026-06-01') returning id`, [companyId, customer])).id;
-          await db.query(`insert into public.document_lines (document_id, company_id, name, quantity, unit_price, tax_id, account_id)
+            `insert into ${E}.documents (company_id, doc_type, contact_id, document_date) values ($1, 'sale_invoice', $2, '2026-06-01') returning id`, [companyId, customer])).id;
+          await db.query(`insert into ${E}.document_lines (document_id, company_id, name, quantity, unit_price, tax_id, account_id)
                           values ($1, $2, 'Energy shared in May', 1200, 0.1, $3, $4)`, [id, companyId, taxId, account]);
-          await db.exec('set search_path = nexgen, public, extensions');
+          await db.exec(`set search_path = nexgen, ${E}, extensions`);
           return id;
         };
 
@@ -483,16 +524,16 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
           const tax = await one(db, `select tax_code, rate::float8 rate, ekwo_tax_id, held_by from billing.tax_of($1, '2026-05-31')`, [place]);
           expect(tax).toEqual({ tax_code: 'BE-S-06', rate: 0.06, ekwo_tax_id: reduced, held_by: 'ekwo' });
           // A tax Ekwo does not have in force that day is refused, not replaced by the pack's rate, which holds.
-          await db.query(`update public.taxes set valid_to = '2026-04-30' where id = $1`, [reduced]);
+          await db.query(`update ${E}.taxes set valid_to = '2026-04-30' where id = $1`, [reduced]);
           await expect(db.query(`select * from billing.tax_of($1, '2026-05-31')`, [place])).rejects.toThrow(/^ekwo_tax_not_in_force: tax BE-S-06/);
-          await db.query(`update public.taxes set valid_to = null where id = $1`, [reduced]);
+          await db.query(`update ${E}.taxes set valid_to = null where id = $1`, [reduced]);
         });
 
         it("records the invoice of a settlement taxed by Ekwo's tax of that code, at Ekwo's rate, and refuses another", async () => {
           const settlement = (await one<{ id: string }>(db, 'select gen_random_uuid() id')).id;
           const right = await invoice(reduced);
           await db.query(`select billing.record_invoice($1, $2, 'sale', '2026-05-01', '2026-05-31', null, $3)`, [place, right, settlement]);
-          const amounts = await one<{ untaxed: number; tax: number }>(db, 'select amount_untaxed::float8 untaxed, amount_tax::float8 tax from public.documents where id = $1', [right]);
+          const amounts = await one<{ untaxed: number; tax: number }>(db, `select amount_untaxed::float8 untaxed, amount_tax::float8 tax from ${E}.documents where id = $1`, [right]);
           expect(amounts).toEqual({ untaxed: 120, tax: 7.2 });
           const wrong = await invoice(standard);
           await expect(db.query(`select billing.record_invoice($1, $2, 'sale', '2026-05-01', '2026-05-31', null, $3)`, [place, wrong, settlement]))
@@ -503,9 +544,9 @@ describe.each<Order>(['ekwo-first', 'nexgen-first'])('Nexgen OS and Ekwo OS on o
   });
 });
 
-describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
-  const sides = () => [runs['ekwo-first']!.side, runs['nexgen-first']!.side];
-  const run = () => runs['nexgen-first']!;
+describe.each<Layout>(['ekwo', 'public'])('Nexgen OS and Ekwo OS in %s, whichever installs first', (layout) => {
+  const sides = () => [runs[`${layout} ekwo-first`]!.side, runs[`${layout} nexgen-first`]!.side];
+  const run = () => runs[`${layout} nexgen-first`]!;
 
   it('each side creates the same objects in both orders', () => {
     const [a, b] = sides();
@@ -534,7 +575,7 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
     expect([...nexgenModules].filter((s) => ekwoModules.has(s) || EKWO_SCHEMAS.includes(s))).toEqual([]);
     // The schema name `ekwo` is reserved for Ekwo OS.
     expect(nexgenModules.has('ekwo')).toBe(false);
-    expect(run().all.has('schema ekwo')).toBe(false);
+    expect(run().side.nexgen.has('schema ekwo')).toBe(false);
   });
 
   it('short names both sides use live apart, each in its own schema', () => {
@@ -542,9 +583,9 @@ describe('Nexgen OS and Ekwo OS, whichever installs first', () => {
     const named = (set: Set<string>) =>
       new Set([...set].filter((o) => !o.startsWith('schema ') && !/_(pkey|key)$/.test(o)).map(nameOf));
     const ekwoNames = named(e);
-    // Each core reaches its own through its search path: `nexgen, public` for
-    // Nexgen OS, `public` for Ekwo OS; `billing.contacts` and
-    // `public.contacts` are read by their schema. The keys keep Ekwo OS's
+    // Each core reaches its own through its search path: `nexgen` for
+    // Nexgen OS, its own schema for Ekwo OS; `billing.contacts` and Ekwo's
+    // `contacts` are read by their schema. The keys keep Ekwo OS's
     // names (decision 0046), and so do the capabilities (decision 0051), in
     // `nexgen`; a surface calls them qualified.
     expect([...named(n)].filter((x) => ekwoNames.has(x)).sort()).toEqual([

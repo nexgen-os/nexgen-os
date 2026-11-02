@@ -75,13 +75,14 @@ for (const f of files.filter((f) => /\.(sql|ts|mjs|md)$/.test(f) && !isData(f) &
 
 // 4. search path in migrations and functions: `nexgen` and the extensions,
 // never `public`, which stays the installation's. The one exception is the
-// billing module's readers of Ekwo OS's own tables, under Ekwo's search path.
+// billing module's readers of Ekwo OS's own tables, under Ekwo's search path:
+// `public` before Ekwo OS moved its core, `ekwo` then `public` since.
 for (const f of files.filter((f) => /migrations\/.*\.sql$/.test(f) || /seed\/.*\.sql$/.test(f))) {
   const text = readFileSync(f, 'utf8');
   if (!/^set search_path = nexgen, extensions;/m.test(text)) problems.push(`${rel(f)}: no session search path`);
   const functions = text.match(/create (?:or replace )?(?:function|procedure)[\s\S]*?\nas \$\$/g) ?? [];
   for (const fn of functions) {
-    const ekwoReader = /^modules\/billing\//.test(rel(f)) && /set search_path = public, pg_temp/.test(fn);
+    const ekwoReader = /^modules\/billing\//.test(rel(f)) && /set search_path = (ekwo, )?public, pg_temp/.test(fn);
     if (!/set search_path = nexgen, extensions, pg_temp/.test(fn) && !ekwoReader) {
       problems.push(`${rel(f)}: a function without its search path: ${fn.split('\n')[0].slice(0, 80)}`);
     }
