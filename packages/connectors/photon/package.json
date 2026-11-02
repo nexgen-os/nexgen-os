@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/photon",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Photon (OpenStreetMap, search as you type) as a Nexgen OS geocoder.",
   "license": "MIT",
   "repository": {

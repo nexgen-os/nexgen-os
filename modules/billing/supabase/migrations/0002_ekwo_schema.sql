@@ -272,3 +272,5 @@ comment on function billing.unlinked_keys() is
   'The rows of the module whose Ekwo id is not in Ekwo OS, when Ekwo OS shares the database, in the schema it lives in: table, row id, Ekwo id. Read by nexgen-os doctor (billing_key_unlinked).';
 
 grant execute on function billing.ekwo_schema(), billing.ekwo_table(text) to authenticated, service_role;
+
+update nexgen.modules set version = '0.4.2' where code = 'billing';

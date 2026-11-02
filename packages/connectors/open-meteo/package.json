@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/open-meteo",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Open-Meteo weather forecast and ERA5 history as a Nexgen OS weather connector.",
   "license": "MIT",
   "repository": {
