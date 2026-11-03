@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- A document an owner publishes is kept as it was published ([0015](docs/decisions/0015-publications.md)): `nexgen.document_publications`, one row per version published, with a copy of the document, its licence, the sources it draws on with their licences, its date, its publisher and the sha256 the database writes (`publication_digest()`). `publish(document, licence, sources)` and `withdraw(publication)` are its gestures, held by the new capability `publications.manage` of the owner preset; `publish()` refuses `license_required`, `checksum_required`, `source_unknown` and `source_not_redistributable`, and the withdrawal is the only change a publication takes. The anonymous role reaches none of it; the schema the public reads comes next.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.

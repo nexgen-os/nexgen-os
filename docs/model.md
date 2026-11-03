@@ -401,6 +401,15 @@ same check.
   algorithm (`sha256:<hex>`) and the user who uploaded it (`uploaded_by`,
   the caller by default) (`attach_document`). Heavy files stay in object
   storage; georeferenced 3D models are the `building` module's.
+- **document_publications** — a document an owner published, kept as it
+  was published ([0015](decisions/0015-publications.md)): one row per
+  version, with a copy of the document (name, kind, uri, media type, size,
+  checksum), its licence, the sources it draws on with their licences, its
+  date, its publisher and the sha256 the database writes over all of it
+  (`publication_digest()`). `publish(document, licence, sources)` and
+  `withdraw(publication)` are its only gestures (`publications.manage`, the
+  owner's); the withdrawal is its only change, and it outlives its
+  document.
 
 ## Countries and defaults
 
