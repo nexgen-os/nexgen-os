@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- A weather point keeps a time zone, and `weather.time_zone_of(series)` gives it to the series of the point: `resample(s, from, to, '1 day', weather.time_zone_of(s))` cuts the days and the months of a point's temperatures or irradiance where its participants live. Until now no participant owned these series, and their days were refused as `time_zone_required`. `weather.point_for()` gives a new point the participant's time zone, and a point without one the first a participant brings; migration `0002_point_time_zone` fills the points already there from the participants that read them, and `nexgen-os migrate` applies it.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
