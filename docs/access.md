@@ -24,6 +24,7 @@ does.
 | `shares.manage` | share a project, invite an editor or a viewer, open the account of a participant |
 | `members.manage` | give, change and remove roles, invite an owner, issue and withdraw keys |
 | `organisation.write` | rename or delete the organisation |
+| `publications.manage` | publish a document of the organisation and withdraw a publication ([0015](decisions/0015-publications.md)) |
 | `account.contact` | write the contact details of a participant |
 | `account.consent` | give and withdraw the consents of a participant |
 | `account.notifications` | choose how a participant is notified |
@@ -35,7 +36,7 @@ adds its own codes (with `area` set to its code) and its own rows.
 | Preset | Holds |
 | --- | --- |
 | `owner` | every capability |
-| `editor` | everything but `members.manage` and `organisation.write` |
+| `editor` | everything but `members.manage`, `organisation.write` and `publications.manage` |
 | `viewer` | `data.read` |
 | `participant` | `data.read` and the `account.*` capabilities |
 
