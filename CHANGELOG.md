@@ -32,6 +32,7 @@ release may break, and says how. How a release is cut:
   no organisation has a member, and refuses every other sign-up as
   `invitation_required`. It does nothing until the installation enables it
   (docs/access.md).
+- A weather point keeps a time zone, and `weather.time_zone_of(series)` gives it to the series of the point: `resample(s, from, to, '1 day', weather.time_zone_of(s))` cuts the days and the months of a point's temperatures or irradiance where its participants live. Until now no participant owned these series, and their days were refused as `time_zone_required`. `weather.point_for()` gives a new point the participant's time zone, and a point without one the first a participant brings; migration `0002_point_time_zone` fills the points already there from the participants that read them, and `nexgen-os migrate` applies it.
 ### Changed
 
 - The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
