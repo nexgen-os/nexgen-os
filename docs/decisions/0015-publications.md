@@ -39,9 +39,15 @@ withdrawn, without the organisation's internal identifiers. It is the only
 schema the anonymous role may be given, so that a new table of the core is
 never public by accident.
 
-The core and the modules of this repository hold no publication: an
-installation of them makes nothing public until its owner adds that
-schema.
+**In the core.** A publication is a row of `nexgen.document_publications`,
+one per version published of a document, written by two gestures of an
+owner, `publish()` and `withdraw()` (capability `publications.manage`).
+The database writes its sha256 (`publication_digest()`), keeps every
+column as it was written but the withdrawal, and keeps the publication when
+its document is deleted. No person writes the table by hand, and the
+anonymous role reaches neither it nor the gestures: the schema the public
+reads is the only one it may be given, and an installation makes nothing
+public until an owner publishes.
 
 ## What it forbids
 
