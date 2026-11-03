@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- Raw values are kept as long as the place decides (decision 0007): the attribute type `series_retention`, an ISO 8601 duration (P3Y) set on a series, an object above it, the organisation or as a pack's default, and `series_retain()`, which removes the values older than it, cut at the hour in UTC, and keeps the hourly and daily rollups, so that `resample()` reads the same days afterwards. A series without a retention keeps every value; forecast issues are not touched; a duration that is not ISO 8601 is refused as `retention_invalid`. For the installation's service role or a pg_cron job, not the API roles (migration `20261103000000_core_series_retain`).
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.

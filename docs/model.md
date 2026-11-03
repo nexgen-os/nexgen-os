@@ -339,6 +339,14 @@ and for a register its consumption, computed again from the values by
 every statement that writes or deletes values (`series_rollup_hours()`):
 there is no queue and nothing to drain.
 
+**Raw values are kept as long as the place decides.** `series_retain()`
+removes, for each series with a `series_retention` (an ISO 8601 duration,
+P3Y, resolved by `parameter_of()` from the series up to its organisation
+and the pack of its place), the values older than it, cut at the hour in
+UTC; the rollups stay, so the days, months and years read the same. A
+series without a retention keeps every value, forecast issues are not
+touched, and the function is the installation's (service role, pg_cron).
+
 **One family of reads**, each `security definer` with one access check per
 series (a member of its organisation, or a role that bypasses row level
 security; a role without a signed-in user reads nothing):
