@@ -8,6 +8,11 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/fluvius`: the Flemish operator's API for service providers as a meter data connector. `consentLink()` gives the page where the customer signs, `mandates()` and `mandateStatusOf()` follow the mandates, and `readings()` gives the quarter-hour `offtake_energy` and `injection_energy` of a meter by its EAN, under the mandate `grid.authorise_reading()` returns. Sandbox secret or live certificate (`clientAssertion()`), secrets given by the caller from the vault.
+- Pack be 0.4.1: the source `fluvius_service_provider_api` and the conventions of the Fluvius hub (`meter_data`: zone, quarter hours, quality table), with the guide it cites.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
