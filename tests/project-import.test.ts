@@ -120,7 +120,7 @@ describe('a project imported from its description', () => {
 
   it('writes only where the person may: row level security decides', async () => {
     await db.query('insert into auth.users (id) values ($1) on conflict do nothing', [USER_B]);
-    await expect(asUser(db, USER_B, () => importProject(db, org, { name: 'Elsewhere', country: 'FR' }))).rejects.toThrow();
+    await expect(asUser(db, USER_B, () => importProject(db, org, { name: 'Elsewhere', country: 'FR' }))).rejects.toThrow(/row-level security|not_allowed/);
     expect(await count('projects')).toBe(1);
   });
 });
