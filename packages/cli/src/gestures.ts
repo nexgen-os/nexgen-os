@@ -23,6 +23,7 @@ import {
   geocoderChain,
   geocoderNames,
   importHomeAssistantSeries,
+  importProject,
   installDevice,
   kpisOf,
   listApiKeys,
@@ -48,7 +49,7 @@ export const GESTURE_COMMANDS: Record<string, string[]> = {
   organisation: ['create'],
   member: ['add', 'list', 'role', 'remove'],
   key: ['create', 'list', 'revoke'],
-  project: ['create'],
+  project: ['create', 'import'],
   participant: ['add'],
   meter: ['declare'],
   device: ['install'],
@@ -69,6 +70,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
   nexgen-os project create --organisation <id> --name <n> --country <cc> [--kind k]
+  nexgen-os project import --organisation <id> --file <description.json> [--dry-run]   a project, its participants, meters, devices; again without a duplicate
   nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
   nexgen-os meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
@@ -153,6 +155,8 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
       return revokeApiKey(db, operand);
     case 'project create':
       return createProject(db, { organisation_id: need(f, 'organisation'), name: need(f, 'name'), country: need(f, 'country'), ...(optional(f, 'kind') ? { kind: optional(f, 'kind')! } : {}) });
+    case 'project import':
+      return importProject(db, need(f, 'organisation'), JSON.parse(await readFile(need(f, 'file'), 'utf8')), { dryRun: f.has('dry-run') });
     case 'participant add': {
       const place = optional(f, 'place');
       const geocoder = optional(f, 'address') === undefined ? undefined : await geocoderChain(db, await loadGeocoders(geocoderNames(io.env), io.env));

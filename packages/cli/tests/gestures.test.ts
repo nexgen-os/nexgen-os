@@ -65,6 +65,25 @@ describe('the gestures as commands', () => {
     expect(human.code).toBe(0);
   });
 
+  it('imports a project from its description, writes nothing on a dry run, and finds it again', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nexgen-gestures-'));
+    const file = join(dir, 'project.json');
+    await writeFile(file, JSON.stringify({
+      name: 'Market hall', country: 'ZZ',
+      participants: [{ name: 'Hall', time_zone: 'Europe/Brussels',
+        place: { country: 'ZZ', geometry: { type: 'Point', coordinates: [4.36, 50.84, 0] }, location_precision: 'street' },
+        meters: [{ identifier: '541448000000000055', scheme: 'gs1_gsrn' }] }],
+    }));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', file, '--dry-run']);
+    expect(plan.dry_run).toBe(true);
+    expect(plan.counts.participant).toEqual({ found: 0, created: 1 });
+    expect((await db.query(`select 1 from nexgen.projects where name = 'Market hall'`)).rows).toHaveLength(0);
+    const done = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(done.project_id).toMatch(/^[0-9a-f-]{36}$/);
+    const again = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(again.counts).toEqual({ project: { found: 1, created: 0 }, participant: { found: 1, created: 0 }, meter: { found: 1, created: 0 }, device: { found: 0, created: 0 } });
+  });
+
   it('issues, lists and withdraws a key, and the key acts as its issuer', async () => {
     const key = await json(['key', 'create', '--organisation', org, '--name', 'Nightly import']);
     expect(key.capabilities).toEqual(['data.read']);

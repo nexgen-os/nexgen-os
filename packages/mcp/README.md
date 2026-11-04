@@ -171,6 +171,7 @@ client can ask before calling them.
 | `add_participant` | A participant joins a project with its place (`join_project()`), given as a point or found through the configured geocoder chain |
 | `declare_meter` | A meter by its identifier in a scheme, which checks it (`declare_meter()`) |
 | `install_device` | A device, from a product of the catalogue or with a stated power (`install_device()`) |
+| `import_project` | A project described as data — participants, meters, devices, identifiers — through the same functions (`importProject()`); given again, it creates only what is new; `dry_run` writes nothing |
 | `store_series` | Values through `store()`, each dated at the start of its interval, with their source |
 | `import_series` | The readings of a file read by its format library — `homeassistant` — written through `store()` |
 | `create_api_key` · `revoke_api_key` | A key issued by a person who holds `members.manage`, signed in, with capabilities they hold (`data.read`, `data.write`…), and its withdrawal; a key does not issue keys |
