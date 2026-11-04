@@ -248,13 +248,27 @@ describe.each(CASES)('Nexgen OS and Ekwo OS on one database, Ekwo OS in %s, %s',
     expect(run.after).toEqual(run.before);
   });
 
-  it("the first one's doctor reads the same after the second installation", () => {
-    expect(run.doctorAfter).toEqual(run.doctorBefore);
+  it("the first one's doctor reads the same after the second installation, Ekwo's keys still to add aside", () => {
+    // Nexgen OS first: its doctor names the foreign keys to Ekwo OS that
+    // `nexgen-os migrate` adds, and nothing else.
+    expect(run.doctorAfter).toEqual(
+      order === 'nexgen-first' ? [...(run.doctorBefore as string[]), 'billing_keys_missing'].sort() : run.doctorBefore,
+    );
   });
 
-  it('the billing module finds Ekwo OS by its marker, where it lives, and nexgen-os doctor reports no problem', async () => {
+  it('the billing module finds Ekwo OS by its marker, where it lives, and nexgen-os doctor names only the keys still to add', async () => {
     expect(await one(db, 'select billing.ekwo_schema() s, billing.ekwo_present() p', [])).toEqual({ s: layout, p: true });
-    expect((await doctor(sqlClient(db))).problems).toEqual([]);
+    const problems = (await doctor(sqlClient(db))).problems;
+    if (order === 'ekwo-first') {
+      expect(problems).toEqual([]);
+    } else {
+      expect(problems).toEqual([
+        {
+          code: 'billing_keys_missing',
+          detail: `Ekwo OS shares the database in ${layout} and the billing module holds no foreign key to it; nexgen-os migrate adds them (billing.reference_ekwo())`,
+        },
+      ]);
+    }
     await db.exec(`set search_path = nexgen, ${E}, extensions`);
   });
 
@@ -329,6 +343,7 @@ describe.each(CASES)('Nexgen OS and Ekwo OS on one database, Ekwo OS in %s, %s',
       // installation adds them once Ekwo OS is there.
       const added = (await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k;
       expect(added).toEqual(order === 'ekwo-first' ? [] : ['organisations_ekwo_company_fk', 'contacts_ekwo_contact_fk', 'invoices_ekwo_invoice_fk']);
+      expect((await doctor(sqlClient(db))).problems.map((p) => p.code)).not.toContain('billing_keys_missing');
       expect(await keys()).toEqual([
         `billing.contacts ${E}.contacts true`,
         `billing.invoices ${E}.documents true`,

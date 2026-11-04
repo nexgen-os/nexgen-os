@@ -142,6 +142,7 @@ describe('billing without Ekwo OS', () => {
     expect((await db.query('select * from billing.unlinked_keys()')).rows).toEqual([]);
     const codes = (await doctor(sqlClient(db))).problems.map((p) => p.code);
     expect(codes).not.toContain('billing_key_unlinked');
+    expect(codes).not.toContain('billing_keys_missing');
     expect(codes).not.toContain('module_table_detached');
     expect(codes).not.toContain('rls_disabled');
   });
@@ -184,7 +185,7 @@ describe('billing beside another application\'s tables in public', () => {
       expect(keys.rows).toEqual([]);
       expect((await one<{ e: boolean; k: string[] }>(platform, 'select billing.ekwo_present() e, billing.reference_ekwo() k'))).toEqual({ e: false, k: [] });
       expect((await platform.query('select * from billing.unlinked_keys()')).rows).toEqual([]);
-      expect((await doctor(sqlClient(platform))).problems.filter((p) => p.code === 'billing_key_unlinked')).toEqual([]);
+      expect((await doctor(sqlClient(platform))).problems.filter((p) => ['billing_key_unlinked', 'billing_keys_missing'].includes(p.code))).toEqual([]);
     } finally {
       await platform.close();
     }
