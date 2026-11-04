@@ -170,6 +170,28 @@ export async function unlinkedBillingKeys(db: SqlClient): Promise<{ table_name: 
 }
 
 /**
+ * The schema Ekwo OS lives in, when it shares the database and the `billing`
+ * module holds no foreign key to it yet: Ekwo OS was installed after the
+ * module, and the keys `billing.reference_ekwo()` adds are still missing
+ * (`nexgen-os migrate` adds them). Ekwo OS is found by the module's own
+ * `billing.ekwo_schema()`; null when the module or Ekwo OS is absent.
+ */
+export async function billingKeysMissing(db: SqlClient): Promise<string | null> {
+  const [r] = await db.query<{ f: boolean }>(`select to_regprocedure('billing.ekwo_schema()') is not null as f`);
+  if (!r?.f) return null;
+  const [e] = await db.query<{ schema: string | null; keys: number }>(
+    `select e.s as schema,
+            (select count(*)::int
+               from pg_constraint c
+               join pg_class t on t.oid = c.conrelid join pg_namespace tn on tn.oid = t.relnamespace
+               join pg_class f on f.oid = c.confrelid join pg_namespace fn on fn.oid = f.relnamespace
+              where c.contype = 'f' and tn.nspname = 'billing' and fn.nspname = e.s) as keys
+       from billing.ekwo_schema() as e (s)`,
+  );
+  return e?.schema && e.keys === 0 ? e.schema : null;
+}
+
+/**
  * What is held both by the `billing` module (or the core) and by Ekwo OS for
  * a party linked to it on the same database: the email or phone of a linked
  * contact, a legal number of a linked organisation. Read through the
@@ -297,6 +319,13 @@ export async function doctor(db: SqlClient, catalogue?: Catalogue): Promise<Doct
     });
   }
 
+  const ekwoSchema = await billingKeysMissing(db);
+  if (ekwoSchema) {
+    problems.push({
+      code: 'billing_keys_missing',
+      detail: `Ekwo OS shares the database in ${ekwoSchema} and the billing module holds no foreign key to it; nexgen-os migrate adds them (billing.reference_ekwo())`,
+    });
+  }
   for (const k of await unlinkedBillingKeys(db)) {
     problems.push({ code: 'billing_key_unlinked', detail: `${k.table_name} ${k.id}: Ekwo id ${k.ekwo_id} is not in Ekwo OS` });
   }
