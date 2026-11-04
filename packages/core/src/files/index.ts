@@ -15,3 +15,4 @@ export * from './project.js';
 export * from './project-sheet.js';
 export * from './evcc.js';
 export * from './pvsol.js';
+export * from './wesmart-db.js';
