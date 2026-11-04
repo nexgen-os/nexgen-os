@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- A project described as data — its participants with their place, the meters they carry, the devices behind them and the identifiers each is known by elsewhere — is written into an organisation through the gestures of the schema (`importProject()` in `@nexgen-os/core`, `nexgen-os project import --file <description.json> [--dry-run]`, the MCP tool `import_project`). Each object is looked for first, by an identifier it carries, then by what names it in its parent; the same description written again creates nothing and adds only what is new, so the import of another system is replayed as often as that system changes. A dry run writes nothing and lists what would be created. Refusals by name: `name_required`, `country_required`, `scheme_required`, `identifier_required`, `device_type_required`, `identifiers_disagree`, `meter_carried_elsewhere`.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
