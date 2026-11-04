@@ -18,6 +18,9 @@
       "@nexgen-os/enedis-sge": [
         "./packages/connectors/enedis-sge/src/index.ts"
       ],
+      "@nexgen-os/fluvius": [
+        "./packages/connectors/fluvius/src/index.ts"
+      ],
       "@nexgen-os/geopunt": [
         "./packages/connectors/geopunt/src/index.ts"
       ],
