@@ -183,6 +183,11 @@ second, the installation adds them with one statement:
 select billing.reference_ekwo();
 ```
 
+or by running `npx nexgen-os migrate` again, which calls it. Until then,
+`nexgen-os doctor` names the installation `billing_keys_missing`: Ekwo OS
+shares the database, in the schema it names, and the module holds no
+foreign key to it.
+
 `nexgen-os doctor` names each row whose Ekwo id is not in Ekwo OS
 (`billing_key_unlinked`). When Ekwo OS runs elsewhere, the columns are plain
 references, and the module does not reach it:
@@ -208,7 +213,8 @@ leaves a database). It asserts, in each of the four cases, that:
 - `ekwo`, `public` and `supabase_migrations` hold only Ekwo's objects,
   `nexgen` and `billing` only Nexgen OS's;
 - the `billing` module finds Ekwo OS where it lives, and `nexgen-os doctor`
-  reports no problem;
+  reports no problem, but for the foreign keys still to add when Nexgen OS
+  was installed first (`billing_keys_missing`);
 - the second installation leaves every grant of the first as it was, Ekwo's
   revocations on its schemas and its default privileges included, and each
   `doctor` reads the same before and after;
@@ -224,6 +230,7 @@ leaves a database). It asserts, in each of the four cases, that:
   neither; `billing.organisations` points at an Ekwo company;
 - with Ekwo OS installed first, `nexgen-os init` adds the foreign keys to
   Ekwo's `companies`, `contacts` and `documents`; with Nexgen OS first,
+  `nexgen-os doctor` names them missing (`billing_keys_missing`) until
   `billing.reference_ekwo()` adds them; a participant's
   invoice is recorded against an Ekwo document, an unknown one is refused,
   and `nexgen-os doctor` names a row whose Ekwo id is gone;
