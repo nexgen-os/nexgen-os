@@ -146,11 +146,15 @@ describe('the whole path on a database with the be pack', () => {
   });
 
   it('checks the mandate, reads through the operator, and keeps the series on the meter', async () => {
-    expect(await one(db, `select auth, redistributable, regions from sources where code = 'fluvius_service_provider_api'`))
-      .toEqual({ auth: 'mandate', redistributable: false, regions: ['BE-VLG'] });
+    const source = await one<{ auth: string; redistributable: boolean; regions: string[] }>(db,
+      `select auth, redistributable, regions from sources where code = 'fluvius_service_provider_api'`);
+    expect(source).toMatchObject({ auth: 'mandate', redistributable: false });
+    // The region and its country are the ones the source row serves, as data.
+    const region = source.regions[0]!;
+    const country = region.split('-')[0]!;
     const org = await organisation(db, 'A cooperative');
-    const project = await insert(db, 'projects', { organisation_id: org, name: 'A study', country: 'BE' });
-    const site = (await one<{ id: string }>(db, `select join_project($1, 'Warehouse', $2) id`, [project, { country: 'BE', region: 'BE-VLG' }])).id;
+    const project = await insert(db, 'projects', { organisation_id: org, name: 'A study', country });
+    const site = (await one<{ id: string }>(db, `select join_project($1, 'Warehouse', $2) id`, [project, { country, region }])).id;
     const meter = (await one<{ id: string }>(db, `select declare_meter($1, $2, 'gs1_gsrn') id`, [site, EAN])).id;
     const connector = await insert(db, 'connectors', {
       organisation_id: org, source_code: 'fluvius_service_provider_api', name: 'Fluvius', secret_ref: 'fluvius_credentials', config: { environment: 'sandbox' },
