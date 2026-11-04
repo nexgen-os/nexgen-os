@@ -1,0 +1,97 @@
+{
+  "data": {
+    "headpoint": {
+      "$type": "MeteringOnHeadpoint",
+      "ean": "541448000000000015",
+      "energyType": "E",
+      "physicalMeters": [
+        {
+          "meterNumber": "1SAG0000000001",
+          "quarterHourlyEnergy": [
+            {
+              "start": "2026-06-10T00:00:00+02:00",
+              "measurements": [
+                {
+                  "offtake": {
+                    "total": {
+                      "value": 0.25,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  },
+                  "injection": {
+                    "total": {
+                      "value": 0.0,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "start": "2026-06-10T00:15:00+02:00",
+              "measurements": [
+                {
+                  "offtake": {
+                    "total": {
+                      "value": 0.5,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  },
+                  "injection": {
+                    "total": {
+                      "value": 0.1,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "start": "2026-06-10T00:30:00+02:00",
+              "measurements": [
+                {
+                  "offtake": {
+                    "total": {
+                      "value": 0.75,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "start": "2026-06-10T00:45:00",
+              "measurements": [
+                {
+                  "offtake": {
+                    "total": {
+                      "value": 1.0,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  },
+                  "injection": {
+                    "total": {
+                      "value": 0.3,
+                      "unit": "kWh",
+                      "validationState": "READ"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "_meta": {
+    "version": "3",
+    "fetchTime": "2026-06-11T06:00:00Z"
+  }
+}
