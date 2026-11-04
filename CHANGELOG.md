@@ -39,6 +39,8 @@ release may break, and says how. How a release is cut:
 - `nexgen-os doctor` names `billing_keys_missing` when Ekwo OS shares the database and the `billing` module holds no foreign key to it yet, as after installing Ekwo OS second; `nexgen-os migrate` (or `billing.reference_ekwo()`) adds them. Until now the doctor said nothing, and the keys stayed missing until someone remembered the statement.
 - `@nexgen-os/fluvius`: the Flemish operator's API for service providers as a meter data connector. `consentLink()` gives the page where the customer signs, `mandates()` and `mandateStatusOf()` follow the mandates, and `readings()` gives the quarter-hour `offtake_energy` and `injection_energy` of a meter by its EAN, under the mandate `grid.authorise_reading()` returns. Sandbox secret or live certificate (`clientAssertion()`), secrets given by the caller from the vault.
 - Pack be 0.4.1: the source `fluvius_service_provider_api` and the conventions of the Fluvius hub (`meter_data`: zone, quarter hours, quality table), with the guide it cites.
+- The Python client attaches a value with its quality: `attach(..., quality="measured")` writes `published`, `measured`, `estimated` or `assumed`, and without one the database's default, `estimated`, as before. Another word is refused as `quality_unknown`, the name the domain `value_quality` gets on the client.
+- The Python client reads a parameter through the one cascade of defaults, `parameter_of(kind, object_id, attribute_type, at=None)`: the value with the level it was found at, its source and its quality, or `parameter_missing`; and lists the projects the connection may read, `projects(organisation_id=None)`.
 
 ### Changed
 

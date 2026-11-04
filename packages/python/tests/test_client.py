@@ -37,6 +37,14 @@ class ClientTest(unittest.TestCase):
         self.assertIsNone(participants[FIXTURE["participant_without_time_zone"]]["time_zone"])
         self.assertEqual(self.nexgen.participants(str(uuid.uuid4())), [])
 
+    def test_lists_the_projects_of_the_organisation(self):
+        projects = self.nexgen.projects(FIXTURE["organisation"])
+        self.assertEqual([(p["name"], p["country"]) for p in projects], [("Project of Depot", "BE"), ("Project of Warehouse", "BE")])
+        participants = {str(p["id"]): p for p in self.nexgen.participants(FIXTURE["organisation"])}
+        depot = str(participants[FIXTURE["participant"]]["project_id"])
+        self.assertIn(depot, [str(p["id"]) for p in projects])
+        self.assertEqual(self.nexgen.projects(str(uuid.uuid4())), [])
+
     def test_places_an_object(self):
         self.assertEqual(self.nexgen.participant_of("device", FIXTURE["meter"]), FIXTURE["participant"])
         self.assertEqual(self.nexgen.country_of("device", FIXTURE["meter"]), FIXTURE["country"])
@@ -121,6 +129,27 @@ class ClientTest(unittest.TestCase):
         with self.assertRaises(NexgenError) as refused:
             self.nexgen.attach("device", FIXTURE["meter"], "annual_consumption", -5, source="a reading")
         self.assertIn(refused.exception.code, ("attribute_type_not_applicable", "invalid_value"))
+
+    def test_attaches_with_its_quality_and_reads_it_through_the_cascade(self):
+        participant = FIXTURE["participant_without_time_zone"]
+        with self.assertRaises(NexgenError) as refused:
+            self.nexgen.parameter_of("participant", participant, "annual_consumption")
+        self.assertEqual(refused.exception.code, "parameter_missing")
+        self.nexgen.attach(
+            "participant", participant, "annual_consumption", 52000, source="meter register 2025",
+            valid_from=datetime(2025, 1, 1, tzinfo=UTC), valid_to=datetime(2026, 1, 1, tzinfo=UTC), quality="measured",
+        )
+        self.nexgen.attach("participant", participant, "annual_consumption", 50000, source="a sizing study", valid_from=datetime(2026, 1, 1, tzinfo=UTC))
+        found = self.nexgen.parameter_of("participant", participant, "annual_consumption", datetime(2025, 6, 1, tzinfo=UTC))
+        self.assertEqual((found["value"], found["level"], found["reference"], found["quality"]), (52000, "object", "meter register 2025", "measured"))
+        self.assertEqual(self.nexgen.parameter_of("participant", participant, "annual_consumption")["quality"], "estimated")
+
+        with self.assertRaises(NexgenError) as refused:
+            self.nexgen.attach("participant", participant, "annual_consumption", 1, source="a guess", valid_from=datetime(2030, 1, 1, tzinfo=UTC), quality="guessed")
+        self.assertEqual(refused.exception.code, "quality_unknown")
+        with self.assertRaises(NexgenError) as refused:
+            self.nexgen.parameter_of("participant", participant, "no_such_attribute")
+        self.assertEqual(refused.exception.code, "attribute_type_unknown")
 
     def test_refuses_a_value_without_a_source(self):
         with self.assertRaises(NexgenError) as refused:
