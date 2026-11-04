@@ -118,7 +118,12 @@ in an earlier release, decision 0054). `doctor` adds `schema_taken` and
 `organisation_id` and reaches no table of the core but `organisations` by a
 path of foreign keys, decision 0042) and `attachments_orphaned` (attributes,
 identifiers, documents, series or a module's table about an object of the
-core whose object is gone, listed by kind, decision 0001).
+core whose object is gone, listed by kind, decision 0001), and, with the
+`billing` module beside Ekwo OS on the same database, `billing_keys_missing`
+(Ekwo OS was installed after the module and none of its foreign keys to
+Ekwo's tables is there yet: `nexgen-os migrate` adds them),
+`billing_key_unlinked` and `billing_held_twice`
+([With Ekwo OS](../../docs/with-ekwo-os.md)).
 
 `pack build` and `pack check` refuse with `not_a_checkout` (no
 `packs/schema/pack.1.json` under the root) and `unknown_pack`, and name each problem of a pack: `pack_json_invalid`, `pack_schema_invalid`,

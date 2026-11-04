@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `nexgen-os doctor` names `billing_keys_missing` when Ekwo OS shares the database and the `billing` module holds no foreign key to it yet, as after installing Ekwo OS second; `nexgen-os migrate` (or `billing.reference_ekwo()`) adds them. Until now the doctor said nothing, and the keys stayed missing until someone remembered the statement.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
