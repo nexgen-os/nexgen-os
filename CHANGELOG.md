@@ -8,6 +8,11 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- The Python client attaches a value with its quality: `attach(..., quality="measured")` writes `published`, `measured`, `estimated` or `assumed`, and without one the database's default, `estimated`, as before. Another word is refused as `quality_unknown`, the name the domain `value_quality` gets on the client.
+- The Python client reads a parameter through the one cascade of defaults, `parameter_of(kind, object_id, attribute_type, at=None)`: the value with the level it was found at, its source and its quality, or `parameter_missing`; and lists the projects the connection may read, `projects(organisation_id=None)`.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
