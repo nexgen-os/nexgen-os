@@ -42,6 +42,7 @@ release may break, and says how. How a release is cut:
 - The Python client attaches a value with its quality: `attach(..., quality="measured")` writes `published`, `measured`, `estimated` or `assumed`, and without one the database's default, `estimated`, as before. Another word is refused as `quality_unknown`, the name the domain `value_quality` gets on the client.
 - The Python client reads a parameter through the one cascade of defaults, `parameter_of(kind, object_id, attribute_type, at=None)`: the value with the level it was found at, its source and its quality, or `parameter_missing`; and lists the projects the connection may read, `projects(organisation_id=None)`.
 - `actions.progress()` says where the devices of a participant or a project stand, beside its actions: how many in each status of the core, the share in service among those not removed, and the ones not yet in service, by name — what a site board shows (migration `0003_progress_devices` of `actions`). The status is the device's own; the module reads it and never writes it.
+- `docs/demo/ifc.ts`, an IFC model to the places of a participant and back out as GeoJSON: `ifcToGeoJson()` reads the file with `@nexgen-os/ifc`, writes it through `importIfc()` of the `building` module and exports the participant with `exportGeoJson()`, and its command runs it in one transaction acting as the person (`NEXGEN_API_KEY`, `NEXGEN_ACCESS_TOKEN` or `NEXGEN_ACT_AS_USER_ID`), the open export (`--open`) leaving out what a source's licence does not let pass on.
 
 ### Changed
 
