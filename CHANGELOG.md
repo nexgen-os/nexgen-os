@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `actions.progress()` says where the devices of a participant or a project stand, beside its actions: how many in each status of the core, the share in service among those not removed, and the ones not yet in service, by name — what a site board shows (migration `0003_progress_devices` of `actions`). The status is the device's own; the module reads it and never writes it.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
