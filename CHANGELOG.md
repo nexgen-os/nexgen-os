@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `docs/demo/ifc.ts`, an IFC model to the places of a participant and back out as GeoJSON: `ifcToGeoJson()` reads the file with `@nexgen-os/ifc`, writes it through `importIfc()` of the `building` module and exports the participant with `exportGeoJson()`, and its command runs it in one transaction acting as the person (`NEXGEN_API_KEY`, `NEXGEN_ACCESS_TOKEN` or `NEXGEN_ACT_AS_USER_ID`), the open export (`--open`) leaving out what a source's licence does not let pass on.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
