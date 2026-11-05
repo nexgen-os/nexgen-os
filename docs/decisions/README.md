@@ -111,3 +111,4 @@ describes; its record is written once the fix has shipped.
 - [0045](0045-to-size-is-one-gesture.md) · To size is one gesture, `size()`, with a named criterion · accepted
 - [0047](0047-a-charging-profile-is-a-command.md) · A charging profile is a command of the `actions` module on the charger, its effect a setpoint series · accepted
 - [0049](0049-the-market-follows-the-place-a-scheme-is-the-countrys-its-contract-the-devices.md) · The market follows the place; a support scheme is the country's, its contract the device's · accepted
+- [0058](0058-a-flexible-device-is-a-device-an-activation-is-a-command.md) · A flexible device is a device, an activation is a command of the `actions` module, its settlement a figure of the module · proposed
