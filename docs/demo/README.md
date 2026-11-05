@@ -98,6 +98,22 @@ holds it: the table as printed, the gap under 12 % on the year and under
 20 % every month from April to September, the two irradiations within 3 %.
 A change of a method that moves a figure shows there first.
 
+`ifc.ts` is not a dataset either: it takes an architect's IFC model to the
+places of a participant and back out as GeoJSON, in one transaction acting
+as the person who runs it — the file read by
+[`@nexgen-os/ifc`](../../packages/formats/ifc/README.md), its building,
+floors, rooms, roof faces and equipment written by `importIfc()` of the
+`building` module, the participant exported by `exportGeoJson()` of the
+core; `--open` gives the export meant for the public, which leaves out what
+a source's licence does not let pass on
+(`tests/ifc-example.test.ts` runs it on the IFC fixtures):
+
+```bash
+export NEXGEN_DB_URL=…        # never written to a file
+export NEXGEN_API_KEY=ngk_…   # a key with write, issued by an owner of the organisation
+npx tsx docs/demo/ifc.ts <participant id> house.ifc <source code> > house.geojson
+```
+
 Run one by hand with PGlite from the repo root:
 
 ```bash

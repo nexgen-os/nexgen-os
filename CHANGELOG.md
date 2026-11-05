@@ -43,6 +43,7 @@ release may break, and says how. How a release is cut:
 - Pack be 0.4.2: the source `ores_service_provider_api` and the conventions of the ORES hub (`meter_data`: zone, quarter hours, three years of history, quality table), with the guide it cites.
 - The Python client attaches a value with its quality: `attach(..., quality="measured")` writes `published`, `measured`, `estimated` or `assumed`, and without one the database's default, `estimated`, as before. Another word is refused as `quality_unknown`, the name the domain `value_quality` gets on the client.
 - The Python client reads a parameter through the one cascade of defaults, `parameter_of(kind, object_id, attribute_type, at=None)`: the value with the level it was found at, its source and its quality, or `parameter_missing`; and lists the projects the connection may read, `projects(organisation_id=None)`.
+- `docs/demo/ifc.ts`, an IFC model to the places of a participant and back out as GeoJSON: `ifcToGeoJson()` reads the file with `@nexgen-os/ifc`, writes it through `importIfc()` of the `building` module and exports the participant with `exportGeoJson()`, and its command runs it in one transaction acting as the person (`NEXGEN_API_KEY`, `NEXGEN_ACCESS_TOKEN` or `NEXGEN_ACT_AS_USER_ID`), the open export (`--open`) leaving out what a source's licence does not let pass on.
 
 ### Changed
 
