@@ -87,6 +87,7 @@ describes; its record is written once the fix has shipped.
 
 - [0037](0037-the-schema-grants-its-own-rights.md) · The schema grants its own rights, and the surface is closed · accepted
 - [0038](0038-everything-raises-by-name.md) · Everything raises, by name · accepted
+- [0059](0059-access-is-evaluated-once-per-query.md) · Access is evaluated once per query, as a set the reader may reach · proposed
 
 ## Agents and the public
 

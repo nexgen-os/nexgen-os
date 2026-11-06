@@ -89,6 +89,13 @@ integration written against one release keeps working against every later
   published and withdrawn by owners, read by the anonymous role through one
   view; then series, documents, an embeddable map, and a check of a
   publication's licence against its sources'.
+- **Access evaluated once per query**
+  ([0059](decisions/0059-access-is-evaluated-once-per-query.md), proposed):
+  once it is accepted, the rules of the core and of the modules rewritten
+  table by table, the series first, each keeping
+  `tests/access-baseline.test.ts` green and measured by
+  `tests/access-cost.test.ts`; the write rules split by command; the
+  project and participant of a row that hangs on an object kept as columns.
 - **An activity log**: who did what, and when, on the six objects of the
   core ([0006](decisions/0006-the-core-names-six-objects.md)) and on the
   figures the modules write about them — the person or the agent acting
