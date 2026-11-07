@@ -1,0 +1,186 @@
+{
+  "name": "Shared supply within a Berlin building",
+  "description": "The owners' association of a Berlin building supplies two flats from the PV of its roof under building electricity use contracts, allocated by quarter-hour. The law draws the building, not a distance: no perimeter is decided, and the sharing is settled all the same.",
+  "period": {
+    "from": "2026-11-09T09:00:00Z",
+    "to": "2026-11-09T10:00:00Z",
+    "step": "15 minutes"
+  },
+  "organisation": "An owners' association of the case",
+  "project": {
+    "name": "Building supply",
+    "kind": "de_gemeinschaftliche_gebaeudeversorgung",
+    "country": "DE"
+  },
+  "participants": [
+    {
+      "ref": "roof",
+      "name": "Building installation",
+      "category": "producer",
+      "segment": "coproperty",
+      "place": {
+        "country": "DE",
+        "region": "DE-BE",
+        "municipality": "11000000",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            13.405,
+            52.52
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "roof",
+          "identifier": "51234567803",
+          "scheme": "malo_id"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 10
+        }
+      ]
+    },
+    {
+      "ref": "flat_a",
+      "name": "Flat A",
+      "category": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "DE",
+        "region": "DE-BE",
+        "municipality": "11000000",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            13.405,
+            52.52
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "flat_a",
+          "identifier": "51234567811",
+          "scheme": "malo_id"
+        }
+      ]
+    },
+    {
+      "ref": "flat_b",
+      "name": "Flat B",
+      "category": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "DE",
+        "region": "DE-BE",
+        "municipality": "11000000",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            13.405,
+            52.52
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "flat_b",
+          "identifier": "51234567829",
+          "scheme": "malo_id"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The building electricity use contracts' allocation key, an input of the case: shares in proportion to the use of each flat, as EnWG § 42b (2) number 1 lets the parties agree."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        0.8,
+        1.0,
+        1.0,
+        0.8
+      ],
+      "source": "An input of the case: quarter-hourly volumes made up for it, consistent at every step (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:roof",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:roof",
+      "quantity": "injection_energy",
+      "values": [
+        0.75,
+        0.95,
+        0.95,
+        0.75
+      ]
+    },
+    {
+      "object": "meter:flat_a",
+      "quantity": "offtake_energy",
+      "values": [
+        0.3,
+        0.4,
+        0.5,
+        0.3
+      ]
+    },
+    {
+      "object": "meter:flat_a",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:flat_b",
+      "quantity": "offtake_energy",
+      "values": [
+        0.2,
+        0.3,
+        0.6,
+        0.4
+      ]
+    },
+    {
+      "object": "meter:flat_b",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
