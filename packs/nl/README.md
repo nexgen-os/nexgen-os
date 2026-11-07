@@ -2,7 +2,7 @@
 
 The values the Netherlands decide that a function of the model reads,
 compiled by `nexgen-os pack build nl` into
-[`supabase/seed/13_pack_nl.sql`](../../supabase/seed/13_pack_nl.sql).
+[`supabase/seed/15_pack_nl.sql`](../../supabase/seed/15_pack_nl.sql).
 Version 0.1.0, certification `community`: checked by the toolchain, read by
 no Dutch professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.

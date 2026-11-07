@@ -170,4 +170,4 @@ professional of the country read it, written with the day in `pack.json`.
 | [`es`](es/README.md) | 0.4.0, `community`: compiled into `supabase/seed/12_pack_es.sql` |
 | [`fr`](fr/README.md) | 0.4.0, `community`: compiled into `supabase/seed/10_pack_fr.sql` |
 | [`it`](it/README.md) | 0.1.0, `community`: compiled into `supabase/seed/14_pack_it.sql` |
-| [`nl`](nl/README.md) | 0.1.0, `community`: compiled into `supabase/seed/13_pack_nl.sql` |
+| [`nl`](nl/README.md) | 0.1.0, `community`: compiled into `supabase/seed/15_pack_nl.sql` |

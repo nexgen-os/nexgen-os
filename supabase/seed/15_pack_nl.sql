@@ -4,8 +4,8 @@
 -- Do not edit: change the pack and build again. `nexgen-os pack check --all`
 -- refuses a seed that is not the exact output of its pack.
 --
--- file           supabase/seed/13_pack_nl.sql
--- checksum       sha256:ca7f9b1cb71b2bb3a72a0fcd29657277a070a5dbed0e4efc404b5b2cb6dda29a
+-- file           supabase/seed/15_pack_nl.sql
+-- checksum       sha256:a419cb4ed445c4eb2092503140b18f80f484b5fb6a5dda3c6fb13c7f075d7651
 -- certification  community
 -- schema_min     0.3.0
 -- modules        grid
@@ -68,7 +68,7 @@ where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, bbox, pack_version, pack_checksum, published_by) values
-  ('NL', 'Netherlands', 'EUR', array['nl', 'fy']::text[], array['Europe/Amsterdam']::text[], 'province', '^[1-9][0-9]{3} ?[A-Z]{2}$', 'cbs_gemeentecode', null::double precision[], '0.1.0', 'sha256:ca7f9b1cb71b2bb3a72a0fcd29657277a070a5dbed0e4efc404b5b2cb6dda29a', 'pack:nl')
+  ('NL', 'Netherlands', 'EUR', array['nl', 'fy']::text[], array['Europe/Amsterdam']::text[], 'province', '^[1-9][0-9]{3} ?[A-Z]{2}$', 'cbs_gemeentecode', null::double precision[], '0.1.0', 'sha256:a419cb4ed445c4eb2092503140b18f80f484b5fb6a5dda3c6fb13c7f075d7651', 'pack:nl')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
