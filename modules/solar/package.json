@@ -1,0 +1,77 @@
+{
+  "name": "@nexgen-os/solar",
+  "version": "0.4.2",
+  "description": "The solar module of Nexgen OS as a library: the PVWatts yield physics (Faiman cell temperature, PVWatts DC model, losses), the Finkelstein-Schafer typical year, P50 and P90 of yearly totals, the inverter fit, and the yield, sizing and performance estimates written to the module's schema.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "modules/solar"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "module.json",
+    "supabase",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./pvwatts": {
+      "types": "./dist/pvwatts.d.ts",
+      "import": "./dist/pvwatts.js"
+    },
+    "./exceedance": {
+      "types": "./dist/exceedance.d.ts",
+      "import": "./dist/exceedance.js"
+    },
+    "./inverter": {
+      "types": "./dist/inverter.d.ts",
+      "import": "./dist/inverter.js"
+    },
+    "./yield": {
+      "types": "./dist/yield.d.ts",
+      "import": "./dist/yield.js"
+    },
+    "./size": {
+      "types": "./dist/size.d.ts",
+      "import": "./dist/size.js"
+    },
+    "./performance": {
+      "types": "./dist/performance.d.ts",
+      "import": "./dist/performance.js"
+    },
+    "./estimates": {
+      "types": "./dist/estimates.d.ts",
+      "import": "./dist/estimates.js"
+    },
+    "./products": {
+      "types": "./dist/products.d.ts",
+      "import": "./dist/products.js"
+    },
+    "./module.json": "./module.json",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.2",
+    "@nexgen-os/open-meteo": "^0.4.2",
+    "@nexgen-os/panond": "^0.4.2",
+    "@nexgen-os/pvgis": "^0.4.2",
+    "@nexgen-os/weather-files": "^0.4.2"
+  }
+}

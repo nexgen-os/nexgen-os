@@ -8,6 +8,16 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/solar`: the `solar` module as an npm package with typed exports, so that a program outside this repository installs the PVWatts physics (Faiman cell temperature, PVWatts DC model, losses), the Finkelstein-Schafer typical year, P50 and P90 and the EPW reader of `@nexgen-os/weather-files` rather than copying them. Subpaths `./pvwatts`, `./exceedance`, `./inverter`, `./yield`, `./size`, `./performance`, `./products`, `./estimates`; the package carries the module's manifest and migrations.
+- `exceedanceLevels()`: P50 and the exceedance levels of yearly totals with no database, the computation `exceedance()` records.
+- The Release workflow starts every Saturday at 03:00 UTC: a dry run, unless the repository variable `RELEASE_SCHEDULE` is `publish`, when it publishes the latest `v*` tag of `main` ([docs/releasing.md](docs/releasing.md)).
+
+### Changed
+
+- A dry run of the Release workflow reports the trusted-publishing check without stopping on it; a run that publishes still stops on it.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.

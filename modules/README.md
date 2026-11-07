@@ -12,6 +12,7 @@ modules/<code>/
   src/                   its TypeScript, where it computes or imports (battery, building, charging, community, consumption, kpis, solar)
   tests/                 its tests, run by the suite with every other
   README.md              what it holds and computes, for a reader who has never seen it
+  package.json           when the module is also an npm package (`solar`, as `@nexgen-os/solar`): a workspace built to dist/
 ```
 
 The manifest is written against [`schema/module.1.json`](schema/module.1.json).

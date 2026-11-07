@@ -80,6 +80,9 @@
       ],
       "@nexgen-os/mcp": [
         "./packages/mcp/src/index.ts"
+      ],
+      "@nexgen-os/solar": [
+        "./modules/solar/src/index.ts"
       ]
     }
   },

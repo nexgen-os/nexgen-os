@@ -10,6 +10,36 @@ estimate, kept in `solar.estimates` with its provenance and its inputs,
 and written by the function that computed it
 ([0004](../../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
 
+## As a package: `@nexgen-os/solar`
+
+The module is also the npm package `@nexgen-os/solar` (AGPL-3.0-only), a
+workspace of this repository built to `dist/` with its types, so that a
+program outside this repository computes as the module does from one
+install rather than from a copy:
+
+```sh
+npm install @nexgen-os/solar
+```
+
+```ts
+import { faimanCellTemperature, pvwattsEnergyPerKwp, exceedanceLevels, readEpw } from '@nexgen-os/solar';
+import { selectTypicalMonths, toYearGrid, typicalYear } from '@nexgen-os/solar/pvwatts';
+```
+
+| Import | What it gives | Reads a database |
+|---|---|---|
+| `@nexgen-os/solar/pvwatts` | the `pvwatts` physics: `faimanCellTemperature()`, `pvwattsEnergyPerKwp()`, `remainingAfterLosses()`, `arrayEnergy()`; weather alignment and cleaning; the typical year, `finkelsteinSchafer()`, `selectTypicalMonths()`, `typicalYear()`; `annualTotals()` | no |
+| `@nexgen-os/solar/exceedance` | `exceedanceLevels()` and `normalQuantile()`; `exceedance()` on a yield estimate | `exceedance()` only |
+| `@nexgen-os/solar/inverter` | `sandiaFromOnd()`, the Sandia inverter fitted from an OND file | no |
+| `@nexgen-os/solar/yield`, `/size`, `/performance`, `/products`, `/estimates` | `estimateYield()`, `size()`, `performanceIndicators()`, `importProduct()`, `writeEstimate()` | yes, a Nexgen OS database with this module |
+| `@nexgen-os/solar` | all of the above, and `readEpw()`, `readTmy3()`, `writeEpw()` of [`@nexgen-os/weather-files`](../../packages/formats/weather-files/README.md) | as above |
+
+The functions take the model as data: the Faiman parameters, γ and the
+losses are the caller's, and the `pvwatts` profile of `solar.yield_profiles`
+holds the ones this module uses (Faiman U0 25, U1 6.84, pvlib's published
+defaults). The package also carries `module.json` and
+`supabase/migrations/`, the schema `npx nexgen-os init` installs.
+
 ## Production, measured first
 
 Production is a device's: a `production_energy` series of a PV system. A
@@ -265,6 +295,10 @@ asked for (P75, P90, P95, P99 on request) are rows of `solar.estimate_levels`. N
 `estimate_not_found`, `real_years_required` (a typical year, or fewer than two
 complete years), `time_zone_required`, `probability_invalid`,
 `uncertainty_invalid`, `horizon_invalid`.
+
+The same computation on yearly totals a program already holds, with no
+database, is `exceedanceLevels(years, { uncertainties?, probabilities?, horizonYears? })`;
+`exceedance()` reads the totals of the estimate and records what it returns.
 
 ## Quantities
 

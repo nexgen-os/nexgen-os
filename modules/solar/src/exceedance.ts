@@ -72,26 +72,13 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
   const totals = annualTotals(values, tz, years);
   if (totals.length < 2) throw new Error(`real_years_required: ${totals.length} complete year in the estimate; the spread needs two or more`);
 
-  const horizon = request.horizonYears ?? 1;
-  if (!(horizon >= 1)) throw new Error('horizon_invalid: the horizon is one year or more');
   const uncertainties = request.uncertainties ?? [];
-  for (const u of uncertainties) if (!(u.pct >= 0)) throw new Error(`uncertainty_invalid: ${u.code} is a standard deviation in percent, zero or more`);
   const probabilities = request.probabilities ?? [75, 90, 99];
-  for (const p of probabilities) if (!(p > 0 && p < 100)) throw new Error(`probability_invalid: ${p} is not a percentage between 0 and 100`);
-
-  const n = totals.length;
-  const p50 = totals.reduce((s, t) => s + t.total, 0) / n;
-  const interannual = Math.sqrt(totals.reduce((s, t) => s + (t.total - p50) ** 2, 0) / (n - 1)) / p50;
-  const overHorizon = interannual / Math.sqrt(horizon);
-  const total = Math.sqrt(overHorizon ** 2 + uncertainties.reduce((s, u) => s + (u.pct / 100) ** 2, 0));
-  const exceedanceKwh = Object.fromEntries(probabilities.map((p) => [String(p), round(p50 * (1 - normalQuantile(p / 100) * total), 3)]));
-
-  const result: Omit<ExceedanceResult, 'estimateId'> = {
-    p50_kwh: round(p50, 3),
-    exceedance_kwh: exceedanceKwh,
-    sigma: { interannual: round(interannual, 6), interannual_over_horizon: round(overHorizon, 6), total: round(total, 6) },
-    years: totals.map((t) => ({ year: t.year, kwh: round(t.total, 3) })),
-  };
+  const horizon = request.horizonYears ?? 1;
+  const result = exceedanceLevels(
+    totals.map((t) => ({ year: t.year, kwh: t.total })),
+    { uncertainties, probabilities, horizonYears: horizon },
+  );
   const inputs = {
     kind: 'exceedance',
     yield_estimate_id: estimate.id,
@@ -105,9 +92,54 @@ export async function exceedance(db: Db, request: ExceedanceRequest): Promise<Ex
   const { estimateId } = await writeEstimate(db, {
     provenance: EXCEEDANCE_ENGINE_VERSION, kind: 'exceedance', deviceId: estimate.device_id, inputs, results: () => ({ ...result }), replaces: request.replaces,
     levels: [{ probability: 50, energy_kwh: result.p50_kwh },
-      ...probabilities.filter((p) => p !== 50).map((p) => ({ probability: p, energy_kwh: exceedanceKwh[String(p)] }))],
+      ...probabilities.filter((p) => p !== 50).map((p) => ({ probability: p, energy_kwh: result.exceedance_kwh[String(p)] }))],
   });
   return { estimateId, ...result };
+}
+
+export interface ExceedanceOptions {
+  /** The components the years do not measure, each a standard deviation in percent of the P50. */
+  uncertainties?: { code: string; pct: number }[];
+  /** The probabilities of exceedance asked for, in percent. Default 75, 90, 99. */
+  probabilities?: number[];
+  /** The number of years the figure is for. Default 1. */
+  horizonYears?: number;
+}
+
+/** P50, the exceedance levels and the relative standard deviations of a set of yearly totals. */
+export type ExceedanceLevels = Omit<ExceedanceResult, 'estimateId'>;
+
+/**
+ * P50 and the exceedance levels of yearly energy totals, with no database:
+ * the mean is the P50, the sample standard deviation of the years is the
+ * interannual variability, divided by the square root of the horizon, and
+ * the named components are added in quadrature; the annual energy is taken
+ * as normally distributed. `exceedance()` reads the totals of a yield
+ * estimate and records what this returns.
+ *
+ * Named errors: `real_years_required` (fewer than two years),
+ * `horizon_invalid`, `uncertainty_invalid`, `probability_invalid`.
+ */
+export function exceedanceLevels(years: { year: number; kwh: number }[], options: ExceedanceOptions = {}): ExceedanceLevels {
+  if (years.length < 2) throw new Error(`real_years_required: ${years.length} complete year; the spread needs two or more`);
+  const horizon = options.horizonYears ?? 1;
+  if (!(horizon >= 1)) throw new Error('horizon_invalid: the horizon is one year or more');
+  const uncertainties = options.uncertainties ?? [];
+  for (const u of uncertainties) if (!(u.pct >= 0)) throw new Error(`uncertainty_invalid: ${u.code} is a standard deviation in percent, zero or more`);
+  const probabilities = options.probabilities ?? [75, 90, 99];
+  for (const p of probabilities) if (!(p > 0 && p < 100)) throw new Error(`probability_invalid: ${p} is not a percentage between 0 and 100`);
+
+  const n = years.length;
+  const p50 = years.reduce((s, t) => s + t.kwh, 0) / n;
+  const interannual = Math.sqrt(years.reduce((s, t) => s + (t.kwh - p50) ** 2, 0) / (n - 1)) / p50;
+  const overHorizon = interannual / Math.sqrt(horizon);
+  const total = Math.sqrt(overHorizon ** 2 + uncertainties.reduce((s, u) => s + (u.pct / 100) ** 2, 0));
+  return {
+    p50_kwh: round(p50, 3),
+    exceedance_kwh: Object.fromEntries(probabilities.map((p) => [String(p), round(p50 * (1 - normalQuantile(p / 100) * total), 3)])),
+    sigma: { interannual: round(interannual, 6), interannual_over_horizon: round(overHorizon, 6), total: round(total, 6) },
+    years: years.map((t) => ({ year: t.year, kwh: round(t.kwh, 3) })),
+  };
 }
 
 /**

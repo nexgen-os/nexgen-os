@@ -105,7 +105,9 @@ worse than one not cut.
 The installer is published as `nexgen-os` (its binary is `nexgen-os`); the
 core (`packages/core`), the format libraries (`packages/formats/*`) and the
 connectors (`packages/connectors/*`) are published under `@nexgen-os/*`, the
-scope of the npm organisation `nexgen-os`. `npm run build` compiles each of
+scope of the npm organisation `nexgen-os`, and so is the `solar` module
+(`modules/solar`, as `@nexgen-os/solar`), the first module that is also a
+package. `npm run build` compiles each of
 them to its `dist/`, the core first.
 `npm run build -w packages/cli` copies the release's migrations, seeds and
 packs into `packages/cli/assets/`, which the published package carries and
@@ -138,6 +140,16 @@ tests, the build and `npm run release:publish -- --for-real`. A version the
 registry already holds is skipped, so a run that stopped half way is simply
 re-run. A package's npm page then shows *Built and signed on GitHub
 Actions*, and `npm audit signatures` verifies it.
+
+**Every Saturday at 03:00 UTC** the workflow starts on its own. By default
+it is a dry run of `main`: the check, the tests, the build and
+`npm run release:publish` without `--for-real`, the trusted-publishing check
+reported without stopping the run. Once a maintainer sets the repository
+variable `RELEASE_SCHEDULE` to `publish` (*Settings → Secrets and variables →
+Actions → Variables*), the Saturday run checks out the latest `v*` tag of
+`main` and publishes what of it the registry does not hold yet; a version
+already there is skipped, so a Saturday with no new tag publishes nothing.
+Removing the variable turns the schedule back into a dry run.
 
 **Dry run, on any branch**: *Actions → Release → Run workflow* with *Publish
 for real* unticked, or locally `npm run build && npm run release:publish`. A
