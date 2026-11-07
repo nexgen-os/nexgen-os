@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { main } from '../src/index.js';
 import { USER_A, freshDatabase, sqlClient } from '../../../tests/helpers/db.js';
-import { EAN_SCHOOL, NAMES, SCHOOL, madeUpPlatform } from '../../connectors/wesmart-database/tests/fixture.js';
+import { EAN_SCHOOL, NAMES, SCHOOL, madeUpPlatform } from '../../connectors/wesmart-database/tests/fixtures/platform.js';
 
 let db: PGlite;
 let source: PGlite;

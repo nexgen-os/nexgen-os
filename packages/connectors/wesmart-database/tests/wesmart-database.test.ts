@@ -1,13 +1,13 @@
 // The platform's database, read only, imported into the model, imported
 // again without a duplicate, and reconciled per participant and per month.
 // Every organisation, project, person, place and metering point is made up
-// (`fixture.ts`).
+// (`fixtures/platform.ts`).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { importHistory, registerSource, type HistoryReport } from '@nexgen-os/core';
 import { readWesmartDatabase, registerWesmartDatabaseScheme, wesmartDatabaseSource } from '@nexgen-os/wesmart-database';
 import { USER_A, asUser, freshDatabase, one } from '../../../../tests/helpers/db.js';
-import { EAN_HOUSE, EAN_SCHOOL, HOUSE, LONELY_PROJECT, NAMES, PV_RECORD, SCHOOL, madeUpPlatform } from './fixture.js';
+import { EAN_HOUSE, EAN_SCHOOL, HOUSE, LONELY_PROJECT, NAMES, PV_RECORD, SCHOOL, madeUpPlatform } from './fixtures/platform.js';
 
 let source: PGlite;
 let db: PGlite;

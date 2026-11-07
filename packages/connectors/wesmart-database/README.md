@@ -68,4 +68,4 @@ processes their data on behalf of the organisations that run the projects;
 the import moves it (names, places, metering points, readings, mandates)
 into the model those organisations run, and the provenance of each series
 says where it came from (`source_code = 'wesmart_database'`). The test
-of this package reads a made-up platform only (`tests/fixture.ts`).
+of this package reads a made-up platform only (`tests/fixtures/platform.ts`).
