@@ -4,8 +4,8 @@
 -- Do not edit: change the pack and build again. `nexgen-os pack check --all`
 -- refuses a seed that is not the exact output of its pack.
 --
--- file           supabase/seed/13_pack_it.sql
--- checksum       sha256:822414bbd4516971d021cf6ca312a5d9a6fd6663bfbfc4a174dc90cf0dde135d
+-- file           supabase/seed/14_pack_it.sql
+-- checksum       sha256:26cbc87a6533793eeda6c600c1811c5685516ee6f25161c85f1a4f2a5b57f71f
 -- certification  community
 -- schema_min     0.3.0
 -- modules        grid
@@ -66,7 +66,7 @@ where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, bbox, pack_version, pack_checksum, published_by) values
-  ('IT', 'Italy', 'EUR', array['it', 'de', 'fr', 'sl']::text[], array['Europe/Rome']::text[], 'region', '^[0-9]{5}$', 'istat', array[6.6, 35.4, 18.6, 47.1]::double precision[], '0.1.0', 'sha256:822414bbd4516971d021cf6ca312a5d9a6fd6663bfbfc4a174dc90cf0dde135d', 'pack:it')
+  ('IT', 'Italy', 'EUR', array['it', 'de', 'fr', 'sl']::text[], array['Europe/Rome']::text[], 'region', '^[0-9]{5}$', 'istat', array[6.6, 35.4, 18.6, 47.1]::double precision[], '0.1.0', 'sha256:26cbc87a6533793eeda6c600c1811c5685516ee6f25161c85f1a4f2a5b57f71f', 'pack:it')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
