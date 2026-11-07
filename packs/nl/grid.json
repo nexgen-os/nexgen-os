@@ -5,9 +5,9 @@
       "code": "tennet",
       "name": "TenneT TSO",
       "kind": "tso",
-      "coverage": "The national high-voltage grid of the Netherlands (220 kV and 380 kV, and most of 110 kV and 150 kV), the offshore grid and the operation of the system; in Flevoland and Gelderland, Liander runs some 150 kV lines (article 3).",
+      "coverage": "The national high-voltage grid (landelijk hoogspanningsnet) of the Netherlands, but some 150 kV lines of Flevoland and Gelderland, which Liander runs (Gebiedsindelingscode elektriciteit, article 3); the regional high-voltage grids are the distribution operators' (article 4).",
       "website": "https://www.tennet.eu/",
-      "description": "The transmission system operator of the Netherlands, TenneT TSO B.V. in the ENTSO-E list of party codes, and the balancing of the Dutch control area.",
+      "description": "The transmission system operator, TenneT TSO B.V. in the ENTSO-E list of party codes (nl_entsoe_eic_parties).",
       "eic_code": "10X1001A1001A361"
     },
     {
