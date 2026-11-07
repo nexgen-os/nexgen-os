@@ -1,0 +1,15 @@
+{
+  "code": "wesmart_database",
+  "name": "WeSmart Database",
+  "description": "The database of the WeSmart platform: organisations, energy sharing projects, their participants with their place, metering point and devices, the quarter-hour readings of those points and the mandates under which the operators' hubs were read. Read, never written, by @nexgen-os/wesmart-database, which imports it into a Nexgen OS installation run for the same organisations.",
+  "kind": "api",
+  "base_url": null,
+  "docs_url": null,
+  "auth": "api_key",
+  "countries": [],
+  "license": "The data of WeSmart's customers, processed by WeSmart on their behalf; not redistributable",
+  "attribution": "WeSmart",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/wesmart-database"
+}

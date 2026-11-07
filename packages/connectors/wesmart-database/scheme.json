@@ -1,0 +1,7 @@
+{
+  "code": "wesmart_database",
+  "name": "WeSmart Database record",
+  "description": "The id of a record of the WeSmart Database (an organisation, a project, a participant, a device): what an imported object is found by the next night.",
+  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+  "published_by": "@nexgen-os/wesmart-database"
+}

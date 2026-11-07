@@ -1,0 +1,39 @@
+{
+  "name": "@nexgen-os/wesmart-database",
+  "version": "0.4.2",
+  "description": "The WeSmart Database as a Nexgen OS importer: organisations, projects, participants with their place, meters and devices, quarter-hour readings and operator mandates, read only, imported again every night and reconciled per participant and per month.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connectors/wesmart-database"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "source.json",
+    "scheme.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0"
+  }
+}

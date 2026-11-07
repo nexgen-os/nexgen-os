@@ -42,6 +42,9 @@
       "@nexgen-os/switchgrid": [
         "./packages/connectors/switchgrid/src/index.ts"
       ],
+      "@nexgen-os/wesmart-database": [
+        "./packages/connectors/wesmart-database/src/index.ts"
+      ],
       "@nexgen-os/urbis": [
         "./packages/connectors/urbis/src/index.ts"
       ],
