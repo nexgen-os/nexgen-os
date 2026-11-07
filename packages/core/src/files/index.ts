@@ -11,3 +11,4 @@ export * from './parquet.js';
 export * from './energy-bill.js';
 export * from './enedis-r6x.js';
 export * from './project.js';
+export * from './history.js';
