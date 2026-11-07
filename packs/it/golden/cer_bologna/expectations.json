@@ -53,7 +53,7 @@
       "level": "country",
       "country": "IT",
       "conditions": {
-        "segment": "residential"
+        "segment": "individual"
       },
       "source_code": "it_dpr_633_1972_vat",
       "source": "packs/it/defaults.json: table A, part III, number 103, electricity for domestic use."

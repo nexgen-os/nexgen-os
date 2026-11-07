@@ -5,7 +5,7 @@
 -- refuses a seed that is not the exact output of its pack.
 --
 -- file           supabase/seed/13_pack_it.sql
--- checksum       sha256:a084f58183be0419504c94deb69dac0c1a34d6d1ed7b4b9f2eea60c9e4a057a8
+-- checksum       sha256:822414bbd4516971d021cf6ca312a5d9a6fd6663bfbfc4a174dc90cf0dde135d
 -- certification  community
 -- schema_min     0.3.0
 -- modules        grid
@@ -66,7 +66,7 @@ where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, bbox, pack_version, pack_checksum, published_by) values
-  ('IT', 'Italy', 'EUR', array['it', 'de', 'fr', 'sl']::text[], array['Europe/Rome']::text[], 'region', '^[0-9]{5}$', 'istat', array[6.6, 35.4, 18.6, 47.1]::double precision[], '0.1.0', 'sha256:a084f58183be0419504c94deb69dac0c1a34d6d1ed7b4b9f2eea60c9e4a057a8', 'pack:it')
+  ('IT', 'Italy', 'EUR', array['it', 'de', 'fr', 'sl']::text[], array['Europe/Rome']::text[], 'region', '^[0-9]{5}$', 'istat', array[6.6, 35.4, 18.6, 47.1]::double precision[], '0.1.0', 'sha256:822414bbd4516971d021cf6ca312a5d9a6fd6663bfbfc4a174dc90cf0dde135d', 'pack:it')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
@@ -169,7 +169,7 @@ on conflict (code) do update set
   description         = excluded.description
 where operators.published_by = excluded.published_by;
 
--- defaults: 30 value(s), 20 of them for a region or a municipality, 7 for a condition. What parameter_of() answers
+-- defaults: 29 value(s), 20 of them for a region or a municipality, 6 for a condition. What parameter_of() answers
 -- for a participant of the country when nothing nearer gives a value.
 do $seed$
 declare
@@ -204,9 +204,8 @@ begin
       ('sharing_settlement_period'::text, null::text, '{"project_kind":"it_autoconsumatore_a_distanza"}'::jsonb, '"PT1H"'::jsonb, 'ISO8601-duration'::text, '2023-03-01'::date, null::date, 'it_arera_tiad'::text, 'The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest'::text, 'published'::text),
       ('sharing_settlement_period'::text, null::text, '{"project_kind":"it_cer"}'::jsonb, '"PT1H"'::jsonb, 'ISO8601-duration'::text, '2023-03-01'::date, null::date, 'it_arera_tiad'::text, 'The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest'::text, 'published'::text),
       ('sharing_settlement_period'::text, null::text, '{"project_kind":"it_gruppo_autoconsumatori"}'::jsonb, '"PT1H"'::jsonb, 'ISO8601-duration'::text, '2023-03-01'::date, null::date, 'it_arera_tiad'::text, 'The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest'::text, 'published'::text),
-      ('vat_rate_electricity'::text, null::text, '{"segment":"coproperty"}'::jsonb, '0.22'::jsonb, 'UNITLESS'::text, '2013-10-01'::date, null::date, 'it_ade_interpello_142_2021'::text, 'The electricity of the common parts of a condominium is not for domestic use and bears the ordinary rate of article 16; the reduced rate applies only to a condominium made of dwellings alone whose electricity serves domestic uses, which the segment does not say'::text, 'published'::text),
-      ('vat_rate_electricity'::text, null::text, '{"segment":"residential"}'::jsonb, '0.1'::jsonb, 'UNITLESS'::text, '2013-10-01'::date, null::date, 'it_dpr_633_1972_vat'::text, 'Table A, part III, number 103: 10 % on electricity for domestic use, a supply to a final customer using it in its dwelling or in a similar collective residence; the row is loaded from the day the ordinary rate became 22 %, the reduced rate being older'::text, 'published'::text),
-      ('vat_rate_electricity'::text, null::text, '{}'::jsonb, '0.22'::jsonb, 'UNITLESS'::text, '2013-10-01'::date, null::date, 'it_dpr_633_1972_vat'::text, 'Article 16, first paragraph: the ordinary rate of 22 %, in force from 1 October 2013; it applies to electricity that is not for domestic use nor for the uses table A, part III, number 103 lists (extractive, agricultural and manufacturing enterprises, which this pack does not tell apart)'::text, 'published'::text)
+      ('vat_rate_electricity'::text, null::text, '{"segment":"individual"}'::jsonb, '0.1'::jsonb, 'UNITLESS'::text, '2013-10-01'::date, null::date, 'it_dpr_633_1972_vat'::text, 'Table A, part III, number 103: 10 % on electricity for domestic use, a supply to a final customer using it in its dwelling or in a similar collective residence, a person or a household; the row is loaded from the day the ordinary rate became 22 %, the reduced rate being older'::text, 'published'::text),
+      ('vat_rate_electricity'::text, null::text, '{}'::jsonb, '0.22'::jsonb, 'UNITLESS'::text, '2013-10-01'::date, null::date, 'it_dpr_633_1972_vat'::text, 'Article 16, first paragraph: the ordinary rate of 22 %, in force from 1 October 2013; it applies to electricity that is not for domestic use nor for the uses table A, part III, number 103 lists (extractive, agricultural and manufacturing enterprises, which this pack does not tell apart). The common parts of a condominium (a coproperty) bear it too, as the tax agency''s answer 142 of 3 March 2021 reads number 103, unless the condominium is made of dwellings alone whose electricity serves domestic uses, which the segment does not say'::text, 'published'::text)
   ),
   problems (problem) as (
     select format('attribute_type_unknown: %s is not an attribute_types code', p.attribute_type)

@@ -8,7 +8,7 @@
       "level": "country",
       "country": "IT",
       "conditions": {
-        "segment": "residential"
+        "segment": "individual"
       },
       "source_code": "it_dpr_633_1972_vat",
       "source": "packs/it/defaults.json: 10 % on electricity for domestic use, table A, part III, number 103."
