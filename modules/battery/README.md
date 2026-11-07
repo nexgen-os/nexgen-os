@@ -127,7 +127,10 @@ Each battery gets one estimate, about the device, and three `simulated`
 series of the device written through `store()`, each naming the estimate in
 its source (`battery.estimates:<id>`): `battery_charge_energy` and
 `battery_discharge_energy` per interval, `charge_level` (percent of the
-usable capacity) at the start of each interval. The inputs say the period,
+usable capacity) at the start of each interval; and, for a battery run for
+peak shaving or arbitrage, `battery_grid_charge_energy`, the part of its
+charge taken from the grid, which the indicators of the `kpis` module do
+not count as produced. The inputs say the period,
 the step, the series read, the battery as `battery_of()` gave it, its place
 in the chain and the batteries before it, the prices read and where they
 came from. The results say the energy charged, charged from the grid and

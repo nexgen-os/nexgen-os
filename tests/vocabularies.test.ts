@@ -70,10 +70,11 @@ describe('the segment of a participant', () => {
 describe('the quantities of self-consumption and storage', () => {
   it('are energies in the unit of energy, each positive, the surplus and the residual derived', async () => {
     const rows = (await db.query<{ code: string; unit: string; aggregation: string }>(
-      `select code, unit, aggregation from quantities where code in ('self_consumption_energy', 'battery_charge_energy', 'battery_discharge_energy') order by code`)).rows;
+      `select code, unit, aggregation from quantities where code in ('self_consumption_energy', 'battery_charge_energy', 'battery_discharge_energy', 'battery_grid_charge_energy') order by code`)).rows;
     expect(rows).toEqual([
       { code: 'battery_charge_energy', unit: 'KiloW-HR', aggregation: 'sum' },
       { code: 'battery_discharge_energy', unit: 'KiloW-HR', aggregation: 'sum' },
+      { code: 'battery_grid_charge_energy', unit: 'KiloW-HR', aggregation: 'sum' },
       { code: 'self_consumption_energy', unit: 'KiloW-HR', aggregation: 'sum' },
     ]);
   });

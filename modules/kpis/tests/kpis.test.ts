@@ -133,7 +133,7 @@ describe('the evaluator', () => {
   it('keeps the program of every indicator it publishes', async () => {
     const rows = await q<{ code: string; program: string[] }>('select code, program from kpis.indicators order by code');
     expect(rows.length).toBeGreaterThanOrEqual(15);
-    expect(rows.find((r) => r.code === 'self_consumption_rate')?.program).toEqual(['direct', 'charge', '+', 'production', '/']);
+    expect(rows.find((r) => r.code === 'self_consumption_rate')?.program).toEqual(['direct', 'charge', '+', 'grid_charge', '-', 'production', '/']);
   });
 });
 
@@ -419,5 +419,54 @@ describe('emission factors, hour by hour or month by month', () => {
     expect(market.results.buckets.map((b) => b.value)).toEqual([expect.closeTo(1.35, 9), expect.closeTo(0.15, 9)]);
     const factor = (market.inputs.parameters as Record<string, { level: string; reference: string; quality: string }[]>).factor;
     expect(factor.map((a) => [a.level, a.reference, a.quality])).toEqual([['country', 'residual mix 2025', 'published'], ['object', 'supplier disclosure 2025', 'published']]);
+  });
+});
+
+describe('a battery that also charges from the grid', () => {
+  // A day: 16 kWh produced (4 an hour from 10:00), 4 consumed directly, 10
+  // stored and 2 injected; the battery also takes 4 kWh from the grid at
+  // night, 14 in all, and gives back 11.9 in the evening. Of the
+  // production, 14 kWh are not injected: a rate of 14/16, of which the
+  // battery stored 10, a boost of 10/16.
+  const DAY = '2026-02-10T00:00:00Z';
+  const NEXT = '2026-02-11T00:00:00Z';
+  const at = (h: number) => new Date(Date.parse(DAY) + h * 3_600_000).toISOString();
+  const by = (values: Record<number, number>): [string, number][] => Object.entries(values).map(([h, v]) => [at(Number(h)), v]);
+
+  async function place(name: string, identifier: string, measured: boolean) {
+    const p = await insert(db, 'participants', { organisation_id: org, project_id: project, name, country: 'ZZ', time_zone: 'UTC' });
+    const m = await insert(db, 'meters', { organisation_id: org, participant_id: p, identifier, scheme: 'zz_ean' });
+    const pv = await insert(db, 'devices', { organisation_id: org, participant_id: p, name: 'PV', device_type: 'solar' });
+    const battery = await insert(db, 'devices', { organisation_id: org, participant_id: p, name: 'Battery', device_type: 'battery' });
+    await storeObject('device', pv, {
+      production_energy: by({ 10: 4, 11: 4, 12: 4, 13: 4 }),
+      ...(measured ? { self_consumption_energy: by({ 10: 1, 11: 1, 12: 1, 13: 1 }) } : {}),
+    });
+    await storeObject('meter', m, {
+      injection_energy: by({ 10: 0.5, 11: 0.5, 12: 0.5, 13: 0.5 }),
+      offtake_energy: by({ 2: 1, 3: 1, 4: 1, 5: 1, 18: 0.025, 19: 0.025, 20: 0.025, 21: 0.025 }),
+    });
+    await storeObject('device', battery, {
+      battery_charge_energy: by({ 2: 1, 3: 1, 4: 1, 5: 1, 10: 2.5, 11: 2.5, 12: 2.5, 13: 2.5 }),
+      battery_grid_charge_energy: by({ 2: 1, 3: 1, 4: 1, 5: 1 }),
+      battery_discharge_energy: by({ 18: 2.975, 19: 2.975, 20: 2.975, 21: 2.975 }),
+    });
+    return p;
+  }
+  const total = async (p: string, code: string) => (await figure(await compute('participant', p, code, DAY, NEXT, null))).results.total.value;
+
+  it('does not count the grid charge as production kept, when the self-consumption is measured', async () => {
+    const p = await place('A hybrid inverter', '2001', true);
+    // (4 + 14 − 4) / 16, where (4 + 14) / 16 gave 1.125.
+    expect(await total(p, 'self_consumption_rate')).toBeCloseTo(14 / 16, 9);
+    // (14 − 4) / 16, where 14 / 16 counted the night's grid charge.
+    expect(await total(p, 'battery_boost_rate')).toBeCloseTo(10 / 16, 9);
+  });
+
+  it('gives the same rate when the self-consumption is the balance that gives it', async () => {
+    const p = await place('A balance', '2002', false);
+    // direct = 16 − 2 − (14 − 4) = 4.
+    expect(await total(p, 'self_consumption_rate')).toBeCloseTo(14 / 16, 9);
+    expect(await total(p, 'battery_boost_rate')).toBeCloseTo(10 / 16, 9);
   });
 });
