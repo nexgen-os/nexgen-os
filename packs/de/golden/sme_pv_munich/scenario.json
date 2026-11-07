@@ -1,6 +1,6 @@
 {
   "name": "A workshop of Munich with PV on its roof",
-  "description": "A workshop self-consumes most of its PV; its yield on four hours by the PVWatts profile of the solar module. Bavaria lies across two control areas, which the pack does not split: the control area is refused by name.",
+  "description": "A workshop self-consumes most of its PV; its yield on four hours by the PVWatts profile of the solar module. No text read gives Bavaria whole to one control area, so the pack decides none there: the control area is refused by name.",
   "period": {
     "from": "2026-06-15T09:00:00Z",
     "to": "2026-06-15T13:00:00Z",
