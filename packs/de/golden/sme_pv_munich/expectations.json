@@ -35,7 +35,7 @@
       "attribute_type": "control_area",
       "at": "2026-11-09",
       "refusal": "parameter_missing",
-      "source": "packs/de decides the control area of the states 50Hertz covers whole; Bavaria is shared between control areas whose borders follow the grid, not the states (packs/de/README.md)."
+      "source": "packs/de decides the control area of the states 50Hertz covers whole; no text read gives Bavaria whole to one transmission operator, whose borders follow the grid (packs/de/README.md)."
     }
   ],
   "operators": [
