@@ -3,9 +3,9 @@
   "country": "IT",
   "name": "Italy",
   "version": "0.1.0",
-  "checksum": "sha256:822414bbd4516971d021cf6ca312a5d9a6fd6663bfbfc4a174dc90cf0dde135d",
+  "checksum": "sha256:26cbc87a6533793eeda6c600c1811c5685516ee6f25161c85f1a4f2a5b57f71f",
   "schema_min": "0.3.0",
-  "seed_sequence": 13,
+  "seed_sequence": 14,
   "certification": {
     "status": "community"
   },
