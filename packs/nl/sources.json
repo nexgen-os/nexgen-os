@@ -1,0 +1,149 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "sources": [
+    {
+      "code": "pdok_locatieserver",
+      "name": "PDOK Locatieserver",
+      "description": "The national geocoding service of PDOK: free search, suggest and reverse lookup of addresses, postal codes, streets, places, municipalities and parcels, built from the BAG and other base registers. An address it returns carries its BAG identifiers, its CBS municipality code and its province. No connector of this repository reads it yet.",
+      "kind": "api",
+      "url": "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free",
+      "license": "Public Domain Mark 1.0 for the BAG data it returns, as the BAG API of PDOK states; the terms of the service itself not verified",
+      "attribution": "© Kadaster / PDOK",
+      "redistributable": true
+    },
+    {
+      "code": "bag",
+      "name": "Basisregistratie Adressen en Gebouwen (BAG), OGC API of PDOK",
+      "description": "The Dutch base register of addresses and buildings kept by the municipalities and published by the Kadaster: every address, every addressable object and every building (pand) with its identifier, footprint, year of construction and status.",
+      "kind": "api",
+      "url": "https://api.pdok.nl/kadaster/bag/ogc/v2",
+      "docs_url": "https://api.pdok.nl/kadaster/bag/ogc/v2?f=html",
+      "license": "Public Domain Mark 1.0",
+      "attribution": "Kadaster — Basisregistratie Adressen en Gebouwen (BAG)",
+      "redistributable": true
+    },
+    {
+      "code": "threedbag",
+      "name": "3DBAG",
+      "description": "Every building of the BAG as a 3D model at several levels of detail, in CityJSON among other formats, keyed by its BAG building identifier; read by the format library `cityjson`.",
+      "kind": "file",
+      "url": "https://3dbag.nl/",
+      "docs_url": "https://docs.3dbag.nl/en/copyright/",
+      "license": "CC-BY-4.0",
+      "attribution": "3DBAG by the 3D geoinformation research group and 3DGI",
+      "redistributable": true
+    },
+    {
+      "code": "cbs",
+      "name": "CBS — Statistics Netherlands",
+      "description": "The statistics office's tables and open data, among them the municipal division of each year with the 4-digit municipality codes.",
+      "kind": "file",
+      "url": "https://www.cbs.nl/",
+      "docs_url": "https://www.cbs.nl/nl-nl/over-ons/website/copyright",
+      "license": "CC-BY-4.0",
+      "attribution": "Bron: CBS",
+      "redistributable": true
+    },
+    {
+      "code": "kvk_handelsregister",
+      "name": "Handelsregister of the Kamer van Koophandel (KvK)",
+      "description": "The Dutch Business Register of enterprises and legal persons, searched by KvK number.",
+      "kind": "registry",
+      "url": "https://www.kvk.nl/",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "nl_energiewet",
+      "name": "Energiewet (Wet van 11 december 2024, Stb. 2025, 12)",
+      "description": "The Dutch energy act that replaced the Elektriciteitswet 1998 and the Gaswet on 1 January 2026: the definitions of an active customer and an energy community (article 1.1), energy sharing (article 2.30) and netting for a small connection (article 2.31). Consolidated version in force from 1 July 2026 read.",
+      "kind": "text",
+      "url": "https://wetten.overheid.nl/BWBR0050714/2026-07-01",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_stb_2025_17",
+      "name": "Wet van 18 december 2024 ter uitvoering van de beëindiging van de salderingsregeling voor elektriciteit (Stb. 2025, 17)",
+      "description": "The act that repeals article 2.31 of the Energiewet (netting) and adds to article 2.34 a reasonable remuneration for what an active customer feeds back, from 1 January 2027 (article V).",
+      "kind": "text",
+      "url": "https://zoek.officielebekendmakingen.nl/stb-2025-17.html",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_begrippencode_elektriciteit",
+      "name": "Begrippencode elektriciteit (ACM)",
+      "description": "The definitions code of the Dutch electricity codes set by the Autoriteit Consument en Markt: the imbalance settlement period, the bidding zone, the voltage levels, a small and a large connection.",
+      "kind": "text",
+      "url": "https://wetten.overheid.nl/BWBR0037938/2025-12-20",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_netcode_elektriciteit",
+      "name": "Netcode elektriciteit (ACM)",
+      "description": "The grid code of the Dutch electricity networks set by the Autoriteit Consument en Markt: how a grid operator builds the meter data of balance responsibility (article 10.17) and the voltage levels it reports by (article 8.1).",
+      "kind": "text",
+      "url": "https://wetten.overheid.nl/BWBR0037940/2025-12-31",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_gebiedsindelingscode_elektriciteit",
+      "name": "Gebiedsindelingscode elektriciteit (ACM)",
+      "description": "The code that sets the area of each Dutch electricity grid operator: the national high-voltage grid (article 3), the regional high-voltage grids (article 4), the medium- and low-voltage grids by province, municipality and district (article 5).",
+      "kind": "text",
+      "url": "https://wetten.overheid.nl/BWBR0037943/2023-12-13",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_wet_omzetbelasting",
+      "name": "Wet op de omzetbelasting 1968",
+      "description": "The Dutch VAT act: the general rate (article 9, first paragraph) and the goods and services of the reduced rate (table I), among which electricity is not.",
+      "kind": "text",
+      "url": "https://wetten.overheid.nl/BWBR0002629/2026-01-01",
+      "license": "Public domain (Auteurswet, article 11: laws and decisions of public authorities)",
+      "redistributable": true
+    },
+    {
+      "code": "nl_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "nl_entsoe_eic_parties",
+      "name": "ENTSO-E — list of X EIC codes (parties)",
+      "description": "The list of party codes of the European electricity market: system operators, suppliers, traders.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/X_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "nl_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "nl_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    }
+  ]
+}

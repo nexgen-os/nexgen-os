@@ -1,0 +1,186 @@
+{
+  "name": "Energy sharing from a greenhouse roof in Westland",
+  "description": "A grower of Westland shares the PV of its roof with two neighbouring houses under one supplier's sharing agreement (Energiewet, article 2.30). No rule of locality is set for sharing yet: the perimeter is refused by name, the sharing settled all the same.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A grower of the case",
+  "project": {
+    "name": "Neighbourhood sharing",
+    "kind": "nl_energie_delen",
+    "country": "NL"
+  },
+  "participants": [
+    {
+      "ref": "grower",
+      "name": "Greenhouse",
+      "category": "producer",
+      "segment": "business",
+      "place": {
+        "country": "NL",
+        "region": "NL-ZH",
+        "municipality": "1783",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.2111,
+            52.0007
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "grower",
+          "identifier": "871000000000000201",
+          "scheme": "gs1_gsrn"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Greenhouse roof PV",
+          "rated_power_kw": 12
+        }
+      ]
+    },
+    {
+      "ref": "home_a",
+      "name": "House A",
+      "category": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "NL",
+        "region": "NL-ZH",
+        "municipality": "1783",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.2125,
+            52.0012
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "home_a",
+          "identifier": "871000000000000202",
+          "scheme": "gs1_gsrn"
+        }
+      ]
+    },
+    {
+      "ref": "home_b",
+      "name": "House B",
+      "category": "consumer",
+      "segment": "individual",
+      "place": {
+        "country": "NL",
+        "region": "NL-ZH",
+        "municipality": "1783",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.2131,
+            52.0003
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "home_b",
+          "identifier": "871000000000000203",
+          "scheme": "gs1_gsrn"
+        }
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "allocation_key",
+      "value": {
+        "method": "proportional",
+        "parameters": {}
+      },
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z",
+      "source": "The operation's allocation key, an input of the case: shares in proportion to the offtake of each participant."
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        6,
+        8,
+        8,
+        6
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:grower",
+      "quantity": "offtake_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:grower",
+      "quantity": "injection_energy",
+      "values": [
+        6,
+        8,
+        8,
+        6
+      ]
+    },
+    {
+      "object": "meter:home_a",
+      "quantity": "offtake_energy",
+      "values": [
+        2,
+        3,
+        6,
+        2
+      ]
+    },
+    {
+      "object": "meter:home_a",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "object": "meter:home_b",
+      "quantity": "offtake_energy",
+      "values": [
+        2,
+        3,
+        4,
+        4
+      ]
+    },
+    {
+      "object": "meter:home_b",
+      "quantity": "injection_energy",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

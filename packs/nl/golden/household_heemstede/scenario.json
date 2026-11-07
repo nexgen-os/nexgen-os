@@ -1,0 +1,83 @@
+{
+  "name": "A household of Heemstede with PV on its roof",
+  "description": "A house of Heemstede, in Noord-Holland, self-consumes part of its PV and feeds back the rest. Noord-Holland is Liander's, Heemstede is Stedin's: the operator is found by the municipality before the province.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A household of the case",
+  "project": {
+    "name": "Home self-consumption",
+    "kind": "individual_self_consumption",
+    "country": "NL"
+  },
+  "participants": [
+    {
+      "ref": "home",
+      "name": "House",
+      "category": "prosumer",
+      "segment": "individual",
+      "place": {
+        "country": "NL",
+        "region": "NL-NH",
+        "municipality": "0397",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            4.6154,
+            52.3448
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "home",
+          "identifier": "871000000000000101",
+          "scheme": "gs1_gsrn"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 5
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        3,
+        4,
+        4,
+        3
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:home",
+      "quantity": "injection_energy",
+      "values": [
+        1,
+        1.5,
+        1.5,
+        1
+      ]
+    },
+    {
+      "object": "meter:home",
+      "quantity": "offtake_energy",
+      "values": [
+        0.5,
+        0,
+        0,
+        0.5
+      ]
+    }
+  ]
+}

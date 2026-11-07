@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "nl_energiegemeenschap",
+      "name": "Energiegemeenschap",
+      "description": "An energy community: a legal entity acting on the energy market for its members, partners or shareholders, whose main purpose is environmental, economic or social benefits for them or for the local areas where it operates, and not profit. The Energiewet has one frame for the renewable and the citizen energy communities of the EU directives.",
+      "parent": "energy_community",
+      "source_code": "nl_energiewet",
+      "reference": "Article 1.1 (definitions), energiegemeenschap"
+    },
+    {
+      "code": "nl_energie_delen",
+      "name": "Energie delen",
+      "description": "Energy sharing by an active customer, or by a connected party within an energy community, under an energy sharing agreement with a supplier that offers it, each participant with a supply or feed-back contract with that supplier and a meter whose communication function is used.",
+      "parent": "collective_self_consumption",
+      "source_code": "nl_energiewet",
+      "reference": "Article 2.30, first paragraph, and article 1.1 (definitions), actieve afnemer"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "defaults": [
+    {
+      "object": "participant:sme",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 101.0,
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_eurostat_business_prices",
+      "source": "packs/nl/defaults.json: Eurostat nrg_pc_205_c, Netherlands, 2025."
+    },
+    {
+      "object": "participant:sme",
+      "attribute_type": "metering_step",
+      "at": "2026-06-15",
+      "value": "PT15M",
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_netcode_elektriciteit",
+      "source": "packs/nl/defaults.json: Netcode elektriciteit, article 10.17, a meter read per imbalance settlement period."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "sme",
+      "operator": "enexis",
+      "by": "region",
+      "region": "NL-NB",
+      "source": "packs/nl/grid.json: Enexis, the one distribution operator of Noord-Brabant (Gebiedsindelingscode elektriciteit, article 5, third paragraph)."
+    }
+  ],
+  "solar": {
+    "energy_kwh": 111.183871,
+    "tolerance_pct": 0.1,
+    "source": "PVWatts DC model (Dobos 2014, NREL/TP-6A20-62641) with Faiman cell temperature U0 25, U1 6.84 and a 14 % system loss, the pvwatts profile of modules/solar, worked by hand hour by hour."
+  },
+  "kpis": [
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_rate",
+      "value": 0.792857,
+      "tolerance": 1e-06,
+      "source": "(140 − 29) / 140."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "specific_yield",
+      "value": 2.8,
+      "tolerance": 1e-06,
+      "source": "140 kWh over 50 kWp."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_savings_business",
+      "value": 22.2999,
+      "tolerance": 1e-06,
+      "source": "111 kWh at 101.0 + 99.9 €/MWh, the business energy price and the grid fees and taxes of packs/nl, 2025."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "injection_value",
+      "refusal": "parameter_missing",
+      "source": "packs/nl has no injection_price_reference."
+    }
+  ]
+}

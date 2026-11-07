@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "NL",
+  "name": "Netherlands",
+  "version": "0.1.0",
+  "checksum": "sha256:bc264d08a14aadb11de355a34760eff28564a1d2efb7c7d16bd13fd1ccddccb6",
+  "schema_min": "0.3.0",
+  "seed_sequence": 13,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "nl",
+      "fy"
+    ],
+    "time_zones": [
+      "Europe/Amsterdam"
+    ],
+    "region_level": "province",
+    "postal_code_pattern": "^[1-9][0-9]{3} ?[A-Z]{2}$",
+    "municipality_scheme": "cbs_gemeentecode",
+    "regions": [
+      {
+        "code": "NL-DR",
+        "name": "Drenthe"
+      },
+      {
+        "code": "NL-FL",
+        "name": "Flevoland"
+      },
+      {
+        "code": "NL-FR",
+        "name": "Fryslân",
+        "names": {
+          "fy": "Fryslân",
+          "nl": "Fryslân"
+        },
+        "aliases": [
+          "Friesland"
+        ]
+      },
+      {
+        "code": "NL-GE",
+        "name": "Gelderland"
+      },
+      {
+        "code": "NL-GR",
+        "name": "Groningen"
+      },
+      {
+        "code": "NL-LI",
+        "name": "Limburg"
+      },
+      {
+        "code": "NL-NB",
+        "name": "Noord-Brabant"
+      },
+      {
+        "code": "NL-NH",
+        "name": "Noord-Holland"
+      },
+      {
+        "code": "NL-OV",
+        "name": "Overijssel"
+      },
+      {
+        "code": "NL-UT",
+        "name": "Utrecht"
+      },
+      {
+        "code": "NL-ZE",
+        "name": "Zeeland"
+      },
+      {
+        "code": "NL-ZH",
+        "name": "Zuid-Holland"
+      }
+    ]
+  }
+}

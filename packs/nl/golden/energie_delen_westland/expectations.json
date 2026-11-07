@@ -1,0 +1,76 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home_a",
+      "attribute_type": "sharing_settlement_period",
+      "at": "2026-06-15",
+      "value": "PT15M",
+      "level": "country",
+      "country": "NL",
+      "conditions": {
+        "project_kind": "nl_energie_delen"
+      },
+      "source_code": "nl_energiewet",
+      "source": "packs/nl/defaults.json: Energiewet, article 2.30, first paragraph, d: shared per imbalance settlement period, 15 minutes by the Begrippencode elektriciteit."
+    },
+    {
+      "object": "participant:home_a",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "The Energiewet leaves the locality of sharing to an order in council (article 2.30, second paragraph), and the Energiebesluit sets none: packs/nl decides no perimeter."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "refusal": "parameter_missing",
+    "source": "No sharing_perimeter for nl_energie_delen."
+  },
+  "operators": [
+    {
+      "meter": "home_a",
+      "operator": "westland_infra",
+      "by": "municipality",
+      "municipality": "NL-1783",
+      "source": "packs/nl/grid.json: Westland Infra runs the grid of the municipality of Westland (Gebiedsindelingscode elektriciteit, article 5, seventh paragraph, a), inside Zuid-Holland, which is Stedin's."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 24.0,
+    "participants": {
+      "grower": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 24.0
+      },
+      "home_a": {
+        "shared_offtake_energy": 11.8,
+        "shared_injection_energy": 0.0
+      },
+      "home_b": {
+        "shared_offtake_energy": 12.2,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants feed in and what they take; each receives in proportion to its offtake. At 09:00, 10:00 and 12:00 the houses take no more than the roof feeds in and receive all they take (4, 6 and 6 kWh); at 11:00 they take 10 kWh and the roof feeds in 8: house A receives 8 × 6/10 = 4.8, house B 8 × 4/10 = 3.2."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.857143,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "24 kWh shared over 28 kWh produced."
+    },
+    {
+      "object": "participant:home_a",
+      "indicator": "residual_offtake_energy",
+      "value": 1.2,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "13 kWh taken less the 11.8 the key shared to house A."
+    }
+  ]
+}

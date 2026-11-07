@@ -1,0 +1,137 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "cbs",
+  "reference": "Municipal division of 2026 (gemeentelijke indeling), codes as the PDOK Locatieserver returns them on 7 November 2026: a subset, the six largest cities and the municipalities a distribution operator other than its province's serves (Gebiedsindelingscode elektriciteit, article 5); the full list loads the same way",
+  "municipalities": [
+    {
+      "code": "0363",
+      "name": "Amsterdam",
+      "parent": "NL-NH"
+    },
+    {
+      "code": "0599",
+      "name": "Rotterdam",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0518",
+      "name": "'s-Gravenhage",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0344",
+      "name": "Utrecht",
+      "parent": "NL-UT"
+    },
+    {
+      "code": "0772",
+      "name": "Eindhoven",
+      "parent": "NL-NB"
+    },
+    {
+      "code": "0014",
+      "name": "Groningen",
+      "parent": "NL-GR"
+    },
+    {
+      "code": "0141",
+      "name": "Almelo",
+      "parent": "NL-OV"
+    },
+    {
+      "code": "0173",
+      "name": "Oldenzaal",
+      "parent": "NL-OV"
+    },
+    {
+      "code": "0118",
+      "name": "Hoogeveen",
+      "parent": "NL-DR"
+    },
+    {
+      "code": "1783",
+      "name": "Westland",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "1842",
+      "name": "Midden-Delfland",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0397",
+      "name": "Heemstede",
+      "parent": "NL-NH"
+    },
+    {
+      "code": "0484",
+      "name": "Alphen aan den Rijn",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0534",
+      "name": "Hillegom",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "1884",
+      "name": "Kaag en Braassem",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0537",
+      "name": "Katwijk",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0546",
+      "name": "Leiden",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0547",
+      "name": "Leiderdorp",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0553",
+      "name": "Lisse",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0569",
+      "name": "Nieuwkoop",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0575",
+      "name": "Noordwijk",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0579",
+      "name": "Oegstgeest",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "1525",
+      "name": "Teylingen",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0626",
+      "name": "Voorschoten",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0629",
+      "name": "Wassenaar",
+      "parent": "NL-ZH"
+    },
+    {
+      "code": "0638",
+      "name": "Zoeterwoude",
+      "parent": "NL-ZH"
+    }
+  ]
+}

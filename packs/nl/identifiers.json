@@ -1,0 +1,39 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "identifiers": [
+    {
+      "code": "cbs_gemeentecode",
+      "name": "CBS municipality code (gemeentecode)",
+      "description": "The 4-digit code of a Dutch municipality given by Statistics Netherlands (CBS), written without the GM prefix of its statistical tables: the level at which a distribution operator's area, local planning rules and most datasets are decided. It changes when municipalities merge. It is not the postal code.",
+      "pattern": "^[0-9]{4}$",
+      "example": "0363",
+      "source_code": "cbs"
+    },
+    {
+      "code": "bag_nummeraanduiding",
+      "name": "BAG address (nummeraanduiding)",
+      "description": "The 16-digit identifier of an address in the Basisregistratie Adressen en Gebouwen (BAG): the code of the municipality that created it, the object type 20, and a 10-digit serial number. The first four digits keep the municipality of creation after a merger.",
+      "pattern": "^[0-9]{4}20[0-9]{10}$",
+      "example": "0599200000239721",
+      "url_template": "https://bag.basisregistraties.overheid.nl/bag/id/nummeraanduiding/{value}",
+      "source_code": "bag"
+    },
+    {
+      "code": "bag_pand",
+      "name": "BAG building (pand)",
+      "description": "The 16-digit identifier of a building in the BAG: the code of the municipality that created it, the object type 10, and a 10-digit serial number. The 3DBAG keys its 3D models by the same identifier.",
+      "pattern": "^[0-9]{4}10[0-9]{10}$",
+      "example": "0599100000617955",
+      "source_code": "bag"
+    },
+    {
+      "code": "kvk_number",
+      "name": "KvK number",
+      "description": "The 8-digit number of an enterprise or a legal person in the Dutch Business Register (Handelsregister) of the Chamber of Commerce (Kamer van Koophandel).",
+      "pattern": "^[0-9]{8}$",
+      "example": "90000102",
+      "source_code": "kvk_handelsregister",
+      "icd": "0106"
+    }
+  ]
+}
