@@ -54,7 +54,8 @@
   },
   "dependencies": {
     "pg": "^8.23.1",
-    "@nexgen-os/core": "^0.4.0"
+    "@nexgen-os/core": "^0.4.0",
+    "@nexgen-os/wesmart-database": "^0.4.2"
   },
   "optionalDependencies": {
     "@electric-sql/pglite": "0.5.8",

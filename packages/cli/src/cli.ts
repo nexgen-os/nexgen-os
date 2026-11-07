@@ -16,7 +16,7 @@ import { install, migrate, postgisVersion, type InstallReport } from './apply.js
 import { NexgenError } from './errors.js';
 import { buildPacks, checkPacks, type PackReport } from './pack/command.js';
 import { GestureError, connect, type Computations, type SqlClient } from '@nexgen-os/core';
-import { GESTURE_COMMANDS, GESTURE_FLAGS, GESTURE_USAGE, printGesture, runGesture } from './gestures.js';
+import { GESTURE_COMMANDS, GESTURE_FLAGS, GESTURE_USAGE, printGesture, printHistory, runGesture } from './gestures.js';
 import { PACKAGE_VERSION, SCHEMA_MIN, SCHEMA_VERSION } from './version.js';
 import { printTry, tryInMemory } from './try.js';
 
@@ -218,6 +218,7 @@ export async function main(argv: string[], io: Io): Promise<number> {
         ...(io.fetch ? { fetch: io.fetch } : {}),
       });
       if (flags.has('json')) io.out(JSON.stringify(value, null, 2));
+      else if (command === 'import' && !flags.has('register')) printHistory(io.out, value as Parameters<typeof printHistory>[1]);
       else printGesture(io.out, value);
       return 0;
     }
