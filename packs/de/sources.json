@@ -1,0 +1,189 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "sources": [
+    {
+      "code": "destatis_gv_isys",
+      "name": "Destatis — Gemeindeverzeichnis-Informationssystem (GV-ISys)",
+      "description": "The statistics office's register of the municipalities of Germany, with their official key (AGS) under their state, government district and district, published quarterly.",
+      "kind": "file",
+      "url": "https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/_inhalt.html",
+      "license": "Datenlizenz Deutschland – Namensnennung – Version 2.0 (not verified)",
+      "attribution": "© Statistisches Bundesamt (Destatis)",
+      "redistributable": true
+    },
+    {
+      "code": "mastr",
+      "name": "Marktstammdatenregister",
+      "description": "The register of the federal network agency where every grid-connected generation unit, storage unit and market actor of the German electricity and gas markets is registered, with its number, place, power and commissioning date; public data downloadable in full.",
+      "kind": "registry",
+      "url": "https://www.marktstammdatenregister.de/MaStR",
+      "docs_url": "https://www.marktstammdatenregister.de/MaStRHilfe/",
+      "license": "Datenlizenz Deutschland – Namensnennung – Version 2.0 (not verified)",
+      "attribution": "© Bundesnetzagentur — Marktstammdatenregister",
+      "redistributable": true
+    },
+    {
+      "code": "smard",
+      "name": "SMARD — Strommarktdaten der Bundesnetzagentur",
+      "description": "The federal network agency's platform of electricity market data: generation, consumption, day-ahead prices of the bidding zone, cross-border flows, by quarter-hour.",
+      "kind": "api",
+      "url": "https://www.smard.de/",
+      "license": "CC-BY-4.0 (not verified)",
+      "attribution": "Bundesnetzagentur | SMARD.de",
+      "redistributable": true
+    },
+    {
+      "code": "netztransparenz",
+      "name": "Netztransparenz — the platform of the four transmission system operators",
+      "description": "The joint publications of the German transmission system operators: balancing, the market value of renewables, the EEG account, the surcharges and levies of the grid, by control area.",
+      "kind": "api",
+      "url": "https://www.netztransparenz.de/",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_enwg",
+      "name": "Energiewirtschaftsgesetz (EnWG)",
+      "description": "The energy industry act: tenant electricity contracts (§ 42a), shared supply within a building (§ 42b), shared use of renewable electricity through the distribution grid (§ 42c).",
+      "kind": "text",
+      "url": "https://www.gesetze-im-internet.de/enwg_2005/",
+      "license": "Terms not stated",
+      "attribution": "Bundesministerium der Justiz — gesetze-im-internet.de",
+      "redistributable": false
+    },
+    {
+      "code": "de_eeg_2023",
+      "name": "Erneuerbare-Energien-Gesetz (EEG 2023)",
+      "description": "The renewable energy sources act: the market premium and its tenders (§ 22), the feed-in tariff (§ 21), the tenant electricity premium (§ 21 (3)), the duration of payment (§ 25), the reduction to zero while the spot price is negative (§ 51).",
+      "kind": "text",
+      "url": "https://www.gesetze-im-internet.de/eeg_2014/",
+      "license": "Terms not stated",
+      "attribution": "Bundesministerium der Justiz — gesetze-im-internet.de",
+      "redistributable": false
+    },
+    {
+      "code": "de_msbg",
+      "name": "Messstellenbetriebsgesetz (MsbG)",
+      "description": "The metering point operation act: who runs a meter, the roll-out of smart metering systems, and how energy is measured (§ 55: quarter-hourly metered load profiles).",
+      "kind": "text",
+      "url": "https://www.gesetze-im-internet.de/messbg/",
+      "license": "Terms not stated",
+      "attribution": "Bundesministerium der Justiz — gesetze-im-internet.de",
+      "redistributable": false
+    },
+    {
+      "code": "de_stromstg",
+      "name": "Stromsteuergesetz (StromStG)",
+      "description": "The electricity tax act: the tax rate per megawatt hour (§ 3) and its reliefs.",
+      "kind": "text",
+      "url": "https://www.gesetze-im-internet.de/stromstg/__3.html",
+      "license": "Terms not stated",
+      "attribution": "Bundesministerium der Justiz — gesetze-im-internet.de",
+      "redistributable": false
+    },
+    {
+      "code": "de_ustg",
+      "name": "Umsatzsteuergesetz (UStG)",
+      "description": "The VAT act: the standard rate (§ 12 (1)) and the zero rate on the supply and installation of photovoltaic systems on or near dwellings (§ 12 (3)).",
+      "kind": "text",
+      "url": "https://www.gesetze-im-internet.de/ustg_1980/__12.html",
+      "license": "Terms not stated",
+      "attribution": "Bundesministerium der Justiz — gesetze-im-internet.de",
+      "redistributable": false
+    },
+    {
+      "code": "de_bdew_identifiers",
+      "name": "BDEW — Anwendungshilfe «Identifikatoren in der Marktkommunikation», version 1.2",
+      "description": "The application guide of the energy and water association on how the identifiers of market communication are built and issued: market partner, market location (MaLo-ID), network location, network area and resource identifiers, with their check-digit methods.",
+      "kind": "text",
+      "url": "https://bdew.de/media/documents/AWH_Identifikatoren-in-der-Marktkommunikation_Version.1.2.pdf",
+      "docs_url": "https://www.bdew.de/service/anwendungshilfen/identifikatoren-in-der-marktkommunikation/",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_mastr_numbering",
+      "name": "Marktstammdatenregister — MaStR-Nummernkonzept (May 2019)",
+      "description": "The federal network agency's note on how the numbers of the register are built: a three-letter prefix of the kind of object or market function, the version digit 9, ten random digits and an EAN check digit.",
+      "kind": "text",
+      "url": "https://www.marktstammdatenregister.de/MaStRHilfe/files/regHilfen/MaStR-Nummernkonzept.pdf",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_entsoe_eic_codes",
+      "name": "ENTSO-E — list of Y EIC codes (areas)",
+      "description": "The list of area codes of the European electricity market, with their functions: bidding zone, control area, LFC area, scheduling area.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/Y_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_entsoe_x_eic_codes",
+      "name": "ENTSO-E — list of X EIC codes (parties)",
+      "description": "The list of party codes of the European electricity market, the system operators among them.",
+      "kind": "text",
+      "url": "https://eepublicdownloads.blob.core.windows.net/cio-lio/csv/X_eicCodes.csv",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_50hertz_grid_area",
+      "name": "50Hertz — the company",
+      "description": "The transmission system operator's page on its grid area: the states of Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia, and the city states of Berlin and Hamburg.",
+      "kind": "text",
+      "url": "https://www.50hertz.com/de/Unternehmen/",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_eurostat_household_prices",
+      "name": "Eurostat — electricity prices components for household consumers, annual (nrg_pc_204_c)",
+      "description": "Yearly electricity prices of households by consumption band and component: energy and supply, network costs, taxes and levies, VAT.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "de_eurostat_business_prices",
+      "name": "Eurostat — electricity prices components for non-household consumers, annual (nrg_pc_205_c)",
+      "description": "Yearly electricity prices of non-household consumers by consumption band and component.",
+      "kind": "text",
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205_c/default/table",
+      "license": "CC-BY-4.0",
+      "attribution": "© European Union, Eurostat",
+      "redistributable": true
+    },
+    {
+      "code": "de_uba_co2_electricity_2024",
+      "name": "Umweltbundesamt — CO2-Emissionen pro Kilowattstunde Strom 2024",
+      "description": "The environment agency's yearly figure of the CO2 emitted in generating each kilowatt hour of electricity consumed in Germany, from its report on the specific greenhouse gas emissions of the German electricity mix.",
+      "kind": "text",
+      "url": "https://www.umweltbundesamt.de/themen/co2-emissionen-pro-kilowattstunde-strom-2024",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_aib_residual_mix_2024",
+      "name": "Association of Issuing Bodies — European Residual Mixes 2024",
+      "description": "The residual mix of each European country for 2024, what is left of its electricity once guarantees of origin are cancelled, with its direct CO2 per kWh, as the Association of Issuing Bodies calculates it for electricity disclosure.",
+      "kind": "text",
+      "url": "https://www.aib-net.org/sites/default/files/assets/eecs/Residual%20Mix/2024_Final%20_Residual%20mix%20calculation%20results_11082025.pdf",
+      "docs_url": "https://www.aib-net.org/facts/european-residual-mix/2024",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "de_bnetza_smard_2025",
+      "name": "Bundesnetzagentur — press release «Bundesnetzagentur publishes 2025 electricity market data» (4 January 2026)",
+      "description": "The federal network agency's yearly summary of the SMARD data: generation, consumption, the mean day-ahead wholesale price of 2025 and of 2024, the hours of negative prices.",
+      "kind": "text",
+      "url": "https://www.bundesnetzagentur.de/SharedDocs/Pressemitteilungen/EN/2026/20260104_SMARD.html",
+      "license": "Terms not stated",
+      "redistributable": false
+    }
+  ]
+}

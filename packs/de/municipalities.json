@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "destatis_gv_isys",
+  "reference": "Gemeindeverzeichnis, official municipality keys (AGS): a representative subset, the three city states and the largest cities of five other states, and the cities the golden cases use; the full list (about 10 800 municipalities) loads the same way",
+  "municipalities": [
+    { "code": "11000000", "name": "Berlin", "parent": "DE-BE" },
+    { "code": "02000000", "name": "Hamburg", "parent": "DE-HH" },
+    { "code": "04011000", "name": "Bremen", "parent": "DE-HB" },
+    { "code": "09162000", "name": "München", "parent": "DE-BY" },
+    { "code": "05315000", "name": "Köln", "parent": "DE-NW" },
+    { "code": "05111000", "name": "Düsseldorf", "parent": "DE-NW" },
+    { "code": "06412000", "name": "Frankfurt am Main", "parent": "DE-HE" },
+    { "code": "08111000", "name": "Stuttgart", "parent": "DE-BW" },
+    { "code": "08311000", "name": "Freiburg im Breisgau", "parent": "DE-BW" },
+    { "code": "14713000", "name": "Leipzig", "parent": "DE-SN" },
+    { "code": "14612000", "name": "Dresden", "parent": "DE-SN" },
+    { "code": "03241001", "name": "Hannover", "parent": "DE-NI" }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "DE",
+  "name": "Germany",
+  "version": "0.1.0",
+  "checksum": "sha256:a5a626cba2db955202f0f402de95ee3c8b0b2653f2226c07e735f6be9471983c",
+  "schema_min": "0.3.0",
+  "seed_sequence": 13,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "de"
+    ],
+    "time_zones": [
+      "Europe/Berlin"
+    ],
+    "region_level": "state",
+    "postal_code_pattern": "^[0-9]{5}$",
+    "bbox": [
+      5.86,
+      47.27,
+      15.05,
+      55.06
+    ],
+    "municipality_scheme": "ags",
+    "regions": [
+      {
+        "code": "DE-BW",
+        "name": "Baden-Württemberg"
+      },
+      {
+        "code": "DE-BY",
+        "name": "Bayern"
+      },
+      {
+        "code": "DE-BE",
+        "name": "Berlin"
+      },
+      {
+        "code": "DE-BB",
+        "name": "Brandenburg"
+      },
+      {
+        "code": "DE-HB",
+        "name": "Bremen"
+      },
+      {
+        "code": "DE-HH",
+        "name": "Hamburg"
+      },
+      {
+        "code": "DE-HE",
+        "name": "Hessen"
+      },
+      {
+        "code": "DE-MV",
+        "name": "Mecklenburg-Vorpommern"
+      },
+      {
+        "code": "DE-NI",
+        "name": "Niedersachsen"
+      },
+      {
+        "code": "DE-NW",
+        "name": "Nordrhein-Westfalen"
+      },
+      {
+        "code": "DE-RP",
+        "name": "Rheinland-Pfalz"
+      },
+      {
+        "code": "DE-SL",
+        "name": "Saarland"
+      },
+      {
+        "code": "DE-SN",
+        "name": "Sachsen"
+      },
+      {
+        "code": "DE-ST",
+        "name": "Sachsen-Anhalt"
+      },
+      {
+        "code": "DE-SH",
+        "name": "Schleswig-Holstein"
+      },
+      {
+        "code": "DE-TH",
+        "name": "Thüringen"
+      }
+    ]
+  }
+}

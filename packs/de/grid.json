@@ -1,0 +1,167 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "operators": [
+    {
+      "code": "fifty_hertz",
+      "name": "50Hertz Transmission",
+      "kind": "tso",
+      "coverage": "The transmission grid and control area of Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia, and of the city states of Berlin and Hamburg.",
+      "website": "https://www.50hertz.com/",
+      "description": "A transmission system operator of the bidding zone DE-LU, responsible for the control area 10YDE-VE-------2.",
+      "eic_code": "10XDE-VE-TRANSMK"
+    },
+    {
+      "code": "amprion",
+      "name": "Amprion",
+      "kind": "tso",
+      "coverage": "The transmission grid and control area of the west of Germany; its borders follow the grid, not the states.",
+      "website": "https://www.amprion.net/",
+      "description": "A transmission system operator of the bidding zone DE-LU, responsible for the control area 10YDE-RWENET---I.",
+      "eic_code": "10XDE-RWENET---W"
+    },
+    {
+      "code": "tennet_de",
+      "name": "TenneT TSO",
+      "kind": "tso",
+      "coverage": "The transmission grid and control area running from the North Sea to the Alps; its borders follow the grid, not the states.",
+      "website": "https://www.tennet.eu/de",
+      "description": "A transmission system operator of the bidding zone DE-LU, responsible for the control area 10YDE-EON------1.",
+      "eic_code": "10XDE-EON-NETZ-C"
+    },
+    {
+      "code": "transnetbw",
+      "name": "TransnetBW",
+      "kind": "tso",
+      "coverage": "The transmission grid and control area of Baden-Württemberg; whether its borders are exactly the state's was not read.",
+      "website": "https://www.transnetbw.de/",
+      "description": "A transmission system operator of the bidding zone DE-LU, responsible for the control area 10YDE-ENBW-----N.",
+      "eic_code": "10XDE-ENBW--TNGX"
+    },
+    {
+      "code": "stromnetz_berlin",
+      "name": "Stromnetz Berlin",
+      "kind": "dso",
+      "regions": [
+        "DE-BE"
+      ],
+      "coverage": "The electricity distribution grid of the city of Berlin.",
+      "website": "https://www.stromnetz.berlin/",
+      "identifier_scheme": "malo_id",
+      "description": "The distribution operator of Berlin. A MaLo-ID names no operator, so a meter is found by the state only."
+    },
+    {
+      "code": "westnetz",
+      "name": "Westnetz",
+      "kind": "dso",
+      "coverage": "Distribution in parts of North Rhine-Westphalia, Rhineland-Palatinate and Lower Saxony; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.westnetz.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "bayernwerk_netz",
+      "name": "Bayernwerk Netz",
+      "kind": "dso",
+      "coverage": "Distribution in large parts of Bavaria; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.bayernwerk-netz.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "netze_bw",
+      "name": "Netze BW",
+      "kind": "dso",
+      "coverage": "Distribution in large parts of Baden-Württemberg; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.netze-bw.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "e_dis_netz",
+      "name": "E.DIS Netz",
+      "kind": "dso",
+      "coverage": "Distribution in parts of Brandenburg and Mecklenburg-Vorpommern; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.e-dis-netz.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "avacon_netz",
+      "name": "Avacon Netz",
+      "kind": "dso",
+      "coverage": "Distribution in parts of Lower Saxony and Saxony-Anhalt; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.avacon-netz.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "mitnetz_strom",
+      "name": "Mitteldeutsche Netzgesellschaft Strom (MITNETZ STROM)",
+      "kind": "dso",
+      "coverage": "Distribution in parts of Saxony, Saxony-Anhalt, Thuringia and Brandenburg; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.mitnetz-strom.de/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    },
+    {
+      "code": "sh_netz",
+      "name": "Schleswig-Holstein Netz",
+      "kind": "dso",
+      "coverage": "Distribution in large parts of Schleswig-Holstein; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.sh-netz.com/",
+      "identifier_scheme": "malo_id",
+      "description": "A regional distribution operator; Germany counts several hundred, each holding the concessions of its municipalities."
+    }
+  ],
+  "support_schemes": [
+    {
+      "code": "de_eeg_feed_in_tariff",
+      "name": "Einspeisevergütung (EEG)",
+      "kind": "feed_in_tariff",
+      "allocation": "open_window",
+      "max_power_kw": 100,
+      "duration_years": 20,
+      "negative_price_rules": [
+        {
+          "threshold_kw": 100,
+          "valid_from": "2026-11-07",
+          "reference": "EEG 2023, § 51 (1) and (2), as in force when read: for periods in which the spot market price is negative, the value the payment is computed from falls to zero. Not applied to an installation below 100 kW until the end of the calendar year in which it is equipped with a smart metering system, nor to one below 2 kW until the end of the year the federal network agency issues its determination under § 85 (2) number 12. The rule applies by the wording in force when the installation was commissioned (§ 100); earlier wordings (several consecutive hours of negative prices, larger installations) are not loaded, so the date is the day the wording was read, not the day it came into force"
+        }
+      ],
+      "source_code": "de_eeg_2023",
+      "reference": "EEG 2023, § 19 (1) number 2 and § 21 (1) number 1: a feed-in tariff for installations of up to 100 kW whose value the law sets; § 25 (1): paid for 20 years, extended to 31 December of the twentieth year"
+    },
+    {
+      "code": "de_eeg_market_premium",
+      "name": "Marktprämie (EEG), statutory value",
+      "kind": "contract_for_difference",
+      "allocation": "open_window",
+      "duration_years": 20,
+      "negative_price_rules": [
+        {
+          "threshold_kw": 100,
+          "valid_from": "2026-11-07",
+          "reference": "EEG 2023, § 51 (1) and (2), as in force when read: for periods in which the spot market price is negative, the value the payment is computed from falls to zero. Not applied to an installation below 100 kW until the end of the calendar year in which it is equipped with a smart metering system, nor to one below 2 kW until the end of the year the federal network agency issues its determination under § 85 (2) number 12. The rule applies by the wording in force when the installation was commissioned (§ 100); earlier wordings (several consecutive hours of negative prices, larger installations) are not loaded, so the date is the day the wording was read, not the day it came into force"
+        }
+      ],
+      "source_code": "de_eeg_2023",
+      "reference": "EEG 2023, § 19 (1) number 1 and § 22 (5): the sliding market premium on directly marketed electricity whose value the law sets (§§ 40 to 49), for installations exempt from tenders — solar of the first segment up to 1 MW, of the second segment up to 750 kW, onshore wind up to 1 MW, biomass up to 150 kW, citizens' energy companies within § 22b; § 25 (1): 20 years. A premium that is never negative, which the kind contract_for_difference approximates"
+    },
+    {
+      "code": "de_eeg_tender",
+      "name": "Ausschreibungen (EEG)",
+      "kind": "contract_for_difference",
+      "allocation": "tender",
+      "duration_years": 20,
+      "negative_price_rules": [
+        {
+          "threshold_kw": 100,
+          "valid_from": "2026-11-07",
+          "reference": "EEG 2023, § 51 (1) and (2), as in force when read: for periods in which the spot market price is negative, the value the payment is computed from falls to zero. Not applied to an installation below 100 kW until the end of the calendar year in which it is equipped with a smart metering system, nor to one below 2 kW until the end of the year the federal network agency issues its determination under § 85 (2) number 12. The rule applies by the wording in force when the installation was commissioned (§ 100); earlier wordings (several consecutive hours of negative prices, larger installations) are not loaded, so the date is the day the wording was read, not the day it came into force"
+        }
+      ],
+      "source_code": "de_eeg_2023",
+      "reference": "EEG 2023, § 22 (1) to (4): the federal network agency sets by tender who is entitled to the market premium and its value, for onshore wind, solar, biomass, green hydrogen and offshore wind above the thresholds of § 22 (2) to (4); § 25 (1): 20 years"
+    }
+  ]
+}

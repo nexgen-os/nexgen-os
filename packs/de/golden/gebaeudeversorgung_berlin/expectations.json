@@ -1,0 +1,96 @@
+{
+  "defaults": [
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "sharing_settlement_period",
+      "at": "2026-11-09",
+      "value": "PT15M",
+      "level": "country",
+      "country": "DE",
+      "conditions": {
+        "project_kind": "de_gemeinschaftliche_gebaeudeversorgung"
+      },
+      "source_code": "de_enwg",
+      "source": "packs/de/defaults.json: EnWG § 42b (5), the allocation by 15-minute interval."
+    },
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-11-09",
+      "value": 0.19,
+      "level": "country",
+      "country": "DE",
+      "source_code": "de_ustg",
+      "source": "packs/de/defaults.json: UStG § 12 (1), the standard rate."
+    },
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "control_area",
+      "at": "2026-11-09",
+      "value": "10YDE-VE-------2",
+      "level": "region",
+      "region": "DE-BE",
+      "source_code": "de_50hertz_grid_area",
+      "source": "packs/de/defaults.json: Berlin is in the 50Hertz grid area, control area 10YDE-VE-------2 of the ENTSO-E list."
+    },
+    {
+      "object": "participant:flat_a",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-11-09",
+      "refusal": "parameter_missing",
+      "source": "EnWG § 42b (1) number 1 draws the building and its ancillary buildings, which no criterion of the core reads: packs/de decides no perimeter (packs/de/README.md)."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-11-09",
+    "refusal": "parameter_missing",
+    "source": "No sharing_perimeter for de_gemeinschaftliche_gebaeudeversorgung."
+  },
+  "operators": [
+    {
+      "meter": "flat_a",
+      "operator": "stromnetz_berlin",
+      "by": "region",
+      "region": "DE-BE",
+      "source": "packs/de/grid.json: stromnetz_berlin, the distribution operator of DE-BE; a MaLo-ID names no operator."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 2.85,
+    "participants": {
+      "roof": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 2.85
+      },
+      "flat_a": {
+        "shared_offtake_energy": 1.431818,
+        "shared_injection_energy": 0.0
+      },
+      "flat_b": {
+        "shared_offtake_energy": 1.418182,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand, as EnWG § 42b (5) allocates: at each quarter-hour the energy shared is the smaller of what the installation gives and what the flats take, each flat receiving in proportion to its use. 0.5, 0.7, 0.95 and 0.7 kWh are shared; at 09:30 the flats take 1.1 kWh and the roof gives 0.95: flat A receives 0.95 × 5/11, flat B 0.95 × 6/11."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.791667,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "2.85 kWh shared over 3.6 kWh produced."
+    },
+    {
+      "object": "participant:flat_a",
+      "indicator": "residual_offtake_energy",
+      "value": 0.068182,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "1.5 kWh taken less the 1.431818 kWh the key allocated to flat A."
+    }
+  ]
+}

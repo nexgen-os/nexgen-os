@@ -1,0 +1,90 @@
+{
+  "defaults": [
+    {
+      "object": "participant:sme",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 105.2,
+      "level": "country",
+      "country": "DE",
+      "source_code": "de_eurostat_business_prices",
+      "source": "packs/de/defaults.json: Eurostat nrg_pc_205_c, Germany, 2025."
+    },
+    {
+      "object": "participant:sme",
+      "attribute_type": "electricity_excise",
+      "at": "2026-11-09",
+      "value": 20.5,
+      "level": "country",
+      "country": "DE",
+      "source_code": "de_stromstg",
+      "source": "packs/de/defaults.json: StromStG § 3, 20.50 €/MWh; the reliefs of manufacturing businesses are not loaded."
+    },
+    {
+      "object": "participant:sme",
+      "attribute_type": "bidding_zone",
+      "at": "2026-11-09",
+      "value": "10Y1001A1001A82H",
+      "level": "country",
+      "country": "DE",
+      "source_code": "de_entsoe_eic_codes",
+      "source": "packs/de/defaults.json: the bidding zone DE-LU of the ENTSO-E list."
+    },
+    {
+      "object": "participant:sme",
+      "attribute_type": "control_area",
+      "at": "2026-11-09",
+      "refusal": "parameter_missing",
+      "source": "packs/de decides the control area of the states 50Hertz covers whole; Bavaria is shared between control areas whose borders follow the grid, not the states (packs/de/README.md)."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "sme",
+      "refusal": "grid_operator_not_found",
+      "source": "packs/de/grid.json lists no operator of DE-BY by region, and a MaLo-ID names no operator: the meter is not resolved, and the model says so by name rather than guess."
+    }
+  ],
+  "solar": {
+    "energy_kwh": 111.183871,
+    "tolerance_pct": 0.1,
+    "source": "PVWatts DC model (Dobos 2014, NREL/TP-6A20-62641) with Faiman cell temperature U0 25, U1 6.84 and a 14 % system loss, the pvwatts profile of modules/solar, worked by hand hour by hour."
+  },
+  "kpis": [
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_rate",
+      "value": 0.792857,
+      "tolerance": 1e-06,
+      "source": "(140 − 29) / 140."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.917355,
+      "tolerance": 1e-06,
+      "source": "111 / (10 + 111)."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "specific_yield",
+      "value": 2.8,
+      "tolerance": 1e-06,
+      "source": "140 kWh over 50 kWp."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "self_consumption_savings_business",
+      "value": 37.9953,
+      "tolerance": 1e-06,
+      "source": "111 kWh at 105.2 + 237.1 €/MWh, the business energy price and the grid fees and taxes of packs/de, 2025 (the grid fees and taxes are the household band's, the one the pack holds)."
+    },
+    {
+      "object": "participant:sme",
+      "indicator": "injection_value",
+      "value": 2.59028,
+      "tolerance": 1e-06,
+      "source": "29 kWh injected (140 − 111) at 89.32 €/MWh, the mean day-ahead price of 2025 (Bundesnetzagentur, SMARD data 2025)."
+    }
+  ]
+}

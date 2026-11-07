@@ -1,0 +1,203 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "defaults": [
+    {
+      "attribute_type": "bidding_zone",
+      "value": "10Y1001A1001A82H",
+      "unit": "code",
+      "source_code": "de_entsoe_eic_codes",
+      "reference": "Row 10Y1001A1001A82H, display name DE_LU, long name Germany_Luxemburg, functions Bidding Zone, LFC Area, Scheduling Area: one bidding zone for Germany and Luxembourg",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-BE",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-BB",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-HH",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-MV",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-SN",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-ST",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "region": "DE-TH",
+      "value": "10YDE-VE-------2",
+      "unit": "code",
+      "source_code": "de_50hertz_grid_area",
+      "reference": "The 50Hertz grid area covers Brandenburg, Mecklenburg-Vorpommern, Saxony, Saxony-Anhalt and Thuringia and the city states of Berlin and Hamburg; its control area is row 10YDE-VE-------2 (DE-50HERTZ, Control Area) of the ENTSO-E list of Y EIC codes",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "metering_step",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "de_msbg",
+      "reference": "§ 55 (1) numbers 1 to 3: a final consumer above 100 000 kWh a year, or equipped with a smart metering system, is measured by a metered load profile (Zählerstandsgangmessung) or a quarter-hourly registered load profile; any other final consumer by the energy taken, as its supply contract requires (§ 55 (1) number 4), which gives index readings only",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 165.4,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Germany, 2024, band KWH2500-4999, component NRG_SUP: 0.1654 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 148.1,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Germany, 2025, band KWH2500-4999, component NRG_SUP: 0.1481 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 123.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Germany, 2024, band MWH2000-19999, component NRG_SUP: 0.1235 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 105.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Germany, 2025, band MWH2000-19999, component NRG_SUP: 0.1052 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 229.4,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Germany, 2024, band KWH2500-4999, components NETC 0.1147 and TAX_FEE_LEV_CHRG 0.1147 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 237.1,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Germany, 2025, band KWH2500-4999, components NETC 0.1130 and TAX_FEE_LEV_CHRG 0.1241 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "injection_price_reference",
+      "value": 78.51,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_bnetza_smard_2025",
+      "reference": "Section «Wholesale electricity prices»: the average day-ahead wholesale price of the previous year, 2024, 78.51 €/MWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "injection_price_reference",
+      "value": 89.32,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_bnetza_smard_2025",
+      "reference": "Section «Wholesale electricity prices»: the average day-ahead wholesale price in 2025, 89.32 €/MWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.363,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "de_uba_co2_electricity_2024",
+      "reference": "Page text of 9 April 2025: 363 g CO2 emitted on average in 2024 in generating each kilowatt hour of electricity consumed in Germany (386 in 2023, 433 in 2022)",
+      "valid_from": "2024-01-01"
+    },
+    {
+      "attribute_type": "market_co2_factor",
+      "value": 0.72456,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "de_aib_residual_mix_2024",
+      "reference": "Table 2 «Residual Mixes 2024», page 7, row DE: 724.56 gCO2/kWh, direct emissions, for electricity disclosure (final version of 11 August 2025)",
+      "valid_from": "2024-01-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "value": 0.19,
+      "unit": "UNITLESS",
+      "source_code": "de_ustg",
+      "reference": "§ 12 (1): the tax is 19 % of the taxable amount of every taxable supply; the supply of electricity has no reduced rate. A ratio kept for simulation; the rate holds since 1 January 2007, and the row starts on the day it was read",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "electricity_excise",
+      "value": 20.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_stromstg",
+      "reference": "§ 3: the tax is 20.50 euros per megawatt hour. The reliefs and refunds of the act (§ 9, § 9b for manufacturing businesses and agriculture) are not loaded; the row starts on the day it was read",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "offpeak_hours",
+      "value": null,
+      "unit": "hours",
+      "source_code": "de_enwg",
+      "reference": "§ 14a (1): the federal network agency may set, by determination, uniform rules under which distribution operators reduce the network charges of controllable consumption devices in return for grid-oriented control, including economic incentives with a time granularity; no single national off-peak window follows from the act. The determination itself and the operators' time windows were not read",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "de_gemeinschaftliche_gebaeudeversorgung"
+      },
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "de_enwg",
+      "reference": "§ 42b (5): the electricity of the building installation is allocated by 15-minute interval, limited in each interval to the smaller of what the installation generates and what the participating consumers use, and to each consumer's own use",
+      "valid_from": "2026-11-07"
+    }
+  ]
+}

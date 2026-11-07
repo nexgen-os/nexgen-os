@@ -1,0 +1,37 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "de_mieterstrom",
+      "name": "Mieterstrom",
+      "description": "Tenant electricity: electricity from a solar installation on, at or in a building, supplied by its operator or a third party to final consumers in that building, its ancillary buildings or buildings of the same neighbourhood, without passing through a grid, under a supply contract that also covers the rest of their needs.",
+      "parent": "collective_self_consumption",
+      "source_code": "de_eeg_2023",
+      "reference": "EEG 2023, § 21 (3) (the tenant electricity premium and its perimeter); the supply contract is EnWG § 42a"
+    },
+    {
+      "code": "de_gemeinschaftliche_gebaeudeversorgung",
+      "name": "Gemeinschaftliche Gebäudeversorgung",
+      "description": "Shared supply within a building: final consumers of one building use, under a building electricity use contract, the electricity of an installation on, at or in that building, without passing through a grid, each receiving the share of an allocation key per 15-minute interval; the operator does not owe them their full supply.",
+      "parent": "collective_self_consumption",
+      "source_code": "de_enwg",
+      "reference": "EnWG § 42b (1) and (5)"
+    },
+    {
+      "code": "de_gemeinsame_nutzung",
+      "name": "Gemeinsame Nutzung (Energy Sharing)",
+      "description": "Energy sharing through the distribution grid: the operator of a renewable installation, or of a storage fed from renewables only — a natural person, or a company whose members are all final consumers or public bodies — supplies other final consumers (households, small and medium enterprises, public bodies) through the public distribution grid under a supply contract and a sharing contract that sets an allocation key; every consumption point and the installation are metered quarter-hourly.",
+      "parent": "collective_self_consumption",
+      "source_code": "de_enwg",
+      "reference": "EnWG § 42c (1) to (3)"
+    },
+    {
+      "code": "de_buergerenergiegesellschaft",
+      "name": "Bürgerenergiegesellschaft",
+      "description": "A citizens' energy company: a cooperative or other company of at least 50 natural persons with voting rights, at least 75 % of the votes held by natural persons registered in a postal code area wholly or partly within 50 km of the planned installation, the other votes held only by small and medium enterprises or municipalities, and no member above 10 % of the votes; it may be exempted from tenders.",
+      "parent": "energy_community",
+      "source_code": "de_eeg_2023",
+      "reference": "EEG 2023, § 3 number 15 (definition) and § 22 (2) and (3) (exemption from tenders)"
+    }
+  ]
+}

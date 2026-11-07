@@ -1,0 +1,29 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "identifiers": [
+    {
+      "code": "malo_id",
+      "name": "Marktlokations-ID (MaLo-ID)",
+      "description": "The identifier of a market location of the German electricity or gas market, the point where energy is supplied or fed in and billed: eleven digits, the first naming the code-issuing body (4 to 9 for the electricity and water association's issuing service, 1 to 3 for the gas association's), nine digits issued by it, and a check digit computed by the locomotive and wagon numbering method. The network operator requests and assigns it; it does not change when the network operator changes, and it says nothing about the operator or the energy carrier.",
+      "pattern": "^[1-9][0-9]{10}$",
+      "example": "41373559241",
+      "source_code": "de_bdew_identifiers"
+    },
+    {
+      "code": "ags",
+      "name": "Amtlicher Gemeindeschlüssel (AGS)",
+      "description": "The eight-digit official key of a municipality in the statistics office's register: two digits of the state (01 to 16), one of the government district, two of the district, three of the municipality. It is not the postal code.",
+      "pattern": "^(0[1-9]|1[0-6])[0-9]{6}$",
+      "example": "09162000",
+      "source_code": "destatis_gv_isys"
+    },
+    {
+      "code": "mastr",
+      "name": "MaStR-Nummer",
+      "description": "The number the core energy market data register (Marktstammdatenregister) gives a unit, a grouping or a market actor: three letters naming its kind (SEE a power generation unit, SEL a technical generation location, ABR a plant operator, SNB a power network operator…), the version digit 9, ten random digits and a check digit computed by the EAN method over the version and the ten digits; a market actor may carry two letters naming its market role.",
+      "pattern": "^[A-Z]{3}9[0-9]{11}([A-Z]{2})?$",
+      "example": "SEE901234567898",
+      "source_code": "de_mastr_numbering"
+    }
+  ]
+}
