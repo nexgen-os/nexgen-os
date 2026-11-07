@@ -13,7 +13,7 @@
     {
       "object": "participant:sme",
       "attribute_type": "metering_step",
-      "at": "2026-06-15",
+      "at": "2026-11-09",
       "value": "PT15M",
       "level": "country",
       "country": "NL",
