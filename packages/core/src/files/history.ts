@@ -338,9 +338,9 @@ async function run(db: Db, history: HistoryDescription, options: HistoryOptions 
 
   // Reconciliation: per meter and month, then summed per participant.
   const lines = new Map<string, MonthLine>();
-  for (const reading of history.readings ?? []) {
+  for (const [r, reading] of (history.readings ?? []).entries()) {
     const key = `${reading.scheme} ${reading.identifier} ${reading.quantity_code}`;
-    const participantRef = refOfMeter.get(`${reading.scheme} ${reading.identifier}`) ?? reading.identifier;
+    const participantRef = refOfMeter.get(`${reading.scheme} ${reading.identifier}`) ?? `readings[${r}]`; // never the metering point itself
     const meter = await meterOf(db, reading.scheme, reading.identifier);
     const add = (month: string, source: number, nexgen: number | null, refusal?: string) => {
       const lineKey = `${participantRef} ${month} ${reading.quantity_code}`;
