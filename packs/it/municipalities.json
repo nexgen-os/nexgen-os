@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "source_code": "istat_municipalities",
+  "reference": "Elenco dei codici statistici dei comuni: a representative subset, the capitals of the regions the golden cases and the operators use; the full list (about 7 900 municipalities) loads the same way",
+  "municipalities": [
+    { "code": "058091", "name": "Roma", "parent": "IT-62" },
+    { "code": "015146", "name": "Milano", "parent": "IT-25" },
+    { "code": "001272", "name": "Torino", "parent": "IT-21" },
+    { "code": "037006", "name": "Bologna", "parent": "IT-45" },
+    { "code": "048017", "name": "Firenze", "parent": "IT-52" },
+    { "code": "063049", "name": "Napoli", "parent": "IT-72" },
+    { "code": "072006", "name": "Bari", "parent": "IT-75" },
+    { "code": "080063", "name": "Reggio di Calabria", "parent": "IT-78" },
+    { "code": "082053", "name": "Palermo", "parent": "IT-82" },
+    { "code": "092009", "name": "Cagliari", "parent": "IT-88" }
+  ]
+}

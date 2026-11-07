@@ -1,0 +1,83 @@
+{
+  "name": "A workshop of Palermo self-consuming its PV",
+  "description": "A workshop self-consumes its roof PV; Sicily is a market zone of its own, the workshop pays the ordinary VAT rate, and its POD names e-distribuzione.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A workshop of the case",
+  "project": {
+    "name": "Workshop roof",
+    "kind": "pv_roof",
+    "country": "IT"
+  },
+  "participants": [
+    {
+      "ref": "workshop",
+      "name": "Workshop",
+      "category": "prosumer",
+      "segment": "business",
+      "place": {
+        "country": "IT",
+        "region": "IT-82",
+        "municipality": "082053",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            13.3615,
+            38.1157
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "workshop",
+          "identifier": "IT001E00000053",
+          "scheme": "pod"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Workshop PV",
+          "rated_power_kw": 20
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        10,
+        15,
+        15,
+        10
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption + charge)."
+    },
+    {
+      "object": "meter:workshop",
+      "quantity": "injection_energy",
+      "values": [
+        2,
+        4,
+        5,
+        2
+      ]
+    },
+    {
+      "object": "meter:workshop",
+      "quantity": "offtake_energy",
+      "values": [
+        1,
+        0,
+        0,
+        1
+      ]
+    }
+  ]
+}

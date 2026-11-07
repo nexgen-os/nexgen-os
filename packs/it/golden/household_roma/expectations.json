@@ -1,0 +1,74 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.1,
+      "level": "country",
+      "country": "IT",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "it_dpr_633_1972_vat",
+      "source": "packs/it/defaults.json: 10 % on electricity for domestic use, table A, part III, number 103."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "bidding_zone",
+      "at": "2026-06-15",
+      "value": "10Y1001A1001A71M",
+      "level": "region",
+      "region": "IT-62",
+      "source_code": "it_gme_market_zones",
+      "source": "packs/it/defaults.json: Lazio is in the zone CSUD, BZN|IT-Centre-South."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "control_area",
+      "at": "2026-11-07",
+      "value": "10YIT-GRTN-----B",
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_entsoe_eic_codes",
+      "source": "packs/it/defaults.json: the one control area of Italy, from the day it was read."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/it loads no Eurostat price yet: its figures were not read on the dataset."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "refusal": "parameter_missing",
+    "source": "A roof installation shares nothing: packs/it decides no sharing_perimeter for pv_roof."
+  },
+  "operators": [
+    {
+      "meter": "home",
+      "operator": "areti",
+      "by": "prefix",
+      "prefix": "IT002",
+      "source": "packs/it/grid.json: the POD starts with IT002, the code of Areti; the meter says no operator itself."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_rate",
+      "value": 0.7,
+      "tolerance": 1e-06,
+      "source": "(10 − 3) / 10: what is not injected."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.933333,
+      "tolerance": 1e-06,
+      "source": "7 / (0.5 + 7)."
+    }
+  ]
+}

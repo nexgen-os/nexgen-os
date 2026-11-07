@@ -1,0 +1,145 @@
+{
+  "defaults": [
+    {
+      "object": "participant:flat",
+      "attribute_type": "sharing_perimeter",
+      "at": "2026-06-15",
+      "value": [
+        "same_substation"
+      ],
+      "level": "country",
+      "country": "IT",
+      "conditions": {
+        "project_kind": "it_cer"
+      },
+      "source_code": "it_camera_autoconsumo_diffuso",
+      "source": "packs/it/defaults.json: the incentive of the decree 414/2023 is paid on the energy shared under the same primary substation."
+    },
+    {
+      "object": "participant:flat",
+      "attribute_type": "sharing_perimeter",
+      "at": "2023-06-15",
+      "refusal": "parameter_missing",
+      "source": "The pack loads the perimeter from the day the decree 414/2023 came into force, 24 January 2024; the earlier regime is not loaded."
+    },
+    {
+      "object": "participant:solar",
+      "attribute_type": "sharing_settlement_period",
+      "at": "2026-06-15",
+      "value": "PT1H",
+      "level": "country",
+      "country": "IT",
+      "conditions": {
+        "project_kind": "it_cer"
+      },
+      "source_code": "it_arera_tiad",
+      "source": "packs/it/defaults.json: the TIAD shares hour by hour."
+    },
+    {
+      "object": "participant:solar",
+      "attribute_type": "bidding_zone",
+      "at": "2026-06-15",
+      "value": "10Y1001A1001A73I",
+      "level": "region",
+      "region": "IT-45",
+      "source_code": "it_gme_market_zones",
+      "source": "packs/it/defaults.json: Emilia-Romagna is in the zone NORD, BZN|IT-North."
+    },
+    {
+      "object": "participant:flat",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.1,
+      "level": "country",
+      "country": "IT",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "it_dpr_633_1972_vat",
+      "source": "packs/it/defaults.json: table A, part III, number 103, electricity for domestic use."
+    }
+  ],
+  "perimeter": {
+    "on": "2026-06-15",
+    "rule": {
+      "criteria": [
+        "same_substation"
+      ],
+      "level": "country",
+      "conditions": {
+        "project_kind": "it_cer"
+      },
+      "source_code": "it_camera_autoconsumo_diffuso"
+    },
+    "participants": {
+      "solar": {
+        "in_perimeter": true
+      },
+      "flat": {
+        "in_perimeter": true,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": true
+          }
+        ]
+      },
+      "shop": {
+        "in_perimeter": false,
+        "criteria": [
+          {
+            "criterion": "same_substation",
+            "in": false
+          }
+        ]
+      }
+    },
+    "source": "The flat's meter and the producer's are downstream of CASE-CP1, the shop's of CASE-CP2: the shop shares in the market zone, without the incentive the perimeter of the pack values."
+  },
+  "operators": [
+    {
+      "meter": "shop",
+      "operator": "inrete",
+      "by": "meter",
+      "source": "The scenario connects the meter to inrete and its primary substation."
+    }
+  ],
+  "settlement": {
+    "engine": "sharing_example",
+    "shared_kwh": 123.0,
+    "participants": {
+      "solar": {
+        "shared_offtake_energy": 0.0,
+        "shared_injection_energy": 123.0
+      },
+      "flat": {
+        "shared_offtake_energy": 66.888889,
+        "shared_injection_energy": 0.0
+      },
+      "shop": {
+        "shared_offtake_energy": 56.111111,
+        "shared_injection_energy": 0.0
+      }
+    },
+    "tolerance_kwh": 1e-06,
+    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take, the minimum hour by hour of the TIAD; each receives in proportion to its offtake. At 11:00 the demand (45 kWh) exceeds the pool (38 kWh): the flat receives 38 × 20/45, the shop 38 × 25/45."
+  },
+  "kpis": [
+    {
+      "object": "project",
+      "indicator": "shared_rate",
+      "value": 0.878571,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "123 kWh shared over 140 kWh produced."
+    },
+    {
+      "object": "participant:shop",
+      "indicator": "residual_offtake_energy",
+      "value": 3.888889,
+      "tolerance": 1e-06,
+      "after": "settlement",
+      "source": "60 kWh taken less what the key shared to the shop."
+    }
+  ]
+}

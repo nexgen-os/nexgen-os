@@ -1,0 +1,29 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "project_kinds": [
+    {
+      "code": "it_autoconsumatore_a_distanza",
+      "name": "Autoconsumatore individuale di energia rinnovabile a distanza",
+      "description": "An individual renewable self-consumer at a distance: one final customer consuming, through the distribution grid, the energy of renewable plants it holds on another site than its consumption.",
+      "parent": "individual_self_consumption",
+      "source_code": "it_dlgs_199_2021",
+      "reference": "Article 30, paragraph 1: the individual self-consumer, including the one whose plant stands at a site other than its consumption and uses the distribution grid"
+    },
+    {
+      "code": "it_gruppo_autoconsumatori",
+      "name": "Gruppo di autoconsumatori di energia rinnovabile che agiscono collettivamente",
+      "description": "A group of renewable self-consumers acting jointly: at least two final customers in the same building or condominium, sharing the energy of the renewable plants of the building.",
+      "parent": "collective_self_consumption",
+      "source_code": "it_dlgs_199_2021",
+      "reference": "Article 30, paragraph 2"
+    },
+    {
+      "code": "it_cer",
+      "name": "Comunità energetica rinnovabile (CER)",
+      "description": "A renewable energy community: an autonomous legal entity of open and voluntary participation, controlled by members — natural persons, small and medium enterprises, local authorities, associations and other bodies named by the act — near its plants, whose main purpose is environmental, economic or social benefit for its members or the areas where it operates rather than financial profit.",
+      "parent": "energy_community",
+      "source_code": "it_dlgs_199_2021",
+      "reference": "Article 31"
+    }
+  ]
+}
