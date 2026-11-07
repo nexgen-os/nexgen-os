@@ -38,7 +38,7 @@ country's ([0021](../../docs/decisions/0021-one-cascade-of-defaults.md)).
 |---|---|---|
 | `bidding_zone` | by region, from 1 January 2021: NORD `10Y1001A1001A73I` (Piemonte, Valle d'Aosta, Lombardia, Trentino-Alto Adige, Veneto, Friuli Venezia Giulia, Liguria, Emilia-Romagna), CNOR `10Y1001A1001A70O` (Toscana, Marche), CSUD `10Y1001A1001A71M` (Umbria, Lazio, Abruzzo, Campania), SUD `10Y1001A1001A788` (Molise, Puglia, Basilicata), CALA `10Y1001C--00096J` (Calabria), SICI `10Y1001A1001A75E`, SARD `10Y1001A1001A74G`; null for the country, which has seven | GME list of the market zones; ARERA deliberation 103/2019/R/eel; ENTSO-E area list for the codes |
 | `control_area` | `10YIT-GRTN-----B` for the whole country | ENTSO-E area list |
-| `vat_rate_electricity` | 0.22, the ordinary rate, from 1 October 2013; 0.10 for a `residential` participant (domestic use); 0.22 for a `coproperty` (the common parts of a condominium) | DPR 633/1972, article 16 and table A, part III, number 103; Agenzia delle Entrate, answer 142 of 3 March 2021 |
+| `vat_rate_electricity` | 0.22, the ordinary rate, from 1 October 2013, which the common parts of a condominium (`coproperty`) bear too; 0.10 for an `individual` participant (domestic use) | DPR 633/1972, article 16 and table A, part III, number 103; Agenzia delle Entrate, answer 142 of 3 March 2021 |
 | `sharing_perimeter` | `["same_substation"]` for a project `it_cer` or `it_autoconsumatore_a_distanza`, from 24 January 2024 | the incentive of the decree 414/2023 on the energy shared under one primary substation, as the Chamber of Deputies' note states it |
 | `sharing_settlement_period` | `PT1H` for the three frames, from 1 March 2023 | TIAD, the shared energy as the hourly minimum of injection and withdrawal |
 
@@ -89,7 +89,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 
 | Case | Kind | What it checks |
 |---|---|---|
-| `cer_bologna` | `it_cer` in Bologna | a flat in by its primary substation, a shop out on another; the perimeter refused before 24 January 2024; the hourly settlement period; the zone NORD; the domestic VAT; the shares of a proportional key and the shared rate |
+| `cer_bologna` | `it_cer` in Bologna | a flat in by its primary substation, a shop out on another; the perimeter refused before 24 January 2024; the hourly settlement period; the zone NORD; the domestic VAT of a household; the shares of a proportional key and the shared rate |
 | `household_roma` | `pv_roof` in Roma | the operator of a meter found by its POD prefix (Areti), the zone CSUD, the control area, the domestic VAT, no household price loaded, self-consumption of a house |
 | `sme_palermo` | `pv_roof` in Palermo | the zone SICI and its refusal before 2021, the ordinary VAT of a business, the operator by POD prefix (e-distribuzione), self-consumption of a workshop |
 

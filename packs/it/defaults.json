@@ -202,29 +202,18 @@
       "value": 0.22,
       "unit": "UNITLESS",
       "source_code": "it_dpr_633_1972_vat",
-      "reference": "Article 16, first paragraph: the ordinary rate of 22 %, in force from 1 October 2013; it applies to electricity that is not for domestic use nor for the uses table A, part III, number 103 lists (extractive, agricultural and manufacturing enterprises, which this pack does not tell apart)",
+      "reference": "Article 16, first paragraph: the ordinary rate of 22 %, in force from 1 October 2013; it applies to electricity that is not for domestic use nor for the uses table A, part III, number 103 lists (extractive, agricultural and manufacturing enterprises, which this pack does not tell apart). The common parts of a condominium (a coproperty) bear it too, as the tax agency's answer 142 of 3 March 2021 reads number 103, unless the condominium is made of dwellings alone whose electricity serves domestic uses, which the segment does not say",
       "valid_from": "2013-10-01"
     },
     {
       "attribute_type": "vat_rate_electricity",
       "condition": {
-        "segment": "residential"
+        "segment": "individual"
       },
       "value": 0.1,
       "unit": "UNITLESS",
       "source_code": "it_dpr_633_1972_vat",
-      "reference": "Table A, part III, number 103: 10 % on electricity for domestic use, a supply to a final customer using it in its dwelling or in a similar collective residence; the row is loaded from the day the ordinary rate became 22 %, the reduced rate being older",
-      "valid_from": "2013-10-01"
-    },
-    {
-      "attribute_type": "vat_rate_electricity",
-      "condition": {
-        "segment": "coproperty"
-      },
-      "value": 0.22,
-      "unit": "UNITLESS",
-      "source_code": "it_ade_interpello_142_2021",
-      "reference": "The electricity of the common parts of a condominium is not for domestic use and bears the ordinary rate of article 16; the reduced rate applies only to a condominium made of dwellings alone whose electricity serves domestic uses, which the segment does not say",
+      "reference": "Table A, part III, number 103: 10 % on electricity for domestic use, a supply to a final customer using it in its dwelling or in a similar collective residence, a person or a household; the row is loaded from the day the ordinary rate became 22 %, the reduced rate being older",
       "valid_from": "2013-10-01"
     },
     {
