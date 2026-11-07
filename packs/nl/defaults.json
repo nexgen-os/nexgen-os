@@ -1,0 +1,118 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "defaults": [
+    {
+      "attribute_type": "bidding_zone",
+      "value": "10YNL----------L",
+      "unit": "code",
+      "source_code": "nl_entsoe_eic_codes",
+      "reference": "Row 10YNL----------L, display name NL, functions Bidding Zone, Control Area, LFC Area, LFC Block, Member State, Scheduling Area",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "control_area",
+      "value": "10YNL----------L",
+      "unit": "code",
+      "source_code": "nl_entsoe_eic_codes",
+      "reference": "Row 10YNL----------L, function Control Area, display name NL",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "imbalance_settlement_period",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "nl_begrippencode_elektriciteit",
+      "reference": "Definition of onbalansverrekeningsperiode: the time unit of imbalance settlement, 15 minutes, by clock quarter-hour",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "metering_step",
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "nl_netcode_elektriciteit",
+      "reference": "Article 10.17, third and tenth paragraphs: the grid operator builds the meter data of balance responsibility per imbalance settlement period (15 minutes, Begrippencode elektriciteit) from the meters it reads remotely at small connections whose allocation method is slimme-meter-allocatie; a small connection allocated by profile (profielallocatie) has no quarter-hour readings",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "nl_energie_delen"
+      },
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "nl_energiewet",
+      "reference": "Article 2.30, first paragraph, d: the electricity is shared per imbalance settlement period, 15 minutes by the Begrippencode elektriciteit",
+      "valid_from": "2026-01-01"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "nl_energiegemeenschap"
+      },
+      "value": "PT15M",
+      "unit": "ISO8601-duration",
+      "source_code": "nl_energiewet",
+      "reference": "Article 2.30, first paragraph, d: a connected party within an energy community shares its electricity per imbalance settlement period, 15 minutes by the Begrippencode elektriciteit",
+      "valid_from": "2026-01-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 170.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Netherlands, 2024, band KWH2500-4999, component NRG_SUP: 0.1702 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 146.7,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Netherlands, 2025, band KWH2500-4999, component NRG_SUP: 0.1467 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 116.9,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Netherlands, 2024, band MWH2000-19999, component NRG_SUP: 0.1169 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 101.0,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Netherlands, 2025, band MWH2000-19999, component NRG_SUP: 0.1010 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 64.3,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Netherlands, 2024, band KWH2500-4999, components NETC 0.1015 and TAX_FEE_LEV_CHRG -0.0372 EUR/kWh, VAT excluded; a mean over the band, in which the fixed energy tax credit per connection (heffingskorting) outweighs part of the energy tax, so a kWh saved at the margin saves more than this figure",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 99.9,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "nl_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Netherlands, 2025, band KWH2500-4999, components NETC 0.1135 and TAX_FEE_LEV_CHRG -0.0136 EUR/kWh, VAT excluded; a mean over the band, in which the fixed energy tax credit per connection (heffingskorting) outweighs part of the energy tax, so a kWh saved at the margin saves more than this figure",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "value": 0.21,
+      "unit": "UNITLESS",
+      "source_code": "nl_wet_omzetbelasting",
+      "reference": "Article 9, first paragraph: the tax is 21 percent; electricity is not among the goods and services of table I (9 percent). Held from 1 January 2023; the rates of earlier years were not read",
+      "valid_from": "2023-01-01"
+    }
+  ]
+}

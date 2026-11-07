@@ -1,0 +1,159 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "operators": [
+    {
+      "code": "tennet",
+      "name": "TenneT TSO",
+      "kind": "tso",
+      "coverage": "The national high-voltage grid of the Netherlands (220 kV and 380 kV, and most of 110 kV and 150 kV), the offshore grid and the operation of the system; in Flevoland and Gelderland, Liander runs some 150 kV lines (article 3).",
+      "website": "https://www.tennet.eu/",
+      "description": "The transmission system operator of the Netherlands, TenneT TSO B.V. in the ENTSO-E list of party codes, and the balancing of the Dutch control area.",
+      "eic_code": "10X1001A1001A361"
+    },
+    {
+      "code": "liander",
+      "name": "Liander",
+      "kind": "dso",
+      "regions": [
+        "NL-FR",
+        "NL-FL",
+        "NL-GE",
+        "NL-NH"
+      ],
+      "municipalities": [
+        "NL-0484",
+        "NL-0534",
+        "NL-1884",
+        "NL-0537",
+        "NL-0546",
+        "NL-0547",
+        "NL-0553",
+        "NL-0569",
+        "NL-0575",
+        "NL-0579",
+        "NL-1525",
+        "NL-0626",
+        "NL-0629",
+        "NL-0638"
+      ],
+      "coverage": "The medium- and low-voltage grids of Fryslân, Flevoland, Gelderland (but three villages of West Betuwe) and Noord-Holland (but Heemstede), and of fourteen municipalities of Zuid-Holland around Leiden; also parts of Deventer, Steenwijkerland, Amersfoort and Veenendaal, which the pack leaves to the operator of their province (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).",
+      "website": "https://www.liander.nl/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Liander N.V., a distribution operator of electricity and gas."
+    },
+    {
+      "code": "stedin",
+      "name": "Stedin",
+      "kind": "dso",
+      "regions": [
+        "NL-UT",
+        "NL-ZE",
+        "NL-ZH"
+      ],
+      "municipalities": [
+        "NL-0397"
+      ],
+      "coverage": "The medium- and low-voltage grids of Utrecht (but two districts each of Amersfoort and Veenendaal), Zeeland and Zuid-Holland (but the municipalities of Liander and Westland Infra), and of Heemstede in Noord-Holland (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).",
+      "website": "https://www.stedin.net/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Stedin Netbeheer B.V., a distribution operator of electricity and gas."
+    },
+    {
+      "code": "enexis",
+      "name": "Enexis",
+      "kind": "dso",
+      "regions": [
+        "NL-GR",
+        "NL-DR",
+        "NL-NB",
+        "NL-LI",
+        "NL-OV"
+      ],
+      "coverage": "The medium- and low-voltage grids of Groningen, Drenthe, Noord-Brabant, Limburg and Overijssel, but the areas of Coteq, Rendo and Liander there (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).",
+      "website": "https://www.enexis.nl/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Enexis Netbeheer B.V., a distribution operator of electricity and gas."
+    },
+    {
+      "code": "westland_infra",
+      "name": "Westland Infra",
+      "kind": "dso",
+      "municipalities": [
+        "NL-1783",
+        "NL-1842"
+      ],
+      "coverage": "The medium- and low-voltage grids of the municipalities of Westland and Midden-Delfland, and of a few streets and districts of Rotterdam, Delft, Den Haag, Maassluis and Vlaardingen, left to Stedin by the pack (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).",
+      "website": "https://www.westlandinfra.nl/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Westland Infra Netbeheer B.V., a distribution operator of electricity and gas."
+    },
+    {
+      "code": "coteq",
+      "name": "Coteq",
+      "kind": "dso",
+      "municipalities": [
+        "NL-0141",
+        "NL-0173"
+      ],
+      "coverage": "The medium- and low-voltage grids of Almelo (but the villages of Bornerbroek and Aadorp), Oldenzaal (but De Graven Es) and the former municipality of Goor (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5). A meter in one of those exceptions names its operator itself.",
+      "website": "https://www.coteqnetbeheer.nl/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "Coteq Netbeheer B.V., a distribution operator of electricity and gas."
+    },
+    {
+      "code": "rendo",
+      "name": "Rendo",
+      "kind": "dso",
+      "municipalities": [
+        "NL-0118"
+      ],
+      "coverage": "The medium- and low-voltage grids of Hoogeveen as it was bounded on 31 December 1997, and of Steenwijk, Tuk and Zuidveen in Steenwijkerland, left to Enexis by the pack (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).",
+      "website": "https://www.rendonetwerken.nl/",
+      "identifier_scheme": "gs1_gsrn",
+      "description": "N.V. RENDO, a distribution operator of electricity and gas."
+    }
+  ],
+  "voltage_levels": {
+    "levels": [
+      {
+        "code": "lv",
+        "name": "Laagspanning",
+        "min_kv": 0,
+        "max_kv": 1
+      },
+      {
+        "code": "mv",
+        "name": "Middenspanning",
+        "min_kv": 1,
+        "max_kv": 35
+      },
+      {
+        "code": "hv",
+        "name": "Hoogspanning",
+        "min_kv": 35,
+        "max_kv": 150
+      },
+      {
+        "code": "ehv",
+        "name": "Extra hoogspanning",
+        "min_kv": 150,
+        "max_kv": 380
+      }
+    ],
+    "source_code": "nl_netcode_elektriciteit",
+    "reference": "Article 8.1, first paragraph: the levels a grid operator reports its interruptions by — up to 1 kV; above 1 kV up to 35 kV; above 35 kV up to 150 kV; 220 kV and 380 kV. The Begrippencode elektriciteit defines low voltage as up to 1 kV (alternating current) and a medium-voltage grid as above 1 kV up to 35 kV",
+    "valid_from": "2026-11-07"
+  },
+  "support_schemes": [
+    {
+      "code": "nl_salderingsregeling",
+      "name": "Salderingsregeling",
+      "kind": "net_metering",
+      "allocation": "open_window",
+      "source_code": "nl_energiewet",
+      "reference": "Article 2.31: for a final customer with a small connection (3 x 80 A or less, article 1.1) who has no feed-back contract with another market party than its supplier, the supplier deducts what is fed in from what is taken, up to what is taken, for renewable electricity (up to 5 000 kWh fed in for non-renewable electricity), and pays a reasonable, non-negative remuneration for the surplus. Repealed from 1 January 2027 by the act of 18 December 2024 (Stb. 2025, 17, article I, B, and article V), which from then gives an active customer a reasonable remuneration for what it feeds back, not below 50 % of its agreed supply price until 1 January 2030 (new article 2.34, ninth paragraph). The netting of the Elektriciteitswet 1998 before 2026 was not read for this pack",
+      "valid_from": "2026-01-01",
+      "valid_to": "2027-01-01"
+    }
+  ]
+}

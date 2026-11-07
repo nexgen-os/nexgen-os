@@ -1,0 +1,85 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 146.7,
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_eurostat_household_prices",
+      "source": "packs/nl/defaults.json: Eurostat nrg_pc_204_c, Netherlands, 2025."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 99.9,
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_eurostat_household_prices",
+      "source": "packs/nl/defaults.json: Eurostat nrg_pc_204_c, Netherlands, 2025, network costs 0.1135 and taxes -0.0136 EUR/kWh."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.21,
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_wet_omzetbelasting",
+      "source": "packs/nl/defaults.json: Wet op de omzetbelasting 1968, article 9, first paragraph."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "market_co2_factor",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "The Netherlands have full consumption disclosure: the Association of Issuing Bodies publishes no residual mix for NL in 2024 (packs/nl/README.md)."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "home",
+      "operator": "stedin",
+      "by": "municipality",
+      "municipality": "NL-0397",
+      "source": "packs/nl/grid.json: Stedin runs the grid of Heemstede (Gebiedsindelingscode elektriciteit, article 5, sixth paragraph, b), inside Noord-Holland, which is Liander's."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_rate",
+      "value": 0.642857,
+      "tolerance": 1e-06,
+      "source": "(14 − 5) / 14: what is not fed back."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.9,
+      "tolerance": 1e-06,
+      "source": "9 / (1 + 9)."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings_household",
+      "value": 2.2194,
+      "tolerance": 1e-06,
+      "source": "9 kWh at 146.7 + 99.9 €/MWh, the household energy price and the grid fees and taxes of packs/nl, 2025."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "injection_value",
+      "refusal": "parameter_missing",
+      "source": "packs/nl has no injection_price_reference: what is paid for feeding back is the supplier's contract."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "co2_avoided",
+      "refusal": "parameter_missing",
+      "source": "packs/nl has no grid_co2_factor."
+    }
+  ]
+}
