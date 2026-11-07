@@ -5,7 +5,7 @@
 -- refuses a seed that is not the exact output of its pack.
 --
 -- file           supabase/seed/13_pack_nl.sql
--- checksum       sha256:bc264d08a14aadb11de355a34760eff28564a1d2efb7c7d16bd13fd1ccddccb6
+-- checksum       sha256:ca7f9b1cb71b2bb3a72a0fcd29657277a070a5dbed0e4efc404b5b2cb6dda29a
 -- certification  community
 -- schema_min     0.3.0
 -- modules        grid
@@ -68,7 +68,7 @@ where identifier_schemes.published_by = excluded.published_by;
 
 -- countries: who the country is, and which version of its pack this installation holds.
 insert into countries (code, name, currency, languages, time_zones, region_level, postal_code_pattern, municipality_scheme, bbox, pack_version, pack_checksum, published_by) values
-  ('NL', 'Netherlands', 'EUR', array['nl', 'fy']::text[], array['Europe/Amsterdam']::text[], 'province', '^[1-9][0-9]{3} ?[A-Z]{2}$', 'cbs_gemeentecode', null::double precision[], '0.1.0', 'sha256:bc264d08a14aadb11de355a34760eff28564a1d2efb7c7d16bd13fd1ccddccb6', 'pack:nl')
+  ('NL', 'Netherlands', 'EUR', array['nl', 'fy']::text[], array['Europe/Amsterdam']::text[], 'province', '^[1-9][0-9]{3} ?[A-Z]{2}$', 'cbs_gemeentecode', null::double precision[], '0.1.0', 'sha256:ca7f9b1cb71b2bb3a72a0fcd29657277a070a5dbed0e4efc404b5b2cb6dda29a', 'pack:nl')
 on conflict (code) do update set
   name                = excluded.name,
   currency            = excluded.currency,
@@ -161,7 +161,7 @@ insert into grid.operators (code, name, kind, country, regions, municipalities, 
   ('liander', 'Liander', 'dso', 'NL', array['NL-FR', 'NL-FL', 'NL-GE', 'NL-NH']::text[], array['NL-0484', 'NL-0534', 'NL-1884', 'NL-0537', 'NL-0546', 'NL-0547', 'NL-0553', 'NL-0569', 'NL-0575', 'NL-0579', 'NL-1525', 'NL-0626', 'NL-0629', 'NL-0638']::text[], '{}'::text[], 'The medium- and low-voltage grids of Fryslân, Flevoland, Gelderland (but three villages of West Betuwe) and Noord-Holland (but Heemstede), and of fourteen municipalities of Zuid-Holland around Leiden; also parts of Deventer, Steenwijkerland, Amersfoort and Veenendaal, which the pack leaves to the operator of their province (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).', 'https://www.liander.nl/', null, '{}'::jsonb, 'gs1_gsrn', null, 'Liander N.V., a distribution operator of electricity and gas.', 'pack:nl'),
   ('rendo', 'Rendo', 'dso', 'NL', '{}'::text[], array['NL-0118']::text[], '{}'::text[], 'The medium- and low-voltage grids of Hoogeveen as it was bounded on 31 December 1997, and of Steenwijk, Tuk and Zuidveen in Steenwijkerland, left to Enexis by the pack (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).', 'https://www.rendonetwerken.nl/', null, '{}'::jsonb, 'gs1_gsrn', null, 'N.V. RENDO, a distribution operator of electricity and gas.', 'pack:nl'),
   ('stedin', 'Stedin', 'dso', 'NL', array['NL-UT', 'NL-ZE', 'NL-ZH']::text[], array['NL-0397']::text[], '{}'::text[], 'The medium- and low-voltage grids of Utrecht (but two districts each of Amersfoort and Veenendaal), Zeeland and Zuid-Holland (but the municipalities of Liander and Westland Infra), and of Heemstede in Noord-Holland (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).', 'https://www.stedin.net/', null, '{}'::jsonb, 'gs1_gsrn', null, 'Stedin Netbeheer B.V., a distribution operator of electricity and gas.', 'pack:nl'),
-  ('tennet', 'TenneT TSO', 'tso', 'NL', '{}'::text[], '{}'::text[], '{}'::text[], 'The national high-voltage grid of the Netherlands (220 kV and 380 kV, and most of 110 kV and 150 kV), the offshore grid and the operation of the system; in Flevoland and Gelderland, Liander runs some 150 kV lines (article 3).', 'https://www.tennet.eu/', null, '{}'::jsonb, null, '10X1001A1001A361', 'The transmission system operator of the Netherlands, TenneT TSO B.V. in the ENTSO-E list of party codes, and the balancing of the Dutch control area.', 'pack:nl'),
+  ('tennet', 'TenneT TSO', 'tso', 'NL', '{}'::text[], '{}'::text[], '{}'::text[], 'The national high-voltage grid (landelijk hoogspanningsnet) of the Netherlands, but some 150 kV lines of Flevoland and Gelderland, which Liander runs (Gebiedsindelingscode elektriciteit, article 3); the regional high-voltage grids are the distribution operators'' (article 4).', 'https://www.tennet.eu/', null, '{}'::jsonb, null, '10X1001A1001A361', 'The transmission system operator, TenneT TSO B.V. in the ENTSO-E list of party codes (nl_entsoe_eic_parties).', 'pack:nl'),
   ('westland_infra', 'Westland Infra', 'dso', 'NL', '{}'::text[], array['NL-1783', 'NL-1842']::text[], '{}'::text[], 'The medium- and low-voltage grids of the municipalities of Westland and Midden-Delfland, and of a few streets and districts of Rotterdam, Delft, Den Haag, Maassluis and Vlaardingen, left to Stedin by the pack (Gebiedsindelingscode elektriciteit, version in force from 13 December 2023, article 5).', 'https://www.westlandinfra.nl/', null, '{}'::jsonb, 'gs1_gsrn', null, 'Westland Infra Netbeheer B.V., a distribution operator of electricity and gas.', 'pack:nl')
 on conflict (code) do update set
   name                = excluded.name,
