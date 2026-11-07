@@ -1,0 +1,61 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "operators": [
+    {
+      "code": "terna",
+      "name": "Terna",
+      "kind": "tso",
+      "coverage": "The national transmission grid of the mainland, Sicily and Sardinia, and the dispatching of the system.",
+      "website": "https://www.terna.it/",
+      "description": "The transmission system operator and the operator of the control area 10YIT-GRTN-----B: the transmission grid, the dispatching, the market zones of the relevant grid."
+    },
+    {
+      "code": "e_distribuzione",
+      "name": "e-distribuzione",
+      "kind": "dso",
+      "coverage": "Distribution in most Italian municipalities; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.e-distribuzione.it/",
+      "identifier_scheme": "pod",
+      "identifier_prefixes": ["IT001"],
+      "description": "The largest distribution operator, code 001 in the POD of the points it issues; a meter whose bill shows only the last eight digits of its POD takes IT001E before them."
+    },
+    {
+      "code": "areti",
+      "name": "Areti",
+      "kind": "dso",
+      "coverage": "Distribution in Roma and a few neighbouring municipalities.",
+      "website": "https://www.areti.it/",
+      "identifier_scheme": "pod",
+      "identifier_prefixes": ["IT002"],
+      "description": "A distribution operator, code 002 in the POD of the points it issues."
+    },
+    {
+      "code": "inrete",
+      "name": "Inrete Distribuzione Energia",
+      "kind": "dso",
+      "coverage": "Distribution in parts of Emilia-Romagna; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "pod",
+      "identifier_prefixes": ["IT011"],
+      "description": "A distribution operator, code 011 in the POD of the points it issues."
+    },
+    {
+      "code": "unareti",
+      "name": "Unareti",
+      "kind": "dso",
+      "coverage": "Distribution in Milano, Brescia and other municipalities of Lombardia; the municipalities it serves are not listed by this pack.",
+      "website": "https://www.unareti.it/",
+      "identifier_scheme": "pod",
+      "identifier_prefixes": ["IT012"],
+      "description": "A distribution operator, code 012 in the POD of the points it issues."
+    },
+    {
+      "code": "ireti",
+      "name": "Ireti",
+      "kind": "dso",
+      "coverage": "Distribution in Torino, Parma and other municipalities; the municipalities it serves are not listed by this pack.",
+      "identifier_scheme": "pod",
+      "identifier_prefixes": ["IT020"],
+      "description": "A distribution operator, code 020 in the POD of the points it issues."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "defaults": [
+    {
+      "object": "participant:workshop",
+      "attribute_type": "vat_rate_electricity",
+      "at": "2026-06-15",
+      "value": 0.22,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_dpr_633_1972_vat",
+      "source": "packs/it/defaults.json: the ordinary rate of article 16, 22 %."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "bidding_zone",
+      "at": "2026-06-15",
+      "value": "10Y1001A1001A75E",
+      "level": "region",
+      "region": "IT-82",
+      "source_code": "it_gme_market_zones",
+      "source": "packs/it/defaults.json: Sicily is the zone SICI, BZN|IT-Sicily."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "bidding_zone",
+      "at": "2020-06-15",
+      "refusal": "parameter_missing",
+      "source": "The pack loads the zones of the configuration in force from 1 January 2021; the earlier one is not loaded."
+    }
+  ],
+  "operators": [
+    {
+      "meter": "workshop",
+      "operator": "e_distribuzione",
+      "by": "prefix",
+      "prefix": "IT001",
+      "source": "packs/it/grid.json: the POD starts with IT001, the code of e-distribuzione."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:workshop",
+      "indicator": "self_consumption_rate",
+      "value": 0.74,
+      "tolerance": 1e-06,
+      "source": "(50 − 13) / 50."
+    },
+    {
+      "object": "participant:workshop",
+      "indicator": "self_sufficiency_rate",
+      "value": 0.948718,
+      "tolerance": 1e-06,
+      "source": "37 / (2 + 37)."
+    }
+  ]
+}

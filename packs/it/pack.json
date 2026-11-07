@@ -1,0 +1,141 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "country": "IT",
+  "name": "Italy",
+  "version": "0.1.0",
+  "checksum": "sha256:a084f58183be0419504c94deb69dac0c1a34d6d1ed7b4b9f2eea60c9e4a057a8",
+  "schema_min": "0.3.0",
+  "seed_sequence": 13,
+  "certification": {
+    "status": "community"
+  },
+  "modules": [
+    "grid"
+  ],
+  "sections": [
+    "identifiers",
+    "sources",
+    "project_kinds",
+    "municipalities",
+    "grid",
+    "defaults"
+  ],
+  "identity": {
+    "currency": "EUR",
+    "languages": [
+      "it",
+      "de",
+      "fr",
+      "sl"
+    ],
+    "time_zones": [
+      "Europe/Rome"
+    ],
+    "region_level": "region",
+    "postal_code_pattern": "^[0-9]{5}$",
+    "bbox": [
+      6.6,
+      35.4,
+      18.6,
+      47.1
+    ],
+    "municipality_scheme": "istat",
+    "regions": [
+      {
+        "code": "IT-21",
+        "name": "Piemonte"
+      },
+      {
+        "code": "IT-23",
+        "name": "Valle d'Aosta",
+        "names": {
+          "fr": "Vallée d'Aoste"
+        }
+      },
+      {
+        "code": "IT-25",
+        "name": "Lombardia"
+      },
+      {
+        "code": "IT-32",
+        "name": "Trentino-Alto Adige",
+        "names": {
+          "de": "Trentino-Südtirol"
+        },
+        "aliases": [
+          "Trentino-Alto Adige/Südtirol"
+        ]
+      },
+      {
+        "code": "IT-34",
+        "name": "Veneto"
+      },
+      {
+        "code": "IT-36",
+        "name": "Friuli Venezia Giulia",
+        "names": {
+          "sl": "Furlanija - Julijska krajina"
+        },
+        "aliases": [
+          "Friuli-Venezia Giulia"
+        ]
+      },
+      {
+        "code": "IT-42",
+        "name": "Liguria"
+      },
+      {
+        "code": "IT-45",
+        "name": "Emilia-Romagna"
+      },
+      {
+        "code": "IT-52",
+        "name": "Toscana"
+      },
+      {
+        "code": "IT-55",
+        "name": "Umbria"
+      },
+      {
+        "code": "IT-57",
+        "name": "Marche"
+      },
+      {
+        "code": "IT-62",
+        "name": "Lazio"
+      },
+      {
+        "code": "IT-65",
+        "name": "Abruzzo"
+      },
+      {
+        "code": "IT-67",
+        "name": "Molise"
+      },
+      {
+        "code": "IT-72",
+        "name": "Campania"
+      },
+      {
+        "code": "IT-75",
+        "name": "Puglia"
+      },
+      {
+        "code": "IT-77",
+        "name": "Basilicata"
+      },
+      {
+        "code": "IT-78",
+        "name": "Calabria"
+      },
+      {
+        "code": "IT-82",
+        "name": "Sicilia"
+      },
+      {
+        "code": "IT-88",
+        "name": "Sardegna"
+      }
+    ]
+  }
+}

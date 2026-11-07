@@ -1,0 +1,36 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "identifiers": [
+    {
+      "code": "pod",
+      "name": "POD",
+      "description": "The code of a withdrawal point (punto di prelievo) of the Italian electricity grid, issued by the distribution operator the point is connected to: IT, three digits of that operator, the letter E for electricity, and the number of the point, eight digits on most bills, nine on some. It stays the same through a change of retailer, a transfer or a takeover of the supply. The register of the operators' three-digit codes was not read: the pattern follows the structure the operators print on their bills.",
+      "pattern": "^IT[0-9]{3}E[0-9]{8,9}$",
+      "example": "IT001E12345678"
+    },
+    {
+      "code": "istat",
+      "name": "Codice ISTAT del comune",
+      "description": "The six-digit statistical code of a municipality in the statistics office's list of territorial administrative units: three digits of the province (or metropolitan city or equivalent unit) and three of the municipality within it, with its leading zeros. It is not the postal code (CAP) nor the cadastral code.",
+      "pattern": "^[0-9]{6}$",
+      "example": "058091",
+      "source_code": "istat_municipalities"
+    },
+    {
+      "code": "partita_iva",
+      "name": "Partita IVA",
+      "description": "The VAT number of a business or another taxable person: eleven digits, seven of the person, three of the tax office, and a check digit. No check digit is validated here.",
+      "pattern": "^[0-9]{11}$",
+      "example": "01234567897",
+      "icd": "0211"
+    },
+    {
+      "code": "codice_catastale_comune",
+      "name": "Codice catastale del comune",
+      "description": "The four-character code the cadastre and the tax code (codice fiscale) give a municipality: a letter and three digits. A parcel of the cadastre is named within its municipality by its sheet (foglio), parcel (particella) and unit (subalterno), which no scheme of this pack holds yet.",
+      "pattern": "^[A-Z][0-9]{3}$",
+      "example": "F205",
+      "source_code": "agenzia_entrate_catasto"
+    }
+  ]
+}

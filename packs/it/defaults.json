@@ -1,0 +1,290 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "defaults": [
+    {
+      "attribute_type": "bidding_zone",
+      "value": null,
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Italy has seven geographical zones of the day-ahead market (NORD, CNOR, CSUD, SUD, CALA, SICI, SARD): the zone follows the region of the place, and a place without a region has none",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-21",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-23",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-25",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-32",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-34",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-36",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-42",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-45",
+      "value": "10Y1001A1001A73I",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone NORD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-52",
+      "value": "10Y1001A1001A70O",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CNOR, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-57",
+      "value": "10Y1001A1001A70O",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CNOR, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-North in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-55",
+      "value": "10Y1001A1001A71M",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CSUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-62",
+      "value": "10Y1001A1001A71M",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CSUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-65",
+      "value": "10Y1001A1001A71M",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CSUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-72",
+      "value": "10Y1001A1001A71M",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CSUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Centre-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-67",
+      "value": "10Y1001A1001A788",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone SUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-75",
+      "value": "10Y1001A1001A788",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone SUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-77",
+      "value": "10Y1001A1001A788",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone SUD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-South in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-78",
+      "value": "10Y1001C--00096J",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone CALA, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Calabria in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-82",
+      "value": "10Y1001A1001A75E",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone SICI, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Sicily in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "bidding_zone",
+      "region": "IT-88",
+      "value": "10Y1001A1001A74G",
+      "unit": "code",
+      "source_code": "it_gme_market_zones",
+      "reference": "Geographical zone SARD, in the configuration of the deliberation 103/2019/R/eel from 1 January 2021; its EIC code is the one of BZN|IT-Sardinia in the ENTSO-E area list, read on 7 November 2026",
+      "valid_from": "2021-01-01"
+    },
+    {
+      "attribute_type": "control_area",
+      "value": "10YIT-GRTN-----B",
+      "unit": "code",
+      "source_code": "it_entsoe_eic_codes",
+      "reference": "Row 10YIT-GRTN-----B, Italy (IT), functions CTA, LFA, LFB, MBA, SCA: the one control area of the country, every bidding zone within it",
+      "valid_from": "2026-11-07"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "value": 0.22,
+      "unit": "UNITLESS",
+      "source_code": "it_dpr_633_1972_vat",
+      "reference": "Article 16, first paragraph: the ordinary rate of 22 %, in force from 1 October 2013; it applies to electricity that is not for domestic use nor for the uses table A, part III, number 103 lists (extractive, agricultural and manufacturing enterprises, which this pack does not tell apart)",
+      "valid_from": "2013-10-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "condition": {
+        "segment": "residential"
+      },
+      "value": 0.1,
+      "unit": "UNITLESS",
+      "source_code": "it_dpr_633_1972_vat",
+      "reference": "Table A, part III, number 103: 10 % on electricity for domestic use, a supply to a final customer using it in its dwelling or in a similar collective residence; the row is loaded from the day the ordinary rate became 22 %, the reduced rate being older",
+      "valid_from": "2013-10-01"
+    },
+    {
+      "attribute_type": "vat_rate_electricity",
+      "condition": {
+        "segment": "coproperty"
+      },
+      "value": 0.22,
+      "unit": "UNITLESS",
+      "source_code": "it_ade_interpello_142_2021",
+      "reference": "The electricity of the common parts of a condominium is not for domestic use and bears the ordinary rate of article 16; the reduced rate applies only to a condominium made of dwellings alone whose electricity serves domestic uses, which the segment does not say",
+      "valid_from": "2013-10-01"
+    },
+    {
+      "attribute_type": "sharing_perimeter",
+      "condition": {
+        "project_kind": "it_cer"
+      },
+      "value": [
+        "same_substation"
+      ],
+      "unit": "list",
+      "source_code": "it_camera_autoconsumo_diffuso",
+      "reference": "The incentive of the decree 414/2023 is paid only on the energy shared by plants and consumption points connected under the same primary substation (cabina primaria); the energy may be shared within one market zone (Decreto legislativo 199/2021, article 31, as amended by the decree-law 19/2025, article 1-bis), which no criterion of the model holds: the perimeter loaded is the one of the shared energy the incentive and the TIAD value. The primary substation is a grid.substations row, the meter says which one it is downstream of, read on the energy services manager's maps",
+      "valid_from": "2024-01-24"
+    },
+    {
+      "attribute_type": "sharing_perimeter",
+      "condition": {
+        "project_kind": "it_autoconsumatore_a_distanza"
+      },
+      "value": [
+        "same_substation"
+      ],
+      "unit": "list",
+      "source_code": "it_camera_autoconsumo_diffuso",
+      "reference": "The incentive of the decree 414/2023 is paid only on the energy shared by plants and consumption points connected under the same primary substation (cabina primaria); the energy may be shared within one market zone (Decreto legislativo 199/2021, article 31, as amended by the decree-law 19/2025, article 1-bis), which no criterion of the model holds: the perimeter loaded is the one of the shared energy the incentive and the TIAD value. The primary substation is a grid.substations row, the meter says which one it is downstream of, read on the energy services manager's maps",
+      "valid_from": "2024-01-24"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "it_cer"
+      },
+      "value": "PT1H",
+      "unit": "ISO8601-duration",
+      "source_code": "it_arera_tiad",
+      "reference": "The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest",
+      "valid_from": "2023-03-01"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "it_gruppo_autoconsumatori"
+      },
+      "value": "PT1H",
+      "unit": "ISO8601-duration",
+      "source_code": "it_arera_tiad",
+      "reference": "The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest",
+      "valid_from": "2023-03-01"
+    },
+    {
+      "attribute_type": "sharing_settlement_period",
+      "condition": {
+        "project_kind": "it_autoconsumatore_a_distanza"
+      },
+      "value": "PT1H",
+      "unit": "ISO8601-duration",
+      "source_code": "it_arera_tiad",
+      "reference": "The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest",
+      "valid_from": "2023-03-01"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "$schema": "../schema/pack.1.json",
+  "sources": [
+    {
+      "code": "istat_municipalities",
+      "name": "ISTAT — Codici statistici delle unità amministrative territoriali",
+      "description": "The statistics office's list of municipalities, provinces and regions with their statistical codes, updated at every change of the territory.",
+      "kind": "file",
+      "url": "https://www.istat.it/it/archivio/6789",
+      "license": "CC-BY-4.0 (ISTAT terms of use) (not verified)",
+      "attribution": "© ISTAT — Istituto Nazionale di Statistica",
+      "redistributable": true
+    },
+    {
+      "code": "agenzia_entrate_catasto",
+      "name": "Agenzia delle Entrate — Catasto",
+      "description": "The cadastre of Italy outside the provinces of Trento and Bolzano, which keep their own land register: parcels and building units by municipality, sheet, parcel and unit, and the cadastral codes of the municipalities. No connector of this repository reads it yet.",
+      "kind": "registry",
+      "url": "https://www.agenziaentrate.gov.it/portale/web/guest/schede/fabbricatiterreni",
+      "license": "Agenzia delle Entrate terms of use (not verified)",
+      "attribution": "© Agenzia delle Entrate",
+      "redistributable": false
+    },
+    {
+      "code": "gse_cacer_portal",
+      "name": "GSE — Gruppi di autoconsumatori e comunità di energia rinnovabile",
+      "description": "The page of the energy services manager on the configurations of shared self-consumption: the decree of incentives, its operating rules, the maps of the areas each primary substation serves and the portal where a configuration asks for the service, which a connector would read under the configuration's own credentials.",
+      "kind": "text",
+      "url": "https://www.gse.it/servizi-per-te/autoconsumo/gruppi-di-autoconsumatori-e-comunita-di-energia-rinnovabile",
+      "license": "GSE terms of use (not verified)",
+      "attribution": "GSE — Gestore dei Servizi Energetici",
+      "redistributable": false
+    },
+    {
+      "code": "it_dlgs_199_2021",
+      "name": "Decreto legislativo 8 novembre 2021, n. 199 — attuazione della direttiva (UE) 2018/2001 sulla promozione dell'uso dell'energia da fonti rinnovabili",
+      "description": "The transposition of the renewable energy directive: individual self-consumers, including at a distance (article 30), groups of self-consumers acting jointly (article 30), renewable energy communities (article 31) and the incentives for shared energy (article 8), as amended by the decree-law 13/2023 and the decree-law 19/2025 (article 1-bis).",
+      "kind": "text",
+      "url": "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2021-11-08;199",
+      "license": "Terms not stated (official text)",
+      "attribution": "Gazzetta Ufficiale della Repubblica Italiana",
+      "redistributable": true
+    },
+    {
+      "code": "it_dm_mase_414_2023",
+      "name": "Decreto del Ministro dell'ambiente e della sicurezza energetica 7 dicembre 2023, n. 414 (decreto CACER)",
+      "description": "The decree of the incentives for the configurations of self-consumption for sharing renewable energy (CACER): a premium tariff on the shared energy for twenty years from each plant's entry into operation, plants of up to 1 MW, and a capital grant of up to 40 % in small municipalities; in force from 24 January 2024. Read through the energy services manager's page and the Chamber of Deputies' dossier.",
+      "kind": "text",
+      "url": "https://www.gse.it/servizi-per-te/autoconsumo/gruppi-di-autoconsumatori-e-comunita-di-energia-rinnovabile",
+      "license": "Terms not stated (official text)",
+      "attribution": "Ministero dell'Ambiente e della Sicurezza Energetica",
+      "redistributable": true
+    },
+    {
+      "code": "it_camera_autoconsumo_diffuso",
+      "name": "Camera dei deputati — Le configurazioni per l'autoconsumo diffuso",
+      "description": "The Chamber of Deputies' research note on the configurations of shared self-consumption, updated on 13 June 2025: energy may be shared within one market zone, and the incentive is paid only on the energy shared by plants and consumption points connected under the same primary substation.",
+      "kind": "text",
+      "url": "https://temi.camera.it/leg19/temi/le-configurazioni-per-l-autoconsumo-diffuso.html",
+      "license": "Terms not stated",
+      "attribution": "Camera dei deputati — Servizio Studi",
+      "redistributable": true
+    },
+    {
+      "code": "it_arera_tiad",
+      "name": "ARERA — Testo integrato autoconsumo diffuso (TIAD), allegato A alla deliberazione 27 dicembre 2022, 727/2022/R/eel",
+      "description": "The regulator's rules on the configurations of shared self-consumption: the shared energy, the self-consumed energy within the area of one primary substation, and the restitution of network components, as amended by the deliberation 15/2024/R/eel; it replaced the deliberation 318/2020/R/eel from 1 March 2023 at the earliest.",
+      "kind": "text",
+      "url": "https://www.arera.it/fileadmin/allegati/docs/22/727-22TIAD.pdf",
+      "license": "Terms not stated (official text)",
+      "attribution": "ARERA — Autorità di Regolazione per Energia Reti e Ambiente",
+      "redistributable": true
+    },
+    {
+      "code": "it_arera_103_2019_market_zones",
+      "name": "ARERA — deliberazione 19 marzo 2019, 103/2019/R/eel, the configuration of the market zones from 2021",
+      "description": "The regulator's approval of the zones of the relevant grid from 1 January 2021: Umbria moved from the centre-north zone to the centre-south zone, and the Calabria zone replaced the limited production pole of Rossano.",
+      "kind": "text",
+      "url": "https://www.arera.it/atti-e-provvedimenti/dettaglio/19/103-19",
+      "license": "Terms not stated (official text)",
+      "attribution": "ARERA — Autorità di Regolazione per Energia Reti e Ambiente",
+      "redistributable": true
+    },
+    {
+      "code": "it_gme_market_zones",
+      "name": "GME — Zone del mercato elettrico (18 October 2023)",
+      "description": "The market operator's list of the zones of the day-ahead market and the regions each geographical zone covers.",
+      "kind": "text",
+      "url": "https://gme.mercatoelettrico.org/portals/0/Documents/en-US/20231018_ME_Zone_en.pdf",
+      "license": "Terms not stated",
+      "attribution": "GME — Gestore dei Mercati Energetici",
+      "redistributable": true
+    },
+    {
+      "code": "it_entsoe_eic_codes",
+      "name": "ENTSO-E Transparency Platform — Area list with Energy Identification Code (EIC)",
+      "description": "The list of the areas of the transparency platform with their EIC codes and functions: bidding zones (BZN), control areas (CTA), scheduling and market balance areas.",
+      "kind": "text",
+      "url": "https://transparencyplatform.zendesk.com/hc/en-us/articles/15885757676308-Area-List-with-Energy-Identification-Code-EIC",
+      "license": "Terms not stated",
+      "attribution": "ENTSO-E",
+      "redistributable": true
+    },
+    {
+      "code": "it_dpr_633_1972_vat",
+      "name": "Decreto del Presidente della Repubblica 26 ottobre 1972, n. 633 — istituzione e disciplina dell'imposta sul valore aggiunto",
+      "description": "The VAT act: the ordinary rate (article 16) and the reduced rates of table A; part III, number 103, gives 10 % to electricity for domestic use.",
+      "kind": "text",
+      "url": "https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1972-10-26;633",
+      "license": "Terms not stated (official text)",
+      "attribution": "Gazzetta Ufficiale della Repubblica Italiana",
+      "redistributable": true
+    },
+    {
+      "code": "it_ade_interpello_142_2021",
+      "name": "Agenzia delle Entrate — risposta all'interpello 3 marzo 2021, n. 142",
+      "description": "The tax agency's answer on the electricity of the common parts of a condominium: not a domestic use, taxed at the ordinary rate, unless the condominium is made only of dwellings whose electricity serves domestic uses alone.",
+      "kind": "text",
+      "url": "https://www.agenziaentrate.gov.it/portale/web/guest/risposte-agli-interpelli",
+      "license": "Terms not stated (official text)",
+      "attribution": "Agenzia delle Entrate",
+      "redistributable": true
+    },
+    {
+      "code": "it_dlgs_190_2024",
+      "name": "Decreto legislativo 25 novembre 2024, n. 190 — disciplina dei regimi amministrativi per la produzione di energia da fonti rinnovabili (testo unico FER)",
+      "description": "The single act on the permits of renewable plants, in force from 30 December 2024: free activity (annex A), the simplified procedure PAS (annex B) and the single authorisation (annex C), as amended in 2025. No value of the pack reads it yet.",
+      "kind": "text",
+      "url": "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2024-11-25;190",
+      "license": "Terms not stated (official text)",
+      "attribution": "Gazzetta Ufficiale della Repubblica Italiana",
+      "redistributable": true
+    }
+  ]
+}
