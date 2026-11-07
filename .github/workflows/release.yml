@@ -8,11 +8,18 @@ name: Release
 # - A tag `v*` publishes for real.
 # - A manual run publishes for real only when `publish` is ticked and the run is
 #   on a tag; otherwise it is a dry run (`npm publish --dry-run`) on any branch.
+# - Every Saturday at 03:00 UTC a scheduled run starts. It is a dry run of
+#   `main` unless the repository variable RELEASE_SCHEDULE is `publish`; then
+#   it checks out the latest `v*` tag of `main` and publishes what of it the
+#   registry does not hold yet (a version already there is skipped). Without
+#   that variable, set by a maintainer on GitHub, the schedule never publishes.
 # - A pull request never starts it.
 
 on:
   push:
     tags: ['v*']
+  schedule:
+    - cron: '0 3 * * 6' # Saturday, 03:00 UTC
   workflow_dispatch:
     inputs:
       publish:
@@ -43,6 +50,35 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # the publish script reads the tag that names HEAD
+      # Whether this run publishes for real, decided once: a pushed tag; a
+      # manual run on a tag with `publish` ticked; the Saturday schedule when
+      # RELEASE_SCHEDULE is `publish`, on the latest tag of main. Anything
+      # else is a dry run.
+      - name: What this run does
+        id: mode
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          PUBLISH_INPUT: ${{ inputs.publish }}
+          RELEASE_SCHEDULE: ${{ vars.RELEASE_SCHEDULE }}
+        run: |
+          publish=false
+          case "$EVENT" in
+            push) publish=true ;;
+            workflow_dispatch)
+              if [ "$PUBLISH_INPUT" = true ]; then
+                case "$REF" in refs/tags/v*) publish=true ;; esac
+              fi ;;
+            schedule)
+              if [ "$RELEASE_SCHEDULE" = publish ]; then
+                tag=$(git describe --tags --abbrev=0 --match 'v*' HEAD)
+                git checkout --detach "$tag"
+                echo "The schedule publishes $tag."
+                publish=true
+              fi ;;
+          esac
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "Publish for real: $publish"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -54,14 +90,16 @@ jobs:
       # Every package must be one this run can publish: a package without a
       # trusted publisher would stop the run half way, after the packages
       # before it are already on the registry. See docs/releasing.md.
+      # A dry run reports what the check finds without stopping on it.
       - name: Trusted publishing of every package
         run: npm run release:check
+        continue-on-error: ${{ steps.mode.outputs.publish != 'true' }}
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
       - name: Dry run
-        if: ${{ !(startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish)) }}
+        if: ${{ steps.mode.outputs.publish != 'true' }}
         run: npm run release:publish
       - name: Publish
-        if: ${{ startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish) }}
+        if: ${{ steps.mode.outputs.publish == 'true' }}
         run: npm run release:publish -- --for-real

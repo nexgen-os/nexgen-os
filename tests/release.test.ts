@@ -1,7 +1,10 @@
 // How a release reaches npm: what is published is read from the workspaces,
 // the workflow holds no token, and the check that runs first reads npm's
 // answers rather than the registry.
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — a plain script of the repository, with no types of its own
 import { publishOrder, staleRanges, workspaces } from '../scripts/publish.mjs';
@@ -67,6 +70,16 @@ describe('the release workflow', () => {
     expect(workflow).not.toMatch(/pull_request/);
   });
 
+  it('starts every Saturday at 03:00 UTC', () => {
+    expect(workflow).toMatch(/schedule:\n\s+- cron: '0 3 \* \* 6'/);
+  });
+
+  it('publishes or dry-runs as the step that decides it says, and nothing else', () => {
+    expect(workflow.match(/run: npm run release:publish -- --for-real/g)).toHaveLength(1);
+    expect(workflow).toMatch(/- name: Publish\n\s+if: \$\{\{ steps\.mode\.outputs\.publish == 'true' \}\}\n\s+run: npm run release:publish -- --for-real/);
+    expect(workflow).toMatch(/- name: Dry run\n\s+if: \$\{\{ steps\.mode\.outputs\.publish != 'true' \}\}\n\s+run: npm run release:publish\n/);
+  });
+
   it('pins the npm version that supports trusted publishing', () => {
     expect(workflow).toMatch(/npm install -g npm@11\.\d+\.\d+/);
   });
@@ -83,6 +96,64 @@ describe('the release workflow', () => {
     const doc = readFileSync(new URL('../docs/releasing.md', import.meta.url), 'utf8');
     expect(doc).toContain('npm run release:check');
     expect(doc).toContain('release.yml');
+  });
+});
+
+// The shell of the step `What this run does`, run as GitHub would run it.
+const decide = (() => {
+  const step = workflow.slice(workflow.indexOf('id: mode'));
+  const body = step.slice(step.indexOf('run: |\n') + 'run: |\n'.length);
+  const lines: string[] = [];
+  for (const line of body.split('\n')) {
+    if (!line.startsWith('          ') && line.trim() !== '') break;
+    lines.push(line.slice(10));
+  }
+  return lines.join('\n');
+})();
+
+function mode(env: Record<string, string>, cwd = process.cwd()): { publish: string; head: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'release-mode-'));
+  const output = join(dir, 'output');
+  try {
+    execFileSync('bash', ['-e', '-c', decide], { cwd, env: { PATH: process.env.PATH ?? '', GITHUB_OUTPUT: output, ...env }, stdio: 'ignore' });
+    const publish = /publish=(\w+)/.exec(readFileSync(output, 'utf8'))?.[1] ?? '';
+    return { publish, head: execFileSync('git', ['describe', '--tags', '--always', 'HEAD'], { cwd, encoding: 'utf8' }).trim() };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+describe('whether a run of the release workflow publishes', () => {
+  it('publishes on a pushed tag', () => {
+    expect(mode({ EVENT: 'push', REF: 'refs/tags/v1.2.3' }).publish).toBe('true');
+  });
+
+  it('publishes a manual run only on a tag with publish ticked', () => {
+    expect(mode({ EVENT: 'workflow_dispatch', REF: 'refs/tags/v1.2.3', PUBLISH_INPUT: 'true' }).publish).toBe('true');
+    expect(mode({ EVENT: 'workflow_dispatch', REF: 'refs/heads/main', PUBLISH_INPUT: 'true' }).publish).toBe('false');
+    expect(mode({ EVENT: 'workflow_dispatch', REF: 'refs/tags/v1.2.3', PUBLISH_INPUT: 'false' }).publish).toBe('false');
+  });
+
+  it('never publishes on the schedule unless RELEASE_SCHEDULE is publish', () => {
+    expect(mode({ EVENT: 'schedule', REF: 'refs/heads/main' }).publish).toBe('false');
+    expect(mode({ EVENT: 'schedule', REF: 'refs/heads/main', RELEASE_SCHEDULE: 'yes' }).publish).toBe('false');
+  });
+
+  it('on the schedule, with RELEASE_SCHEDULE publish, publishes the latest tag of main', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'release-repo-'));
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.org', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { cwd: repo, stdio: 'ignore' });
+    try {
+      git('init', '-q');
+      git('commit', '-q', '--allow-empty', '-m', 'one');
+      git('tag', 'v0.1.0');
+      git('commit', '-q', '--allow-empty', '-m', 'two');
+      git('tag', 'v0.2.0');
+      git('commit', '-q', '--allow-empty', '-m', 'three, not released');
+      expect(mode({ EVENT: 'schedule', REF: 'refs/heads/main', RELEASE_SCHEDULE: 'publish' }, repo)).toEqual({ publish: 'true', head: 'v0.2.0' });
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 });
 
