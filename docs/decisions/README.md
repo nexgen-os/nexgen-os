@@ -82,6 +82,7 @@ describes; its record is written once the fix has shipped.
 - [0036](0036-a-file-is-imported-once.md) · A file is imported once, and a reader reports rather than corrects · accepted
 - [0050](0050-an-energy-bill-is-read-once-a-generic-invoice-then-its-energy.md) · An energy bill is read once: a generic invoice, then its energy · accepted
 - [0011](0011-external-data.md) · A source is a row, a connector is code, and an organisation's use of it is a `connectors` row naming its secret · accepted
+- [0061](0061-a-device-connector-reads-series-and-carries-commands.md) · A device connector reads series of a device and carries out its commands, through two interfaces and one path each · accepted
 
 ## Rights and refusals
 

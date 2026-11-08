@@ -115,7 +115,10 @@ The day is always given: the same call gives the same answer.
   proposes lands here with `source = 'detector'` and the detector's name in
   `source_ref`.
 - Sending a command is a connector's: the module records what was asked and
-  what the device answered.
+  what the device answered. `carryCommands()` of `@nexgen-os/core` hands a
+  connector's carrier the validated commands that are due and reports each
+  answer here
+  ([0061](../../docs/decisions/0061-a-device-connector-reads-series-and-carries-commands.md)).
 - Notifications, reminders and calendars are an application's.
 
 Install: `npx nexgen-os init --modules actions`. The yearly inspection and
