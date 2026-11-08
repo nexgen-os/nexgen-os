@@ -13,6 +13,7 @@ export * from './series.js';
 export * from './time.js';
 export * from './connectors/interfaces.js';
 export * from './connectors/meter-data.js';
+export * from './connectors/devices.js';
 export * from './connectors/runner.js';
 export * from './connectors/pvlib.js';
 export * from './connectors/settlement.js';
