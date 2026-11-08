@@ -30,6 +30,7 @@
     "packages/formats/*",
     "packages/core",
     "packages/connectors/*",
+    "modules/solar",
     "packages/cli",
     "packages/mcp"
   ]

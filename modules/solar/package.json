@@ -1,0 +1,42 @@
+{
+  "name": "@nexgen-os/solar",
+  "version": "0.4.2",
+  "description": "The code of the solar module of Nexgen OS: a PV yield by PVGIS or by the PVWatts model over a typical year chosen by Finkelstein-Schafer, its exceedance levels, sizing, performance indicators and product files, each written as an estimate with its provenance.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "modules/solar"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "module.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./module.json": "./module.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0",
+    "@nexgen-os/open-meteo": "^0.4.0",
+    "@nexgen-os/panond": "^0.4.0",
+    "@nexgen-os/pvgis": "^0.4.0"
+  }
+}

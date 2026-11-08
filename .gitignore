@@ -9,3 +9,4 @@ packages/cli/LICENSE
 .venv-sdk/
 packages/core/LICENSE
 packages/mcp/LICENSE
+modules/solar/LICENSE
