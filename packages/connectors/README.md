@@ -65,6 +65,7 @@ from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same call
 | [`mapbox`](mapbox/README.md) | `mapbox` (shipped with the package) — a commercial geocoder, worldwide: search as you type, a full address, a point to its full address; the commercial service of the chain | Mapbox's terms: permanent geocoding (asked by default) may be stored, never redistributed; temporary geocoding may not be stored |
 | [`ban`](ban/README.md) | `ban` — Base Adresse Nationale, France, house-number precision | Licence Ouverte 2.0; no key |
 | [`geopunt`](geopunt/README.md) | `geopunt` — the Flemish address register | open; no key |
+| [`grb`](grb/README.md) | `grb` and `dhmv` (shipped with the package) — the buildings of a place in Flanders: GRB footprints by persistent object id, their ground, eave and ridge from the surface and terrain models of DHM Vlaanderen II at 1 m, as a CityJSON model the `building` module imports | Modellicentie Gratis Hergebruik; open, no key |
 | [`urbis`](urbis/README.md) | `urbis` — the Brussels address register | open; no key |
 | [`icar`](icar/README.md) | `icar` — the Walloon address register | open; no key |
 

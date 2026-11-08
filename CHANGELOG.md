@@ -43,6 +43,7 @@ release may break, and says how. How a release is cut:
 - The Python client reads a parameter through the one cascade of defaults, `parameter_of(kind, object_id, attribute_type, at=None)`: the value with the level it was found at, its source and its quality, or `parameter_missing`; and lists the projects the connection may read, `projects(organisation_id=None)`.
 - `actions.progress()` says where the devices of a participant or a project stand, beside its actions: how many in each status of the core, the share in service among those not removed, and the ones not yet in service, by name — what a site board shows (migration `0003_progress_devices` of `actions`). The status is the device's own; the module reads it and never writes it.
 - `docs/demo/ifc.ts`, an IFC model to the places of a participant and back out as GeoJSON: `ifcToGeoJson()` reads the file with `@nexgen-os/ifc`, writes it through `importIfc()` of the `building` module and exports the participant with `exportGeoJson()`, and its command runs it in one transaction acting as the person (`NEXGEN_API_KEY`, `NEXGEN_ACCESS_TOKEN` or `NEXGEN_ACT_AS_USER_ID`), the open export (`--open`) leaving out what a source's licence does not let pass on.
+- `@nexgen-os/grb`: the buildings of a place in Flanders from open data. The footprints of GRB (the Large-scale Reference Database of Digitaal Vlaanderen) around a point, each by its persistent object id, and the surface and terrain models of DHM Vlaanderen II at 1 m over their box; `heightsInFootprint()` gives the ground (median of the terrain), the eave and the ridge (two percentiles of the surface, given as data) of each footprint, and `siteModel()` returns the whole as a CityJSON model in Lambert 72 that `importCityJson()` of the `building` module writes: footprint, elevation, height, `global_id`, and the GRB version and dates in its metadata. Sources `grb` and `dhmv` ship with the package. MIT; open, no key.
 
 ### Changed
 
@@ -53,6 +54,7 @@ release may break, and says how. How a release is cut:
 ### Fixed
 
 - `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
+- `building`: `importCityJson()` writes a building whose ground is not a whole number of metres. The elevation was read as an integer by the query that places the footprint, and an elevation of 7.84 m was refused with `invalid input syntax for type integer`.
 
 ## [0.4.2] — 2026-11-02
 
