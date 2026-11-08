@@ -24,6 +24,9 @@
       "@nexgen-os/geopunt": [
         "./packages/connectors/geopunt/src/index.ts"
       ],
+      "@nexgen-os/grb": [
+        "./packages/connectors/grb/src/index.ts"
+      ],
       "@nexgen-os/icar": [
         "./packages/connectors/icar/src/index.ts"
       ],
