@@ -1,0 +1,34 @@
+[
+  {
+    "code": "grb",
+    "name": "GRB — Large-scale Reference Database of Flanders",
+    "description": "Every building on the ground in Flanders drawn by Digitaal Vlaanderen at large scale (layer GBG), with a persistent object id and the date of its version, through a Web Feature Service in Belgian Lambert 72. Read by @nexgen-os/grb.",
+    "kind": "api",
+    "base_url": "https://geo.api.vlaanderen.be/GRB/wfs",
+    "docs_url": "https://www.vlaanderen.be/digitaal-vlaanderen/onze-diensten-en-platformen/basiskaart-vlaanderen-grb",
+    "auth": "none",
+    "countries": ["BE"],
+    "regions": ["BE-VLG"],
+    "license": "Modellicentie Gratis Hergebruik",
+    "attribution": "© Digitaal Vlaanderen — GRB",
+    "retention_days": null,
+    "redistributable": true,
+    "published_by": "@nexgen-os/grb"
+  },
+  {
+    "code": "dhmv",
+    "name": "DHM Vlaanderen II — Digital Height Model of Flanders",
+    "description": "The surface the airborne laser saw (DSM, roofs and trees) and the terrain under it (DTM) over Flanders, at 1 m, in metres above the Ostend datum, through a Web Coverage Service in Belgian Lambert 72. Read by @nexgen-os/grb for the heights of buildings.",
+    "kind": "api",
+    "base_url": "https://geo.api.vlaanderen.be/DHMV/wcs",
+    "docs_url": "https://www.vlaanderen.be/digitaal-vlaanderen/onze-oplossingen/earth-observation-data-science-eodas/het-digitaal-hoogtemodel",
+    "auth": "none",
+    "countries": ["BE"],
+    "regions": ["BE-VLG"],
+    "license": "Modellicentie Gratis Hergebruik",
+    "attribution": "© Digitaal Vlaanderen — DHM Vlaanderen II",
+    "retention_days": null,
+    "redistributable": true,
+    "published_by": "@nexgen-os/grb"
+  }
+]
