@@ -26,6 +26,8 @@ A connector comes in one of two kinds:
 |---|---|---|
 | `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the participant or its weather point, every issue kept; history as `measured` or `simulated` values |
 | `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter |
+| `DeviceReadingsProvider` | series of a device from its maker's platform, an aggregator or its local interface, by its identifier in the platform's scheme | `series` of kind `measured` on the device |
+| `CommandCarrier` | the answer of a device to a command of the `actions` module: the instant it acknowledged it, or why not | the command done and its value in the setpoint or command series of the device, or failed with why (`actions.report()`) |
 | `PlacesProvider` | places around a point, with their external identifier, address and attributes | `participants` / `building.buildings`, `identifiers`, `attributes` with `source_code` |
 | `Geocoder` (in [`@nexgen-os/core`](../core/src/address.ts)) | an address ⇄ a point | the participant's address and point, with precision and source |
 
@@ -36,6 +38,23 @@ A meter is read at its operator's hub only under the customer's mandate:
 hub from its pack row (`meterDataHub()`), and stores what comes back on the
 meter. A provider whose source reads under mandate calls `requireMandate()`
 first and refuses without one.
+
+A device — a charger, a heat pump, an inverter, a battery — is reached
+through two interfaces and nothing else
+([decision 0061](../../docs/decisions/0061-a-device-connector-reads-series-and-carries-commands.md)).
+Each names the identifier scheme its platform knows devices by, and the
+device carries its value in `identifiers`.
+`collectDeviceReadings(db, provider, request)` checks the organisation's
+connector against the provider's source and stores what comes back as the
+measured series of the device. `carryCommands(db, carrier, { connectorId,
+until })` hands the carrier the validated commands that name the connector
+and are due, the earliest first, and reports each answer through
+`actions.report()`: acknowledged, the command is done and its value lands
+in its series; refused, unanswered or not sent, it failed and says why
+(`identifier_missing` for a device the platform cannot be told), and a
+person proposes it again. A module that keeps more of a command than its
+value passes its own `report`. A carrier sends what a person validated; it
+never decides, and never writes a series itself.
 
 `storeSeries(db, target, series, { issuedAt })` writes what a weather or
 meter connector returned through `store()`, the one write path of the core:
