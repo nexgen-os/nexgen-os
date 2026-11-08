@@ -93,6 +93,9 @@
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"
       ],
+      "@nexgen-os/solar": [
+        "./modules/solar/src/index.ts"
+      ],
       "@nexgen-os/mcp": [
         "./packages/mcp/src/index.ts"
       ]

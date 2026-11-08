@@ -320,6 +320,30 @@ new computation that names it (`replaces`) replaces it. Named errors: `device_no
 `time_zone_required`, `series_not_found`, `irradiance_required`,
 `estimate_not_of_system`, `period_not_covered`.
 
+## From code: `@nexgen-os/solar`
+
+The module's code is a package of its own, AGPL-3.0 like the module, for an
+application that computes what the module computes against a database where
+the module is installed (`nexgen-os init`), with one implementation for every
+caller:
+
+```ts
+import { estimateYield, exceedance, size } from '@nexgen-os/solar';
+import { finkelsteinSchafer, pvwattsEnergyPerKwp, typicalYear } from '@nexgen-os/solar';
+
+const result = await estimateYield(db, { deviceId: pvSystemId, years: { from: 2015, to: 2024 }, profileCode: 'pvwatts' });
+```
+
+`db` is the seam of `@nexgen-os/core` (`Db`), acting as the person. The
+computations (`estimateYield()`, `size()`, `exceedance()`,
+`performanceIndicators()`, `importProduct()`) write their estimate with its
+inputs and its provenance, as they do from the command line and the MCP
+server; the models under them (the PVWatts DC model, the Faiman cell
+temperature, the typical year chosen month by month by Finkelstein-Schafer,
+the normal quantile of an exceedance level, the Sandia inverter fitted from
+an OND file) are plain functions of numbers and series. The package also
+carries the module's manifest, `@nexgen-os/solar/module.json`.
+
 ## Not here yet
 
 - The `pvsyst_like` and `pvsol_like` profiles, and the readers of PVsyst

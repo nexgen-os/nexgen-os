@@ -6,8 +6,7 @@
 import type { Computations } from '@nexgen-os/core';
 import { size as sizeCharging } from './charging/src/size.js';
 import { settleSharing } from './community/src/sharing.js';
-import { size as sizeSolar } from './solar/src/size.js';
-import { estimateYield } from './solar/src/yield.js';
+import { estimateYield, size as sizeSolar } from './solar/src/index.js';
 import { size as sizeBattery } from './battery/src/estimates.js';
 
 export const MODULE_COMPUTATIONS: Computations = {
