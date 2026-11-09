@@ -136,8 +136,11 @@ publisher can be set.
 Pushing the tag runs `npm ci`, `npm run release:check`, the typecheck, the
 tests, the build and `npm run release:publish -- --for-real`. A version the
 registry already holds is skipped, so a run that stopped half way is simply
-re-run. A package's npm page then shows *Built and signed on GitHub
-Actions*, and `npm audit signatures` verifies it.
+re-run. The run also writes the software bill of materials of every package
+it publishes (`node scripts/sbom.mjs`, one CycloneDX document per package)
+and keeps them as the run's artifact `sbom-<tag>`. A package's npm page then
+shows *Built and signed on GitHub Actions*, and `npm audit signatures`
+verifies it.
 
 **Dry run, on any branch**: *Actions → Release → Run workflow* with *Publish
 for real* unticked, or locally `npm run build && npm run release:publish`. A
