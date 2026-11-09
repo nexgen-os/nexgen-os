@@ -1,0 +1,20 @@
+template: dsmr
+products:
+  - brand: DSMR
+params:
+  - name: usage
+    choice: ["grid"]
+  - name: host
+  - name: port
+    default: 1502 # required to avoid rendering `uri: :` for test which leads to error
+  - name: timeout
+    advanced: true
+    default: 15s
+  - name: energy
+    deprecated: true
+    advanced: true
+    type: string
+render: |
+  type: dsmr
+  uri: {{ joinHostPort .host .port }}
+  timeout: {{ .timeout }}

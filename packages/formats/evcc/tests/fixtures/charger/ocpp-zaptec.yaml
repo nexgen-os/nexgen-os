@@ -1,0 +1,14 @@
+template: ocpp-zaptec
+products:
+  - brand: Zaptec
+    description:
+      generic: Go (OCPP)
+capabilities: ["rfid", "dim"]
+requirements:
+  description:
+    generic: "OCPP 1.6J (Box-Level Integration) [docs.zaptec.com](https://docs.zaptec.com/docs/ocpp16j)"
+  evcc: ["sponsorship", "skiptest"]
+params:
+  - preset: ocpp
+render: |
+  {{ include "ocpp" . }}
