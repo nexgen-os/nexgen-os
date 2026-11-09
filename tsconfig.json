@@ -66,6 +66,9 @@
       "@nexgen-os/energy-bill": [
         "./packages/formats/energy-bill/src/index.ts"
       ],
+      "@nexgen-os/evcc": [
+        "./packages/formats/evcc/src/index.ts"
+      ],
       "@nexgen-os/geojson": [
         "./packages/formats/geojson/src/index.ts"
       ],
