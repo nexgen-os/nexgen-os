@@ -12,7 +12,7 @@ the model. MIT.
 ```ts
 import { homeAssistantSnapshot } from '@nexgen-os/homeassistant-api';
 import { readHomeAssistant } from '@nexgen-os/homeassistant';
-import { importHomeAssistant } from '@nexgen-os/building'; // modules/building/src
+// importHomeAssistant(): the building module, modules/building/src/homeassistant.ts
 
 const snapshot = await homeAssistantSnapshot(
   { url: 'http://homeassistant.local:8123', token },          // token from the connector's secret_ref
