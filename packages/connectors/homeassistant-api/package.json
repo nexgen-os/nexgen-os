@@ -1,0 +1,38 @@
+{
+  "name": "@nexgen-os/homeassistant-api",
+  "version": "0.4.2",
+  "description": "A live Home Assistant installation read over its WebSocket API: floors, areas, devices, entities and the recorder's states as the snapshot @nexgen-os/homeassistant reads.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connectors/homeassistant-api"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0",
+    "@nexgen-os/homeassistant": "^0.4.2"
+  }
+}
