@@ -27,6 +27,7 @@ tables it fills; an exporter reads the rows back into the same shapes.
 | [`geojson`](geojson/README.md) | GeoJSON (RFC 7946) | features of a collection, a feature, a geometry | a FeatureCollection with its bbox | `exportGeoJson`, `importGeoJsonParticipants` (core) |
 | [`weather-files`](weather-files/README.md) | EPW, TMY3 | hourly series dated at their start in UTC | EPW | `importWeatherFile`, `exportWeatherYear` (core) |
 | [`parquet`](parquet/README.md) | Parquet | — | series rows | `exportSeriesParquet` (core) |
+| [`evcc`](evcc/README.md) | evcc device templates (YAML) | the products a template drives, brand and model, its class and group, capabilities, uses, discovery on a local network, sponsorship | — | `importEvccCatalogue` (core) |
 | [`ocpp`](ocpp/README.md) | OCPP 1.6J and 2.0.1 frames (Open Charge Alliance) | station identity, connector states, meter values, sessions, charging profiles and their answers | a schedule as `SetChargingProfile` | `importStationLog` (`modules/charging/src`) |
 | [`sunspec`](sunspec/README.md) | SunSpec Modbus (SunSpec Alliance information models, all 112 included) | the map of a device, each model's points scaled by their scale factors, repeating groups | the registers that set a writable point | — (a Modbus connector reads and writes the registers) |
 | [`panond`](panond/README.md) | PVsyst PAN, OND | a module's one-diode model, an inverter's curves | — | `importProduct` (`modules/solar/src/products.ts`) |
