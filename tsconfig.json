@@ -75,6 +75,9 @@
       "@nexgen-os/homeassistant": [
         "./packages/formats/homeassistant/src/index.ts"
       ],
+      "@nexgen-os/homeassistant-api": [
+        "./packages/connectors/homeassistant-api/src/index.ts"
+      ],
       "@nexgen-os/ifc": [
         "./packages/formats/ifc/src/index.ts"
       ],
