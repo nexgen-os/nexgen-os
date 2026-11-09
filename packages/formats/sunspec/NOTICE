@@ -1,0 +1,18 @@
+@nexgen-os/sunspec
+Copyright (c) 2026 Nexgen OS contributors — MIT (LICENSE)
+
+This package includes the SunSpec information model definitions published
+by the SunSpec Alliance in https://github.com/sunspec/models, licensed under
+the Apache License, Version 2.0 (LICENSE-models). They are carried in
+src/models.ts (dist/models.js once built), written from the JSON files of
+that repository by scripts/models.mjs, which keeps their names, types,
+sizes, scale factors, units, access, counts, labels and symbol names, and
+leaves out their descriptions, details, comments and standards.
+
+SunSpec is a trademark of the SunSpec Alliance. This package is not
+certified by the SunSpec Alliance.
+
+The test fixtures device_1547.json and inverter_123.json are written from
+the test data of pysunspec2 (https://github.com/sunspec/pysunspec2,
+Apache License 2.0) by tests/fixtures/make-fixtures.py, with the values
+pysunspec2 computes from them.
