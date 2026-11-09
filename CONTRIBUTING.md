@@ -45,3 +45,8 @@ Contributions are accepted under the Developer Certificate of Origin
 to submit it under the project's licences. There is no contributor licence
 agreement, and nothing in the sign-off lets anyone relicense the core: it is
 AGPL-3.0, and the format libraries are MIT, for good.
+
+A dependency comes with its licence. Before adding one to a format library
+or a connector, check that a closed product could take it (MIT, BSD,
+Apache-2.0, ISC, MPL-2.0…); `node scripts/check-licences.mjs` says what
+each package ships and refuses the rest, as the CI does.
