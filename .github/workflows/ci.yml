@@ -122,6 +122,10 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/hygiene.mjs
+      # What each package ships, read from package-lock.json: an MIT library
+      # takes no copyleft, no package takes a licence that forbids commercial
+      # use or names none (decision 0005).
+      - run: node scripts/check-licences.mjs
 
   dco:
     name: dco

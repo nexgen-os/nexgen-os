@@ -59,6 +59,15 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # What each package ships, with its version and its licence, as one
+      # CycloneDX document per package, kept with the run (SECURITY.md).
+      - name: Software bill of materials
+        run: node scripts/sbom.mjs sbom
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.ref_name }}
+          path: sbom/
+          retention-days: 90
       - name: Dry run
         if: ${{ !(startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish)) }}
         run: npm run release:publish
