@@ -90,6 +90,9 @@
       "@nexgen-os/project-sheet": [
         "./packages/formats/project-sheet/src/index.ts"
       ],
+      "@nexgen-os/sunspec": [
+        "./packages/formats/sunspec/src/index.ts"
+      ],
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"
       ],
