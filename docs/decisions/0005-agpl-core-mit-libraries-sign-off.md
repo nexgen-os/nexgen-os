@@ -24,6 +24,17 @@ own licence file, so that they can be taken into any product. A program
 connector wrapping a third party's tool keeps that tool's licence for the
 tool itself.
 
+**What a package ships keeps its promise.** A format library or a
+connector ships only what any product may take: licences that are
+permissive, or whose copyleft stays in the files of the package that
+carries it (MPL-2.0). The core, the command line and the MCP server ship
+only what an AGPL-3.0 work may be distributed with. No package ships a
+licence that forbids commercial use, a source-available licence, or a
+package that names no licence. The check reads `package-lock.json` on
+every pull request (`scripts/check-licences.mjs`), and every release keeps
+the bill of materials of each package it publishes (`scripts/sbom.mjs`,
+[`SECURITY.md`](../../SECURITY.md)).
+
 **A sign-off is enough to contribute.** Every commit carries
 `Signed-off-by:` under the Developer Certificate of Origin 1.1
 (`git commit -s`): the contributor certifies that they wrote the change or
@@ -45,6 +56,9 @@ services around it; no part of the open model is held back for them
   change licence.
 - A commit without its sign-off.
 - A feature of the open model reserved to a paid service.
+- A dependency that a format library or a connector would ship under GPL,
+  LGPL or AGPL, and a dependency of any package under a licence that
+  forbids commercial use, a source-available licence, or none.
 
 ## See also
 

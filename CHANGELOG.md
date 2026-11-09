@@ -8,6 +8,11 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- Every release writes the software bill of materials of each package it publishes: one CycloneDX document per package, listing what it ships with its version, its hash and its licence (`node scripts/sbom.mjs`), kept with the run of the Release workflow. `SECURITY.md` says how a vulnerability is handled, from the report to the advisory.
+- The licences a package ships are checked on every pull request (`node scripts/check-licences.mjs`, from `package-lock.json`): a format library or a connector takes nothing a closed product could not take, and no package takes a licence that forbids commercial use, a source-available licence or none, each refusal named `licence_refused` with the path that brings it (decision 0005).
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
