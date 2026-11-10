@@ -1,0 +1,18 @@
+{
+  "smr_version": 50,
+  "meter_model": "Sagemcom XS210 ESMR5",
+  "unique_id": "not-hex",
+  "active_tariff": 1,
+  "total_power_import_kwh": 512.25,
+  "total_power_import_t1_kwh": 300.5,
+  "total_power_import_t2_kwh": 211.75,
+  "total_power_export_kwh": 0,
+  "total_power_export_t1_kwh": 0,
+  "total_power_export_t2_kwh": 0,
+  "active_power_w": 412,
+  "active_power_l1_w": 412,
+  "active_voltage_l1_v": "n/a",
+  "total_gas_m3": 1022.5,
+  "gas_timestamp": 231029023000,
+  "gas_unique_id": "47617344656D6F35363738"
+}

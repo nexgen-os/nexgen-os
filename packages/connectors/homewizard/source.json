@@ -1,0 +1,15 @@
+{
+  "code": "homewizard",
+  "name": "HomeWizard P1 meter, local API",
+  "description": "A dongle on the P1 port of a smart meter that answers on the participant's own network (API v1, enabled by the participant in the HomeWizard Energy app): the meter's offtake and injection registers by tariff, its power and voltage per phase, and the meters on its bus (gas, water). Read by @nexgen-os/homewizard; nothing leaves the place unless the installation stores it.",
+  "kind": "device",
+  "base_url": null,
+  "docs_url": "https://api-documentation.homewizard.com/docs/v1/measurement",
+  "auth": "none",
+  "countries": [],
+  "license": "The data is the participant's, read on their own network",
+  "attribution": "HomeWizard",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/homewizard"
+}

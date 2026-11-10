@@ -1,0 +1,39 @@
+{
+  "name": "@nexgen-os/homewizard",
+  "version": "0.4.2",
+  "description": "The HomeWizard P1 meter's local API (v1) as a Nexgen OS connector: the offtake and injection registers, the power and the voltage of the connection, and the meters of its bus, read on the participant's own network.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connectors/homewizard"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "source.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0",
+    "@nexgen-os/enedis-r6x": "^0.4.0"
+  }
+}
