@@ -539,6 +539,7 @@ into the same shapes, and the library writes the file.
 | DSMR P1 telegram, P1M5 dongle message | `dsmr`: `readTelegram`, `readP1m5` | `meterSeriesOfDsmr` (core: the series of the electricity meter, or of a gas meter on its bus) |
 | A project sheet (CSV, .xlsx): a project, its participants, meters and devices | `project-sheet`: `readProjectSheet`, `readProjectWorkbook`, `writeProjectSheet` | `importProjectSheet` (core, through `importProject`) |
 | An energy bill, read once as an EN 16931 invoice | `energy-bill`: `readEnergyBill` | `importEnergyBill` (core: the document, the meter, the contract's attributes), `estimateFromBill` (`modules/consumption/src`), `billing.record_invoice()` |
+| S2 messages (EN 50491-12-2) | `s2`: `readMessage`, `problemsOf`, `readPowerForecast`, `writePowerEnvelopeInstruction` | — (read and written by a device connector) |
 
 An energy bill is read once, by a generic invoice reader, into the EN 16931
 shape `ReceivedInvoice`; `@nexgen-os/energy-bill` adds its energy
