@@ -102,6 +102,9 @@
       "@nexgen-os/sunspec": [
         "./packages/formats/sunspec/src/index.ts"
       ],
+      "@nexgen-os/s2": [
+        "./packages/formats/s2/src/index.ts"
+      ],
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"
       ],
