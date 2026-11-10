@@ -1,0 +1,34 @@
+{
+  "name": "@nexgen-os/s2",
+  "version": "0.4.2",
+  "description": "S2 (EN 50491-12-2), the messages between a customer energy manager and the resource manager of a device, read, checked against the S2 JSON schemas and written. No database, no dependency.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/s2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
+}

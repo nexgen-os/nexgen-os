@@ -1,0 +1,66 @@
+[
+  { "message_type": "Handshake", "message_id": "4f1c2a90-0001-4000-8000-000000000001", "role": "RM", "supported_protocol_versions": ["0.0.2-beta"] },
+  { "message_type": "Handshake", "message_id": "9a7e0c10-0001-4000-8000-000000000001", "role": "CEM" },
+  { "message_type": "HandshakeResponse", "message_id": "9a7e0c10-0002-4000-8000-000000000002", "selected_protocol_version": "0.0.2-beta" },
+  {
+    "message_type": "ResourceManagerDetails",
+    "message_id": "4f1c2a90-0002-4000-8000-000000000002",
+    "resource_id": "battery-garage",
+    "name": "Home battery",
+    "roles": [{ "role": "ENERGY_STORAGE", "commodity": "ELECTRICITY" }],
+    "manufacturer": "Example Storage",
+    "model": "ES-10",
+    "serial_number": "ES10-000123",
+    "firmware_version": "2.4.1",
+    "instruction_processing_delay": 2000,
+    "available_control_types": ["POWER_ENVELOPE_BASED_CONTROL", "FILL_RATE_BASED_CONTROL"],
+    "provides_forecast": true,
+    "provides_power_measurement_types": ["ELECTRIC.POWER.3_PHASE_SYMMETRIC"]
+  },
+  { "message_type": "SelectControlType", "message_id": "9a7e0c10-0003-4000-8000-000000000003", "control_type": "POWER_ENVELOPE_BASED_CONTROL" },
+  {
+    "message_type": "PowerMeasurement",
+    "message_id": "4f1c2a90-0003-4000-8000-000000000003",
+    "measurement_timestamp": "2026-11-10T13:00:05+01:00",
+    "values": [{ "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC", "value": -2350.5 }]
+  },
+  {
+    "message_type": "PowerForecast",
+    "message_id": "4f1c2a90-0004-4000-8000-000000000004",
+    "start_time": "2026-11-10T12:00:00Z",
+    "elements": [
+      { "duration": 900000, "power_values": [{ "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC", "value_expected": -2000, "value_lower_95PPR": -2600, "value_upper_95PPR": -1400 }] },
+      { "duration": 1800000, "power_values": [{ "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC", "value_expected": 500, "value_lower_limit": 0, "value_upper_limit": 3000 }] }
+    ]
+  },
+  {
+    "message_type": "PEBC.PowerConstraints",
+    "message_id": "4f1c2a90-0005-4000-8000-000000000005",
+    "id": "constraints-1",
+    "valid_from": "2026-11-10T12:00:00Z",
+    "consequence_type": "VANISH",
+    "allowed_limit_ranges": [
+      { "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC", "limit_type": "UPPER_LIMIT", "range_boundary": { "start_of_range": -5000, "end_of_range": 5000 }, "abnormal_condition_only": false },
+      { "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC", "limit_type": "LOWER_LIMIT", "range_boundary": { "start_of_range": -5000, "end_of_range": 5000 }, "abnormal_condition_only": false }
+    ]
+  },
+  {
+    "message_type": "FRBC.SystemDescription",
+    "message_id": "4f1c2a90-0006-4000-8000-000000000006",
+    "valid_from": "2026-11-10T12:00:00Z",
+    "actuators": [{
+      "id": "inverter",
+      "supported_commodities": ["ELECTRICITY"],
+      "operation_modes": [
+        { "id": "charge", "elements": [{ "fill_level_range": { "start_of_range": 0, "end_of_range": 100 }, "fill_rate": { "start_of_range": 0, "end_of_range": 0.0139 }, "power_ranges": [{ "start_of_range": 0, "end_of_range": 5000, "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC" }] }], "abnormal_condition_only": false },
+        { "id": "discharge", "elements": [{ "fill_level_range": { "start_of_range": 0, "end_of_range": 100 }, "fill_rate": { "start_of_range": -0.0139, "end_of_range": 0 }, "power_ranges": [{ "start_of_range": -5000, "end_of_range": 0, "commodity_quantity": "ELECTRIC.POWER.3_PHASE_SYMMETRIC" }] }], "abnormal_condition_only": false }
+      ],
+      "transitions": [{ "id": "c-d", "from": "charge", "to": "discharge", "start_timers": [], "blocking_timers": [], "abnormal_condition_only": false }],
+      "timers": []
+    }],
+    "storage": { "fill_level_label": "%", "provides_leakage_behaviour": false, "provides_fill_level_target_profile": false, "provides_usage_forecast": false, "fill_level_range": { "start_of_range": 0, "end_of_range": 100 } }
+  },
+  { "message_type": "InstructionStatusUpdate", "message_id": "4f1c2a90-0007-4000-8000-000000000007", "instruction_id": "instruction-1", "status_type": "ACCEPTED", "timestamp": "2026-11-10T12:00:01Z" },
+  { "message_type": "ReceptionStatus", "subject_message_id": "9a7e0c10-0003-4000-8000-000000000003", "status": "OK" },
+  { "message_type": "SessionRequest", "message_id": "9a7e0c10-0009-4000-8000-000000000009", "request": "TERMINATE" }
+]
