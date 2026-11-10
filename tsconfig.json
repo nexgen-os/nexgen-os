@@ -30,6 +30,9 @@
       "@nexgen-os/icar": [
         "./packages/connectors/icar/src/index.ts"
       ],
+      "@nexgen-os/homewizard": [
+        "./packages/connectors/homewizard/src/index.ts"
+      ],
       "@nexgen-os/mapbox": [
         "./packages/connectors/mapbox/src/index.ts"
       ],
