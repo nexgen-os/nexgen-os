@@ -36,6 +36,7 @@ tables it fills; an exporter reads the rows back into the same shapes.
 | [`project-sheet`](project-sheet/README.md) | A project sheet: one table, as CSV or an .xlsx workbook | a project, its participants with their place, their meters and devices, identifiers; every unreadable cell named with its line | the sheet, read back the same | `importProjectSheet` (core, through `importProject`) |
 | [`energy-bill`](energy-bill/README.md) | An energy bill: an EN 16931 invoice (`ReceivedInvoice` of `@ekwo-ai/factur-x`) and its energy facts | meter, consumption period, kWh per band, prices by band and season, network, taxes, totals reconciled | — | `importEnergyBill` (core), `estimateFromBill` (`modules/consumption/src`) |
 | [`utilityrate5`](utilityrate5/README.md) | SAM `utilityrate5` electricity rates (NREL) | energy charges by period and tier, 12 × 24 weekday and weekend schedules, time-series rates, every other `ur_` input as read; the rate of each hour of SAM's year | the same inputs; an hourly year folded back to its schedules | — |
+| [`s2`](s2/README.md) | S2, EN 50491-12-2 (S2 JSON 1.0.0) | the 36 messages between an energy manager and a device's resource manager, checked against the schemas; a device's details, measurements in their units, forecasts dated at their start | any message, checked; a power envelope instruction from dated steps | — (a device connector's) |
 
 The geocoders are not formats: they speak to services, which are sources,
 and live with the [connectors](../connectors/README.md).

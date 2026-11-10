@@ -79,7 +79,7 @@ describe('a message that does not hold', () => {
   });
 
   it('checks the objects a message carries, down to the lists and their bounds', () => {
-    const system = structuredClone(of('FRBC.SystemDescription')) as { actuators: { operation_modes: { elements: { power_ranges: unknown[] }[] }[] }[] };
+    const system = structuredClone(of('FRBC.SystemDescription')) as unknown as { actuators: { operation_modes: { elements: { power_ranges: unknown[] }[] }[] }[] };
     system.actuators[0].operation_modes[1].elements[0].power_ranges = [];
     expect(problemsOf(system)).toEqual(['$.actuators[0].operation_modes[1].elements[0].power_ranges: at least 1 item(s), 0 given']);
     expect(problemsOf({ ...of('PowerMeasurement'), measurement_timestamp: '2026-11-10 13:00' })).toEqual([
