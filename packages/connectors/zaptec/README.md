@@ -61,7 +61,7 @@ otherwise):
 
 A second collection of the same window changes nothing. What is left out is
 named in `skipped`: a voided session, replaced by a corrected one
-(`session_voided`); a session whose start or end is not a date
+(`voided`); a session whose start or end is not a date
 (`stamp_invalid`); the readings of a session recorded offline on a clock the
 station did not trust, whose record is kept (`clock_unreliable`); a reading
 below the one before it or outside the session (`value_invalid`).
