@@ -1,0 +1,14 @@
+{
+  "code": "easee",
+  "name": "Easee",
+  "description": "The cloud of Easee charging stations: the chargers an account reaches, the history of what each observed (its lifetime energy register, the power it delivered) and its charging sessions with the energy of each. Read by @nexgen-os/easee with the account of the charger's owner.",
+  "kind": "api",
+  "base_url": "https://api.easee.com",
+  "docs_url": "https://developer.easee.com",
+  "auth": "oauth2",
+  "license": "Easee's terms of use; the data is the charger owner's, read with their account",
+  "attribution": "Easee",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/easee"
+}
