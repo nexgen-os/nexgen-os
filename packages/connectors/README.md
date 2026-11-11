@@ -100,6 +100,18 @@ tells the two worldwide ones apart by their `sources` row: an open one may be
 passed on, a commercial one, Mapbox, may not); each place says which
 one answered ([decision 0009](../../docs/decisions/0009-what-applies-follows-the-region.md)).
 
+### Finding the devices of a place on its own network
+
+Before a device is read, it is found. [`mdns`](mdns/README.md)
+(`@nexgen-os/mdns`) asks the place's local network, by DNS-SD over multicast
+DNS, which instances of the service types it is given answer — name, host,
+port, addresses, key=value pairs — and `matchDiscovered()` proposes, for
+each, the entries of a catalogue given as data (`{ key, mdns, hostname }`)
+it may be. It reads no series and writes nothing: the person installing
+the device confirms which one it is, and the connector of that device reads
+it. It runs on a machine of that network, never from a server elsewhere. No
+source, no key, no dependency; MIT.
+
 ### Private connectors
 
 The interfaces are the contract. A connector whose data is not open — a
