@@ -1,0 +1,1 @@
+{ "accessToken": "fixture-access-token", "expiresIn": 86400, "accessClaims": ["User"], "tokenType": "Bearer", "refreshToken": "fixture-refresh-token" }

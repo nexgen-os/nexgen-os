@@ -39,6 +39,9 @@
       "@nexgen-os/pvgis": [
         "./packages/connectors/pvgis/src/index.ts"
       ],
+      "@nexgen-os/easee": [
+        "./packages/connectors/easee/src/index.ts"
+      ],
       "@nexgen-os/switchgrid": [
         "./packages/connectors/switchgrid/src/index.ts"
       ],
