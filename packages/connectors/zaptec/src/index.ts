@@ -287,7 +287,7 @@ export function stateOfZaptec(observations: unknown): ZaptecState {
 /**
  * Sessions of `GET /api/sessions/archived` as records and energy readings.
  * A voided session (replaced by a corrected one) is skipped
- * (`session_voided`), and so is a session whose start or end is not a date
+ * (`voided`), and so is a session whose start or end is not a date
  * (`stamp_invalid`). An offline session on a clock the station did not
  * trust keeps its record, never its readings (`clock_unreliable`); a reading
  * below the one before it is skipped (`value_invalid`).
@@ -297,7 +297,7 @@ export function sessionsOfZaptec(archived: unknown[]): ZaptecSessions {
   for (const s of archived as Json[]) {
     const id = String(s.id ?? '');
     if (s.voided === true) {
-      out.skipped.push({ session: id, reason: 'session_voided' });
+      out.skipped.push({ session: id, reason: 'voided' });
       continue;
     }
     const started = instantOf(s.startDateTime);

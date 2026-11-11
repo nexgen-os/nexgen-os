@@ -123,7 +123,7 @@ describe('the sessions of a charger', () => {
 
     expect(read.sessions.map((s) => s.record.transaction_id.slice(-1))).toEqual(['1', '3', '4']);
     expect(read.skipped).toEqual([
-      { session: 'a1000000-0000-4000-8000-000000000002', reason: 'session_voided' },
+      { session: 'a1000000-0000-4000-8000-000000000002', reason: 'voided' },
       { session: 'a1000000-0000-4000-8000-000000000004', reason: 'clock_unreliable' },
     ]);
     const [s1, s3, s4] = read.sessions;
