@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/easee`, Easee charging stations read from their cloud with the owner's account: `easee({ username, password })` with `chargers()`, `observations()` (the history of the charger's lifetime energy register, `consumption_energy` cumulative, and of its power) and `sessions()`, and `collectEasee()`, which records each session once through `charging.record()` and stores the observations as series of the charger, read by hour or day through `resample()`. A refusal for asking too often is named (`source_rate_limited`); the price and the cost of a session are not read. The package ships its `easee` source.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
