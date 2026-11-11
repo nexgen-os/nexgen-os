@@ -36,6 +36,9 @@
       "@nexgen-os/mapbox": [
         "./packages/connectors/mapbox/src/index.ts"
       ],
+      "@nexgen-os/mdns": [
+        "./packages/connectors/mdns/src/index.ts"
+      ],
       "@nexgen-os/nominatim": [
         "./packages/connectors/nominatim/src/index.ts"
       ],
