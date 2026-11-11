@@ -1,0 +1,5 @@
+[
+  { "timestamp": "2026-11-09T18:10:00Z", "value": 10.9 },
+  { "timestamp": "2026-11-09T20:30:00Z", "value": 0 },
+  { "timestamp": "not a date", "value": 3 }
+]

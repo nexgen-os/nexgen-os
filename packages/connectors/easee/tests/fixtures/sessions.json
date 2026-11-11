@@ -1,0 +1,10 @@
+[
+  { "carConnected": "2026-11-09T18:05:00Z", "carDisconnected": "2026-11-09T21:40:00Z", "kiloWattHours": 15.4,
+    "pricePerKwhExcludingVat": 0.2, "costIncludingVat": 3.85, "currency": "XXX", "actualDurationSeconds": 8400,
+    "firstEnergyTransferPeriodStarted": "2026-11-09T18:10:00Z", "lastEnergyTransferPeriodEnd": "2026-11-09T20:30:00Z",
+    "id": 3041, "chargerId": "EH000101", "isComplete": true, "authToken": "04A2B3C4D5E6F7", "authUser": 77, "ocmfData": "OCMF|{}" },
+  { "carConnected": "2026-11-10T07:00:00Z", "carDisconnected": null, "kiloWattHours": 3.2, "actualDurationSeconds": 3600,
+    "firstEnergyTransferPeriodStarted": "2026-11-10T07:00:00Z", "lastEnergyTransferPeriodEnd": "2026-11-10T08:00:00Z",
+    "id": 3042, "chargerId": "EH000101", "isComplete": false },
+  { "carConnected": null, "id": 3043, "chargerId": "EH000101" }
+]

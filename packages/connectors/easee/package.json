@@ -1,0 +1,38 @@
+{
+  "name": "@nexgen-os/easee",
+  "version": "0.4.2",
+  "description": "Easee charging stations read from their cloud as a Nexgen OS connector: the chargers of an account, their lifetime energy register and power, and their sessions, as sessions and series of the charger.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connectors/easee"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "source.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0"
+  }
+}
