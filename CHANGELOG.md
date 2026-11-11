@@ -8,6 +8,10 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/zaptec`, Zaptec charging stations read from their cloud with the owner's account: `zaptec({ username, password })` with `chargers()`, `state()` (the power, voltage and current of each phase at their own stamps, the operation mode in words) and `sessions()` (every page of the archive), and `collectZaptecSessions()`, which records each session once through `charging.record()` and keeps their energy as one `consumption_energy` register of the charger, read by hour or day through `resample()`. What it leaves out is named (`voided`, `clock_unreliable`, `stamp_invalid`, `value_invalid`); the person who authorised a session is not read. The package ships its `zaptec` source.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.

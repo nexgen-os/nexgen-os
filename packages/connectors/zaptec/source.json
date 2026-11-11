@@ -1,0 +1,14 @@
+{
+  "code": "zaptec",
+  "name": "Zaptec",
+  "description": "The cloud of Zaptec charging stations: the chargers an account owns, their state as they last reported it (power, voltage and current of each phase, operation mode) and their completed sessions with the energy each delivered. Read by @nexgen-os/zaptec with the account of the charger's owner.",
+  "kind": "api",
+  "base_url": "https://api.zaptec.com",
+  "docs_url": "https://api.zaptec.com/help/index.html",
+  "auth": "oauth2",
+  "license": "Zaptec's terms of use; the data is the charger owner's, read with their account",
+  "attribution": "Zaptec",
+  "retention_days": null,
+  "redistributable": false,
+  "published_by": "@nexgen-os/zaptec"
+}
