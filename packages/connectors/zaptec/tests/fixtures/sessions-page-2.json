@@ -1,0 +1,9 @@
+{ "hasMore": false, "cursor": null, "sessions": [
+  { "id": "a1000000-0000-4000-8000-000000000003", "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "deviceId": "ZAP000101",
+    "externalId": "4711", "startDateTime": "2026-11-10T07:00:00Z", "endDateTime": "2026-11-10T08:00:00Z",
+    "offline": false, "reliableClock": true, "signed": false, "voided": false, "aborted": false, "energy": 3.2, "energyDetails": [] },
+  { "id": "a1000000-0000-4000-8000-000000000004", "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "deviceId": "ZAP000101",
+    "startDateTime": "2026-11-10T12:00:00Z", "endDateTime": "2026-11-10T13:00:00Z",
+    "offline": true, "reliableClock": false, "signed": false, "voided": false, "aborted": false, "energy": 2.0,
+    "energyDetails": [ { "timestamp": "2026-11-10T12:30:00Z", "energy": 1.0 } ] }
+] }

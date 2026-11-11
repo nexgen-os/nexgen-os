@@ -1,0 +1,14 @@
+{ "hasMore": true, "cursor": "fixture-cursor-2", "sessions": [
+  { "id": "a1000000-0000-4000-8000-000000000001", "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "deviceId": "ZAP000101", "deviceName": "ZAP000101",
+    "installationId": "5c0d3e4f-0000-4000-8000-0000000000aa", "chargerFirmwareVersion": "3.4.1.2", "tokenName": "Blue card",
+    "authorizedUser": { "id": "u0000000-0000-4000-8000-000000000009", "email": "someone@example.org", "fullName": "Some One" },
+    "startDateTime": "2026-11-09T18:10:00Z", "endDateTime": "2026-11-09T20:30:00Z", "recognizedDateTime": "2026-11-09T20:31:00Z",
+    "offline": false, "reliableClock": true, "stoppedByRfid": false, "signed": true, "voided": false, "aborted": false, "energy": 15.4,
+    "energyDetails": [
+      { "timestamp": "2026-11-09T19:00:00Z", "energy": 9.1 },
+      { "timestamp": "2026-11-09T20:00:00Z", "energy": 14.8 }
+    ] },
+  { "id": "a1000000-0000-4000-8000-000000000002", "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "deviceId": "ZAP000101",
+    "replacedBySessionId": "a1000000-0000-4000-8000-000000000003",
+    "startDateTime": "2026-11-10T07:00:00Z", "endDateTime": "2026-11-10T07:05:00Z", "voided": true, "energy": 0, "energyDetails": [] }
+] }

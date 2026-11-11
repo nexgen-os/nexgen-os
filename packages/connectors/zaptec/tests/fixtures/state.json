@@ -1,0 +1,12 @@
+[
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": -2, "timestamp": "2026-11-10T21:00:00.000", "valueAsString": "2026-11-10T21:00:00" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 501, "timestamp": "2026-11-10T21:04:10.31", "valueAsString": "231.4" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 502, "timestamp": "2026-11-10T21:04:10.31", "valueAsString": "229.8" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 503, "timestamp": "2026-11-10T21:04:10.31", "valueAsString": "230.6" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 507, "timestamp": "2026-11-10T21:04:12Z", "valueAsString": "15.9" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 508, "timestamp": "2026-11-10T21:04:12Z", "valueAsString": "16.0" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 509, "timestamp": "2026-11-10T21:04:12Z", "valueAsString": "" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 513, "timestamp": "2026-11-10T21:04:15+00:00", "valueAsString": "11021.7" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 553, "timestamp": "2026-11-10T21:04:15Z", "valueAsString": "4.21" },
+  { "chargerId": "0b6e1c2a-7d1f-4f8e-9a3b-111111111111", "stateId": 710, "timestamp": "2026-11-10T20:41:02Z", "valueAsString": "3" }
+]
