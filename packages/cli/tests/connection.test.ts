@@ -104,7 +104,7 @@ describe('the command line', () => {
     const r = await run(['status', '--project-ref', REF, '--db-region', 'eu-west-3'], { NEXGEN_DB_PASSWORD: 'secret' });
     expect(r.err).toBe('');
     expect(r.code).toBe(0);
-    expect(r.out).toMatch(/^Nexgen OS 0\.3\.0/);
+    expect(r.out).toMatch(/^Nexgen OS \d+\.\d+\.\d+\n/);
     expect(r.opened).toEqual(['aws-0-eu-west-3.pooler.supabase.com', 'aws-1-eu-west-3.pooler.supabase.com', 'aws-1-eu-west-3.pooler.supabase.com']);
   });
 
