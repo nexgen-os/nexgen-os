@@ -61,7 +61,7 @@ describe('the server', () => {
     const { tools } = await writer.listTools();
     const names = tools.map((t) => t.name);
     for (const name of ['status', 'list_organisations', 'list_projects', 'list_participants', 'list_meters', 'list_devices', 'list_series',
-      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'import_project', 'store_series',
+      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'import_project', 'import_project_sheet', 'store_series',
       'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_describe_system', 'solar_estimate_yield', 'solar_estimates',
       'actions_of_project', 'actions_propose', 'actions_validate']) {
       expect(names).toContain(name);
@@ -153,6 +153,17 @@ describe('the server', () => {
     const again = await call(writer, 'import_project', { organisation_id: org, description });
     expect(again.value.project_id).toBe(done.value.project_id);
     expect(again.value.objects.every((o: { outcome: string }) => o.outcome === 'found')).toBe(true);
+  });
+
+  it('imports a project sheet, and refuses one with a cell it cannot read', async () => {
+    const sheet = (power: string) => 'project,country,participant,time_zone,participant_country,city,latitude,longitude,location_precision,device_type,device_name,device_rated_power_kw\n'
+      + `Sports hall,BE,Hall,Europe/Brussels,BE,Namur,50.47,4.87,city,solar,Hall roof,${power}\n`;
+    const plan = await call(writer, 'import_project_sheet', { organisation_id: org, sheet: sheet('20'), dry_run: true });
+    expect(plan.error, plan.text).toBe(false);
+    expect(plan.value.projects[0].counts.device).toEqual({ found: 0, created: 1 });
+    const refused = await call(writer, 'import_project_sheet', { organisation_id: org, sheet: sheet('20 kW') });
+    expect(refused.error).toBe(true);
+    expect(refused.text).toMatch(/sheet_unreadable: line 2 invalid_number device_rated_power_kw/);
   });
 });
 

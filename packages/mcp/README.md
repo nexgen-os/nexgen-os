@@ -172,6 +172,7 @@ client can ask before calling them.
 | `declare_meter` | A meter by its identifier in a scheme, which checks it (`declare_meter()`) |
 | `install_device` | A device, from a product of the catalogue or with a stated power (`install_device()`) |
 | `import_project` | A project described as data — participants, meters, devices, identifiers — through the same functions (`importProject()`); given again, it creates only what is new; `dry_run` writes nothing |
+| `import_project_sheet` | A project sheet, the CSV a spreadsheet saves ([`@nexgen-os/project-sheet`](../formats/project-sheet/README.md)), each of its projects imported as `import_project` does (`importProjectSheet()`); a sheet with a cell it cannot read is refused whole, `sheet_unreadable`, each problem with its line |
 | `store_series` | Values through `store()`, each dated at the start of its interval, with their source |
 | `import_series` | The readings of a file read by its format library — `homeassistant` — written through `store()` |
 | `create_api_key` · `revoke_api_key` | A key issued by a person who holds `members.manage`, signed in, with capabilities they hold (`data.read`, `data.write`…), and its withdrawal; a key does not issue keys |
