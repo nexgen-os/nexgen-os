@@ -84,6 +84,24 @@ describe('the gestures as commands', () => {
     expect(again.counts).toEqual({ project: { found: 1, created: 0 }, participant: { found: 1, created: 0 }, meter: { found: 1, created: 0 }, device: { found: 0, created: 0 } });
   });
 
+  it('imports a project sheet a spreadsheet saved, and names the cell it cannot read', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nexgen-gestures-'));
+    const file = join(dir, 'project.csv');
+    const sheet = (power: string) => [
+      'project;country;participant;time_zone;participant_country;latitude;longitude;location_precision;meter_scheme;meter_identifier;device_type;device_name;device_rated_power_kw',
+      `Covered market;ZZ;Stall;Europe/Brussels;ZZ;50,84;4,36;street;gs1_gsrn;541448000000000062;inverter;Stall inverter;${power}`,
+    ].join('\r\n');
+    await writeFile(file, sheet('3,5'));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', file, '--dry-run']);
+    expect(plan.projects[0].counts.device).toEqual({ found: 0, created: 1 });
+    const done = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(done.projects[0].project_id).toMatch(/^[0-9a-f-]{36}$/);
+    await writeFile(file, sheet('three'));
+    const refused = await run(['project', 'import', '--organisation', org, '--file', file]);
+    expect(refused.code).not.toBe(0);
+    expect(refused.err).toMatch(/sheet_unreadable: line 2 invalid_number device_rated_power_kw "three"/);
+  });
+
   it('issues, lists and withdraws a key, and the key acts as its issuer', async () => {
     const key = await json(['key', 'create', '--organisation', org, '--name', 'Nightly import']);
     expect(key.capabilities).toEqual(['data.read']);

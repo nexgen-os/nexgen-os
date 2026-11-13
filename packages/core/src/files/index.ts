@@ -12,3 +12,4 @@ export * from './energy-bill.js';
 export * from './enedis-r6x.js';
 export * from './dsmr.js';
 export * from './project.js';
+export * from './project-sheet.js';
