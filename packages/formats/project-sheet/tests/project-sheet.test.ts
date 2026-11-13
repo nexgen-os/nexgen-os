@@ -78,8 +78,8 @@ describe('writing a project sheet', () => {
     const { projects } = readProjectSheet(await fixture('community-semicolon.csv'));
     const comma = writeProjectSheet(projects);
     expect(comma.split('\r\n')[0]).toBe(PROJECT_SHEET_COLUMNS.join(','));
-    expect(readProjectSheet(comma)).toEqual({ delimiter: ',', projects, problems: [] });
-    expect(readProjectSheet(writeProjectSheet(projects, { delimiter: ';' }))).toEqual({ delimiter: ';', projects, problems: [] });
+    expect(readProjectSheet(comma)).toEqual({ format: 'csv', delimiter: ',', projects, problems: [] });
+    expect(readProjectSheet(writeProjectSheet(projects, { delimiter: ';' }))).toEqual({ format: 'csv', delimiter: ';', projects, problems: [] });
   });
 
   it('publishes a template that is the header the writer gives', async () => {
