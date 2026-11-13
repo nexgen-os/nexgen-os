@@ -1,0 +1,5 @@
+project,country,participant,latitude,meter_scheme,meter_identifier,device_type,device_name,device_rated_power_kw,device_unit_count,device_installed_on,project_identifiers,participant
+One,FR,A,45.1,ean,,heat_pump,,1.5,2.5,2026-02-30,crm,
+,FR,B,,,,,,,,,,
+One,DE,C,,,,pv_system,Roof,"12,5",,,,
+One,,,,ean,123,,,,,,,

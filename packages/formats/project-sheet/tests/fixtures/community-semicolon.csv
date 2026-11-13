@@ -1,0 +1,6 @@
+﻿project;country;project_kind;participant;category;time_zone;participant_identifiers;address_line1;postal_code;city;participant_country;latitude;longitude;location_precision;meter_scheme;meter_identifier;meter_direction;device_type;device_name;device_rated_power_kw;device_unit_count;notes
+Sunny Street Community;BE;energy_community;School;prosumer;Europe/Brussels;crm=S-001;"Rue de l'Ecole 1; block A";1000;Brussels;BE;50,8466;4,3528;rooftop;ean;541448800000000017;both;pv_system;Roof array;36,5;1;kept aside
+Sunny Street Community;;;School;;;;;;;;;;;ean;541448800000000024;offtake;battery;Basement battery;10;;
+Sunny Street Community;;;Bakery;consumer;;crm=S-002|vat=BE0123456789;;;;;;;;ean;541448800000000031;;;;;;
+
+Sunny Street Community;;;Town hall;;;;;;;;;;;;;;;;;;
