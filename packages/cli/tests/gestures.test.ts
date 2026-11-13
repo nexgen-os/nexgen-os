@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { PGlite } from '@electric-sql/pglite';
 import { main } from '../src/index.js';
 import { USER_A, USER_B, freshDatabase, organisation, sqlClient } from '../../../tests/helpers/db.js';
@@ -100,6 +101,12 @@ describe('the gestures as commands', () => {
     const refused = await run(['project', 'import', '--organisation', org, '--file', file]);
     expect(refused.code).not.toBe(0);
     expect(refused.err).toMatch(/sheet_unreadable: line 2 invalid_number device_rated_power_kw "three"/);
+  });
+
+  it('imports the .xlsx workbook of a project sheet', async () => {
+    const workbook = fileURLToPath(new URL('../../formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', workbook, '--dry-run']);
+    expect(plan.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
   });
 
   it('issues, lists and withdraws a key, and the key acts as its issuer', async () => {

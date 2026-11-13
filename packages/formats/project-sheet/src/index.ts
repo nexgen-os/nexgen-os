@@ -126,7 +126,8 @@ export type SheetProblemCode =
   | 'coordinates_incomplete'
   | 'meter_incomplete'
   | 'device_incomplete'
-  | 'values_disagree';
+  | 'values_disagree'
+  | 'number_rounded';
 
 /**
  * What the reader could not read, by name, at its line (1 is the header).
@@ -142,17 +143,32 @@ export interface SheetProblem {
 }
 
 export interface ProjectSheet {
-  /** The separator the header uses. */
-  delimiter: ',' | ';' | '\t';
+  /** A CSV text, or a workbook (`readProjectWorkbook()`). */
+  format: 'csv' | 'xlsx';
+  /** The separator the header of a CSV uses; null for a workbook. */
+  delimiter: ',' | ';' | '\t' | null;
   projects: SheetProject[];
   problems: SheetProblem[];
 }
 
 const WARNINGS: ReadonlySet<SheetProblemCode> = new Set(['column_unknown']);
 
+/** A row of a sheet, its cells as text, at its line (its row number in a workbook). */
+export interface SheetRow {
+  line: number;
+  cells: string[];
+}
+
+/** Adds a problem, its level from its code. */
+export function reportTo(problems: SheetProblem[]) {
+  return (code: SheetProblemCode, line: number, column?: string, value?: string) =>
+    problems.push({ code, level: WARNINGS.has(code) ? 'warning' : 'error', line,
+      ...(column === undefined ? {} : { column }), ...(value === undefined ? {} : { value }) });
+}
+
 /** Splits a sheet into rows of cells (RFC 4180: quotes doubled, separators and line breaks inside quotes). */
-function cells(text: string, delimiter: string): { rows: { line: number; cells: string[] }[]; unterminated: number | null } {
-  const rows: { line: number; cells: string[] }[] = [];
+function cells(text: string, delimiter: string): { rows: SheetRow[]; unterminated: number | null } {
+  const rows: SheetRow[] = [];
   let row: string[] = [];
   let cell = '';
   let quoted = false;
@@ -180,7 +196,7 @@ function cells(text: string, delimiter: string): { rows: { line: number; cells: 
 }
 
 /** The separator of the header: the one of comma, semicolon and tab it holds most of, outside quotes. */
-function delimiterOf(header: string): ProjectSheet['delimiter'] {
+function delimiterOf(header: string): NonNullable<ProjectSheet['delimiter']> {
   const outside = header.replace(/"[^"]*"/g, '');
   const counts = ([',', ';', '\t'] as const).map((d) => [d, outside.split(d).length - 1] as const);
   return counts.reduce((best, c) => (c[1] > best[1] ? c : best))[0];
@@ -192,29 +208,36 @@ function delimiterOf(header: string): ProjectSheet['delimiter'] {
  * `column_missing`.
  */
 export function readProjectSheet(text: string): ProjectSheet {
-  const body = text.replace(/^﻿/, '');
+  const body = text.replace(/^\uFEFF/, '');
   const delimiter = delimiterOf(body.split(/\r?\n/, 1)[0] ?? '');
   const problems: SheetProblem[] = [];
-  const report = (code: SheetProblemCode, line: number, column?: string, value?: string) =>
-    problems.push({ code, level: WARNINGS.has(code) ? 'warning' : 'error', line,
-      ...(column === undefined ? {} : { column }), ...(value === undefined ? {} : { value }) });
-
   const { rows, unterminated } = cells(body, delimiter);
-  if (unterminated !== null) report('quote_unterminated', unterminated);
+  if (unterminated !== null) reportTo(problems)('quote_unterminated', unterminated);
+  return { format: 'csv', delimiter, projects: projectsOfRows(rows, delimiter !== ',', problems), problems };
+}
+
+/**
+ * The projects rows of cells describe, the first row naming the columns:
+ * what `readProjectSheet()` and `readProjectWorkbook()` share. A number may
+ * carry a decimal comma when `decimalComma` says the cells allow it.
+ */
+export function projectsOfRows(rows: SheetRow[], decimalComma: boolean, problems: SheetProblem[]): SheetProject[] {
+  const report = reportTo(problems);
   const [head, ...data] = rows;
+  const headLine = head?.line ?? 1;
   const columns = (head?.cells ?? []).map((c) => c.trim().toLowerCase());
   const known = new Set<string>(PROJECT_SHEET_COLUMNS);
   const index = new Map<string, number>();
   columns.forEach((c, i) => {
     if (c === '') return;
-    if (!known.has(c)) report('column_unknown', 1, c);
-    else if (index.has(c)) report('column_repeated', 1, c);
+    if (!known.has(c)) report('column_unknown', headLine, c);
+    else if (index.has(c)) report('column_repeated', headLine, c);
     else index.set(c, i);
   });
   for (const required of ['project', 'participant'] as const) {
-    if (!index.has(required)) report('column_missing', 1, required);
+    if (!index.has(required)) report('column_missing', headLine, required);
   }
-  if (!index.has('project') || !index.has('participant')) return { delimiter, projects: [], problems };
+  if (!index.has('project') || !index.has('participant')) return [];
 
   const projects: SheetProject[] = [];
   for (const { line, cells: row } of data) {
@@ -228,7 +251,7 @@ export function readProjectSheet(text: string): ProjectSheet {
     const number = (c: ProjectSheetColumn, integer = false): number | undefined => {
       const raw = get(c);
       if (raw === undefined) return undefined;
-      const written = delimiter === ',' ? raw : raw.replace(',', '.');
+      const written = decimalComma ? raw.replace(',', '.') : raw;
       const n = /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(written) ? Number(written) : NaN;
       if (!Number.isFinite(n) || (integer && !Number.isInteger(n))) { report('invalid_number', line, c, raw); return undefined; }
       return n;
@@ -333,7 +356,7 @@ export function readProjectSheet(text: string): ProjectSheet {
       report('device_incomplete', line, deviceType === undefined ? 'device_type' : 'device_name');
     }
   }
-  return { delimiter, projects, problems };
+  return projects;
 }
 
 /** One cell, quoted when it holds the separator, a quote or a line break. */
@@ -348,7 +371,7 @@ function quote(value: string, delimiter: string): string {
  * for a project without participants. Numbers are written with a point,
  * so the default separator is the comma.
  */
-export function writeProjectSheet(projects: SheetProject[], options: { delimiter?: ProjectSheet['delimiter'] } = {}): string {
+export function writeProjectSheet(projects: SheetProject[], options: { delimiter?: NonNullable<ProjectSheet['delimiter']> } = {}): string {
   const delimiter = options.delimiter ?? ',';
   const ids = (list: SheetIdentifier[]) => list.map((i) => `${i.scheme}=${i.value}`).join('|');
   const text = (v: string | number | undefined) => (v === undefined ? '' : String(v));
@@ -389,3 +412,5 @@ export function writeProjectSheet(projects: SheetProject[], options: { delimiter
   }
   return lines.join('\r\n') + '\r\n';
 }
+
+export { readProjectWorkbook } from './xlsx.js';

@@ -1,6 +1,7 @@
 // A project sheet saved by a spreadsheet becomes rows through importProject(),
 // is refused whole when a cell cannot be read, and written again creates
 // nothing.
+import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { USER_A, asUser, freshDatabase, one, organisation } from './helpers/db.js';
@@ -82,6 +83,17 @@ describe('a project sheet imported', () => {
       .rejects.toThrow(/^sheet_unreadable: line 2 invalid_number device_rated_power_kw "about 36"$/);
     expect(await count('projects')).toBe(1);
     await expect(importProjectSheet(db, org, 'project,participant\r\n')).rejects.toThrow(/^sheet_empty/);
+  });
+
+  it('imports the .xlsx workbook a spreadsheet keeps, as it imports a CSV', async () => {
+    const workbook = new Uint8Array(await readFile(new URL('../packages/formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url)));
+    const plan = await asUser(db, USER_A, () => importProjectSheet(db, org, workbook, { dryRun: true }));
+    expect(plan.projects.map((p) => p.counts)).toEqual([{
+      project: { found: 0, created: 1 }, participant: { found: 0, created: 2 },
+      meter: { found: 0, created: 2 }, device: { found: 0, created: 2 },
+    }]);
+    const rounded = new Uint8Array(await readFile(new URL('../packages/formats/project-sheet/tests/fixtures/community-libreoffice-rounded.xlsx', import.meta.url)));
+    await expect(asUser(db, USER_A, () => importProjectSheet(db, org, rounded))).rejects.toThrow(/^sheet_unreadable: line 2 number_rounded L2 "5.414488E\+017"; /);
   });
 
   it('passes on what the model refuses, by its name', async () => {

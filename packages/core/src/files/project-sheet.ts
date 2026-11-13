@@ -1,6 +1,6 @@
 /**
  * A project sheet into the model: `@nexgen-os/project-sheet` reads the table
- * a spreadsheet saves — a project, its participants with their place, the
+ * a spreadsheet saves, as CSV or as its .xlsx workbook — a project, its participants with their place, the
  * meters they carry, the devices behind them — and this file gives each
  * project of it to `importProject()`, the one way a project described as
  * data becomes rows. So a sheet written again finds what is there and adds
@@ -11,7 +11,7 @@
  * an importer never guesses what a cell meant. A column the sheet does not
  * know is left aside and given back as a warning.
  */
-import { readProjectSheet, type ProjectSheet, type SheetIdentifier, type SheetProblem, type SheetProject } from '@nexgen-os/project-sheet';
+import { readProjectSheet, readProjectWorkbook, type ProjectSheet, type SheetIdentifier, type SheetProblem, type SheetProject } from '@nexgen-os/project-sheet';
 import type { Db } from '../db.js';
 import { GestureError } from '../refusal.js';
 import { importProject, type IdentifierDescription, type ProjectDescription, type ProjectImport, type ProjectImportOptions } from './project.js';
@@ -78,13 +78,14 @@ function said(p: SheetProblem): string {
 }
 
 /**
- * Writes the projects of a sheet — its text, or the sheet already read —
- * into an organisation, or finds them there: see the head of this file.
+ * Writes the projects of a sheet — its text (CSV), the bytes of an .xlsx
+ * workbook, or the sheet already read — into an organisation, or finds them there: see the head of this file.
  * Refuses `sheet_unreadable` with every problem the reader named, and
  * `sheet_empty` for a sheet that describes no project.
  */
-export async function importProjectSheet(db: Db, organisationId: string, sheet: string | ProjectSheet, options: ProjectImportOptions = {}): Promise<ProjectSheetImport> {
-  const read = typeof sheet === 'string' ? readProjectSheet(sheet) : sheet;
+export async function importProjectSheet(db: Db, organisationId: string, sheet: string | Uint8Array | ProjectSheet, options: ProjectImportOptions = {}): Promise<ProjectSheetImport> {
+  const read = typeof sheet === 'string' ? readProjectSheet(sheet)
+    : sheet instanceof Uint8Array ? readProjectWorkbook(sheet) : sheet;
   const errors = read.problems.filter((p) => p.level === 'error');
   if (errors.length > 0) throw new GestureError(`sheet_unreadable: ${errors.map(said).join('; ')}`);
   if (read.projects.length === 0) throw new GestureError('sheet_empty: the sheet describes no project');

@@ -71,7 +71,7 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
   nexgen-os project create --organisation <id> --name <n> --country <cc> [--kind k]
-  nexgen-os project import --organisation <id> --file <description.json|sheet.csv> [--dry-run]   a project, its participants, meters, devices; again without a duplicate
+  nexgen-os project import --organisation <id> --file <description.json|sheet.csv|sheet.xlsx> [--dry-run]   a project, its participants, meters, devices; again without a duplicate
   nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
   nexgen-os meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
@@ -157,13 +157,12 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
     case 'project create':
       return createProject(db, { organisation_id: need(f, 'organisation'), name: need(f, 'name'), country: need(f, 'country'), ...(optional(f, 'kind') ? { kind: optional(f, 'kind')! } : {}) });
     case 'project import': {
-      // A description in JSON, or a project sheet a spreadsheet saved (CSV, any separator).
+      // A description in JSON, or a project sheet a spreadsheet saved: its .xlsx workbook or a CSV, any separator.
       const file = need(f, 'file');
-      const text = await readFile(file, 'utf8');
       const options = { dryRun: f.has('dry-run') };
-      return /\.json$/i.test(file)
-        ? importProject(db, need(f, 'organisation'), JSON.parse(text), options)
-        : importProjectSheet(db, need(f, 'organisation'), text, options);
+      if (/\.json$/i.test(file)) return importProject(db, need(f, 'organisation'), JSON.parse(await readFile(file, 'utf8')), options);
+      const sheet = /\.xlsx$/i.test(file) ? new Uint8Array(await readFile(file)) : await readFile(file, 'utf8');
+      return importProjectSheet(db, need(f, 'organisation'), sheet, options);
     }
     case 'participant add': {
       const place = optional(f, 'place');

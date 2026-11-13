@@ -2,8 +2,8 @@
 
 A project sheet is the plainest way to hand a project to Nexgen OS: its
 participants, the meters they carry and the devices behind them, as one
-table any spreadsheet saves as CSV. This package reads it into plain
-shapes, names with its line every cell it cannot read, and writes projects
+table any spreadsheet keeps, read from its CSV or straight from its
+`.xlsx` workbook. This package reads it into plain shapes, names with its line every cell it cannot read, and writes projects
 back as a sheet it reads the same. MIT; no dependency, no database, no
 network.
 
@@ -35,11 +35,25 @@ How it reads:
   written: the model that receives them knows its vocabulary and refuses
   what it does not.
 
+A workbook (`readProjectWorkbook(bytes, { sheet? })`): the first
+worksheet, or the one named, of an Office Open XML spreadsheet as Excel,
+LibreOffice Calc and the others save it, read into the same rows as a CSV.
+A string is read as written; a number in its shortest decimal form; a number
+shown as a date (a built-in date format, or a format of its own made of
+days, months and years) as the day it counts, from the workbook's 1900 or
+1904 epoch. A number of more than fifteen digits was rounded by the
+spreadsheet — an identifier typed as a number — and is reported as
+`number_rounded` with its cell, never given: format the column as text.
+The ZIP container is inflated by `node:zlib`, so a workbook is read in
+Node; a file that is not a workbook throws `workbook_unreadable`, a sheet
+it does not hold `sheet_not_found`.
+
 What it reports, by name and line: `column_missing`, `column_unknown`,
 `column_repeated`, `quote_unterminated`, `row_too_long`,
 `project_required`, `participant_required`, `invalid_number`,
 `invalid_date`, `invalid_identifier`, `coordinates_incomplete`,
-`meter_incomplete`, `device_incomplete`, `values_disagree`. Every problem
+`meter_incomplete`, `device_incomplete`, `values_disagree`,
+`number_rounded`. Every problem
 but `column_unknown` is an error: the sheet does not say what its author
 meant.
 
@@ -47,7 +61,7 @@ meant.
 import { readProjectSheet, writeProjectSheet } from '@nexgen-os/project-sheet';
 import { importProjectSheet } from '@nexgen-os/core';
 
-const sheet = readProjectSheet(text);
+const sheet = readProjectSheet(text);            // or readProjectWorkbook(bytes)
 for (const p of sheet.problems) console.warn(p.line, p.code, p.column ?? '', p.value ?? '');
 
 // Into Nexgen OS: refused while the sheet has an error, then imported and
@@ -61,4 +75,4 @@ What it never does: look up a code, geocode an address, correct a cell.
 Into Nexgen OS, `importProjectSheet()` of `@nexgen-os/core` gives each
 project of the sheet to `importProject()`, which writes it through the
 gestures of the schema and finds what is already there
-(`nexgen-os project import --file <sheet.csv>`).
+(`nexgen-os project import --file <sheet.csv|sheet.xlsx>`).
