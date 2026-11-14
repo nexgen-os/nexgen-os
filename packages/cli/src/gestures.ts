@@ -11,22 +11,28 @@
  */
 import { readFile } from 'node:fs/promises';
 import {
+  addMember,
   addParticipant,
   compute,
   computeKpi,
   createApiKey,
+  createOrganisation,
   createProject,
   declareMeter,
+  estimatePvYieldAt,
   geocoderChain,
   geocoderNames,
   importHomeAssistantSeries,
   installDevice,
   kpisOf,
   listApiKeys,
+  listMembers,
   loadGeocoders,
   personSession,
   readSurfaceConfig,
+  removeMember,
   revokeApiKey,
+  setMemberRole,
   verifyAccessToken,
   type Computations,
   type Db,
@@ -39,6 +45,8 @@ type Flags = Map<string, string | true>;
 
 /** The commands of this file and their subcommands; `size` and `kpis` take none or one. */
 export const GESTURE_COMMANDS: Record<string, string[]> = {
+  organisation: ['create'],
+  member: ['add', 'list', 'role', 'remove'],
   key: ['create', 'list', 'revoke'],
   project: ['create'],
   participant: ['add'],
@@ -47,10 +55,16 @@ export const GESTURE_COMMANDS: Record<string, string[]> = {
   series: ['import'],
   size: [],
   kpis: ['', 'compute'],
+  solar: ['estimate'],
 };
 
 export const GESTURE_USAGE = `
 Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER_ID), under row level security:
+  nexgen-os organisation create --name <n>                                          an organisation, the person its owner
+  nexgen-os member add --organisation <id> --user <id> [--role owner|editor|viewer]  give a person a role (an owner)
+  nexgen-os member list --organisation <id>                                         the members and their roles
+  nexgen-os member role --organisation <id> --user <id> --role <r>                  change a member's role
+  nexgen-os member remove --organisation <id> --user <id>                           remove a member
   nexgen-os key create --organisation <id> --name <n> [--write] [--expires <iso>]   issue a key (an owner)
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
@@ -63,6 +77,9 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os size --module solar|battery --request <file.json>                       to size, with a named criterion
   nexgen-os kpis --object-kind <k> --object <id> --from <iso> --to <iso>            the indicators of an object
   nexgen-os kpis compute --object-kind <k> --object <id> --indicator <code> --from <iso> --to <iso>
+  nexgen-os solar estimate --project <id> --name <n> --country <cc> --lon <x> --lat <y>
+                           --kwp <p> --azimuth <deg from north> --tilt <deg> [--year yyyy] [--loss pct] [--time-zone tz]
+                                                                                    a PV system at a point and its yield by month
 `;
 
 /** The flags these commands take, beside those of the installer. */
@@ -71,12 +88,18 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
-  write: 'switch', expires: 'value',
+  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value', loss: 'value', user: 'value', role: 'value',
 };
 
 function need(flags: Flags, name: string): string {
   const value = flags.get(name);
   if (typeof value !== 'string' || value.length === 0) throw new NexgenError('usage', `--${name} is required`);
+  return value;
+}
+
+function number(flags: Flags, name: string): number {
+  const value = Number(need(flags, name));
+  if (!Number.isFinite(value)) throw new NexgenError('usage', `--${name} takes a number`);
   return value;
 }
 
@@ -108,6 +131,16 @@ export async function runGesture(command: string, sub: string | undefined, opera
 
 async function gesture(db: Db, command: string, sub: string | undefined, operand: string | undefined, f: Flags, io: GestureIo): Promise<unknown> {
   switch (`${command} ${sub ?? ''}`.trim()) {
+    case 'organisation create':
+      return createOrganisation(db, need(f, 'name'));
+    case 'member add':
+      return addMember(db, { organisation_id: need(f, 'organisation'), user_id: need(f, 'user'), ...(optional(f, 'role') ? { role: optional(f, 'role')! } : {}) });
+    case 'member list':
+      return listMembers(db, need(f, 'organisation'));
+    case 'member role':
+      return setMemberRole(db, { organisation_id: need(f, 'organisation'), user_id: need(f, 'user'), role: need(f, 'role') });
+    case 'member remove':
+      return removeMember(db, need(f, 'organisation'), need(f, 'user'));
     case 'key create':
       return createApiKey(db, {
         organisation_id: need(f, 'organisation'), name: need(f, 'name'),
@@ -160,6 +193,15 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
       return kpisOf(db, need(f, 'object-kind'), need(f, 'object'), need(f, 'from'), need(f, 'to'));
     case 'kpis compute':
       return computeKpi(db, need(f, 'object-kind'), need(f, 'object'), need(f, 'indicator'), need(f, 'from'), need(f, 'to'));
+    case 'solar estimate':
+      return estimatePvYieldAt(db, io.computations ?? {}, {
+        project_id: need(f, 'project'), name: need(f, 'name'), country: need(f, 'country'),
+        lon: number(f, 'lon'), lat: number(f, 'lat'), kwp: number(f, 'kwp'), azimuth_deg: number(f, 'azimuth'), tilt_deg: number(f, 'tilt'),
+        ...(optional(f, 'year') !== undefined ? { year: number(f, 'year') } : {}),
+        // A percentage, as PVGIS takes it; the attribute holds a fraction.
+        ...(optional(f, 'loss') !== undefined ? { system_loss: number(f, 'loss') / 100 } : {}),
+        ...(optional(f, 'time-zone') ? { time_zone: optional(f, 'time-zone')! } : {}),
+      });
     default:
       throw new NexgenError('usage', `unknown command ${command} ${sub ?? ''}; run nexgen-os --help`);
   }
