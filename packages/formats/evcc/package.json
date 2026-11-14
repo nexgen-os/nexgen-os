@@ -1,0 +1,37 @@
+{
+  "name": "@nexgen-os/evcc",
+  "version": "0.4.2",
+  "description": "The device templates of evcc read into plain shapes: the products each template drives, the brand and model, the class of device, its capabilities, its uses, how it is found on a local network, and whether it needs a sponsorship. No database, no network.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/evcc"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}

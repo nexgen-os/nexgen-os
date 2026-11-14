@@ -1,0 +1,34 @@
+{
+  "name": "@nexgen-os/utilityrate5",
+  "version": "0.4.1",
+  "description": "SAM utilityrate5 rates read and written: the energy charges, the 12 x 24 weekday and weekend schedules, the time-series rates, and the hourly rates of a year they give. No database, no dependency.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/utilityrate5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
+}
