@@ -1,0 +1,61 @@
+{
+  "data": {
+    "headpoint": [
+      {
+        "type": "metering-on-meter",
+        "ean": "541449000000000011",
+        "energyType": "E",
+        "physiclaMeters": [
+          {
+            "seqNumber": "1",
+            "meterID": "1SAG0000000001",
+            "quarterHourlyEnergy": [
+              {
+                "start": "2026-06-16T22:00:00Z",
+                "measurements": [
+                  {
+                    "offtake": {
+                      "total": {
+                        "value": 2.0,
+                        "unit": "kWh",
+                        "validationState": "VAL"
+                      }
+                    },
+                    "injection": {
+                      "total": {
+                        "value": 0.0,
+                        "unit": "kWh",
+                        "validationState": "VAL"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "start": "2026-06-16T22:15:00Z",
+                "measurements": [
+                  {
+                    "offtake": {
+                      "total": {
+                        "value": 2.5,
+                        "unit": "kWh",
+                        "validationState": "VAL"
+                      }
+                    },
+                    "injection": {
+                      "total": {
+                        "value": 0.0,
+                        "unit": "kWh",
+                        "validationState": "VAL"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
