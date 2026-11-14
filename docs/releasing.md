@@ -56,9 +56,13 @@ worse than one not cut.
    ```
 
 7. **The run against a real Supabase project.** The test suite runs on
-   PGlite; this run covers what PGlite does not: the published binary over a
-   pooler, a hosted project's roles, extensions and TLS. On a throwaway
-   project, with PostGIS enabled:
+   PGlite. It installs every module and every pack over the schemas a new
+   Supabase project already holds (`tests/fixtures/supabase-project.sql`), so
+   a module whose schema the host takes is refused there before anywhere
+   else; a schema Supabase adds to its projects goes into that file. This run
+   covers what PGlite does not: the published binary over a pooler, a hosted
+   project's roles, extensions and TLS. On a throwaway project, with PostGIS
+   enabled:
 
    ```sh
    export NEXGEN_DB_URL=…                       # never written to a file
@@ -80,7 +84,9 @@ worse than one not cut.
    where Supabase keeps PostGIS, is on the search path; and a session
    pooler string whose host is not the project's (`aws-0-…` for a project
    on `aws-1-…`) is refused by the pooler with `tenant/user … not found` —
-   copy the string from the project's *Connect* panel.
+   copy the string from the project's *Connect* panel, or give
+   `--project-ref` and `--db-region` with `NEXGEN_DB_PASSWORD`, which tries
+   both. Run `init` once each way.
 
    **The last run:** written here when the release is cut.
 

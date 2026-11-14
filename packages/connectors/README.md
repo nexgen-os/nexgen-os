@@ -47,7 +47,7 @@ issue time.
 One package per service, `@nexgen-os/<service>`, MIT, with its own `package.json`
 and `README`; the interfaces, the standard shape of a place and `storeSeries()` come
 from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same calls for any TypeScript client:
-`store()`, `seriesEnsure()`, and the reads `resample()`, `window()`,
+`store()`, `seriesEnsure()`, and the reads `resample()`, `aggregate()`, `window()`,
 `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`,
 `convertUnit()` — each one call of the SQL function of the same name.
 
@@ -58,12 +58,14 @@ from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same call
 | [`open-meteo`](open-meteo/README.md) | `open_meteo` — hourly forecast of temperature and irradiance, and history from the ERA5 archive (irradiance on a plane, horizontal components `ghi`, `dni`, `dhi`, temperature, wind speed), worldwide | data CC BY 4.0; the free API is for non-commercial use, a paid plan otherwise |
 | [`pvgis`](pvgis/README.md) | `pvgis` — hourly energy, in-plane irradiance and temperature of a PV system over whole years (seriescalc), and its multi-year yield (PVcalc); azimuth from true north turned into PVGIS's aspect from south, hours dated at their start in UTC | free, no key, no restriction on use |
 | [`switchgrid`](switchgrid/README.md) | `switchgrid` (shipped with the package) — an intermediary: the customer's consent on its page, then the operator's raw R63 files read by `enedis-r6x` into the meter's offtake, injection and reactive power, under mandate | Switchgrid's terms; not redistributable, kept as long as the consent holds |
+| [`fluvius`](fluvius/README.md) | `fluvius_service_provider_api` (be pack) — the Flemish operator's API for service providers: the consent link signed on the operator's page, the mandates, and the quarter-hour offtake and injection energy of a meter, under mandate | the operator's data access contract; not redistributable, kept as long as the mandate holds |
 | [`enedis-sge`](enedis-sge/README.md) | `enedis_sge` (fr pack) — the operator's web services for a third party under contract: point search, technical data, detailed measures (the end of a step with its offset), collection orders, under mandate; a skeleton until homologation | the operator's third-party contract; not redistributable, kept as long as the authorisation holds |
 | [`nominatim`](nominatim/README.md) | `nominatim` — an address ⇄ a point on OpenStreetMap, worldwide, ISO 3166-2 regions | ODbL; the public instance wants a named user agent and one request per second |
 | [`photon`](photon/README.md) | `photon` — search as you type on OpenStreetMap, worldwide | ODbL; no country filter on the server, applied on the answers |
 | [`mapbox`](mapbox/README.md) | `mapbox` (shipped with the package) — a commercial geocoder, worldwide: search as you type, a full address, a point to its full address; the commercial service of the chain | Mapbox's terms: permanent geocoding (asked by default) may be stored, never redistributed; temporary geocoding may not be stored |
 | [`ban`](ban/README.md) | `ban` — Base Adresse Nationale, France, house-number precision | Licence Ouverte 2.0; no key |
 | [`geopunt`](geopunt/README.md) | `geopunt` — the Flemish address register | open; no key |
+| [`grb`](grb/README.md) | `grb` and `dhmv` (shipped with the package) — the buildings of a place in Flanders: GRB footprints by persistent object id, their ground, eave and ridge from the surface and terrain models of DHM Vlaanderen II at 1 m, as a CityJSON model the `building` module imports | Modellicentie Gratis Hergebruik; open, no key |
 | [`urbis`](urbis/README.md) | `urbis` — the Brussels address register | open; no key |
 | [`icar`](icar/README.md) | `icar` — the Walloon address register | open; no key |
 
