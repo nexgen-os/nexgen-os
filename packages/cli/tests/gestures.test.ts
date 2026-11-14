@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { PGlite } from '@electric-sql/pglite';
 import { main } from '../src/index.js';
 import { USER_A, USER_B, freshDatabase, organisation, sqlClient } from '../../../tests/helpers/db.js';
@@ -65,6 +66,49 @@ describe('the gestures as commands', () => {
     expect(human.code).toBe(0);
   });
 
+  it('imports a project from its description, writes nothing on a dry run, and finds it again', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nexgen-gestures-'));
+    const file = join(dir, 'project.json');
+    await writeFile(file, JSON.stringify({
+      name: 'Market hall', country: 'ZZ',
+      participants: [{ name: 'Hall', time_zone: 'Europe/Brussels',
+        place: { country: 'ZZ', geometry: { type: 'Point', coordinates: [4.36, 50.84, 0] }, location_precision: 'street' },
+        meters: [{ identifier: '541448000000000055', scheme: 'gs1_gsrn' }] }],
+    }));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', file, '--dry-run']);
+    expect(plan.dry_run).toBe(true);
+    expect(plan.counts.participant).toEqual({ found: 0, created: 1 });
+    expect((await db.query(`select 1 from nexgen.projects where name = 'Market hall'`)).rows).toHaveLength(0);
+    const done = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(done.project_id).toMatch(/^[0-9a-f-]{36}$/);
+    const again = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(again.counts).toEqual({ project: { found: 1, created: 0 }, participant: { found: 1, created: 0 }, meter: { found: 1, created: 0 }, device: { found: 0, created: 0 } });
+  });
+
+  it('imports a project sheet a spreadsheet saved, and names the cell it cannot read', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nexgen-gestures-'));
+    const file = join(dir, 'project.csv');
+    const sheet = (power: string) => [
+      'project;country;participant;time_zone;participant_country;latitude;longitude;location_precision;meter_scheme;meter_identifier;device_type;device_name;device_rated_power_kw',
+      `Covered market;ZZ;Stall;Europe/Brussels;ZZ;50,84;4,36;street;gs1_gsrn;541448000000000062;inverter;Stall inverter;${power}`,
+    ].join('\r\n');
+    await writeFile(file, sheet('3,5'));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', file, '--dry-run']);
+    expect(plan.projects[0].counts.device).toEqual({ found: 0, created: 1 });
+    const done = await json(['project', 'import', '--organisation', org, '--file', file]);
+    expect(done.projects[0].project_id).toMatch(/^[0-9a-f-]{36}$/);
+    await writeFile(file, sheet('three'));
+    const refused = await run(['project', 'import', '--organisation', org, '--file', file]);
+    expect(refused.code).not.toBe(0);
+    expect(refused.err).toMatch(/sheet_unreadable: line 2 invalid_number device_rated_power_kw "three"/);
+  });
+
+  it('imports the .xlsx workbook of a project sheet', async () => {
+    const workbook = fileURLToPath(new URL('../../formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url));
+    const plan = await json(['project', 'import', '--organisation', org, '--file', workbook, '--dry-run']);
+    expect(plan.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
+  });
+
   it('issues, lists and withdraws a key, and the key acts as its issuer', async () => {
     const key = await json(['key', 'create', '--organisation', org, '--name', 'Nightly import']);
     expect(key.capabilities).toEqual(['data.read']);
@@ -77,6 +121,24 @@ describe('the gestures as commands', () => {
     expect((await run(['key', 'revoke', key.api_key_id])).code).toBe(0);
     expect((await run(['kpis', '--object-kind', 'project', '--object', org, '--from', '2026-01-01', '--to', '2026-02-01'], { NEXGEN_API_KEY: key.secret })).err)
       .toMatch(/^api_key_revoked:/);
+  });
+
+  it('creates an organisation and gives its members their roles, as its owner', async () => {
+    const created = await json(['organisation', 'create', '--name', 'A new installation'], { NEXGEN_ACT_AS_USER_ID: USER_B });
+    expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
+    const asB = { NEXGEN_ACT_AS_USER_ID: USER_B };
+    expect(await json(['member', 'list', '--organisation', created.id], asB)).toEqual([expect.objectContaining({ user_id: USER_B, role: 'owner' })]);
+
+    expect((await run(['member', 'list', '--organisation', created.id])).out).toBe('nothing');
+    const added = await json(['member', 'add', '--organisation', created.id, '--user', USER_A], asB);
+    expect(added).toEqual({ organisation_id: created.id, user_id: USER_A, role: 'viewer' });
+    expect((await run(['member', 'add', '--organisation', created.id, '--user', USER_A], asB)).err).toMatch(/^already_member:/);
+    expect((await run(['member', 'role', '--organisation', created.id, '--user', USER_B, '--role', 'editor'], asB)).err).toMatch(/^last_owner:/);
+    expect((await run(['member', 'remove', '--organisation', created.id, '--user', USER_B], asB)).err).toMatch(/^last_owner:/);
+
+    expect((await json(['member', 'role', '--organisation', created.id, '--user', USER_A, '--role', 'owner'], asB)).role).toBe('owner');
+    expect((await json(['member', 'remove', '--organisation', created.id, '--user', USER_B])).removed).toBe(true);
+    expect(await json(['member', 'list', '--organisation', created.id])).toEqual([expect.objectContaining({ user_id: USER_A, role: 'owner' })]);
   });
 
   it('refuses by name: nobody to act as, a stranger, a computation not loaded, an address without a geocoder', async () => {

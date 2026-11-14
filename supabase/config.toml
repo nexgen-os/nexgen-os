@@ -38,3 +38,12 @@ max_rows = 1000
 
 [auth]
 enabled = true
+
+# An account opened by an invitation only (docs/access.md): uncomment to let
+# Supabase Auth create an account for an address an open invitation was sent
+# to, and for the installation's first person.
+#
+# [auth.hook.before_user_created]
+# enabled = true
+# uri = "pg-functions://postgres/nexgen/before_user_created"
+

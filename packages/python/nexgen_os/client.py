@@ -41,6 +41,19 @@ class Bucket:
 
 
 @dataclass(frozen=True)
+class AggregateBucket:
+    """One step of several series added up: its start, the total in the quantity's unit, how many of the series
+    held a value in it, their readings, how many they expect, and the worst quality among them."""
+
+    start: datetime
+    value: Optional[float]
+    series: int
+    samples: int
+    expected: Optional[int] = None
+    quality: Optional[int] = None
+
+
+@dataclass(frozen=True)
 class Reading:
     """One stored value: its instant (UTC), its value in the quantity's unit, its quality code."""
 
@@ -125,6 +138,16 @@ class Nexgen:
         """The organisations the connection may read."""
         return self._rows("select id, name from nexgen.organisations order by name, id")
 
+    def projects(self, organisation_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """The projects the connection may read, with their kind and their country, of one organisation when given."""
+        return self._rows(
+            """select id, organisation_id, name, kind, country, status, start_date
+                 from nexgen.projects
+                where %(organisation)s::uuid is null or organisation_id = %(organisation)s::uuid
+                order by name, id""",
+            {"organisation": organisation_id},
+        )
+
     def participants(self, organisation_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """The participants the connection may read, with their place, of one organisation when given."""
         return self._rows(
@@ -140,6 +163,21 @@ class Nexgen:
         return self._one(
             "select nexgen.attributes_of(%s::uuid, coalesce(%s::timestamptz, now()))",
             (object_id, at),
+        )
+
+    def parameter_of(self, kind: str, object_id: str, attribute_type: str, at: Optional[datetime] = None) -> Dict[str, Any]:
+        """The value of a parameter for an object at ``at`` (now by default), through the one cascade of defaults.
+
+        The object, its parents, its organisation, then its place's
+        municipality, region and country (the pack), and the core's default
+        last (``parameter_of()``, decision 0021). The value comes with where
+        it was found: ``level``, ``object_id``, ``source_code``, ``reference``
+        and its ``quality``. Nothing holds it: ``parameter_missing``, with
+        the last level the cascade reached.
+        """
+        return self._one(
+            "select nexgen.parameter_of(%s, %s::uuid, %s, coalesce(%s::timestamptz, now()))",
+            (kind, object_id, attribute_type, at),
         )
 
     def resample(
@@ -162,6 +200,28 @@ class Nexgen:
             (series_id, start, end, step, time_zone, issued_before),
         )
         return Rows(Bucket(r["bucket"], r["value"], r["samples"], r["expected"], r["quality"]) for r in rows)
+
+    def aggregate(
+        self,
+        series_ids: Iterable[str],
+        start: datetime,
+        end: datetime,
+        step: Step,
+        time_zone: Optional[str] = None,
+    ) -> List[AggregateBucket]:
+        """Several series of one quantity that adds up, summed on a regular step over ``[start, end)``,
+        each read as ``resample`` reads it; ``series`` says how many held a value in each bucket.
+
+        A step of a day or more is cut in the time zone the series share (or ``time_zone``).
+        """
+        rows = self._rows(
+            """select bucket, value, series, samples, expected, quality
+                 from nexgen.aggregate(%s::uuid[], %s::timestamptz, %s::timestamptz, %s::interval, %s)""",
+            ([str(i) for i in series_ids], start, end, step, time_zone),
+        )
+        return Rows(
+            AggregateBucket(r["bucket"], r["value"], r["series"], r["samples"], r["expected"], r["quality"]) for r in rows
+        )
 
     def window(self, series_id: str, start: datetime, end: datetime, limit: int = 100000) -> List[Reading]:
         """The stored values over ``[start, end)`` in time order: how a register's index is read."""
@@ -303,24 +363,32 @@ class Nexgen:
         source_code: Optional[str] = None,
         valid_from: Optional[datetime] = None,
         valid_to: Optional[datetime] = None,
+        quality: Optional[str] = None,
     ) -> str:
         """Attaches an attribute to an object (its kind and its id), over a period, with where it comes from; returns its id.
 
         ``value`` is a JSON value in the unit of the attribute type's quantity.
         A value without a source is refused (``source_required``): nothing is
-        attached that nobody can trace back.
+        attached that nobody can trace back. ``quality`` says what kind of
+        value it is: ``published`` (read in a text that decides it),
+        ``measured`` (on the object itself), ``estimated`` (the database's
+        default when none is given) or ``assumed`` (a conventional value a study starts from);
+        another word is refused as ``quality_unknown``.
         """
         from psycopg.types.json import Jsonb
 
         if not (source or source_code):
             raise NexgenError("source_required", "an attribute is attached with its source: give source or source_code")
+        # Without a quality the column keeps the database's default.
+        column, placeholder = (", quality", ", %s") if quality is not None else ("", "")
         return str(
             self._one(
-                """insert into nexgen.attributes
-                          (object_kind, object_id, attribute_type, value, source, source_code, valid_from, valid_to)
-                   values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz)
-                   returning id""",
-                (kind, object_id, attribute_type, Jsonb(value), source, source_code, valid_from, valid_to),
+                f"""insert into nexgen.attributes
+                           (object_kind, object_id, attribute_type, value, source, source_code, valid_from, valid_to{column})
+                    values (%s, %s::uuid, %s, %s, %s, %s, %s::timestamptz, %s::timestamptz{placeholder})
+                    returning id""",
+                (kind, object_id, attribute_type, Jsonb(value), source, source_code, valid_from, valid_to)
+                + ((quality,) if column else ()),
             )
         )
 

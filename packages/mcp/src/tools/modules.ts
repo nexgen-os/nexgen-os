@@ -66,12 +66,28 @@ export const MODULE_TOOLS: Tool[] = [
     run: ({ db, computations }, a) => core.compute(db, computations, 'solar.size', a),
   }),
   tool({
+    name: 'solar_describe_system',
+    title: 'Describe a PV system',
+    module: 'solar',
+    description: 'A PV system of a participant as the solar module reads it: a device of type solar, its DC power, and its arrays, each with its own azimuth (degrees clockwise from true north, 180 faces south) and tilt (degrees from horizontal) as the person stated them. Then solar_estimate_yield computes its yield.',
+    input: z.object({
+      participant_id: uuid, name: z.string().min(1), kwp: z.number().positive(),
+      arrays: z.array(z.object({
+        name: z.string().min(1), azimuth_deg: z.number().min(0).max(360), tilt_deg: z.number().min(0).max(90),
+        kwp: z.number().positive().optional(), mounting: z.string().optional(),
+      })).min(1),
+      installed_on: z.string().optional(),
+    }),
+    writes: true,
+    run: ({ db }, a) => core.describePvSystem(db, a),
+  }),
+  tool({
     name: 'solar_estimate_yield',
     title: 'Estimate a PV yield',
     module: 'solar',
-    description: 'The yield of a PV system over whole years, with a named profile (pvgis_like by default, pvwatts, or an engine), kept in solar.estimates with what it was computed from. It reaches PVGIS on the Internet unless the profile computes here.',
+    description: 'The yield of a PV system over whole years, with a named profile (pvgis_like by default, pvwatts, or an engine), kept in solar.estimates with what it was computed from. pvgis_like without years gives the mean of every year PVGIS covers. The system loss is the place\'s system_loss, read by parameter_of() (14 % at the generic level); set it on the system, its participant, its project or its organisation, never invent one. It reaches PVGIS on the Internet unless the profile computes here.',
     input: z.object({
-      deviceId: uuid, years: z.object({ from: z.number().int(), to: z.number().int() }), profileCode: z.string().optional(),
+      deviceId: uuid, years: z.object({ from: z.number().int(), to: z.number().int() }).optional(), profileCode: z.string().optional(),
       raddatabase: z.string().optional(), typicalYear: z.boolean().optional(), anchor: z.enum(['pvgis', 'none']).optional(),
       engine: z.object({ name: engineName }).optional(), replaces: uuid.optional(),
     }),

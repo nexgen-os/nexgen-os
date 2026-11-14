@@ -46,7 +46,9 @@ silent UTC.
 
 **Retention is a default of the installation and its pack.** How long raw
 values are kept differs by country and by region; no number lives in the
-core, and aggregates outlive the raw values they summarise.
+core, and aggregates outlive the raw values they summarise: the attribute
+type `series_retention` is resolved by `parameter_of()`, and
+`series_retain()` removes the older values and leaves the rollups.
 
 ## What it forbids
 
