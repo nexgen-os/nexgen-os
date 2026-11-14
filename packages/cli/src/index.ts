@@ -9,6 +9,7 @@ export { POSTGIS_LINE, applyPlan, applyStep, ensureHistory, install, migrate, po
 export type { DoctorReport, Problem, StatusReport } from './doctor.js';
 export { doctor, status, tablesWithoutRls } from './doctor.js';
 export { main, parseArgs } from './cli.js';
+export { DB_PASSWORD_ENV, POOLER_GENERATIONS, databaseUrl, hostOf, poolerUrl } from './connection.js';
 export type { MonthOfYield, TryOptions, TryReport } from './try.js';
 export { DEMO_DATASET, DEMO_DEVICE_ID, DEMO_PV_SYSTEM, defaultYear, emptyMemoryDatabase, memorySqlClient, printTry, tryInMemory } from './try.js';
 export type { PackLine, PackReport, PackSelection, PackState } from './pack/command.js';
