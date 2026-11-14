@@ -60,7 +60,10 @@ npx nexgen-os doctor
 ```
 
 `EKWO_DB_URL` and `NEXGEN_DB_URL` are the same connection string; neither is
-written to a file. `--packs` names the countries of the installation's
+written to a file. Both installers also find the session pooler from the
+project's ref and region, under the same flags (`--project-ref`,
+`--db-region`, `--db-password`; the password in `EKWO_DB_PASSWORD` and
+`NEXGEN_DB_PASSWORD`). `--packs` names the countries of the installation's
 places, and there is no default; without `--modules`, `init` installs every
 module shipped. Then, in *Project settings → Data API → Exposed schemas*,
 add `ekwo`, `nexgen` and the module schemas, so that one client reaches both
