@@ -51,6 +51,9 @@
       "@nexgen-os/cityjson": [
         "./packages/formats/cityjson/src/index.ts"
       ],
+      "@nexgen-os/dsmr": [
+        "./packages/formats/dsmr/src/index.ts"
+      ],
       "@nexgen-os/enedis-r6x": [
         "./packages/formats/enedis-r6x/src/index.ts"
       ],
@@ -74,6 +77,9 @@
       ],
       "@nexgen-os/parquet": [
         "./packages/formats/parquet/src/index.ts"
+      ],
+      "@nexgen-os/utilityrate5": [
+        "./packages/formats/utilityrate5/src/index.ts"
       ],
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"

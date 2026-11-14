@@ -22,6 +22,18 @@ describe('an IFC4 model with an IfcMapConversion', () => {
     expect(model.site.description).toMatchObject({ entity: 'IfcSite' });
   });
 
+  it('gives its placement as values: the false origin, the X axis 30° counter-clockwise from grid east, scale 1', () => {
+    const { origin, xAxis, scale } = model.georeference.placement;
+    expect(origin.map((c) => Math.round(c * 1000) / 1000)).toEqual([121000, 487000, 0]);
+    expect(xAxis[0]).toBeCloseTo(Math.cos(Math.PI / 6), 9);
+    expect(xAxis[1]).toBeCloseTo(Math.sin(Math.PI / 6), 9);
+    expect(scale).toBeCloseTo(1, 9);
+  });
+
+  it('gives the box its meshes fit in, in model metres: the slab 0.3 m below the ground floor, the roof\'s top at 9.464 m', () => {
+    expect(model.bounds!.map((v) => Math.round(v * 1000) / 1000 + 0)).toEqual([0, 0, -0.3, 10, 6, 9.464]);
+  });
+
   it('reads the building, its storeys and rooms in metres, and its year as the file says it', () => {
     expect(b).toMatchObject({ globalId: '0K7w7JWBL5QOdBzu3Yz7Ts', name: 'Canal house', elevation: 0, yearOfConstruction: 1962 });
     expect(b.height).toBeCloseTo(9.464, 3);
@@ -69,6 +81,10 @@ describe('an IFC4 model without a map conversion', () => {
     expect(model.georeference.srid).toBeNull();
     expect(model.georeference.proj).toMatch(/^\+proj=tmerc /);
     expect(model.buildings[0].footprint.source).toBe('walls');
+    // Millimetres read as metres: one model metre is one metre of the local grid, its X axis turned by the TrueNorth.
+    const { xAxis, scale } = model.georeference.placement;
+    expect(scale).toBeCloseTo(1, 9);
+    expect(Math.atan2(xAxis[1], xAxis[0]) * 180 / Math.PI).toBeCloseTo(30, 6);
   });
 
   it('needs an origin when it has no site coordinates either, and refuses what is not IFC, by name', async () => {

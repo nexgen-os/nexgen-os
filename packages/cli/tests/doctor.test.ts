@@ -27,7 +27,7 @@ describe('doctor', () => {
     expect(r.problems).toEqual([]);
     expect(r.schemaVersion).toBe('0.4.0');
     expect(r.postgis).toMatch(/^3\./);
-    expect(r.applied).toEqual({ core: 17, 'module:grid': 2, 'module:solar': 4, 'module:weather': 1, 'pack:fr': 1 });
+    expect(r.applied).toEqual({ core: 20, 'module:grid': 2, 'module:solar': 5, 'module:weather': 2, 'pack:fr': 1 });
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);
@@ -146,12 +146,12 @@ describe('status and the command line', () => {
     try {
       const dry = await run(['init', '--modules', 'grid', '--dry-run'], empty);
       expect(dry.code).toBe(0);
-      expect(dry.out).toMatch(/would apply 19 step\(s\), 0 already recorded — dry run, rolled back$/);
+      expect(dry.out).toMatch(/would apply 22 step\(s\), 0 already recorded — dry run, rolled back$/);
       const real = await run(['init', '--modules=grid'], empty);
-      expect(real.out).toMatch(/applied 19 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
+      expect(real.out).toMatch(/applied 22 step\(s\), 0 already recorded\nnext: nexgen-os doctor, .*$/);
       const again = await run(['init', '--modules=grid'], empty);
-      expect(again.out).toBe('nothing to apply: 19 step(s) already recorded');
-      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 19 step(s) already recorded');
+      expect(again.out).toBe('nothing to apply: 22 step(s) already recorded');
+      expect((await run(['migrate'], empty)).out).toBe('nothing to apply: 22 step(s) already recorded');
     } finally {
       await empty.close();
     }
@@ -161,7 +161,7 @@ describe('status and the command line', () => {
     const noUrl = await main(['status'], { out: () => {}, err: (l) => expect(l).toMatch(/^db_url_required:/), env: {} });
     expect(noUrl).toBe(1);
     expect(await run(['init', '--modlues', 'x'])).toMatchObject({ code: 2, err: 'usage: unknown flag --modlues' });
-    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, battery, billing, building, charging, community, consumption, grid, kpis, solar, weather/);
+    expect((await run(['init', '--modules', 'nope'])).err).toMatch(/^unknown_module: nope; shipped: actions, battery, billing, building, charging, community, consumption, forecast, grid, kpis, solar, weather/);
   });
 
   it('names the weeks whose values sit in the default partition with no weekly partition, and the weeks to come once it partitions', async () => {

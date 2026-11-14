@@ -339,6 +339,14 @@ and for a register its consumption, computed again from the values by
 every statement that writes or deletes values (`series_rollup_hours()`):
 there is no queue and nothing to drain.
 
+**Raw values are kept as long as the place decides.** `series_retain()`
+removes, for each series with a `series_retention` (an ISO 8601 duration,
+P3Y, resolved by `parameter_of()` from the series up to its organisation
+and the pack of its place), the values older than it, cut at the hour in
+UTC; the rollups stay, so the days, months and years read the same. A
+series without a retention keeps every value, forecast issues are not
+touched, and the function is the installation's (service role, pg_cron).
+
 **One family of reads**, each `security definer` with one access check per
 series (a member of its organisation, or a role that bypasses row level
 security; a role without a signed-in user reads nothing):
@@ -346,6 +354,7 @@ security; a role without a signed-in user reads nothing):
 | Function | Answers |
 |---|---|
 | `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the participant's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets |
+| `aggregate(series[], from, to, step, time_zone?)` | several series of one quantity that adds up (an energy, a volume) summed on one step, each read as `resample()` reads it: the total of each bucket, how many series held a value in it (`series`), their `samples`, `expected` and the worst `quality`. Days cut in the time zone the series share, or the one given (`time_zone_required` when they differ); `quantities_differ`, `quantity_not_summable` (a power, a temperature, a state) |
 | `nexgen.window(series, from, to, limit?)` | the stored values in time order: how an index is read (`window` is a reserved word: call it qualified) |
 | `latest(series[])` | the last value that is not missing, one row per series |
 | `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a figure of a module (a validation module), with its method |
@@ -487,6 +496,7 @@ Read by everyone signed in, written by migrations, seeds, modules and packs.
 | `kpis` | `kpis` | indicators as data — a formula over the amounts of quantities in an object's series and over parameters resolved by `parameter_of()`, read by one evaluator that never builds SQL — their `targets`, the `figures` computed for a participant, a project, a meter or a device, whose buckets are a simulated series of the object, and export `templates`; a rate over a period is the formula over the period's amounts, an additive figure the sum of its buckets; an energy weighted hour by hour by a series of its bidding zone (a grid carbon intensity), the monthly default of the pack when there is none, said in the figure (`co2_avoided`, `scope2_location_based`, `scope2_market_based`) |
 | `battery` | `battery` | batteries (`devices`, a device of type battery with the same id: usable capacity, power, round-trip efficiency, band of state of charge, objective, and the perimeter whose flows it sees — its participant's place, or its project's surplus and residual once energy is shared), the physics of a battery product (`battery_products`), what a battery is run for (`objectives`), and the `estimates` of a dispatch, about the battery, with its charge, discharge and state of charge as `simulated` series of the device, or of a sizing, about the participant or the project, with its curve and the point a criterion recommends; a figure neither the device nor its product says is a parameter `parameter_of()` resolves (`battery_c_rate`, `round_trip_efficiency`, `battery_cost`) |
 | `charging` | `charging` | electric vehicle chargers (`devices`, a device of type charger with the same id: power of the station, OCPP identity, the meter it sits behind), their EVSEs and connectors (`connectors`, by a standard of `connector_standards`), the `sessions` they deliver, once per source and transaction, their power and energy as series of the device, the charging `profiles` they are asked to keep — each a command of `actions` whose effect is a `setpoint` series of the charger ([0047](decisions/0047-a-charging-profile-is-a-command.md)) — and the `estimates` of a sizing of charge points |
+| `forecast` | `forecast` | methods of forecasting as data, a series forecast by a method (`forecasts`), each issue written as a forecast series of the core with its issue time (`issue()`), its accuracy at a horizon (`accuracy()`) |
 | `weather`, `actions` | their own | weather sources, points and which participants read them; actions (steps, recommendations, commands) and action templates as data |
 
 ## Geometry
@@ -512,10 +522,12 @@ into the same shapes, and the library writes the file.
 | Home Assistant snapshot | `homeassistant`: `readHomeAssistant`, `writeHomeAssistant` | `importHomeAssistant`, `exportHomeAssistant` (`modules/building/src`) |
 | CityJSON 2.0 | `cityjson`: `readCityJson`, `writeCityJson` | `importCityJson`, `exportCityJson` (`modules/building/src`) |
 | IFC4, IFC2x3 | `ifc`: `readIfc` | `importIfc` (`modules/building/src`) |
-| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core; the buildings and surfaces when `building` is installed) |
+| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core; the buildings and surfaces when `building` is installed), `importGeoJsonParticipants` (core) |
 | EPW, TMY3 | `weather-files`: `readEpw`, `readTmy3`, `writeEpw` | `importWeatherFile`, `exportWeatherYear` (core) |
 | Parquet | `parquet`: `writeSeriesParquet` | `exportSeriesParquet` (core) |
 | PVsyst PAN, OND | `panond`: `readPan`, `readOnd` | `importProduct` (`modules/solar/src/products.ts`) |
+| SAM electricity rate (`utilityrate5` inputs) | `utilityrate5`: `readUtilityRate`, `writeUtilityRate`, `hourlyRates`, `rateFromHourly` | none yet: the library reads and writes the rate alone |
+| DSMR P1 telegram, P1M5 dongle message | `dsmr`: `readTelegram`, `readP1m5` | `meterSeriesOfDsmr` (core: the series of the electricity meter, or of a gas meter on its bus) |
 | An energy bill, read once as an EN 16931 invoice | `energy-bill`: `readEnergyBill` | `importEnergyBill` (core: the document, the meter, the contract's attributes), `estimateFromBill` (`modules/consumption/src`), `billing.record_invoice()` |
 
 An energy bill is read once, by a generic invoice reader, into the EN 16931
