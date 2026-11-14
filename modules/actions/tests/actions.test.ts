@@ -26,6 +26,12 @@ interface Progress {
   done_share: number | null;
   late: { id: string; name: string; phase: string; planned_end: string }[];
   current_phase: string | null;
+  devices: {
+    total: number;
+    by_status: Record<string, number>;
+    in_service_share: number | null;
+    not_in_service: { id: string; name: string; device_type: string; status: string }[];
+  };
 }
 
 interface Plan {
@@ -158,7 +164,35 @@ describe('where a project stands', () => {
       done_share: 0.3333,
       late: [{ id: installed, name: 'Ground array mounted and wired', phase: 'installation', planned_end: '2026-05-29' }],
       current_phase: 'study',
+      devices: {
+        total: 5,
+        by_status: { in_service: 3, planned: 2 },
+        in_service_share: 0.6,
+        not_in_service: [
+          { id: CARPORT_ARRAY, name: 'Car park array', device_type: 'solar', status: 'planned' },
+          { id: GROUND_ARRAY, name: 'Lower field ground array', device_type: 'solar', status: 'planned' },
+        ],
+      },
     });
+  });
+
+  it('says where the devices of the works stand: a device in service leaves the list, a removed one leaves the share', async () => {
+    await db.query(`update devices set status = 'installed', installation_date = '2026-06-19' where id = $1`, [GROUND_ARRAY]);
+    expect((await progress(FARM, '2026-06-22')).devices).toMatchObject({
+      by_status: { in_service: 3, installed: 1, planned: 1 },
+      in_service_share: 0.6,
+      not_in_service: [{ name: 'Car park array', status: 'planned' }, { name: 'Lower field ground array', status: 'installed' }],
+    });
+    await db.query(`update devices set status = 'in_service' where id = $1`, [GROUND_ARRAY]);
+    await db.query(`update devices set status = 'removed', removal_date = '2026-06-20' where id = $1`, [CARPORT_ARRAY]);
+    expect((await progress(FARM, '2026-06-22')).devices).toEqual({
+      total: 5,
+      by_status: { in_service: 4, removed: 1 },
+      in_service_share: 1,
+      not_in_service: [],
+    });
+    await db.query(`update devices set status = 'planned', installation_date = null where id = $1`, [GROUND_ARRAY]);
+    await db.query(`update devices set status = 'planned', removal_date = null where id = $1`, [CARPORT_ARRAY]);
   });
 
   it('gives the same answer for the same day, and another for another day', async () => {
@@ -191,6 +225,7 @@ describe('where a project stands', () => {
     expect(mine.p.total).toBe(7);
     const theirs = await asUser(db, USER_B, () => one<{ p: Progress }>(db, `select actions.progress($1, '2026-06-22') p`, [FARM]));
     expect(theirs.p).toMatchObject({ total: 0, by_status: {}, done_share: null, late: [], current_phase: null });
+    expect(theirs.p.devices).toEqual({ total: 0, by_status: {}, in_service_share: null, not_in_service: [] });
     await expect(asUser(db, USER_B, () => db.query(`update actions.actions set notes = 'x' where object_id = $1 returning id`, [FARM])))
       .resolves.toMatchObject({ rows: [] });
   });

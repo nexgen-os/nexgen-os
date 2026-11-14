@@ -107,6 +107,14 @@ the share done among those not dismissed, the late ones (planned to end
 before the day and neither done, failed nor dismissed), the phase of the earliest action still open.
 The day is always given: the same call gives the same answer.
 
+The same call says where the devices of the works stand (`devices`): how
+many devices of the participant, or of the participants taking part in the
+project, are in each status of the core (`planned`, `installed`,
+`in_service`, `out_of_service`, `removed`), the share in service among
+those not removed, and the ones not yet in service, by name — what a site
+board shows. A device's status is its own, kept by the core: the module
+reads it and never writes it.
+
 ## What stays outside
 
 - Detectors that propose actions from a portfolio, the scoring of

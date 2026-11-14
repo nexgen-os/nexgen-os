@@ -135,3 +135,60 @@ describe('point_for', () => {
     expect(theirs.rows).toHaveLength(0);
   });
 });
+
+describe('the time zone of a point', () => {
+  let firm: string;
+  // Two participants in one 0.05° cell of PVGIS, the first without a time zone.
+  let unzoned: string;
+  let zoned: string;
+  let pointId: string;
+
+  beforeAll(async () => {
+    firm = await organisation(db, 'A weather reader', USER_A);
+    unzoned = await participant(db, { organisation_id: firm, name: 'No zone', country: 'BE', geometry: point(4.351, 50.851) });
+    zoned = await participant(db, { organisation_id: firm, name: 'Brussels', country: 'BE', time_zone: 'Europe/Brussels', geometry: point(4.352, 50.852) });
+  });
+
+  it('is taken from the first participant with one that reads the point, and kept', async () => {
+    pointId = (await one<{ id: string }>(db, `select weather.point_for($1, 'pvgis') id`, [unzoned])).id;
+    const zoneOf = async () => (await one<{ time_zone: string | null }>(db, 'select time_zone from weather.points where id = $1', [pointId])).time_zone;
+    expect(await zoneOf()).toBeNull();
+    expect((await one<{ id: string }>(db, `select weather.point_for($1, 'pvgis') id`, [zoned])).id).toBe(pointId);
+    expect(await zoneOf()).toBe('Europe/Brussels');
+    // A neighbour across a border of time zones in the same cell leaves it as it is.
+    const other = await participant(db, { organisation_id: firm, name: 'Elsewhere zoned', country: 'BE', time_zone: 'UTC', geometry: point(4.353, 50.853) });
+    await db.query(`select weather.point_for($1, 'pvgis')`, [other]);
+    expect(await zoneOf()).toBe('Europe/Brussels');
+  });
+
+  it('is a time zone Postgres knows', async () => {
+    await expect(db.query(`update weather.points set time_zone = 'Europe/Atlantis' where id = $1`, [pointId])).rejects.toThrow(/time_zone_unknown/);
+  });
+
+  it('cuts the series of the point by day, through time_zone_of()', async () => {
+    // Hourly temperatures from 22:00 UTC on 1 June to 22:00 UTC on 3 June:
+    // 10 °C until midnight in Brussels (22:00 UTC), 20 °C the next day.
+    const hours = Array.from({ length: 48 }, (_, h) => new Date(Date.UTC(2026, 5, 1, 22 + h)).toISOString());
+    const values = hours.map((_, h) => (h < 24 ? 10 : 20));
+    await db.query(`select store(null, $1::timestamptz[], $2::float8[], p_series => $3::jsonb)`, [
+      hours, values, JSON.stringify({
+        object_kind: 'organisation', object_id: firm, quantity_code: 'temperature', value_kind: 'instant', step: '1 hour',
+        source_code: 'pvgis', external_ref: pointId, name: 'PVGIS point',
+      }),
+    ]);
+    const series = (await one<{ id: string }>(db, `select id from series where external_ref = $1`, [pointId])).id;
+    expect((await one<{ tz: string | null }>(db, 'select weather.time_zone_of($1) tz', [series])).tz).toBe('Europe/Brussels');
+    // Without it, the core finds no participant and no time zone.
+    await expect(db.query(`select * from resample($1, '2026-06-02', '2026-06-04', '1 day')`, [series])).rejects.toThrow(/time_zone_required/);
+    const days = await db.query<{ bucket: string; value: number }>(
+      `select bucket::text, value from resample($1, '2026-06-01T22:00:00Z', '2026-06-03T22:00:00Z', '1 day', weather.time_zone_of($1))`, [series]);
+    expect(days.rows.map((r) => r.value)).toEqual([10, 20]);
+  });
+
+  it('is the participant\'s for a series of the participant', async () => {
+    const own = (await one<{ id: string }>(db, `select series_ensure('participant', $1, 'temperature', 'measured', 'instant', '1 hour') id`, [zoned])).id;
+    expect((await one<{ tz: string | null }>(db, 'select weather.time_zone_of($1) tz', [own])).tz).toBe('Europe/Brussels');
+    const none = (await one<{ id: string }>(db, `select series_ensure('participant', $1, 'temperature', 'measured', 'instant', '1 hour') id`, [unzoned])).id;
+    expect((await one<{ tz: string | null }>(db, 'select weather.time_zone_of($1) tz', [none])).tz).toBeNull();
+  });
+});
