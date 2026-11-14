@@ -243,30 +243,49 @@ export function fluvius(options: FluviusOptions): FluviusConnector {
   };
 }
 
-/** Each quarter hour of the answer, offtake and injection, as the series of the meter; a state the hub's table does not hold is refused by name. */
-export function energySeries(answer: unknown, meter: Pick<MeterOfHub, 'identifier' | 'direction'>, hub: Pick<MeterDataHub, 'time_zone' | 'quality_codes'>): CollectedSeries[] {
+/**
+ * Each quarter hour of the answer, offtake and injection, as the series of
+ * the meter; a state the hub's table does not hold is refused by name.
+ *
+ * The answer is the one of the API for service providers the Belgian
+ * distribution operators run, read the same for each of them: `headpoint`
+ * is one metering point or a list of them (the one of the meter is kept),
+ * and its quarter hours sit under its physical meters (a digital meter) or
+ * on the point itself (a meter read remotely, whose values the operator
+ * gives for the whole point). `operator` names the hub in a refusal.
+ */
+export function energySeries(
+  answer: unknown, meter: Pick<MeterOfHub, 'identifier' | 'direction'>, hub: Pick<MeterDataHub, 'time_zone' | 'quality_codes'>, operator = 'fluvius',
+): CollectedSeries[] {
   type Measurement = { total?: { value?: unknown; validationState?: unknown } };
   type Quarter = { start?: unknown; measurements?: { offtake?: Measurement; injection?: Measurement }[] };
-  const headpoint = (answer as { data?: { headpoint?: { ean?: unknown; physicalMeters?: { quarterHourlyEnergy?: Quarter[] }[] } } } | null)?.data?.headpoint;
-  if (headpoint?.ean !== undefined && String(headpoint.ean) !== meter.identifier) {
-    throw new GestureError(`source_unavailable: fluvius answered for ${String(headpoint.ean)}, not ${meter.identifier}`);
+  type Physical = { quarterHourlyEnergy?: Quarter[] };
+  // `physiclaMeters` is how one operator's guide spells the field; both spellings are read.
+  type Headpoint = { ean?: unknown; quarterHourlyEnergy?: Quarter[]; physicalMeters?: Physical[]; physiclaMeters?: Physical[] };
+  const given = (answer as { data?: { headpoint?: Headpoint | Headpoint[] } } | null)?.data?.headpoint;
+  const points = given === undefined || given === null ? [] : Array.isArray(given) ? given : [given];
+  const headpoints = points.filter((point) => point.ean === undefined || String(point.ean) === meter.identifier);
+  if (points.length > 0 && headpoints.length === 0) {
+    throw new GestureError(`source_unavailable: ${operator} answered for ${points.map((point) => String(point.ean)).join(', ')}, not ${meter.identifier}`);
   }
+  const quarters = headpoints.flatMap((point) => [
+    ...(point.quarterHourlyEnergy ?? []),
+    ...(point.physicalMeters ?? point.physiclaMeters ?? []).flatMap((physical) => physical.quarterHourlyEnergy ?? []),
+  ]);
   const directions = meter.direction === 'offtake' ? ['offtake'] as const
     : meter.direction === 'injection' ? ['injection'] as const : ['offtake', 'injection'] as const;
   const out: CollectedSeries[] = [];
   for (const direction of directions) {
     const values: { at: string; value: number; quality: number }[] = [];
-    for (const physical of headpoint?.physicalMeters ?? []) {
-      for (const quarter of physical.quarterHourlyEnergy ?? []) {
-        const total = quarter.measurements?.[0]?.[direction]?.total;
-        if (!total || typeof total.value !== 'number') continue;
-        const state = typeof total.validationState === 'string' && total.validationState !== '' ? total.validationState : 'none';
-        const quality = hub.quality_codes[state];
-        if (quality === undefined) {
-          throw new GestureError(`quality_unknown: fluvius state ${JSON.stringify(state)} at ${String(quarter.start)} is not in the hub's quality table; add it to the pack row`);
-        }
-        values.push({ at: instant(String(quarter.start ?? ''), hub.time_zone), value: total.value, quality });
+    for (const quarter of quarters) {
+      const total = quarter.measurements?.[0]?.[direction]?.total;
+      if (!total || typeof total.value !== 'number') continue;
+      const state = typeof total.validationState === 'string' && total.validationState !== '' ? total.validationState : 'none';
+      const quality = hub.quality_codes[state];
+      if (quality === undefined) {
+        throw new GestureError(`quality_unknown: ${operator} state ${JSON.stringify(state)} at ${String(quarter.start)} is not in the hub's quality table; add it to the pack row`);
       }
+      values.push({ at: instant(String(quarter.start ?? ''), hub.time_zone, operator), value: total.value, quality });
     }
     if (values.length === 0) continue;
     values.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
@@ -276,22 +295,22 @@ export function energySeries(answer: unknown, meter: Pick<MeterOfHub, 'identifie
 }
 
 /** A stamp of the answer in UTC: its own offset, else the hub's zone; a stamp the zone skips or repeats is refused. */
-function instant(text: string, timeZone: string | null): string {
+function instant(text: string, timeZone: string | null, operator: string): string {
   if (/(Z|[+-]\d{2}:?\d{2})$/.test(text)) {
     const ms = Date.parse(text);
-    if (Number.isNaN(ms)) throw new GestureError(`date_unreadable: fluvius stamp ${JSON.stringify(text)}`);
+    if (Number.isNaN(ms)) throw new GestureError(`date_unreadable: ${operator} stamp ${JSON.stringify(text)}`);
     return new Date(ms).toISOString();
   }
   const wall = Date.parse(`${text}Z`);
-  if (Number.isNaN(wall)) throw new GestureError(`date_unreadable: fluvius stamp ${JSON.stringify(text)}`);
-  if (!timeZone) throw new GestureError(`time_zone_required: fluvius stamp ${text} carries no offset and the hub names no time_zone`);
+  if (Number.isNaN(wall)) throw new GestureError(`date_unreadable: ${operator} stamp ${JSON.stringify(text)}`);
+  if (!timeZone) throw new GestureError(`time_zone_required: ${operator} stamp ${text} carries no offset and the hub names no time_zone`);
   const found = instantsOf(timeZone, wall);
-  if (found.length !== 1) throw new GestureError(`date_unreadable: fluvius stamp ${text} is ${found.length === 0 ? 'skipped' : 'repeated'} in ${timeZone}`);
+  if (found.length !== 1) throw new GestureError(`date_unreadable: ${operator} stamp ${text} is ${found.length === 0 ? 'skipped' : 'repeated'} in ${timeZone}`);
   return new Date(found[0]!).toISOString();
 }
 
 /** The first instant of a day (`YYYY-MM-DD`) in a zone, to the second, as the operator wants it. */
-function startOfDay(day: string, timeZone: string): string {
+export function startOfDay(day: string, timeZone: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new GestureError(`date_unreadable: ${JSON.stringify(day)} is not YYYY-MM-DD`);
   const wall = Date.parse(`${day}T00:00:00Z`);
   const found = instantsOf(timeZone, wall);
@@ -300,7 +319,7 @@ function startOfDay(day: string, timeZone: string): string {
 }
 
 /** An instant to the second, without milliseconds: the operator refuses them. */
-function seconds(iso: string): string {
+export function seconds(iso: string): string {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) throw new GestureError(`date_unreadable: ${JSON.stringify(iso)}`);
   return new Date(Math.floor(ms / 1000) * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
