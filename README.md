@@ -38,7 +38,9 @@ that a lender, a reviewer or a client can check it.
 - **A yield with its provenance**: PVGIS (no key), PVWatts built in, or
   pvlib through its connector; P50 and the exceedance levels asked for,
   IEC 61724-1 indicators, an ordered loss chain, a far horizon and the
-  soiling of the place ([`modules/solar`](modules/solar/README.md)).
+  soiling of the place ([`modules/solar`](modules/solar/README.md)); a
+  point, a power, an azimuth and a tilt are enough to start, in one
+  command ([`solar estimate`](packages/cli/README.md#gestures-as-a-person)).
 - **Products from their files**: PAN and OND read into module and
   inverter products, with pvlib's parameter names
   ([`packages/formats/panond`](packages/formats/panond/README.md)).
@@ -205,6 +207,7 @@ export NEXGEN_DB_URL='postgresql://…'   # the project's connection string
 npx nexgen-os init --dry-run            # what would be applied
 npx nexgen-os init                      # the core and every module; --packs <cc> for a country
 npx nexgen-os doctor                    # what is wrong, by name
+npx nexgen-os organisation create --name "My organisation"   # as a person (NEXGEN_ACT_AS_USER_ID), its owner
 ```
 
 Program connectors are optional: a yield computed by pvlib needs Python and
@@ -330,7 +333,7 @@ packs/                 one folder per country, data only (fr, be, es: identity a
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
-packages/formats/      one MIT package per file format (cityjson, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, weather-files)
+packages/formats/      one MIT package per file format (cityjson, dsmr, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, utilityrate5, weather-files)
 packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis), geocoders (nominatim, photon, ban, geopunt, urbis, icar, mapbox), meter data under mandate (switchgrid, enedis-sge), and the programs in other languages, JSON in and out (pvlib, optional)
 packages/python/       the Python client: the readers of the model, attributes attached with their source, MIT
 docs/                  the model, the doctrine and its decisions, the road to 1.0, how a release is cut, and in `demo/` one loadable dataset per domain (house, school, community, farm, district, drone survey, office)

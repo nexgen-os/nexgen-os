@@ -346,6 +346,7 @@ security; a role without a signed-in user reads nothing):
 | Function | Answers |
 |---|---|
 | `resample(series, from, to, step, time_zone?, issued_before?)` | the amount of each bucket: the quantity's sum, mean or last; for a cumulative register the consumption of the bucket, resets handled; with `samples`, `expected` and the worst `quality`. Durations bin from local midnight (half-hour time zones fall on local hours); a number of days or months cuts in the participant's time zone (`time_zone_required` without one), `step_unsupported` for a step that mixes them. Reads the rollups when they cover the buckets |
+| `aggregate(series[], from, to, step, time_zone?)` | several series of one quantity that adds up (an energy, a volume) summed on one step, each read as `resample()` reads it: the total of each bucket, how many series held a value in it (`series`), their `samples`, `expected` and the worst `quality`. Days cut in the time zone the series share, or the one given (`time_zone_required` when they differ); `quantities_differ`, `quantity_not_summable` (a power, a temperature, a state) |
 | `nexgen.window(series, from, to, limit?)` | the stored values in time order: how an index is read (`window` is a reserved word: call it qualified) |
 | `latest(series[])` | the last value that is not missing, one row per series |
 | `fill(series, from, to, step, method, time_zone?)` | every bucket, empty ones filled on the fly (`none`, `zero`, `previous`, `linear`) and flagged estimated; nothing is written. A substitute that must be stored is a figure of a module (a validation module), with its method |
@@ -512,10 +513,12 @@ into the same shapes, and the library writes the file.
 | Home Assistant snapshot | `homeassistant`: `readHomeAssistant`, `writeHomeAssistant` | `importHomeAssistant`, `exportHomeAssistant` (`modules/building/src`) |
 | CityJSON 2.0 | `cityjson`: `readCityJson`, `writeCityJson` | `importCityJson`, `exportCityJson` (`modules/building/src`) |
 | IFC4, IFC2x3 | `ifc`: `readIfc` | `importIfc` (`modules/building/src`) |
-| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core; the buildings and surfaces when `building` is installed) |
+| GeoJSON | `geojson`: `readGeoJson`, `writeGeoJson` | `exportGeoJson` (core; the buildings and surfaces when `building` is installed), `importGeoJsonParticipants` (core) |
 | EPW, TMY3 | `weather-files`: `readEpw`, `readTmy3`, `writeEpw` | `importWeatherFile`, `exportWeatherYear` (core) |
 | Parquet | `parquet`: `writeSeriesParquet` | `exportSeriesParquet` (core) |
 | PVsyst PAN, OND | `panond`: `readPan`, `readOnd` | `importProduct` (`modules/solar/src/products.ts`) |
+| SAM electricity rate (`utilityrate5` inputs) | `utilityrate5`: `readUtilityRate`, `writeUtilityRate`, `hourlyRates`, `rateFromHourly` | none yet: the library reads and writes the rate alone |
+| DSMR P1 telegram, P1M5 dongle message | `dsmr`: `readTelegram`, `readP1m5` | `meterSeriesOfDsmr` (core: the series of the electricity meter, or of a gas meter on its bus) |
 | An energy bill, read once as an EN 16931 invoice | `energy-bill`: `readEnergyBill` | `importEnergyBill` (core: the document, the meter, the contract's attributes), `estimateFromBill` (`modules/consumption/src`), `billing.record_invoice()` |
 
 An energy bill is read once, by a generic invoice reader, into the EN 16931
