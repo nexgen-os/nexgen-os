@@ -1,6 +1,6 @@
 // The `settlement` request kind (packages/connectors/README.md): the contracts in force
-// over a period, each with its price signals as the `contracts` module
-// keeps them (modules/contracts/README.md) and the series its
+// over a period, each with its price signals as the `energy_contracts` module
+// keeps them (modules/energy_contracts/README.md) and the series its
 // volume is read from; back, the
 // settlement lines of each contract — the energy, the price and the amount
 // over each interval a price holds, who pays and who is paid. Any engine

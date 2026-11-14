@@ -1,4 +1,4 @@
-// The `contracts` module on a database: a community where a consumer buys
+// The `energy_contracts` module on a database: a community where a consumer buys
 // from a producer of its project under a physical PPA and from its supplier
 // for the rest, a producer that sells what is left at the market, the prices
 // each contract sets — fixed, indexed on the day-ahead price with a floor and
@@ -26,15 +26,15 @@ async function place(name: string, fields: Record<string, unknown> = {}): Promis
 }
 
 async function contract(fields: Record<string, unknown>): Promise<string> {
-  return insert(db, 'contracts.contracts', { organisation_id: org, valid_from: '2026-01-01', ...fields });
+  return insert(db, 'energy_contracts.contracts', { organisation_id: org, valid_from: '2026-01-01', ...fields });
 }
 
 async function price(contractId: string, component: string, at: string): Promise<Record<string, unknown> | null> {
-  return (await one<{ p: Record<string, unknown> | null }>(db, 'select contracts.price_at($1, $2, $3) p', [contractId, component, at])).p;
+  return (await one<{ p: Record<string, unknown> | null }>(db, 'select energy_contracts.price_at($1, $2, $3) p', [contractId, component, at])).p;
 }
 
 beforeAll(async () => {
-  db = await freshDatabase(['grid', 'contracts'], ['be']);
+  db = await freshDatabase(['grid', 'energy_contracts'], ['be']);
   org = await organisation(db, 'A community operator', USER_A);
   other = await organisation(db, 'Another company', USER_B);
   project = await insert(db, 'projects', { organisation_id: org, name: 'A community', kind: 'energy_community', country: 'BE' });
@@ -59,24 +59,24 @@ afterAll(async () => {
 
 describe('a contract', () => {
   it('ships its kinds and volume modes as vocabularies', async () => {
-    const kinds = (await db.query<{ code: string }>('select code from contracts.kinds order by code')).rows.map((r) => r.code);
+    const kinds = (await db.query<{ code: string }>('select code from energy_contracts.kinds order by code')).rows.map((r) => r.code);
     expect(kinds).toEqual(['community_tariff', 'injection', 'market', 'ppa_physical', 'ppa_virtual', 'supply']);
-    const modes = (await db.query<{ code: string }>('select code from contracts.volume_modes order by code')).rows.map((r) => r.code);
+    const modes = (await db.query<{ code: string }>('select code from energy_contracts.volume_modes order by code')).rows.map((r) => r.code);
     expect(modes).toEqual(['allocated_power', 'pay_as_consumed', 'pay_as_produced']);
   });
 
   it('takes the organisation of its participant and the currency of its country', async () => {
     const id = await contract({ organisation_id: other, participant_id: consumer, kind: 'supply', flow: 'offtake', counterparty_contact_id: supplier, meter_id: meter, priority: 10, reference: 'SUP-1' });
-    expect(await one(db, 'select organisation_id, currency from contracts.contracts where id = $1', [id])).toEqual({ organisation_id: org, currency: 'EUR' });
+    expect(await one(db, 'select organisation_id, currency from energy_contracts.contracts where id = $1', [id])).toEqual({ organisation_id: org, currency: 'EUR' });
   });
 
   it('lists the contracts of a flow in the order of the cascade', async () => {
     const ppa = await contract({ participant_id: consumer, kind: 'ppa_physical', flow: 'offtake', counterparty_participant_id: producer, volume_mode: 'pay_as_produced', priority: 1 });
     await contract({ participant_id: consumer, kind: 'supply', flow: 'offtake', valid_from: '2025-01-01', valid_to: '2026-01-01', priority: 0 });
-    const rows = (await db.query<{ id: string; kind: string }>(`select id, kind from contracts.in_force($1, 'offtake', '2026-06-01')`, [consumer])).rows;
+    const rows = (await db.query<{ id: string; kind: string }>(`select id, kind from energy_contracts.in_force($1, 'offtake', '2026-06-01')`, [consumer])).rows;
     expect(rows.map((r) => r.kind)).toEqual(['ppa_physical', 'supply']);
     expect(rows[0].id).toBe(ppa);
-    expect((await db.query(`select 1 from contracts.in_force($1, 'injection', '2026-06-01')`, [consumer])).rows).toHaveLength(0);
+    expect((await db.query(`select 1 from energy_contracts.in_force($1, 'injection', '2026-06-01')`, [consumer])).rows).toHaveLength(0);
   });
 
   it('refuses what does not hold, by name', async () => {
@@ -107,14 +107,14 @@ describe('a price signal', () => {
   });
 
   it('sets a fixed price over an ISO 8601 period', async () => {
-    await insert(db, 'contracts.price_signals', { organisation_id: org, contract_id: ppa, component: 'energy_price', form: 'fixed', value: 95, valid_from: '2026-01-01T00:00:00Z', duration: 'P1Y' });
+    await insert(db, 'energy_contracts.price_signals', { organisation_id: org, contract_id: ppa, component: 'energy_price', form: 'fixed', value: 95, valid_from: '2026-01-01T00:00:00Z', duration: 'P1Y' });
     expect(await price(ppa, 'energy_price', at(1))).toMatchObject({ price: 95, unit: 'EUR-PER-MegaW-HR', currency: 'EUR', form: 'fixed', index: null });
     expect(await price(ppa, 'energy_price', '2027-01-01T00:00:00Z')).toBeNull();
     expect(await price(ppa, 'power_price', at(1))).toBeNull();
   });
 
   it('reads an indexed price on the price series at each instant, within its floor and cap', async () => {
-    await insert(db, 'contracts.price_signals', {
+    await insert(db, 'energy_contracts.price_signals', {
       organisation_id: org, contract_id: market, component: 'energy_price', form: 'indexed', factor: 0.9, value: -5, floor: 0, cap: 300, index_series_id: dayAhead, valid_from: '2026-01-01T00:00:00Z',
     });
     expect(await price(market, 'energy_price', at(0))).toMatchObject({ price: 67, index: 80 });
@@ -127,7 +127,7 @@ describe('a price signal', () => {
 
   it('refuses what does not hold, by name', async () => {
     const signal = (fields: Record<string, unknown>) =>
-      insert(db, 'contracts.price_signals', { organisation_id: org, contract_id: ppa, component: 'energy_price', form: 'fixed', value: 90, valid_from: '2026-07-01T00:00:00Z', ...fields });
+      insert(db, 'energy_contracts.price_signals', { organisation_id: org, contract_id: ppa, component: 'energy_price', form: 'fixed', value: 90, valid_from: '2026-07-01T00:00:00Z', ...fields });
     await expect(signal({})).rejects.toThrow(/overlapping_value/);
     await expect(signal({ component: 'offtake_energy' })).rejects.toThrow(/component_not_priced/);
     await expect(signal({ form: 'indexed', value: null, valid_from: '2028-01-01T00:00:00Z' })).rejects.toThrow(/price_signals_indexed/);
@@ -147,24 +147,24 @@ describe('a price signal', () => {
       )
     ).seriesId;
     await expect(signal({ form: 'indexed', value: null, index_series_id: theirs, valid_from: '2027-01-01T00:00:00Z' })).rejects.toThrow(/series_of_other_organisation/);
-    await expect(db.query(`update contracts.contracts set currency = 'USD' where id = $1`, [ppa])).rejects.toThrow(/currency_edited/);
+    await expect(db.query(`update energy_contracts.contracts set currency = 'USD' where id = $1`, [ppa])).rejects.toThrow(/currency_edited/);
   });
 });
 
 describe('row level security', () => {
   it('shows the contracts and prices of an organisation to its members only', async () => {
-    const mine = await asUser(db, USER_A, async () => (await db.query('select id from contracts.contracts')).rows.length);
+    const mine = await asUser(db, USER_A, async () => (await db.query('select id from energy_contracts.contracts')).rows.length);
     expect(mine).toBeGreaterThan(0);
-    expect(await asUser(db, USER_B, async () => (await db.query('select id from contracts.contracts')).rows)).toHaveLength(0);
-    expect(await asUser(db, USER_B, async () => (await db.query('select id from contracts.price_signals')).rows)).toHaveLength(0);
+    expect(await asUser(db, USER_B, async () => (await db.query('select id from energy_contracts.contracts')).rows)).toHaveLength(0);
+    expect(await asUser(db, USER_B, async () => (await db.query('select id from energy_contracts.price_signals')).rows)).toHaveLength(0);
     // Somebody else's participant does not exist for them.
     await expect(
-      asUser(db, USER_B, () => db.query(`insert into contracts.contracts (organisation_id, participant_id, kind, flow, valid_from, currency) values ($1, $2, 'supply', 'offtake', '2026-01-01', 'EUR')`, [other, consumer])),
+      asUser(db, USER_B, () => db.query(`insert into energy_contracts.contracts (organisation_id, participant_id, kind, flow, valid_from, currency) values ($1, $2, 'supply', 'offtake', '2026-01-01', 'EUR')`, [other, consumer])),
     ).rejects.toThrow(/participant_not_found/);
   });
 
   it('reads a price as a member, through the same function', async () => {
-    const id = (await one<{ id: string }>(db, `select id from contracts.contracts where kind = 'market'`)).id;
+    const id = (await one<{ id: string }>(db, `select id from energy_contracts.contracts where kind = 'market'`)).id;
     expect(await asUser(db, USER_A, () => price(id, 'energy_price', at(0)))).toMatchObject({ price: 67 });
     await expect(asUser(db, USER_B, () => price(id, 'energy_price', at(0)))).rejects.toThrow(/contract_not_found/);
   });
