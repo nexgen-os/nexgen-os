@@ -165,7 +165,7 @@ professional of the country read it, written with the day in `pack.json`.
 
 | Pack | State |
 |---|---|
-| [`be`](be/README.md) | 0.4.0, `community`: compiled into `supabase/seed/11_pack_be.sql` |
+| [`be`](be/README.md) | 0.4.2, `community`: compiled into `supabase/seed/11_pack_be.sql` |
 | [`de`](de/README.md) | 0.1.0, `community`: compiled into `supabase/seed/13_pack_de.sql` |
 | [`es`](es/README.md) | 0.4.0, `community`: compiled into `supabase/seed/12_pack_es.sql` |
 | [`fr`](fr/README.md) | 0.4.0, `community`: compiled into `supabase/seed/10_pack_fr.sql` |

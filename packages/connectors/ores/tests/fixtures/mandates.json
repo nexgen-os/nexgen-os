@@ -1,0 +1,41 @@
+{
+  "data": {
+    "mandates": [
+      {
+        "referenceNumber": "REF-0001",
+        "status": "Approved",
+        "ean": "541449000000000011",
+        "energyType": "E",
+        "dataPeriodFrom": "2025-01-26T00:00:00Z",
+        "dataPeriodTo": "2030-01-26T00:00:00Z",
+        "dataServiceType": "HourlyQuarterHourly",
+        "mandateExpirationDate": "2028-01-26T00:00:00Z"
+      },
+      {
+        "referenceNumber": "REF-0001",
+        "status": "Approved",
+        "ean": "541449000000000011",
+        "energyType": "E",
+        "dataPeriodFrom": "2025-01-26T00:00:00Z",
+        "dataPeriodTo": "2030-01-26T00:00:00Z",
+        "dataServiceType": " Daily",
+        "mandateExpirationDate": "2028-01-26T00:00:00Z",
+        "renewalStatus": "Expired"
+      },
+      {
+        "referenceNumber": "REF-0001",
+        "status": "Rejected",
+        "ean": "541449000000000028",
+        "energyType": "G",
+        "dataServiceType": "Daily"
+      },
+      {
+        "referenceNumber": "REF-0001",
+        "status": "Finished",
+        "energyType": "E",
+        "dataServiceType": "Daily",
+        "renewalStatus": "RenewalRequested"
+      }
+    ]
+  }
+}

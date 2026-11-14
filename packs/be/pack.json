@@ -2,8 +2,8 @@
   "$schema": "../schema/pack.1.json",
   "country": "BE",
   "name": "Belgium",
-  "version": "0.4.0",
-  "checksum": "sha256:6c0e9b2f80616a66ef3b695d87ae84861f660b1efc6ae6ff30cb36a53c2ef469",
+  "version": "0.4.2",
+  "checksum": "sha256:9556b7a683b247b60f0cf127b6dc7f9ba7660bd602268fe5d4988eda3f1b530d",
   "schema_min": "0.3.0",
   "seed_sequence": 11,
   "certification": {

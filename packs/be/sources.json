@@ -102,6 +102,36 @@
       ]
     },
     {
+      "code": "fluvius_service_provider_api",
+      "name": "Fluvius — the API for service providers (dienstverleners)",
+      "description": "The Flemish distribution operator's API for a service provider under its data access contract: the consent link the customer signs on the operator's page, the mandates, and the quarter-hour energy of a meter, offtake and injection. Read by @nexgen-os/fluvius with a client certificate and a subscription key, under the customer's mandate. What it gives is kept only as long as that mandate holds, and never passed on.",
+      "kind": "api",
+      "url": "https://apihub.fluvius.be/",
+      "docs_url": "https://partner.fluvius.be/sites/fluvius/files/2024-03/ontsluiten-van-verbruiksdata-via-api-v2-met-addendum-maart2024.pdf",
+      "auth": "mandate",
+      "license": "Fluvius data access contract terms",
+      "attribution": "© Fluvius",
+      "redistributable": false,
+      "regions": [
+        "BE-VLG"
+      ]
+    },
+    {
+      "code": "ores_service_provider_api",
+      "name": "ORES — the API for energy service providers (third-party data access)",
+      "description": "The main Walloon distribution operator's API for an energy service provider under its data access contract: the consent link the customer follows to My ORES, the mandates, and the quarter-hour energy of a meter, offtake and injection, with three years of history. Read by @nexgen-os/ores with the certificate the operator registered and a subscription key, under the customer's mandate. What it gives is kept only as long as that mandate holds, and never passed on.",
+      "kind": "api",
+      "url": "https://edap.ores.be/",
+      "docs_url": "https://media.ores.be/ores-cms/i0ghhud2/utilisation-des-api-tpda-ores-2026.pdf",
+      "auth": "mandate",
+      "license": "ORES data access contract terms",
+      "attribution": "© ORES",
+      "redistributable": false,
+      "regions": [
+        "BE-WAL"
+      ]
+    },
+    {
       "code": "elia_open_data",
       "name": "Elia open data",
       "description": "The transmission operator's open datasets: load, generation, cross-border exchanges, balancing and CO2 intensity of the country.",
@@ -131,11 +161,29 @@
       "redistributable": false
     },
     {
+      "code": "be_fluvius_service_provider_api",
+      "name": "Fluvius — Ontsluiten van verbruiksdata via API (v2, with the addendum of March 2024)",
+      "description": "The Flemish distribution operator's guide for service providers: the consent link, the mandates and their statuses, the quarter-hour energy of a meter and the state of each value.",
+      "kind": "text",
+      "url": "https://partner.fluvius.be/sites/fluvius/files/2024-03/ontsluiten-van-verbruiksdata-via-api-v2-met-addendum-maart2024.pdf",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
       "code": "be_sibelga_consumption_history",
       "name": "Sibelga — consumption history",
       "description": "The Brussels distribution operator's page on the history of a customer's consumption, quarter-hourly for a smart meter.",
       "kind": "text",
       "url": "https://www.sibelga.be/en/connections-meters/meter-readings-and-consumption/consumptions-history",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_ores_service_provider_api",
+      "name": "ORES — Le partage de données avec les fournisseurs de services énergétiques, utilisation des API (2026)",
+      "description": "The main Walloon distribution operator's guide for energy service providers: the certificate, the consent link, the mandates and their statuses, the quarter-hour energy of a meter and the state of each value.",
+      "kind": "text",
+      "url": "https://media.ores.be/ores-cms/i0ghhud2/utilisation-des-api-tpda-ores-2026.pdf",
       "license": "Terms not stated",
       "redistributable": false
     },

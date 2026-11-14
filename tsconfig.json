@@ -18,6 +18,9 @@
       "@nexgen-os/enedis-sge": [
         "./packages/connectors/enedis-sge/src/index.ts"
       ],
+      "@nexgen-os/fluvius": [
+        "./packages/connectors/fluvius/src/index.ts"
+      ],
       "@nexgen-os/geopunt": [
         "./packages/connectors/geopunt/src/index.ts"
       ],
@@ -32,6 +35,9 @@
       ],
       "@nexgen-os/open-meteo": [
         "./packages/connectors/open-meteo/src/index.ts"
+      ],
+      "@nexgen-os/ores": [
+        "./packages/connectors/ores/src/index.ts"
       ],
       "@nexgen-os/photon": [
         "./packages/connectors/photon/src/index.ts"
@@ -50,6 +56,9 @@
       ],
       "@nexgen-os/cityjson": [
         "./packages/formats/cityjson/src/index.ts"
+      ],
+      "@nexgen-os/dsmr": [
+        "./packages/formats/dsmr/src/index.ts"
       ],
       "@nexgen-os/enedis-r6x": [
         "./packages/formats/enedis-r6x/src/index.ts"
@@ -74,6 +83,12 @@
       ],
       "@nexgen-os/parquet": [
         "./packages/formats/parquet/src/index.ts"
+      ],
+      "@nexgen-os/utilityrate5": [
+        "./packages/formats/utilityrate5/src/index.ts"
+      ],
+      "@nexgen-os/project-sheet": [
+        "./packages/formats/project-sheet/src/index.ts"
       ],
       "@nexgen-os/weather-files": [
         "./packages/formats/weather-files/src/index.ts"

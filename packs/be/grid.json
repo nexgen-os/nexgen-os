@@ -21,7 +21,21 @@
       "website": "https://www.fluvius.be/",
       "data_hub_url": "https://opendata.fluvius.be/",
       "identifier_scheme": "gs1_gsrn",
-      "description": "The Flemish distribution operator: connection, digital meters, meter data."
+      "description": "The Flemish distribution operator: connection, digital meters, meter data.",
+      "meter_data": {
+        "sources": [
+          "fluvius_service_provider_api"
+        ],
+        "time_zone": "Europe/Brussels",
+        "quality_codes": {
+          "READ": 0
+        },
+        "steps": [
+          "PT15M"
+        ],
+        "source_code": "be_fluvius_service_provider_api",
+        "reference": "Ontsluiten van verbruiksdata via API v2 (addendum March 2024): quarter-hour energy of a meter, offtake and injection in kWh, each step dated at its start; READ is the state of a value read on the meter, the one observed on the live API in August 2026, and any other state is added here when it is met"
+      }
     },
     {
       "code": "sibelga",
@@ -48,7 +62,25 @@
       "coverage": "Most of the Walloon municipalities; each municipality is served by the operator it designated.",
       "website": "https://www.ores.be/",
       "identifier_scheme": "gs1_gsrn",
-      "description": "The main Walloon distribution operator."
+      "description": "The main Walloon distribution operator.",
+      "meter_data": {
+        "sources": [
+          "ores_service_provider_api"
+        ],
+        "time_zone": "Europe/Brussels",
+        "quality_codes": {
+          "READ": 0,
+          "VAL": 0,
+          "EST": 1,
+          "NVAL": 100
+        },
+        "history_months": 36,
+        "steps": [
+          "PT15M"
+        ],
+        "source_code": "be_ores_service_provider_api",
+        "reference": "Le partage de données avec les fournisseurs de services énergétiques, utilisation des API (2026): quarter-hour energy of an electricity meter, offtake and injection in kWh, each step dated at its start in UTC, three years of history at most; the state of a value is READ (read on the meter), VAL (validated by the collection systems), EST (estimated by them) or NVAL (not validated, kept under the pack's own code 100)"
+      }
     },
     {
       "code": "resa",

@@ -14,7 +14,7 @@ the importer of the `solar` module writes them.
 | PAN `PNom`, `Width` × `Height` | `unit_power_kw`, `unit_surface_m2` | |
 | OND `PNomConv` | `unit_power_kw` (AC) | |
 | PAN `Gamma`, `muGamma`, `RShunt`, `Rp_0`, `Rp_Exp`, `RSerie`, `muISC`, `NCelS` | `solar.module_products`, model `pvsyst`: `gamma_ref`, `mu_gamma`, `R_sh_ref`, `R_sh_0`, `R_sh_exp`, `R_s`, `alpha_sc` (A/°C), `cells_in_series` | pvlib's keys for `calcparams_pvsyst`; `EgRef` 1.121 eV for silicon |
-| PAN `Isc`, `Voc` at `TRef` | `I_L_ref`, `I_o_ref` | solved: see below |
+| PAN `Isc`, `Voc` at `TRef` | `reference`: `isc`, `voc`, `t_ref` | `TRef` 25 °C when the file says none; the importer solves `I_L_ref`, `I_o_ref` from them: see below |
 | the whole PAN file | `module_products.metadata.pan` | incidence profile, bifaciality, STC point, dimensions |
 | the OND file but its commercial block | `solar.inverter_products`, model `ond`, `parameters` | the file's keys, efficiency curves (`ProfilPIO…`) as `[x, y]` pairs, as pvlib's `read_panond` gives them |
 | the OND commercial block | `inverter_products.metadata.ond` | data source, dimensions, remarks |
@@ -41,16 +41,22 @@ array names it.
 ## The diode currents
 
 PVsyst stores the series and shunt resistances and the diode factor, not
-the light current and the diode's saturation current. At short circuit
-(V = 0, I = Isc) and open circuit (V = Voc, I = 0) the one-diode equation is
-linear in both, so `diodeCurrents()` solves them exactly: the model then
-gives back the file's Isc and Voc, and its maximum power lands within half
-a percent of `PNom` on the files tested.
+the light current and the diode's saturation current. A format library
+computes no figure (decision
+[0035](../../../docs/decisions/0035-a-format-library-touches-no-database.md)),
+so `readPan()` gives the point the file states them by — `Isc` and `Voc`
+at `TRef`, in `reference` — and the `solar` module solves them:
+`pvsystModel()` of
+[`modules/solar/src/products.ts`](../../../modules/solar/src/products.ts),
+which `importProduct()` calls, gives the model back the file's Isc and Voc
+exactly, and its maximum power within half a percent of `PNom` on the
+files tested.
 
 ## Refusals
 
 `panond_unreadable` (not a PVsyst text file), `panond_binary_unsupported`
 (a binary file of PVsyst before version 6: export it again as text),
 `pan_unreadable` / `ond_unreadable` (another kind of object, or a value the
-model needs is missing), `pan_inconsistent` (the file's numbers give no
-diode), `already_imported` (the product already has its physics).
+model needs is missing); from the importer, `pan_inconsistent` (the file's
+numbers give no diode) and `already_imported` (the product already has its
+physics).

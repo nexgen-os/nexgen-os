@@ -47,7 +47,7 @@ issue time.
 One package per service, `@nexgen-os/<service>`, MIT, with its own `package.json`
 and `README`; the interfaces, the standard shape of a place and `storeSeries()` come
 from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same calls for any TypeScript client:
-`store()`, `seriesEnsure()`, and the reads `resample()`, `window()`,
+`store()`, `seriesEnsure()`, and the reads `resample()`, `aggregate()`, `window()`,
 `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`,
 `convertUnit()` — each one call of the SQL function of the same name.
 
@@ -58,6 +58,8 @@ from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same call
 | [`open-meteo`](open-meteo/README.md) | `open_meteo` — hourly forecast of temperature and irradiance, and history from the ERA5 archive (irradiance on a plane, horizontal components `ghi`, `dni`, `dhi`, temperature, wind speed), worldwide | data CC BY 4.0; the free API is for non-commercial use, a paid plan otherwise |
 | [`pvgis`](pvgis/README.md) | `pvgis` — hourly energy, in-plane irradiance and temperature of a PV system over whole years (seriescalc), and its multi-year yield (PVcalc); azimuth from true north turned into PVGIS's aspect from south, hours dated at their start in UTC | free, no key, no restriction on use |
 | [`switchgrid`](switchgrid/README.md) | `switchgrid` (shipped with the package) — an intermediary: the customer's consent on its page, then the operator's raw R63 files read by `enedis-r6x` into the meter's offtake, injection and reactive power, under mandate | Switchgrid's terms; not redistributable, kept as long as the consent holds |
+| [`fluvius`](fluvius/README.md) | `fluvius_service_provider_api` (be pack) — the Flemish operator's API for service providers: the consent link signed on the operator's page, the mandates, and the quarter-hour offtake and injection energy of a meter, under mandate | the operator's data access contract; not redistributable, kept as long as the mandate holds |
+| [`ores`](ores/README.md) | `ores_service_provider_api` (be pack) — the main Walloon operator's API for energy service providers: the consent link followed to My ORES, the mandates, and the quarter-hour offtake and injection energy of a meter the day after, with three years of history, under mandate; the answers read by the reader of `fluvius` | the operator's data access contract; not redistributable, kept as long as the mandate holds |
 | [`enedis-sge`](enedis-sge/README.md) | `enedis_sge` (fr pack) — the operator's web services for a third party under contract: point search, technical data, detailed measures (the end of a step with its offset), collection orders, under mandate; a skeleton until homologation | the operator's third-party contract; not redistributable, kept as long as the authorisation holds |
 | [`nominatim`](nominatim/README.md) | `nominatim` — an address ⇄ a point on OpenStreetMap, worldwide, ISO 3166-2 regions | ODbL; the public instance wants a named user agent and one request per second |
 | [`photon`](photon/README.md) | `photon` — search as you type on OpenStreetMap, worldwide | ODbL; no country filter on the server, applied on the answers |
