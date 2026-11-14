@@ -27,7 +27,7 @@ describe('doctor', () => {
     expect(r.problems).toEqual([]);
     expect(r.schemaVersion).toBe('0.4.0');
     expect(r.postgis).toMatch(/^3\./);
-    expect(r.applied).toEqual({ core: 17, 'module:grid': 2, 'module:solar': 4, 'module:weather': 1, 'pack:fr': 1 });
+    expect(r.applied).toEqual({ core: 17, 'module:grid': 2, 'module:solar': 5, 'module:weather': 1, 'pack:fr': 1 });
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
     expect(r.packs).toEqual(['fr']);
     expect(r.vocabularies.quantities).toBeGreaterThan(0);

@@ -264,6 +264,49 @@ export async function installDevice(db: Db, d: DeviceInput): Promise<{ id: strin
      d.source_code ?? null, d.unit_count ?? null]);
 }
 
+export interface PvArrayInput {
+  name: string;
+  /** Degrees clockwise from true north: 180 faces south. */
+  azimuth_deg: number;
+  /** Degrees from horizontal. */
+  tilt_deg: number;
+  /** The array's DC power; the system's when it has one array. */
+  kwp?: number;
+  mounting?: string;
+}
+
+export interface PvSystemInput {
+  participant_id: string;
+  name: string;
+  /** The DC power of the system, kWp. */
+  kwp: number;
+  arrays: PvArrayInput[];
+  installed_on?: string;
+}
+
+/**
+ * A PV system of a participant, described as the `solar` module reads it: a
+ * device of the core (`install_device()`, type `solar`), its row of
+ * `solar.devices` with its DC power, and one row of `solar.pv_arrays` per
+ * array with its own orientation. Its yield is then a computation of the
+ * module (`solar.yield`).
+ */
+export async function describePvSystem(db: Db, p: PvSystemInput): Promise<{ device_id: string; arrays: string[] }> {
+  await requireModule(db, 'solar');
+  if (p.arrays.length === 0) throw new GestureError('pv_array_required: a PV system has at least one array, with its azimuth and tilt');
+  const { id } = await installDevice(db, { participant_id: p.participant_id, device_type: 'solar', name: p.name, rated_power_kw: p.kwp, ...(p.installed_on ? { installed_on: p.installed_on } : {}) });
+  await db.query('insert into solar.devices (id, kwp_dc) values ($1, $2)', [id, p.kwp]);
+  const arrays: string[] = [];
+  for (const a of p.arrays) {
+    const row = await first<{ id: string }>(db,
+      `insert into solar.pv_arrays (organisation_id, device_id, name, azimuth_deg, tilt_deg, mounting, kwp_dc)
+       select d.organisation_id, d.id, $2, $3, $4, $5, $6 from devices d where d.id = $1 returning id`,
+      [id, a.name, a.azimuth_deg, a.tilt_deg, a.mounting ?? null, a.kwp ?? (p.arrays.length === 1 ? p.kwp : null)]);
+    arrays.push(row.id);
+  }
+  return { device_id: id, arrays };
+}
+
 /**
  * The readings of one entity of a Home Assistant export, read by its format
  * library (`@nexgen-os/homeassistant`) and written through `store()` as a
@@ -372,4 +415,66 @@ export async function compute(db: Db, computations: Computations, name: Computat
   const fn = computations[name];
   if (fn === undefined) throw new GestureError(`computation_not_loaded: ${name} is the code of its module, and this surface was started without it`);
   return fn(db, request as never);
+}
+
+export interface PvYieldAtInput {
+  project_id: string;
+  /** The participant's name: the place, the roof, the client. */
+  name: string;
+  /** ISO 3166-1 alpha-2: the country is data of the place, never assumed. */
+  country: string;
+  lon: number;
+  lat: number;
+  time_zone?: string;
+  kwp: number;
+  /** Degrees clockwise from true north: 180 faces south. */
+  azimuth_deg: number;
+  tilt_deg: number;
+  /** A whole calendar year PVGIS covers; without it, the mean of every year it covers. */
+  year?: number;
+  /**
+   * The system loss the person says for this place, a fraction (0.025 for
+   * 2.5 %): set on the participant as `system_loss`, where any other
+   * surface reads it too; without it, the cascade answers (decision 0055).
+   */
+  system_loss?: number;
+  profileCode?: string;
+}
+
+/**
+ * The yield of a PV system at a point, in one gesture: the participant
+ * joins the project at that point, its PV system is described with one
+ * array (`describePvSystem()`), the `solar` module estimates its yield for
+ * the year asked, or as the mean of every year PVGIS covers (`solar.yield`),
+ * and it is read back by calendar month through `resample()`, in UTC, the
+ * mean of the years. The system loss is the place's: the one given is set
+ * on the participant, and the estimate says the level it was read at.
+ */
+export async function estimatePvYieldAt(db: Db, computations: Computations, p: PvYieldAtInput) {
+  const place = { country: p.country, geometry: { type: 'Point', coordinates: [p.lon, p.lat, 0] }, location_precision: 'rooftop' };
+  const participant = await addParticipant(db, { project_id: p.project_id, name: p.name, place, category: 'prosumer', ...(p.time_zone ? { time_zone: p.time_zone } : {}) });
+  if (p.system_loss !== undefined) {
+    await db.query(`select set_attribute('participant', $1, 'system_loss', $2::jsonb, null, null, 'said by the person', 'estimated')`, [participant.id, JSON.stringify(p.system_loss)]);
+  }
+  const system = await describePvSystem(db, {
+    participant_id: participant.id, name: 'PV system', kwp: p.kwp,
+    arrays: [{ name: 'Array 1', azimuth_deg: p.azimuth_deg, tilt_deg: p.tilt_deg }],
+  });
+  const estimate = await compute(db, computations, 'solar.yield', {
+    deviceId: system.device_id, ...(p.year !== undefined ? { years: { from: p.year, to: p.year } } : {}), ...(p.profileCode ? { profileCode: p.profileCode } : {}),
+  }) as { estimateId: string; seriesId: string; annualKwh: number; kwhPerKwp: number; kwp: number };
+  const { provenance, years, system_loss } = await first<{ provenance: string; years: { from: number; to: number }; system_loss: Record<string, unknown> | null }>(db,
+    `select provenance, inputs -> 'weather' -> 'years' years, inputs -> 'system_loss' system_loss from solar.estimates where id = $1`, [estimate.estimateId]);
+  const n = years.to - years.from + 1;
+  const byMonth = new Map<number, number>();
+  for (const b of await resample(db, estimate.seriesId, `${years.from}-01-01T00:00:00Z`, `${years.to + 1}-01-01T00:00:00Z`, '1 month', { timeZone: 'UTC' })) {
+    if (b.value === null) continue;
+    const month = Number(b.bucket.slice(5, 7));
+    byMonth.set(month, (byMonth.get(month) ?? 0) + Number(b.value));
+  }
+  const months = [...byMonth.entries()].sort(([a], [b]) => a - b).map(([month, kwh]) => ({ month, kwh: Math.round((kwh / n) * 10) / 10 }));
+  return {
+    participant_id: participant.id, device_id: system.device_id, estimate_id: estimate.estimateId,
+    annual_kwh: estimate.annualKwh, kwh_per_kwp: estimate.kwhPerKwp, years, system_loss, provenance, months,
+  };
 }
