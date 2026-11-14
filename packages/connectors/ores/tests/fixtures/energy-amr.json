@@ -1,0 +1,65 @@
+{
+  "data": {
+    "headpoint": [
+      {
+        "type": "metering-on-headpoint",
+        "ean": "541449000000000028",
+        "energyType": "E",
+        "quarterHourlyEnergy": [
+          {
+            "start": "2026-06-09T22:00:00Z",
+            "measurements": [
+              {
+                "offtake": {
+                  "total": {
+                    "value": 12.892,
+                    "unit": "kWh",
+                    "validationState": "VAL"
+                  },
+                  "inductive": {
+                    "value": 4.828,
+                    "unit": "kVArh",
+                    "validationState": "VAL"
+                  },
+                  "capacitive": {
+                    "value": 8.4,
+                    "unit": "kVArh",
+                    "validationState": "VAL"
+                  }
+                },
+                "injection": {
+                  "total": {
+                    "value": 21.082,
+                    "unit": "kWh",
+                    "validationState": "VAL"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "start": "2026-06-09T22:15:00Z",
+            "measurements": [
+              {
+                "offtake": {
+                  "total": {
+                    "value": 11.5,
+                    "unit": "kWh",
+                    "validationState": "VAL"
+                  }
+                },
+                "injection": {
+                  "total": {
+                    "value": 20.0,
+                    "unit": "kWh",
+                    "validationState": "EST"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

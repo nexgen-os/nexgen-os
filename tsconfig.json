@@ -36,6 +36,9 @@
       "@nexgen-os/open-meteo": [
         "./packages/connectors/open-meteo/src/index.ts"
       ],
+      "@nexgen-os/ores": [
+        "./packages/connectors/ores/src/index.ts"
+      ],
       "@nexgen-os/photon": [
         "./packages/connectors/photon/src/index.ts"
       ],

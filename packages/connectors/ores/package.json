@@ -1,0 +1,38 @@
+{
+  "name": "@nexgen-os/ores",
+  "version": "0.4.2",
+  "description": "The ORES API for energy service providers as a Nexgen OS meter data connector: the customer's consent link signed in My ORES, the mandates, and the quarter-hour energy of a meter read under mandate.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connectors/ores"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/core": "^0.4.0",
+    "@nexgen-os/fluvius": "^0.4.2"
+  }
+}

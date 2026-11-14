@@ -66,7 +66,7 @@ describe('the be pack', () => {
     const be = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version from countries where code = 'BE'`);
     expect(be).toEqual({ name: 'Belgium', currency: 'EUR', languages: ['fr', 'nl', 'de'], time_zones: ['Europe/Brussels'], region_level: 'region',
-      municipality_scheme: 'nis', pack_version: '0.4.1' });
+      municipality_scheme: 'nis', pack_version: '0.4.2' });
     const regions = await db.query<{ code: string }>(`select code from regions where country = 'BE' and kind = 'subdivision' order by code`);
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
     // Its names in the languages of the country, as ISO 3166-2 writes them.
@@ -89,6 +89,7 @@ describe('the be pack', () => {
       geopunt: ['BE-VLG', 'BE-BRU'],
       icar: ['BE-WAL'],
       kbo_bce: [],
+      ores_service_provider_api: ['BE-WAL'],
       rmi_aws: [],
       statbel: [],
       urbis: ['BE-BRU'],
@@ -166,7 +167,7 @@ describe('the be pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'be' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'be', version: '0.4.1', file: 'supabase/seed/11_pack_be.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'be', version: '0.4.2', file: 'supabase/seed/11_pack_be.sql', state: 'up_to_date' }]);
   });
 });
 
