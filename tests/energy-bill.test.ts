@@ -95,6 +95,32 @@ describe('a bill written into the model', () => {
     expect(await one(db, 'select kind, period_from::text, period_to::text from billing.invoices where id = $1', [ekwo])).toEqual({ kind: 'purchase', period_from: '2026-08-01', period_to: '2026-08-31' });
   });
 
+  it('writes nothing of a bill refused half way, so that it can be imported again', async () => {
+    // Another farm of the same company, in a project of its own, that has no bill yet.
+    const barn = (await one<{ id: string }>(db, `
+      with p as (insert into projects (organisation_id, name, country) select organisation_id, 'Barn', 'FR' from participants where id = $1 returning id, organisation_id)
+      insert into participants (organisation_id, project_id, name, country, time_zone) select organisation_id, id, 'Barn', 'FR', 'Europe/Paris' from p returning id`, [farm])).id;
+    const written = async () => one<{ n: number }>(db, `
+      select (select count(*) from documents where object_id = $1) + (select count(*) from meters where participant_id = $1)
+           + (select count(*) from attributes where object_id = $1) n`, [barn]);
+    // The document attached and the meter declared, the first attribute of the contract fails.
+    const failing = { query: (sql: string, params?: unknown[]) => (sql.includes('set_attribute') ? Promise.reject(new Error('disk_full: no space left')) : db.query(sql, params)) };
+    await expect(asUser(db, USER_A, () => importEnergyBill(failing as never, { participantId: barn, reading, file: file('c') }))).rejects.toThrow(/^disk_full/);
+    expect(Number((await written()).n)).toBe(0);
+    const again = await asUser(db, USER_A, () => importEnergyBill(db, { participantId: barn, reading, file: file('c') }));
+    expect([again.meterFound, again.attributes.length]).toEqual([false, imported.attributes.length]);
+  });
+
+  it("inside the caller's transaction, rolls back the bill alone and leaves the transaction going", async () => {
+    const failing = { query: (sql: string, params?: unknown[]) => (sql.includes('set_attribute') ? Promise.reject(new Error('disk_full: no space left')) : db.query(sql, params)) };
+    await db.exec('begin');
+    await db.query(`update participants set name = 'Farm, renamed' where id = $1`, [farm]);
+    await expect(asUser(db, USER_A, () => importEnergyBill(failing as never, { participantId: farm, reading, file: file('d') }))).rejects.toThrow(/^disk_full/);
+    expect(await one(db, `select count(*)::int n from documents where checksum = $1`, [file('d').checksum])).toEqual({ n: 0 });
+    expect(await one(db, 'select name from participants where id = $1', [farm])).toEqual({ name: 'Farm, renamed' });
+    await db.exec('rollback');
+  });
+
   it('refuses a bill in another currency than the country\'s, and writes nothing', async () => {
     const before = await one<{ n: number }>(db, 'select count(*)::int n from documents');
     await expect(asUser(db, USER_A, () => importEnergyBill(db, { participantId: farm, reading: readEnergyBill(OTHER_CURRENCY), file: file('b') }))).rejects.toThrow(/^currency_mismatch: the bill is in CHF/);

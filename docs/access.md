@@ -24,6 +24,7 @@ does.
 | `shares.manage` | share a project, invite an editor or a viewer, open the account of a participant |
 | `members.manage` | give, change and remove roles, invite an owner, issue and withdraw keys |
 | `organisation.write` | rename or delete the organisation |
+| `publications.manage` | publish a document of the organisation and withdraw a publication ([0015](decisions/0015-publications.md)) |
 | `account.contact` | write the contact details of a participant |
 | `account.consent` | give and withdraw the consents of a participant |
 | `account.notifications` | choose how a participant is notified |
@@ -35,7 +36,7 @@ adds its own codes (with `area` set to its code) and its own rows.
 | Preset | Holds |
 | --- | --- |
 | `owner` | every capability |
-| `editor` | everything but `members.manage` and `organisation.write` |
+| `editor` | everything but `members.manage`, `organisation.write` and `publications.manage` |
 | `viewer` | `data.read` |
 | `participant` | `data.read` and the `account.*` capabilities |
 
@@ -94,6 +95,34 @@ The person it was sent to takes it when they sign in
 (`accept_invitation(token)`, `accept_invitations()`); `revoke_invitation()`
 withdraws it. A participant that already has an account refuses a second
 one (`participant_has_account`).
+
+### An account is opened by an invitation
+
+Supabase Auth creates an account for whoever signs up, and an installation
+that signs its people in by a code sent by email or text message keeps
+sign-ups open for the code to leave; any signed-in person may then create
+an organisation. The core carries the hook that closes the door:
+`before_user_created(event)`, the *Before User Created* hook of Supabase
+Auth, lets an account be created for the email address an open invitation
+was sent to — a member, a share of a project, the account of a participant
+— and refuses every other sign-up as `invitation_required` (HTTP 403). While
+nobody is a member of any organisation, the installation's first person is
+let in, to create the first one. A sign-up by phone number alone or an
+anonymous sign-in carries no address an invitation could name, and is
+refused once the installation has members.
+
+The hook does nothing until the installation enables it: on a hosted
+project, *Authentication → Hooks → Before User Created*, type *Postgres*,
+schema `nexgen`, function `before_user_created`; on a local one, in
+`supabase/config.toml`:
+
+```toml
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/nexgen/before_user_created"
+```
+
+Only `supabase_auth_admin`, the role Supabase Auth calls it as, may run it.
 
 ## API keys
 

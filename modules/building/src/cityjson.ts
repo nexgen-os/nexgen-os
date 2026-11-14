@@ -70,7 +70,7 @@ export async function importCityJson(db: Db, target: CityJsonTarget, model: City
     const building = await db.query<{ id: string }>(
       `select building.add_building($1, $2,
                 (select case when g.u is null then null else
-                          ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($4, 0)), $5), 4326) end
+                          ST_Transform(ST_SetSRID(ST_Force3D(ST_CollectionExtract(ST_MakeValid(g.u), 3), coalesce($4::numeric, 0)), $5), 4326) end
                    from (select ST_Union(ST_Force2D(ST_GeomFromText(w))) u from unnest($3::text[]) w) g),
                 $4, $6, $7, $8, $9, p_global_id => $10) id`,
       [
