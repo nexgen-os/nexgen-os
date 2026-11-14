@@ -1,0 +1,12 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "forecast",
+  "name": "Forecast",
+  "description": "Forecasts of a series of the core: a method as data, each issue written as a forecast series with the time it was issued, and its accuracy against what was then measured.",
+  "version": "0.5.0",
+  "schema": "forecast",
+  "requires": {
+    "core": "0.3.0"
+  },
+  "licence": "AGPL-3.0-only"
+}
