@@ -8,6 +8,23 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `system_loss`, the aggregate loss of a PV system, a parameter of the `solar` module resolved by `parameter_of()` from the system up to the organisation and the country, with PVGIS PVcalc's 14 % at the generic level ([0055](docs/decisions/0055-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md)); an estimate records it in `inputs.system_loss` and in its loss chain.
+- A `pvgis_like` yield estimate without years reads every year PVGIS covers and gives their mean annual.
+- `nexgen-os solar estimate`: a PV system at a point and its yield by month, in one command, as a person — the mean of every year PVGIS covers unless `--year` names one, the system loss given by `--loss` set on the participant; `describePvSystem()` in the core and the MCP tool `solar_describe_system` describe a system and its arrays as the `solar` module reads them.
+
+- `importGeoJsonParticipants()` of `@nexgen-os/core`: the participants of a GeoJSON FeatureCollection — the export's, or any file whose features carry its properties — join a project at their place, with their category, address, time zone and identifiers. The file is attached to the project with its checksum and imported once (`already_imported`), whole or not at all; a feature without a name or a country refuses it by its index (`name_required`, `country_required`).
+- After `init`, an organisation and the people in it are commands, run as a person under row level security: `nexgen-os organisation create` (the person becomes its owner), `member add`, `member list`, `member role` and `member remove`, through `create_organisation()`, `add_member()`, `set_member_role()` and `remove_member()`, and as `createOrganisation()`, `listMembers()`, `addMember()`, `setMemberRole()` and `removeMember()` of `@nexgen-os/core`. `init` names them in what to do next, and the installer's README follows an installation with them.
+### Changed
+
+- The `pvgis_like` and `pvwatts` yield profiles no longer carry 14 %: their `system` loss is the place's `system_loss`. Where nobody sets it, the generic level gives the same 14 %, so an estimate moves only where an organisation, a project, a participant or a system says its own. `nexgen-os migrate` applies `modules/solar/supabase/migrations/0005_system_loss.sql` where `solar` is installed.
+- **Breaking:** `@nexgen-os/panond` computes no figure ([0035](docs/decisions/0035-a-format-library-touches-no-database.md)): `readPan()` gives the file's one-diode model without the light current and the saturation current PVsyst does not store (`PvsystFileParameters`), and the point the file states them by, `reference` (`isc`, `voc`, `t_ref`); `diodeCurrents()` leaves the library. The `solar` module solves them: `pvsystModel()` of `modules/solar/src/products.ts`, which `importProduct()` calls, gives the same `I_L_ref` and `I_o_ref` as 0.4.0, and `pan_inconsistent` is now its refusal. A caller that read `readPan(…).parameters.I_L_ref` reads `pvsystModel(readPan(…)).I_L_ref`.
+
+### Fixed
+
+- `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
+
 ## [0.4.2] — 2026-11-02
 
 The `billing` module finds Ekwo OS in the schema it lives in.
@@ -38,6 +55,7 @@ The first version published to npm: `npx nexgen-os init` installs it, and the li
 - The command is also `nexgen`: once installed (`npm install -g nexgen-os`), `nexgen init`, `nexgen doctor` and every other command of `nexgen-os` answer under the shorter name.
 - `battery.size()` says in `warnings` when its period is under a year (`period_under_a_year`, with the number of days): the savings of the period are scaled to a year, so the season it covers weighs on the savings, the payback, the net present value and the rates. On one site, a 5 kWh battery saved 318 a year sized on a whole year, 374 on June alone and 94 on December alone.
 - `battery_opex`, the yearly operating cost of one MWh of usable storage capacity, an attribute type of the `battery` module: `battery.size()` takes it off the savings of a year for the payback and the net present value, gives `opex_per_year` on each point of its curve, and records it in its inputs, null when nobody says it and none is counted.
+- `--project-ref <ref> --db-region <region>`, with the database password in `NEXGEN_DB_PASSWORD` (or `--db-password`): every command that reaches a database finds the session pooler of a Supabase project itself, trying both generations of its host (`aws-0-`, `aws-1-`) and keeping the one that holds the project — the flags Ekwo OS takes for the same thing. A missing or malformed piece is refused by name (`invalid_project_ref`, `db_region_required`, `invalid_region`, `db_password_required`), and `pooler_not_found` names the hosts tried, never the password.
 - `nexgen-os try`: the core and the `solar` module in a Postgres in memory, the house of example 01 and its yield for a year, by month, with its provenance — no database, no account.
 - `nexgen-os init` reads, before applying anything, the schema each module it installs would create, and refuses one the database already holds by name: `schema_taken`, naming the schema, the module and the objects already in it. `nexgen-os doctor` names the same schemas for the modules not installed yet.
 - A module manifest may list the codes the module carried in an earlier release, `formerly` ([0054](docs/decisions/0054-a-module-that-cannot-install-changes-its-code.md)); `migrate` and `doctor` refuse an installation that holds one as `module_renamed`, naming the new code.
