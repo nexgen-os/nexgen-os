@@ -32,10 +32,13 @@
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-license.mjs"
   },
   "dependencies": {
+    "@nexgen-os/dsmr": "^0.4.0",
     "@nexgen-os/enedis-r6x": "^0.4.0",
     "@nexgen-os/energy-bill": "^0.4.0",
+    "@nexgen-os/evcc": "^0.4.0",
     "@nexgen-os/geojson": "^0.4.0",
     "@nexgen-os/homeassistant": "^0.4.0",
+    "@nexgen-os/project-sheet": "^0.4.0",
     "@nexgen-os/weather-files": "^0.4.0"
   },
   "peerDependencies": {

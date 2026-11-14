@@ -22,6 +22,7 @@ let org: string;
 let shared: string;
 let other: string;
 let member: string;
+let study: string;
 
 // Each gesture runs in a transaction rolled back, so that one person's
 // success leaves nothing for the next; true when it went through.
@@ -52,6 +53,7 @@ const GESTURES: Record<string, () => [string, unknown[]]> = {
   'adds a member': () => [`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'viewer') returning user_id`, [org, PEOPLE.stranger]],
   'renames the organisation': () => [`update organisations set name = 'Renamed' where id = $1 returning id`, [org]],
   'issues a key': () => [`select * from create_api_key($1, 'A key')`, [org]],
+  'publishes a document': () => [`select publish($1, 'CC-BY-4.0') id`, [study]],
 };
 
 // What each role could do before capabilities, and the participant's account.
@@ -78,6 +80,7 @@ beforeAll(async () => {
   await db.query(`insert into project_shares (project_id, user_id, role) values ($1, $2, 'editor'), ($1, $3, 'viewer')`,
     [shared, PEOPLE.shareEditor, PEOPLE.shareViewer]);
   await db.query('update participants set user_id = $2 where id = $1', [member, PEOPLE.participant]);
+  study = await insert(db, 'documents', { object_kind: 'project', object_id: shared, name: 'Study', kind: 'report', uri: 's3://study.pdf', checksum: `sha256:${'0'.repeat(64)}` });
 });
 
 afterAll(async () => {
@@ -101,6 +104,6 @@ describe('the presets', () => {
   it('are rows of role_capabilities, and every capability is held by the owner', async () => {
     const rows = await db.query<{ role: string; n: number }>('select role, count(*)::int n from role_capabilities group by role order by role');
     const total = (await one<{ n: number }>(db, 'select count(*)::int n from capabilities')).n;
-    expect(Object.fromEntries(rows.rows.map((r) => [r.role, r.n]))).toEqual({ editor: total - 2, owner: total, participant: 5, viewer: 1 });
+    expect(Object.fromEntries(rows.rows.map((r) => [r.role, r.n]))).toEqual({ editor: total - 3, owner: total, participant: 5, viewer: 1 });
   });
 });

@@ -76,6 +76,10 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'authenticator') then
     create role authenticator noinherit login;
   end if;
+  -- The role Supabase Auth runs its hooks as (`before_user_created`).
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin nologin noinherit;
+  end if;
 end
 $$;
 

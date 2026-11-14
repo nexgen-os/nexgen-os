@@ -26,6 +26,8 @@ A connector comes in one of two kinds:
 |---|---|---|
 | `WeatherProvider` | forecast (with its issue time) and history of weather quantities at a point | `series` of kind `forecast` on the participant or its weather point, every issue kept; history as `measured` or `simulated` values |
 | `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter |
+| `DeviceReadingsProvider` | series of a device from its maker's platform, an aggregator or its local interface, by its identifier in the platform's scheme | `series` of kind `measured` on the device |
+| `CommandCarrier` | the answer of a device to a command of the `actions` module: the instant it acknowledged it, or why not | the command done and its value in the setpoint or command series of the device, or failed with why (`actions.report()`) |
 | `PlacesProvider` | places around a point, with their external identifier, address and attributes | `participants` / `building.buildings`, `identifiers`, `attributes` with `source_code` |
 | `Geocoder` (in [`@nexgen-os/core`](../core/src/address.ts)) | an address ⇄ a point | the participant's address and point, with precision and source |
 
@@ -37,6 +39,23 @@ hub from its pack row (`meterDataHub()`), and stores what comes back on the
 meter. A provider whose source reads under mandate calls `requireMandate()`
 first and refuses without one.
 
+A device — a charger, a heat pump, an inverter, a battery — is reached
+through two interfaces and nothing else
+([decision 0061](../../docs/decisions/0061-a-device-connector-reads-series-and-carries-commands.md)).
+Each names the identifier scheme its platform knows devices by, and the
+device carries its value in `identifiers`.
+`collectDeviceReadings(db, provider, request)` checks the organisation's
+connector against the provider's source and stores what comes back as the
+measured series of the device. `carryCommands(db, carrier, { connectorId,
+until })` hands the carrier the validated commands that name the connector
+and are due, the earliest first, and reports each answer through
+`actions.report()`: acknowledged, the command is done and its value lands
+in its series; refused, unanswered or not sent, it failed and says why
+(`identifier_missing` for a device the platform cannot be told), and a
+person proposes it again. A module that keeps more of a command than its
+value passes its own `report`. A carrier sends what a person validated; it
+never decides, and never writes a series itself.
+
 `storeSeries(db, target, series, { issuedAt })` writes what a weather or
 meter connector returned through `store()`, the one write path of the core:
 the series is found or created once on the object (another value kind or
@@ -47,7 +66,7 @@ issue time.
 One package per service, `@nexgen-os/<service>`, MIT, with its own `package.json`
 and `README`; the interfaces, the standard shape of a place and `storeSeries()` come
 from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same calls for any TypeScript client:
-`store()`, `seriesEnsure()`, and the reads `resample()`, `window()`,
+`store()`, `seriesEnsure()`, and the reads `resample()`, `aggregate()`, `window()`,
 `latest()`, `fill()`, `coverage()`, `forecastAt()`, `exportRows()`,
 `convertUnit()` — each one call of the SQL function of the same name.
 
@@ -58,12 +77,14 @@ from `@nexgen-os/core`. [`series.ts`](../core/src/series.ts) types the same call
 | [`open-meteo`](open-meteo/README.md) | `open_meteo` — hourly forecast of temperature and irradiance, and history from the ERA5 archive (irradiance on a plane, horizontal components `ghi`, `dni`, `dhi`, temperature, wind speed), worldwide | data CC BY 4.0; the free API is for non-commercial use, a paid plan otherwise |
 | [`pvgis`](pvgis/README.md) | `pvgis` — hourly energy, in-plane irradiance and temperature of a PV system over whole years (seriescalc), and its multi-year yield (PVcalc); azimuth from true north turned into PVGIS's aspect from south, hours dated at their start in UTC | free, no key, no restriction on use |
 | [`switchgrid`](switchgrid/README.md) | `switchgrid` (shipped with the package) — an intermediary: the customer's consent on its page, then the operator's raw R63 files read by `enedis-r6x` into the meter's offtake, injection and reactive power, under mandate | Switchgrid's terms; not redistributable, kept as long as the consent holds |
+| [`fluvius`](fluvius/README.md) | `fluvius_service_provider_api` (be pack) — the Flemish operator's API for service providers: the consent link signed on the operator's page, the mandates, and the quarter-hour offtake and injection energy of a meter, under mandate | the operator's data access contract; not redistributable, kept as long as the mandate holds |
 | [`enedis-sge`](enedis-sge/README.md) | `enedis_sge` (fr pack) — the operator's web services for a third party under contract: point search, technical data, detailed measures (the end of a step with its offset), collection orders, under mandate; a skeleton until homologation | the operator's third-party contract; not redistributable, kept as long as the authorisation holds |
 | [`nominatim`](nominatim/README.md) | `nominatim` — an address ⇄ a point on OpenStreetMap, worldwide, ISO 3166-2 regions | ODbL; the public instance wants a named user agent and one request per second |
 | [`photon`](photon/README.md) | `photon` — search as you type on OpenStreetMap, worldwide | ODbL; no country filter on the server, applied on the answers |
 | [`mapbox`](mapbox/README.md) | `mapbox` (shipped with the package) — a commercial geocoder, worldwide: search as you type, a full address, a point to its full address; the commercial service of the chain | Mapbox's terms: permanent geocoding (asked by default) may be stored, never redistributed; temporary geocoding may not be stored |
 | [`ban`](ban/README.md) | `ban` — Base Adresse Nationale, France, house-number precision | Licence Ouverte 2.0; no key |
 | [`geopunt`](geopunt/README.md) | `geopunt` — the Flemish address register | open; no key |
+| [`grb`](grb/README.md) | `grb` and `dhmv` (shipped with the package) — the buildings of a place in Flanders: GRB footprints by persistent object id, their ground, eave and ridge from the surface and terrain models of DHM Vlaanderen II at 1 m, as a CityJSON model the `building` module imports | Modellicentie Gratis Hergebruik; open, no key |
 | [`urbis`](urbis/README.md) | `urbis` — the Brussels address register | open; no key |
 | [`icar`](icar/README.md) | `icar` — the Walloon address register | open; no key |
 
