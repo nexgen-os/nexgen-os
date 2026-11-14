@@ -6,13 +6,14 @@
  * that write what a format library reads into the model, and the gestures the
  * command line and the MCP server share, each acting as a person (`session.ts`).
  */
-export type { Db } from './db.js';
+export { atomically, type Db } from './db.js';
 export { orientation, polygonWkt, closed, type Point as Vertex } from './geometry.js';
 export * from './address.js';
 export * from './series.js';
 export * from './time.js';
 export * from './connectors/interfaces.js';
 export * from './connectors/meter-data.js';
+export * from './connectors/devices.js';
 export * from './connectors/runner.js';
 export * from './connectors/pvlib.js';
 export * from './connectors/settlement.js';

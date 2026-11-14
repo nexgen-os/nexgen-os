@@ -102,6 +102,21 @@
       ]
     },
     {
+      "code": "fluvius_service_provider_api",
+      "name": "Fluvius — the API for service providers (dienstverleners)",
+      "description": "The Flemish distribution operator's API for a service provider under its data access contract: the consent link the customer signs on the operator's page, the mandates, and the quarter-hour energy of a meter, offtake and injection. Read by @nexgen-os/fluvius with a client certificate and a subscription key, under the customer's mandate. What it gives is kept only as long as that mandate holds, and never passed on.",
+      "kind": "api",
+      "url": "https://apihub.fluvius.be/",
+      "docs_url": "https://partner.fluvius.be/sites/fluvius/files/2024-03/ontsluiten-van-verbruiksdata-via-api-v2-met-addendum-maart2024.pdf",
+      "auth": "mandate",
+      "license": "Fluvius data access contract terms",
+      "attribution": "© Fluvius",
+      "redistributable": false,
+      "regions": [
+        "BE-VLG"
+      ]
+    },
+    {
       "code": "elia_open_data",
       "name": "Elia open data",
       "description": "The transmission operator's open datasets: load, generation, cross-border exchanges, balancing and CO2 intensity of the country.",
@@ -127,6 +142,15 @@
       "description": "The Flemish distribution operator's page on the quarter-hour readings of its digital electricity meter.",
       "kind": "text",
       "url": "https://www.fluvius.be/nl/factuur-en-tarieven/kwartierwaarden",
+      "license": "Terms not stated",
+      "redistributable": false
+    },
+    {
+      "code": "be_fluvius_service_provider_api",
+      "name": "Fluvius — Ontsluiten van verbruiksdata via API (v2, with the addendum of March 2024)",
+      "description": "The Flemish distribution operator's guide for service providers: the consent link, the mandates and their statuses, the quarter-hour energy of a meter and the state of each value.",
+      "kind": "text",
+      "url": "https://partner.fluvius.be/sites/fluvius/files/2024-03/ontsluiten-van-verbruiksdata-via-api-v2-met-addendum-maart2024.pdf",
       "license": "Terms not stated",
       "redistributable": false
     },

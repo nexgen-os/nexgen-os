@@ -74,6 +74,30 @@ export const WRITE_TOOLS: Tool[] = [
     run: ({ db }, a) => core.installDevice(db, a),
   }),
   tool({
+    name: 'import_project',
+    title: 'Import a project described as data',
+    description: 'A project described as data — its participants with their place and time zone, the meters they carry, the devices behind them, and the identifiers each is known by elsewhere — written through create_project(), join_project(), declare_meter(), install_device() and add_identifier() (importProject()). Each object is looked for first, by an identifier it carries, then by its name in its parent (a meter by its scheme and identifier): the same description given again creates nothing. Run it with dry_run first and show the person what it would create. The country is the person\'s, never assumed.',
+    input: z.object({
+      organisation_id: uuid,
+      description: z.record(z.string(), z.unknown()).describe('{ name, country, kind?, start_date?, identifiers?: [{ scheme, value }], participants?: [{ name, category?, time_zone?, place?, identifiers?, meters?: [{ identifier, scheme, direction?, resource?, valid_from?, name?, identifiers? }], devices?: [{ device_type, name, rated_power_kw?, unit_count?, installed_on?, source_code?, identifiers? }] }] }'),
+      dry_run: z.boolean().default(false).describe('Look for everything, write nothing'),
+    }),
+    writes: true,
+    run: ({ db }, a) => core.importProject(db, a.organisation_id, a.description as unknown as core.ProjectDescription, { dryRun: a.dry_run }),
+  }),
+  tool({
+    name: 'import_project_sheet',
+    title: 'Import a project sheet',
+    description: 'A project sheet — the CSV a spreadsheet saves from the template of @nexgen-os/project-sheet: one row per meter or device of a participant, columns project, country, participant, its place, meter_scheme, meter_identifier, device_type, device_name… — read, then each project of it imported as import_project does (importProjectSheet()). A sheet with a cell that cannot be read is refused whole, sheet_unreadable, naming each problem with its line: show them to the person, never correct a cell yourself. Run it with dry_run first. The country is the sheet\'s, never assumed.',
+    input: z.object({
+      organisation_id: uuid,
+      sheet: z.string().describe('The text of the sheet, its header first; comma, semicolon or tab separated'),
+      dry_run: z.boolean().default(false).describe('Look for everything, write nothing'),
+    }),
+    writes: true,
+    run: ({ db }, a) => core.importProjectSheet(db, a.organisation_id, a.sheet, { dryRun: a.dry_run }),
+  }),
+  tool({
     name: 'store_series',
     title: 'Store series values',
     description: 'Values of a series through store(), the one write path: the series of the object, quantity, kind and source, found or created once; each value dated at the START of its interval, in `unit` (converted to the unit of the quantity). A value already there is replaced. Never a value you computed yourself.',

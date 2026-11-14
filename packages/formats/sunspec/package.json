@@ -1,0 +1,36 @@
+{
+  "name": "@nexgen-os/sunspec",
+  "version": "0.4.2",
+  "description": "SunSpec Modbus: the map of a device, its information models read from registers into plain shapes with their scale factors, and a value written back as registers. The models the SunSpec Alliance publishes are included. No Modbus connection, no database, no dependency.",
+  "license": "MIT AND Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/formats/sunspec"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "LICENSE-models",
+    "NOTICE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  }
+}
