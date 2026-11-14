@@ -1,26 +1,13 @@
 // PAN and OND files read into plain products with no database: a module's
-// PVsyst one-diode model in pvlib's keys, solved so that it gives back the
-// file's Isc, Voc and nominal power; an inverter's keys and efficiency
-// curves as the file has them; prices left out.
+// PVsyst one-diode model in pvlib's keys and the reference point the file
+// gives it at, the two currents PVsyst does not store left to the importer;
+// an inverter's keys and efficiency curves as the file has them; prices
+// left out.
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { parsePanOnd, profilePoints, readOnd, readPan, type PanOndObject, type PvsystModuleParameters } from '@nexgen-os/panond';
+import { parsePanOnd, profilePoints, readOnd, readPan, type PanOndObject } from '@nexgen-os/panond';
 
 const fixture = (name: string) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
-
-/** The current of the one-diode model at a voltage, at the reference conditions. */
-function current(p: PvsystModuleParameters, v: number): number {
-  const nNsVth = p.gamma_ref * p.cells_in_series * (1.380649e-23 * 298.15) / 1.602176634e-19;
-  let lo = -1;
-  let hi = p.I_L_ref + 1;
-  for (let k = 0; k < 100; k++) {
-    const i = (lo + hi) / 2;
-    const f = p.I_L_ref - p.I_o_ref * Math.expm1((v + i * p.R_s) / nNsVth) - (v + i * p.R_s) / p.R_sh_ref - i;
-    if (f > 0) lo = i;
-    else hi = i;
-  }
-  return lo;
-}
 
 describe('the PVsyst text format', () => {
   it('reads blocks, numbers, lists of numbers and text, through a byte order mark and Windows line ends', async () => {
@@ -50,15 +37,10 @@ describe('a PAN file', () => {
     expect([pan.kind, pan.manufacturer, pan.model, pan.unit_power_kw, pan.unit_surface_m2, pan.physics_model]).toEqual(['module', 'Example Solar', 'ES-M108-430', 0.43, 1.953, 'pvsyst']);
   });
 
-  it("gives the PVsyst one-diode model in pvlib's keys, with the currents solved from Isc and Voc", async () => {
-    const { parameters: p } = readPan(await fixture('example-module.PAN'));
-    expect(p).toMatchObject({ gamma_ref: 1, mu_gamma: -0.0002, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 });
-    expect(current(p, 0)).toBeCloseTo(13.9, 6);
-    expect(current(p, 38.9)).toBeCloseTo(0, 5);
-    let pmax = 0;
-    for (let v = 0; v <= 38.9; v += 0.01) pmax = Math.max(pmax, v * current(p, v));
-    expect(pmax).toBeGreaterThan(430 * 0.995);
-    expect(pmax).toBeLessThan(430 * 1.005);
+  it("gives the PVsyst one-diode model in pvlib's keys and its reference point, and solves no current", async () => {
+    const { parameters: p, reference } = readPan(await fixture('example-module.PAN'));
+    expect(p).toEqual({ gamma_ref: 1, mu_gamma: -0.0002, R_sh_ref: 400, R_sh_0: 1600, R_sh_exp: 5.5, R_s: 0.153, alpha_sc: 0.00695, cells_in_series: 54, EgRef: 1.121 });
+    expect(reference).toEqual({ isc: 13.9, voc: 38.9, t_ref: 25 });
   });
 
   it('keeps the whole file in the metadata, the incidence profile included, and leaves the price out', async () => {

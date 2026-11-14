@@ -26,7 +26,8 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
     participant = nexgen.participants()[0]["id"]
     nexgen.attach("participant", participant, "annual_consumption", 41000, source="2025 invoices",
                   valid_from=datetime(2025, 1, 1, tzinfo=timezone.utc),
-                  valid_to=datetime(2026, 1, 1, tzinfo=timezone.utc))
+                  valid_to=datetime(2026, 1, 1, tzinfo=timezone.utc), quality="measured")
+    print(nexgen.parameter_of("participant", participant, "annual_consumption"))  # value, level, source, quality
     print(nexgen.attributes_of(participant, datetime(2025, 6, 1, tzinfo=timezone.utc)))
 
     try:
@@ -45,16 +46,18 @@ with Nexgen.connect() as nexgen:                 # NEXGEN_DB_URL, or Nexgen.conn
 | Call | Reads or writes |
 |---|---|
 | `schema_version()` | `nexgen_schema_version()` |
-| `organisations()`, `participants(organisation_id=None)` | the organisations and the participants, with their place, the connection may read |
+| `organisations()`, `projects(organisation_id=None)`, `participants(organisation_id=None)` | the organisations, the projects with their kind and country, and the participants with their place, the connection may read |
 | `attributes_of(object_id, at=None)` | every attribute holding at a moment |
+| `parameter_of(kind, object_id, attribute_type, at=None)` | one parameter through the one cascade of defaults (the object, its parents, its organisation, its place's municipality, region and country): its `value`, the `level` and `object_id` it was found at, its `source_code`, `reference` and `quality`; `parameter_missing` when nothing holds it |
 | `resample(series_id, start, end, step, time_zone=None, issued_before=None)` | a series on a regular step over `[start, end)`, the amount of each bucket (a register's consumption), as `Bucket(start, value, samples, expected, quality)`; `step` is an interval (`"15 minutes"`, `"1 day"`) or a `timedelta` |
+| `aggregate(series_ids, start, end, step, time_zone=None)` | several series of one quantity that adds up, summed on a regular step, each read as `resample` reads it, as `AggregateBucket(start, value, series, samples, expected, quality)`: `series` is how many held a value in the bucket |
 | `window(series_id, start, end, limit=100000)`, `latest(series_ids)` | the stored values in time order (a register's index); the last value of each series |
 | `fill(series_id, start, end, step, method="linear")`, `coverage(series_id, start, end)` | every bucket with its gaps filled on read and flagged estimated; the gaps of a regular series |
 | `forecast_at(series_id, start, end, as_of=None, horizon=None)`, `export_rows(series_ids, start, end)` | a forecast as it was known; the rows of a Parquet file |
 | `store(series, values, *, unit=None, issued_at=None)` | the one write path: a series id or its identity, `(at, value[, quality])` tuples in `unit`; returns `Stored(series_id, changed)` |
 | `convert_unit(value, from_unit, to_unit)` | a conversion of the core's `units` vocabulary |
 | `participant_of(kind, object_id)`, `country_of(kind, object_id)` | the participant an object belongs to, the country of its place |
-| `attach(kind, object_id, attribute_type, value, *, source=None, source_code=None, valid_from=None, valid_to=None)` | one attribute, with its period and where it comes from; returns its id |
+| `attach(kind, object_id, attribute_type, value, *, source=None, source_code=None, valid_from=None, valid_to=None, quality=None)` | one attribute, with its period, where it comes from and what kind of value it is (`published`, `measured`, `estimated` by default, `assumed`); returns its id |
 
 Values are in the unit of the attribute type's quantity (`quantities`), series
 values are dated at the start of their interval, instants are
@@ -69,7 +72,8 @@ The client has no rights of its own: it sees and changes what the role of
 its connection may, under row level security. Every refusal of the
 database comes back as a `NexgenError` whose `code` is its name
 (`invalid_value`, `overlapping_value`, `attribute_type_not_applicable`,
-`series_not_found`, `time_zone_required`…), with the database's `message`
+`series_not_found`, `time_zone_required`, `parameter_missing`,
+`quality_unknown`…), with the database's `message`
 and its `sqlstate`. Three refusals are the client's own: `db_url_required`
 (no connection string), `source_required` (an attribute without a
 source is never attached) and `extra_required` (a dataframe asked without
