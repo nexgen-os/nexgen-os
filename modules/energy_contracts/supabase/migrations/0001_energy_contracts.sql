@@ -1,4 +1,4 @@
--- Nexgen OS — module `contracts`: the contracts of a participant and their prices.
+-- Nexgen OS — module `energy_contracts`: the contracts of a participant and their prices.
 --
 -- A participant is the node (decision 0043): the energy taken from and
 -- injected into the grid at its meters is bought and sold under contracts —
@@ -18,14 +18,14 @@
 
 set search_path = nexgen, extensions;
 
-create schema contracts;
-grant usage on schema contracts to authenticated, service_role;
+create schema energy_contracts;
+grant usage on schema energy_contracts to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- kinds — what a contract is.
 -- ---------------------------------------------------------------------------
 
-create table contracts.kinds (
+create table energy_contracts.kinds (
   code         text primary key,
   name         text not null,
   -- The flows of the participant's meter a contract of this kind may price,
@@ -41,10 +41,10 @@ create table contracts.kinds (
   constraint kinds_flows check (cardinality(flows) > 0 and flows <@ array['offtake', 'injection'])
 );
 
-comment on table contracts.kinds is
+comment on table energy_contracts.kinds is
   'What a contract is: the flows of the participant''s meter it may price (offtake, injection) and whether the energy is delivered under it (physical). Read by everyone signed in.';
 
-insert into contracts.kinds (code, name, flows, physical, description) values
+insert into energy_contracts.kinds (code, name, flows, physical, description) values
   ('supply', 'Supply contract', '{offtake}', true,
    'The energy a participant takes from the grid, bought from a supplier.'),
   ('injection', 'Injection contract', '{injection}', true,
@@ -58,46 +58,46 @@ insert into contracts.kinds (code, name, flows, physical, description) values
   ('market', 'Market price', '{offtake,injection}', true,
    'Energy bought or sold at a market price, the fallback of a cascade.');
 
-alter table contracts.kinds enable row level security;
-create policy contracts_kinds_read on contracts.kinds for select to authenticated using (true);
-grant select on contracts.kinds to authenticated;
-grant select, insert, update, delete on contracts.kinds to service_role;
+alter table energy_contracts.kinds enable row level security;
+create policy contracts_kinds_read on energy_contracts.kinds for select to authenticated using (true);
+grant select on energy_contracts.kinds to authenticated;
+grant select, insert, update, delete on energy_contracts.kinds to service_role;
 
 -- ---------------------------------------------------------------------------
 -- volume_modes — how the energy of a contract is counted.
 -- ---------------------------------------------------------------------------
 
-create table contracts.volume_modes (
+create table energy_contracts.volume_modes (
   code         text primary key,
   name         text not null,
   description  text,
   constraint volume_modes_code_format check (code ~ '^[a-z][a-z0-9_]*$')
 );
 
-comment on table contracts.volume_modes is
+comment on table energy_contracts.volume_modes is
   'How the energy of a contract is counted on each interval, the volume_basis of a settlement request. Read by everyone signed in.';
 
-insert into contracts.volume_modes (code, name, description) values
+insert into energy_contracts.volume_modes (code, name, description) values
   ('pay_as_consumed', 'Pay as consumed', 'The energy of the flow the participant took or gave on the interval, or what the contracts before it in the cascade left of it.'),
   ('pay_as_produced', 'Pay as produced', 'All the energy produced under the contract on the interval, consumed or not.'),
   ('allocated_power', 'Allocated power', 'At most the power allocated to the contract over the interval.');
 
-alter table contracts.volume_modes enable row level security;
-create policy contracts_volume_modes_read on contracts.volume_modes for select to authenticated using (true);
-grant select on contracts.volume_modes to authenticated;
-grant select, insert, update, delete on contracts.volume_modes to service_role;
+alter table energy_contracts.volume_modes enable row level security;
+create policy contracts_volume_modes_read on energy_contracts.volume_modes for select to authenticated using (true);
+grant select on energy_contracts.volume_modes to authenticated;
+grant select, insert, update, delete on energy_contracts.volume_modes to service_role;
 
 -- ---------------------------------------------------------------------------
 -- contracts — a contract of a participant.
 -- ---------------------------------------------------------------------------
 
-create table contracts.contracts (
+create table energy_contracts.contracts (
   id                          uuid primary key default gen_random_uuid(),
   -- Copied from the participant by trigger.
   organisation_id             uuid not null references organisations(id) on delete cascade,
   -- The participant whose energy the contract prices.
   participant_id              uuid not null references participants(id) on delete cascade,
-  kind                        text not null references contracts.kinds(code),
+  kind                        text not null references energy_contracts.kinds(code),
   -- The flow of the participant's meter it prices, from its point of view.
   flow                        text not null,
   -- The other party: a participant of the same project (the producer of a
@@ -108,7 +108,7 @@ create table contracts.contracts (
   -- The meter of the participant the energy is counted at; null for all its
   -- meters.
   meter_id                    uuid references meters(id) on delete cascade,
-  volume_mode                 text not null default 'pay_as_consumed' references contracts.volume_modes(code),
+  volume_mode                 text not null default 'pay_as_consumed' references energy_contracts.volume_modes(code),
   -- The power allocated to the contract, for `allocated_power`.
   allocated_power_kw          numeric,
   -- The order of the cascade: on an interval, the contracts of a flow take
@@ -134,26 +134,26 @@ create table contracts.contracts (
   constraint contracts_one_counterparty check (counterparty_participant_id is null or counterparty_contact_id is null)
 );
 
-comment on table contracts.contracts is
-  'A contract of a participant: its kind, the flow of its meter it prices (offtake or injection), the other party (a participant of the same project or a contact), the meter, how its volume is counted, its priority in the cascade of the flow, its period, the currency of its prices, its reference and its document. Its prices are contracts.price_signals.';
+comment on table energy_contracts.contracts is
+  'A contract of a participant: its kind, the flow of its meter it prices (offtake or injection), the other party (a participant of the same project or a contact), the meter, how its volume is counted, its priority in the cascade of the flow, its period, the currency of its prices, its reference and its document. Its prices are energy_contracts.price_signals.';
 
-create index contracts_participant_idx on contracts.contracts (participant_id, flow, valid_from);
+create index contracts_participant_idx on energy_contracts.contracts (participant_id, flow, valid_from);
 
-create or replace function contracts.contracts_check()
+create or replace function energy_contracts.contracts_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, extensions, pg_temp
 as $$
 declare
   p  participants%rowtype;
-  k  contracts.kinds%rowtype;
+  k  energy_contracts.kinds%rowtype;
 begin
   select * into p from participants where id = new.participant_id;
   if p.id is null then
     raise exception 'participant_not_found: %', new.participant_id using errcode = 'foreign_key_violation';
   end if;
   new.organisation_id := p.organisation_id;
-  select * into k from contracts.kinds where code = new.kind;
+  select * into k from energy_contracts.kinds where code = new.kind;
   if k.code is not null and not (new.flow = any (k.flows)) then
     raise exception 'flow_not_of_kind: a % contract prices %, not %', k.code, array_to_string(k.flows, ' or '), new.flow
       using errcode = 'check_violation';
@@ -193,7 +193,7 @@ begin
       using errcode = 'not_null_violation';
   end if;
   if tg_op = 'UPDATE' and new.currency is distinct from old.currency
-     and exists (select 1 from contracts.price_signals s where s.contract_id = new.id) then
+     and exists (select 1 from energy_contracts.price_signals s where s.contract_id = new.id) then
     raise exception 'currency_edited: the prices of contract % count in %', old.id, old.currency using errcode = 'check_violation';
   end if;
   new.updated_at := now();
@@ -201,22 +201,22 @@ begin
 end;
 $$;
 
-comment on function contracts.contracts_check() is
-  'BEFORE INSERT / UPDATE on contracts.contracts: copies the organisation of the participant (participant_not_found); the flow is one its kind prices (flow_not_of_kind); the meter is the participant''s (meter_of_other_participant); a counterparty participant is another participant of its project (counterparty_is_participant, counterparty_of_other_project), a counterparty contact and the document are of its organisation (contact_of_other_organisation, document_of_other_organisation); an allocated power is named for allocated_power only (allocated_power_required, allocated_power_not_counted); the currency is that of the participant''s country when none is named (currency_required) and never changes once a price counts in it (currency_edited).';
+comment on function energy_contracts.contracts_check() is
+  'BEFORE INSERT / UPDATE on energy_contracts.contracts: copies the organisation of the participant (participant_not_found); the flow is one its kind prices (flow_not_of_kind); the meter is the participant''s (meter_of_other_participant); a counterparty participant is another participant of its project (counterparty_is_participant, counterparty_of_other_project), a counterparty contact and the document are of its organisation (contact_of_other_organisation, document_of_other_organisation); an allocated power is named for allocated_power only (allocated_power_required, allocated_power_not_counted); the currency is that of the participant''s country when none is named (currency_required) and never changes once a price counts in it (currency_edited).';
 
-create trigger contracts_check before insert or update on contracts.contracts
-  for each row execute function contracts.contracts_check();
-call secure_table('contracts.contracts', 'project_of(''participant'', participant_id)', 'participant_id');
+create trigger contracts_check before insert or update on energy_contracts.contracts
+  for each row execute function energy_contracts.contracts_check();
+call secure_table('energy_contracts.contracts', 'project_of(''participant'', participant_id)', 'participant_id');
 
 -- ---------------------------------------------------------------------------
 -- price_signals — the prices a contract sets, over periods.
 -- ---------------------------------------------------------------------------
 
-create table contracts.price_signals (
+create table energy_contracts.price_signals (
   id               uuid primary key default gen_random_uuid(),
   -- Copied from the contract by trigger.
   organisation_id  uuid not null references organisations(id) on delete cascade,
-  contract_id      uuid not null references contracts.contracts(id) on delete cascade,
+  contract_id      uuid not null references energy_contracts.contracts(id) on delete cascade,
   -- The price it is: a priced quantity of the core (`energy_price` per MWh,
   -- `power_price` per kW and per year, `fixed_price` per month), in the
   -- currency of the contract.
@@ -246,21 +246,21 @@ create table contracts.price_signals (
   constraint price_signals_duration check (duration is null or duration > interval '0')
 );
 
-comment on table contracts.price_signals is
+comment on table energy_contracts.price_signals is
   'A price a contract sets over an ISO 8601 period (valid_from and duration): a component (energy_price, power_price, fixed_price) in the currency of the contract, fixed (value) or indexed on a price series of the core (factor × index + value, within floor and cap). Two signals of one component of a contract never overlap.';
 
-create index price_signals_contract_idx on contracts.price_signals (contract_id, component, valid_from);
+create index price_signals_contract_idx on energy_contracts.price_signals (contract_id, component, valid_from);
 
-create or replace function contracts.price_signals_check()
+create or replace function energy_contracts.price_signals_check()
 returns trigger
 language plpgsql
 set search_path = nexgen, extensions, pg_temp
 as $$
 declare
-  c  contracts.contracts%rowtype;
+  c  energy_contracts.contracts%rowtype;
   s  series%rowtype;
 begin
-  select * into c from contracts.contracts where id = new.contract_id;
+  select * into c from energy_contracts.contracts where id = new.contract_id;
   if c.id is null then
     raise exception 'contract_not_found: %', new.contract_id using errcode = 'foreign_key_violation';
   end if;
@@ -287,7 +287,7 @@ begin
     new.factor := coalesce(new.factor, 1);
     new.value := coalesce(new.value, 0);
   end if;
-  if exists (select 1 from contracts.price_signals x
+  if exists (select 1 from energy_contracts.price_signals x
               where x.contract_id = new.contract_id and x.component = new.component and x.id <> new.id
                 and tstzrange(x.valid_from, x.valid_from + x.duration) && tstzrange(new.valid_from, new.valid_from + new.duration)) then
     raise exception 'overlapping_value: contract % already has a % over that period', new.contract_id, new.component
@@ -297,36 +297,36 @@ begin
 end;
 $$;
 
-comment on function contracts.price_signals_check() is
-  'BEFORE INSERT / UPDATE on contracts.price_signals: copies the organisation of the contract (contract_not_found); the component is a price (component_not_priced); an index series is of the contract''s organisation, of the same quantity and of its currency (series_of_other_organisation, index_of_other_quantity, currency_mismatch); an indexed price defaults to 1 × index + 0; two signals of one component of a contract never overlap (overlapping_value).';
+comment on function energy_contracts.price_signals_check() is
+  'BEFORE INSERT / UPDATE on energy_contracts.price_signals: copies the organisation of the contract (contract_not_found); the component is a price (component_not_priced); an index series is of the contract''s organisation, of the same quantity and of its currency (series_of_other_organisation, index_of_other_quantity, currency_mismatch); an indexed price defaults to 1 × index + 0; two signals of one component of a contract never overlap (overlapping_value).';
 
-create trigger price_signals_check before insert or update on contracts.price_signals
-  for each row execute function contracts.price_signals_check();
-call secure_table('contracts.price_signals',
-  'project_of(''participant'', (select c.participant_id from contracts.contracts c where c.id = contract_id))',
-  '(select c.participant_id from contracts.contracts c where c.id = contract_id)');
+create trigger price_signals_check before insert or update on energy_contracts.price_signals
+  for each row execute function energy_contracts.price_signals_check();
+call secure_table('energy_contracts.price_signals',
+  'project_of(''participant'', (select c.participant_id from energy_contracts.contracts c where c.id = contract_id))',
+  '(select c.participant_id from energy_contracts.contracts c where c.id = contract_id)');
 
 -- ---------------------------------------------------------------------------
 -- Reading: the contracts in force, the price at an instant.
 -- ---------------------------------------------------------------------------
 
-create or replace function contracts.in_force(p_participant_id uuid, p_flow text, p_on date default current_date)
-returns setof contracts.contracts
+create or replace function energy_contracts.in_force(p_participant_id uuid, p_flow text, p_on date default current_date)
+returns setof energy_contracts.contracts
 language sql
 stable
 security invoker
 set search_path = nexgen, extensions, pg_temp
 as $$
-  select c.* from contracts.contracts c
+  select c.* from energy_contracts.contracts c
    where c.participant_id = p_participant_id and c.flow = p_flow
      and c.valid_from <= p_on and (c.valid_to is null or c.valid_to > p_on)
    order by c.priority, c.valid_from, c.created_at;
 $$;
 
-comment on function contracts.in_force(uuid, text, date) is
+comment on function energy_contracts.in_force(uuid, text, date) is
   'The contracts of a participant that price a flow (offtake, injection) on a day, in the order of the cascade: by ascending priority.';
 
-create or replace function contracts.price_at(p_contract_id uuid, p_component text, p_at timestamptz)
+create or replace function energy_contracts.price_at(p_contract_id uuid, p_component text, p_at timestamptz)
 returns jsonb
 language plpgsql
 stable
@@ -334,17 +334,17 @@ security invoker
 set search_path = nexgen, extensions, pg_temp
 as $$
 declare
-  c      contracts.contracts%rowtype;
-  s      contracts.price_signals%rowtype;
+  c      energy_contracts.contracts%rowtype;
+  s      energy_contracts.price_signals%rowtype;
   idx    series%rowtype;
   v_idx  double precision;
   v      numeric;
 begin
-  select * into c from contracts.contracts where id = p_contract_id;
+  select * into c from energy_contracts.contracts where id = p_contract_id;
   if c.id is null then
     raise exception 'contract_not_found: %', p_contract_id using errcode = 'no_data_found';
   end if;
-  select * into s from contracts.price_signals x
+  select * into s from energy_contracts.price_signals x
    where x.contract_id = c.id and x.component = p_component
      and x.valid_from <= p_at and (x.duration is null or x.valid_from + x.duration > p_at);
   if s.id is null then
@@ -371,12 +371,12 @@ begin
 end;
 $$;
 
-comment on function contracts.price_at(uuid, text, timestamptz) is
+comment on function energy_contracts.price_at(uuid, text, timestamptz) is
   'The price a contract sets for a component at an instant: the fixed value, or factor × the index series'' value at that instant + value within floor and cap, with its unit and currency, the signal and the index read. Null when no signal holds then; contract_not_found, series_not_found, index_value_missing by name.';
 
-grant execute on function contracts.in_force(uuid, text, date) to authenticated, service_role;
-grant execute on function contracts.price_at(uuid, text, timestamptz) to authenticated, service_role;
+grant execute on function energy_contracts.in_force(uuid, text, date) to authenticated, service_role;
+grant execute on function energy_contracts.price_at(uuid, text, timestamptz) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('contracts', 'Contracts', '0.4.0', 'contracts', '0.4.0',
+values ('energy_contracts', 'Energy contracts', '0.4.0', 'energy_contracts', '0.4.0',
         'The contracts of a participant — supply, injection, physical or virtual PPA, internal tariff of a community, market — with the other party, the flow they price, their cascade and their prices as signals, fixed or indexed on a price series.');

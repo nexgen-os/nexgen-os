@@ -198,7 +198,7 @@ that any program accepting it answers in.
   over a period (`from`, `to`, `step`), each with its parties, its type,
   its volume basis, its priority, its price signals
   (`SettlementPriceSignal`, read from the `price_signals` of the
-  [`contracts`](../../modules/contracts/README.md) module) and the series its volume is read from (a
+  [`energy_contracts`](../../modules/energy_contracts/README.md) module) and the series its volume is read from (a
   point of the request and one of its quantities, kWh per step); the
   values of the indices a price follows (`indices`) and the rules of the
   country or the project passed as they are (`rules`). Out, the settlement
