@@ -38,7 +38,9 @@ that a lender, a reviewer or a client can check it.
 - **A yield with its provenance**: PVGIS (no key), PVWatts built in, or
   pvlib through its connector; P50 and the exceedance levels asked for,
   IEC 61724-1 indicators, an ordered loss chain, a far horizon and the
-  soiling of the place ([`modules/solar`](modules/solar/README.md)).
+  soiling of the place ([`modules/solar`](modules/solar/README.md)); a
+  point, a power, an azimuth and a tilt are enough to start, in one
+  command ([`solar estimate`](packages/cli/README.md#gestures-as-a-person)).
 - **Products from their files**: PAN and OND read into module and
   inverter products, with pvlib's parameter names
   ([`packages/formats/panond`](packages/formats/panond/README.md)).
@@ -205,6 +207,7 @@ export NEXGEN_DB_URL='postgresql://…'   # the project's connection string
 npx nexgen-os init --dry-run            # what would be applied
 npx nexgen-os init                      # the core and every module; --packs <cc> for a country
 npx nexgen-os doctor                    # what is wrong, by name
+npx nexgen-os organisation create --name "My organisation"   # as a person (NEXGEN_ACT_AS_USER_ID), its owner
 ```
 
 Program connectors are optional: a yield computed by pvlib needs Python and
