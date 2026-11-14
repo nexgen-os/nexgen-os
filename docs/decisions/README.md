@@ -70,8 +70,9 @@ describes; its record is written once the fix has shipped.
 ## Packs
 
 - [0020](0020-a-pack-holds-what-a-function-reads.md) · A pack holds what a function reads, and data cannot execute · accepted
-- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted, amended by 0053
+- [0021](0021-one-cascade-of-defaults.md) · One cascade of defaults, climbing a region to its parent, and no global fallback · accepted, amended by 0053 and 0055
 - [0053](0053-a-technology-figure-holds-everywhere-below-every-place.md) · A technology figure holds everywhere, below every place · accepted
+- [0055](0055-a-parameter-is-resolved-once-from-the-country-down-to-the-device.md) · A parameter is resolved once, from the country down to the device; what an owner may choose is a parameter, never a method constant · accepted
 - [0044](0044-a-condition-has-one-shape.md) · A condition has one shape, checked and matched by one function · accepted
 - [0034](0034-a-pack-upgrade-is-never-silent.md) · A pack upgrade is never silent, and a golden case is its contract · accepted, implemented
 
@@ -86,6 +87,7 @@ describes; its record is written once the fix has shipped.
 
 - [0037](0037-the-schema-grants-its-own-rights.md) · The schema grants its own rights, and the surface is closed · accepted
 - [0038](0038-everything-raises-by-name.md) · Everything raises, by name · accepted
+- [0059](0059-access-is-evaluated-once-per-query.md) · Access is evaluated once per query, as a set the reader may reach · proposed
 
 ## Agents and the public
 
@@ -110,3 +112,4 @@ describes; its record is written once the fix has shipped.
 - [0045](0045-to-size-is-one-gesture.md) · To size is one gesture, `size()`, with a named criterion · accepted
 - [0047](0047-a-charging-profile-is-a-command.md) · A charging profile is a command of the `actions` module on the charger, its effect a setpoint series · accepted
 - [0049](0049-the-market-follows-the-place-a-scheme-is-the-countrys-its-contract-the-devices.md) · The market follows the place; a support scheme is the country's, its contract the device's · accepted
+- [0058](0058-a-flexible-device-is-a-device-an-activation-is-a-command.md) · A flexible device is a device, an activation is a command of the `actions` module, its settlement a figure of the module · proposed
