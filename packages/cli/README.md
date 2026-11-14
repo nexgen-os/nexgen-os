@@ -28,6 +28,15 @@ shorter name `nexgen`: `nexgen init`, `nexgen doctor`, `nexgen migrate`.
    export NEXGEN_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
    ```
 
+   Or give the project's ref and region, with the database password in the
+   environment, and the installer finds the session pooler itself (the same
+   flags as Ekwo OS):
+
+   ```sh
+   export NEXGEN_DB_PASSWORD='<password>'
+   npx nexgen-os init --dry-run --project-ref <ref> --db-region <region>
+   ```
+
 3. See what would be applied, without applying it:
 
    ```sh
@@ -63,7 +72,19 @@ anonymous role: everything is read signed in, under row level security.
 | `pack check <cc>\|--all [--root dir] [--json]` | The same in memory: exits 1 with one named line per problem when a pack fails its checks, its golden cases do not hold their shape (`golden_missing`, `golden_source_missing`, `golden_tolerance_missing`…) or a committed seed is not its exact output. The CI runs `pack check --all`. What a pack holds and the checks: [`packs/README.md`](../../packs/README.md). |
 | `try [--year yyyy] [--json]` | No database, no account: installs the core and the `solar` module in a Postgres in memory (PGlite with PostGIS, optional dependencies loaded by this command only, `pglite_required` when they are missing; `dataset_missing` when the assets of an older build lack example 01), loads the house of example 01 with its PV system, computes its yield for one calendar year (default: the last full one but two) as an estimate of `solar` and prints it by month, with the estimate's provenance and the weather it read. The yield is the module's code: run it from a clone, `npx tsx modules/cli.ts try`; started without it, the command refuses with `computation_not_loaded`. |
 
-Every command but `try` and `pack` reads the connection string from `--db` or `NEXGEN_DB_URL`.
+Every command but `try` and `pack` reads the connection string from `--db`,
+then from `--project-ref` with `--db-region`, then from `NEXGEN_DB_URL`.
+With a project's ref, the connection string is the session pooler of a
+Supabase project, on port 5432; its host carries a generation
+(`aws-0-<region>`, `aws-1-<region>`) that nothing says before asking, so both
+are tried and the one that holds the project is kept. The password is read
+from `NEXGEN_DB_PASSWORD`, or `--db-password`, which a shell's history keeps.
+Each missing piece is refused by name: `invalid_project_ref`,
+`db_region_required`, `invalid_region`, `db_password_required`, and
+`pooler_not_found` when neither generation holds the project in that region;
+any other refusal of the pooler, a wrong password for one, is printed as it
+came. No address of the direct connection is built from a ref: it resolves to
+IPv6 only on recent projects; pass it with `--db`.
 A remote host is reached over TLS; pass `--ca <file>` (on Supabase, the
 certificate under *Database settings → SSL configuration*) to verify the
 server's certificate, or put `sslmode` in the connection string to decide
@@ -95,6 +116,7 @@ person, under row level security, in one transaction each:
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |
 | `size --module solar\|battery --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
 | `kpis --object-kind <k> --object <id> --from <iso> --to <iso>` · `kpis compute … --indicator <code>` | `kpis.of()`, `kpis.compute()` |
+| `solar estimate --project <id> --name <n> --country <cc> --lon <x> --lat <y> --kwp <p> --azimuth <deg> --tilt <deg> [--year yyyy] [--loss pct] [--time-zone tz]` | A PV system at a point and its yield, in one command: the participant joins the project at the point (`join_project()`), its system is described with one array (`describePvSystem()`: a device of type `solar`, `solar.devices`, `solar.pv_arrays`; azimuth in degrees clockwise from true north), the `solar` module estimates the yield — the mean of every year PVGIS covers, or the calendar year `--year` names — and it is read back by calendar month with its provenance. The system loss is the place's `system_loss`, resolved by `parameter_of()` (14 % at the generic level); `--loss`, a percentage, sets it on the participant, and the answer says the level it was read at. One transaction: a refusal keeps nothing. The yield is the module's code: from a clone, `npx tsx modules/cli.ts solar estimate …` |
 
 `--json` prints what the gesture answered; a refusal is printed by its name
 and exits 1. `size` runs the code of its module: from a clone of the
