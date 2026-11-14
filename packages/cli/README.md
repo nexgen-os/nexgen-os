@@ -28,6 +28,15 @@ shorter name `nexgen`: `nexgen init`, `nexgen doctor`, `nexgen migrate`.
    export NEXGEN_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
    ```
 
+   Or give the project's ref and region, with the database password in the
+   environment, and the installer finds the session pooler itself (the same
+   flags as Ekwo OS):
+
+   ```sh
+   export NEXGEN_DB_PASSWORD='<password>'
+   npx nexgen-os init --dry-run --project-ref <ref> --db-region <region>
+   ```
+
 3. See what would be applied, without applying it:
 
    ```sh
@@ -51,6 +60,24 @@ Then expose the schema `nexgen` (and one schema per module) to the API in
 *Project settings → Data API → Exposed schemas*. No schema is given to the
 anonymous role: everything is read signed in, under row level security.
 
+## Then, an organisation and the people in it
+
+An installation holds no organisation. The first one is created by a person
+of the project's Supabase Auth, who becomes its owner, and who then gives
+the others their roles and issues the keys of the machines and the agents —
+the gestures below, run as that person:
+
+```sh
+export NEXGEN_ACT_AS_USER_ID=<the owner's auth.users id>
+npx nexgen-os organisation create --name "<name>"
+npx nexgen-os member add --organisation <id> --user <a colleague's id> --role editor
+npx nexgen-os key create --organisation <id> --name "<an agent>" --write
+```
+
+A person is named by their id in *Authentication → Users*: they sign up
+first, then an owner gives them a role. Who may do what with each role:
+[`docs/access.md`](../../docs/access.md).
+
 ## Commands
 
 | Command | What it does |
@@ -63,7 +90,19 @@ anonymous role: everything is read signed in, under row level security.
 | `pack check <cc>\|--all [--root dir] [--json]` | The same in memory: exits 1 with one named line per problem when a pack fails its checks, its golden cases do not hold their shape (`golden_missing`, `golden_source_missing`, `golden_tolerance_missing`…) or a committed seed is not its exact output. The CI runs `pack check --all`. What a pack holds and the checks: [`packs/README.md`](../../packs/README.md). |
 | `try [--year yyyy] [--json]` | No database, no account: installs the core and the `solar` module in a Postgres in memory (PGlite with PostGIS, optional dependencies loaded by this command only, `pglite_required` when they are missing; `dataset_missing` when the assets of an older build lack example 01), loads the house of example 01 with its PV system, computes its yield for one calendar year (default: the last full one but two) as an estimate of `solar` and prints it by month, with the estimate's provenance and the weather it read. The yield is the module's code: run it from a clone, `npx tsx modules/cli.ts try`; started without it, the command refuses with `computation_not_loaded`. |
 
-Every command but `try` and `pack` reads the connection string from `--db` or `NEXGEN_DB_URL`.
+Every command but `try` and `pack` reads the connection string from `--db`,
+then from `--project-ref` with `--db-region`, then from `NEXGEN_DB_URL`.
+With a project's ref, the connection string is the session pooler of a
+Supabase project, on port 5432; its host carries a generation
+(`aws-0-<region>`, `aws-1-<region>`) that nothing says before asking, so both
+are tried and the one that holds the project is kept. The password is read
+from `NEXGEN_DB_PASSWORD`, or `--db-password`, which a shell's history keeps.
+Each missing piece is refused by name: `invalid_project_ref`,
+`db_region_required`, `invalid_region`, `db_password_required`, and
+`pooler_not_found` when neither generation holds the project in that region;
+any other refusal of the pooler, a wrong password for one, is printed as it
+came. No address of the direct connection is built from a ref: it resolves to
+IPv6 only on recent projects; pass it with `--db`.
 A remote host is reached over TLS; pass `--ca <file>` (on Supabase, the
 certificate under *Database settings → SSL configuration*) to verify the
 server's certificate, or put `sslmode` in the connection string to decide
@@ -86,15 +125,21 @@ person, under row level security, in one transaction each:
 
 | Command | What it does |
 |---|---|
+| `organisation create --name <n>` | `create_organisation()`: an organisation, the person its owner |
+| `member add --organisation <id> --user <id> [--role owner\|editor\|viewer]` | `add_member()`, as an owner; `viewer` when no role is given, `already_member` when the person has one |
+| `member list --organisation <id>` | The members and their roles: an id and a role, nothing more of an account |
+| `member role --organisation <id> --user <id> --role <r>` · `member remove --organisation <id> --user <id>` | `set_member_role()`, `remove_member()`, as an owner; `last_owner` when the organisation would have none left |
 | `key create --organisation <id> --name <n> [--write] [--expires <iso>]` | Issues a key, as a person who holds `members.manage` (an owner), with `data.read`, and `data.write` with `--write`; the secret is printed once |
 | `key list --organisation <id>` · `key revoke <id>` | The keys, never a secret; a withdrawal, at once |
 | `project create --organisation <id> --name <n> --country <cc> [--kind k]` | `create_project()` |
+| `project import --organisation <id> --file <description.json> [--dry-run]` | A project described as data — its participants with their place, their meters and devices, the identifiers each is known by — through the same functions (`importProject()`); written again, it finds what is there and creates only what is new; `--dry-run` writes nothing and says what it would create |
 | `participant add --project <id> --name <n> [--place <json>\|--address <text>] [--country cc] [--time-zone tz] [--category c]` | `join_project()`; an address through the geocoders of `NEXGEN_GEOCODERS` |
 | `meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]` | `declare_meter()` |
 | `device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]` | `install_device()` |
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |
 | `size --module solar\|battery --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
 | `kpis --object-kind <k> --object <id> --from <iso> --to <iso>` · `kpis compute … --indicator <code>` | `kpis.of()`, `kpis.compute()` |
+| `solar estimate --project <id> --name <n> --country <cc> --lon <x> --lat <y> --kwp <p> --azimuth <deg> --tilt <deg> [--year yyyy] [--loss pct] [--time-zone tz]` | A PV system at a point and its yield, in one command: the participant joins the project at the point (`join_project()`), its system is described with one array (`describePvSystem()`: a device of type `solar`, `solar.devices`, `solar.pv_arrays`; azimuth in degrees clockwise from true north), the `solar` module estimates the yield — the mean of every year PVGIS covers, or the calendar year `--year` names — and it is read back by calendar month with its provenance. The system loss is the place's `system_loss`, resolved by `parameter_of()` (14 % at the generic level); `--loss`, a percentage, sets it on the participant, and the answer says the level it was read at. One transaction: a refusal keeps nothing. The yield is the module's code: from a clone, `npx tsx modules/cli.ts solar estimate …` |
 
 `--json` prints what the gesture answered; a refusal is printed by its name
 and exits 1. `size` runs the code of its module: from a clone of the

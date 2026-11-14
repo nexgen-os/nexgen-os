@@ -171,6 +171,7 @@ client can ask before calling them.
 | `add_participant` | A participant joins a project with its place (`join_project()`), given as a point or found through the configured geocoder chain |
 | `declare_meter` | A meter by its identifier in a scheme, which checks it (`declare_meter()`) |
 | `install_device` | A device, from a product of the catalogue or with a stated power (`install_device()`) |
+| `import_project` | A project described as data — participants, meters, devices, identifiers — through the same functions (`importProject()`); given again, it creates only what is new; `dry_run` writes nothing |
 | `store_series` | Values through `store()`, each dated at the start of its interval, with their source |
 | `import_series` | The readings of a file read by its format library — `homeassistant` — written through `store()` |
 | `create_api_key` · `revoke_api_key` | A key issued by a person who holds `members.manage`, signed in, with capabilities they hold (`data.read`, `data.write`…), and its withdrawal; a key does not issue keys |
@@ -182,7 +183,7 @@ its code as a prefix; a module that is not installed offers none.
 | Module | Tools |
 |---|---|
 | `kpis` | `kpis_of` (the indicators of an object, `kpis.of()`), `kpis_compute` (one kept as a figure, `kpis.compute()`) |
-| `solar` | `solar_estimates`, `solar_size` (a named criterion, [0045](../../docs/decisions/0045-to-size-is-one-gesture.md)), `solar_estimate_yield` (a named profile) |
+| `solar` | `solar_estimates`, `solar_describe_system` (a PV system and its arrays, each with its azimuth and tilt), `solar_size` (a named criterion, [0045](../../docs/decisions/0045-to-size-is-one-gesture.md)), `solar_estimate_yield` (a named profile) |
 | `battery` | `battery_estimates`, `battery_size` |
 | `charging` | `charging_sessions`, `charging_limit`, `charging_size` |
 | `community` | `community_settlements`, `community_settle` (by the sharing engine the person configured) |

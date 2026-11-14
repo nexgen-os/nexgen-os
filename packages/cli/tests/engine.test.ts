@@ -71,7 +71,7 @@ describe('plan', () => {
     expect(versions.at(-1)).toBe('supabase/migrations/20261026000000_schema_version_0_4_0.sql');
     expect(names.slice(0, names.indexOf(versions.at(-1)!)).every((n) => n.startsWith('supabase/migrations/'))).toBe(true);
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
-    expect([...c.modules.keys()]).toEqual(['actions', 'battery', 'billing', 'building', 'charging', 'community', 'consumption', 'grid', 'kpis', 'solar', 'weather']);
+    expect([...c.modules.keys()]).toEqual(['actions', 'battery', 'billing', 'building', 'charging', 'community', 'consumption', 'forecast', 'grid', 'kpis', 'solar', 'weather']);
     // Every folder of packs/ with a pack.json, whichever countries the release holds.
     const folders = (await readdir(join(repoRoot, 'packs'))).filter((d) => existsSync(join(repoRoot, 'packs', d, 'pack.json'))).sort();
     expect(folders.length).toBeGreaterThan(0);
@@ -90,7 +90,7 @@ describe('install on a database', () => {
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 17 },
+      { scope: 'core', n: 21 },
       { scope: 'module:grid', n: 2 },
       { scope: 'pack:fr', n: 1 },
     ]);
@@ -104,7 +104,7 @@ describe('install on a database', () => {
     expect(order.slice(0, firstModule).every((s) => s === 'core')).toBe(true);
     expect(order.lastIndexOf('module:weather')).toBeLessThan(order.indexOf('pack:fr'));
     const later = await install(sqlClient(db), { root: repoRoot, modules: ['solar'], packs: [] });
-    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar']);
+    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar', 'module:solar']);
     const modules = await db.query<{ code: string }>('select code from nexgen.modules order by code');
     expect(modules.rows.map((r) => r.code)).toEqual(['grid', 'solar', 'weather']);
   });

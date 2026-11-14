@@ -61,8 +61,8 @@ describe('the server', () => {
     const { tools } = await writer.listTools();
     const names = tools.map((t) => t.name);
     for (const name of ['status', 'list_organisations', 'list_projects', 'list_participants', 'list_meters', 'list_devices', 'list_series',
-      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'store_series',
-      'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_estimate_yield', 'solar_estimates',
+      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'import_project', 'store_series',
+      'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_describe_system', 'solar_estimate_yield', 'solar_estimates',
       'actions_of_project', 'actions_propose', 'actions_validate']) {
       expect(names).toContain(name);
     }
@@ -132,6 +132,27 @@ describe('the server', () => {
     expect(actions).toMatchObject([{ name: 'Heat pump study', source: 'agent', status: 'validated' }]);
     expect((await call(writer, 'kpis_of', { object_kind: 'participant', object_id: school.id, from: '2026-01-01T00:00:00Z', to: '2026-02-01T00:00:00Z' })).error).toBe(false);
     expect((await call(writer, 'list_modules')).value).toContainEqual(expect.objectContaining({ code: 'solar', tools: expect.arrayContaining(['solar_size']) }));
+  });
+
+  it('imports a project described as data, after a dry run, and finds it the second time', async () => {
+    const description = {
+      name: 'Village hall', country: 'BE',
+      participants: [{
+        name: 'Hall', time_zone: 'Europe/Brussels',
+        place: { country: 'BE', city: 'Namur', geometry: { type: 'Point', coordinates: [4.87, 50.47, 0] }, location_precision: 'city', location_source_code: 'nominatim' },
+        meters: [{ identifier: '541448000000000099', scheme: 'gs1_gsrn' }],
+        devices: [{ device_type: 'solar', name: 'Hall roof', rated_power_kw: 12 }],
+      }],
+    };
+    const plan = await call(writer, 'import_project', { organisation_id: org, description, dry_run: true });
+    expect(plan.error, plan.text).toBe(false);
+    expect(plan.value.project_id).toBeNull();
+    expect(plan.value.counts.meter).toEqual({ found: 0, created: 1 });
+    const done = await call(writer, 'import_project', { organisation_id: org, description });
+    expect(done.error, done.text).toBe(false);
+    const again = await call(writer, 'import_project', { organisation_id: org, description });
+    expect(again.value.project_id).toBe(done.value.project_id);
+    expect(again.value.objects.every((o: { outcome: string }) => o.outcome === 'found')).toBe(true);
   });
 });
 
