@@ -9,3 +9,4 @@
 export * from './cityjson.js';
 export * from './homeassistant.js';
 export * from './ifc.js';
+export * from './models.js';

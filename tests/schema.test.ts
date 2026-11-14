@@ -19,7 +19,7 @@ afterAll(async () => {
 // nothing else (decision 0006). A new table of the core is a decision.
 const CORE_TABLES = [
   'api_keys', 'attribute_types', 'attributes', 'capabilities', 'connectors', 'contacts', 'countries', 'currencies', 'defaults', 'device_types',
-  'devices', 'documents', 'forecast_values', 'identifier_schemes', 'identifiers', 'invitations', 'meters', 'modules',
+  'devices', 'document_publications', 'documents', 'forecast_values', 'identifier_schemes', 'identifiers', 'invitations', 'meters', 'modules',
   'organisation_members', 'organisations', 'participants', 'products', 'project_kinds', 'project_shares', 'projects', 'quantities', 'regions', 'role_capabilities',
   'schema_migrations', 'segments', 'series', 'series_rollups', 'series_values', 'sizing_criteria', 'sources', 'units',
 ];

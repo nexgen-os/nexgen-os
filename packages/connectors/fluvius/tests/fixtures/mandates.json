@@ -1,0 +1,10 @@
+{
+  "data": {
+    "mandates": [
+      { "referenceNumber": "REF-0001", "status": "Approved", "ean": "541448000000000015", "dataServiceType": "VH_kwartier_uur", "dataPeriodFrom": "2025-01-01T00:00:00Z", "dataPeriodTo": "2029-01-01T00:00:00Z" },
+      { "referenceNumber": "REF-0002", "status": "Requested", "ean": "541448000000000022", "dataServiceType": "VH_kwartier_uur", "dataPeriodFrom": "2025-01-01T00:00:00Z", "dataPeriodTo": "2029-01-01T00:00:00Z" },
+      { "referenceNumber": "REF-0003", "status": "Finished", "dataServiceType": "VH_dag", "dataPeriodFrom": "2024-01-01T00:00:00Z", "dataPeriodTo": "2025-01-01T00:00:00Z" }
+    ]
+  },
+  "_meta": { "version": "3", "fetchTime": "2026-06-11T06:00:00Z" }
+}

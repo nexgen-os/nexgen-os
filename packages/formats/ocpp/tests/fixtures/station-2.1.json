@@ -1,0 +1,25 @@
+[
+  { "frame": [2, "b1", "BootNotification", { "reason": "PowerUp", "chargingStation": { "model": "AC11-BIDI", "vendorName": "ExampleVendor", "serialNumber": "SN-0210", "firmwareVersion": "3.0.1" } }] },
+  { "frame": [3, "b1", { "currentTime": "2026-06-04T06:00:00Z", "interval": 300, "status": "Accepted" }] },
+  { "frame": [2, "s1", "StatusNotification", { "timestamp": "2026-06-04T17:58:00Z", "connectorStatus": "Occupied", "evseId": 1, "connectorId": 1 }] },
+  { "frame": [3, "s1", {}] },
+  { "frame": [2, "r1", "RequestStartTransaction", { "evseId": 1, "remoteStartId": 501, "idToken": { "idToken": "CENTRAL-EXAMPLE-03", "type": "Central" }, "chargingProfile": { "id": 41, "stackLevel": 0, "chargingProfilePurpose": "TxProfile", "chargingProfileKind": "Relative", "chargingSchedule": [ { "id": 41, "chargingRateUnit": "A", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 16, "numberPhases": 1 } ] } ] } }] },
+  { "frame": [3, "r1", { "status": "Accepted" }] },
+  { "frame": [2, "e1", "TransactionEvent", { "eventType": "Started", "timestamp": "2026-06-04T18:00:00Z", "triggerReason": "RemoteStart", "seqNo": 0, "transactionInfo": { "transactionId": "tx-2026-06-04-r", "chargingState": "Charging", "remoteStartId": 501 }, "evse": { "id": 1, "connectorId": 1 }, "idToken": { "idToken": "CENTRAL-EXAMPLE-03", "type": "Central" }, "meterValue": [
+    { "timestamp": "2026-06-04T18:00:00Z", "sampledValue": [ { "value": 3120.5, "context": "Transaction.Begin", "measurand": "Energy.Active.Import.Register", "unitOfMeasure": { "unit": "kWh", "multiplier": 0 } } ] }
+  ] }] },
+  { "frame": [3, "e1", { "idTokenInfo": { "status": "Accepted" } }] },
+  { "frame": [2, "e2", "TransactionEvent", { "eventType": "Updated", "timestamp": "2026-06-04T18:30:00Z", "triggerReason": "MeterValuePeriodic", "seqNo": 1, "transactionInfo": { "transactionId": "tx-2026-06-04-r", "chargingState": "Charging" }, "meterValue": [
+    { "timestamp": "2026-06-04T18:30:00Z", "sampledValue": [ { "value": 3.68, "measurand": "Power.Active.Import", "unitOfMeasure": { "unit": "kW", "multiplier": 0 } } ] }
+  ] }] },
+  { "frame": [3, "e2", {}] },
+  { "frame": [2, "r2", "RequestStopTransaction", { "transactionId": "tx-2026-06-04-r" }] },
+  { "frame": [3, "r2", { "status": "Accepted" }] },
+  { "frame": [2, "e3", "TransactionEvent", { "eventType": "Ended", "timestamp": "2026-06-04T19:00:02Z", "triggerReason": "RemoteStop", "seqNo": 2, "transactionInfo": { "transactionId": "tx-2026-06-04-r", "chargingState": "Idle", "stoppedReason": "Remote" }, "evse": { "id": 1, "connectorId": 1 }, "meterValue": [
+    { "timestamp": "2026-06-04T19:00:00Z", "sampledValue": [ { "value": 3124.18, "context": "Transaction.End", "measurand": "Energy.Active.Import.Register", "unitOfMeasure": { "unit": "kWh", "multiplier": 0 } } ] }
+  ] }] },
+  { "frame": [3, "e3", {}] },
+  { "frame": [2, "r3", "RequestStartTransaction", { "remoteStartId": 502, "idToken": { "idToken": "CENTRAL-EXAMPLE-03", "type": "Central" } }] },
+  { "frame": [3, "r3", { "status": "Rejected", "statusInfo": { "reasonCode": "OccupiedEVSE" } }] },
+  { "frame": [2, "p1", "SetChargingProfile", { "evseId": 0, "chargingProfile": { "id": 42, "stackLevel": 1, "chargingProfilePurpose": "LocalGeneration", "chargingProfileKind": "Absolute", "chargingSchedule": [ { "id": 42, "chargingRateUnit": "W", "chargingSchedulePeriod": [ { "startPeriod": 0, "limit": 3000 } ] } ] } }] }
+]
