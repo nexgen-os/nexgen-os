@@ -25,7 +25,7 @@ The module keeps the model and an engine shares:
 - `settleSharing()` (`src/sharing.ts`) reads the participants taking part over
   a period, groups left out, the `offtake_energy` and `injection_energy`
   metered behind each one (its meters through `participant_meters()`)
-  resampled on one grid of steps, and hands them with the key, the
+  added up on one grid of steps by the core's `aggregate()`, and hands them with the key, the
   participants' attributes and the caller's `rules` to an engine of the
   `energy_sharing` kind ([packages/connectors/README.md](../../packages/connectors/README.md#programs-in-any-language));
 - a participant with no metered series of its own (a study, a scenario)

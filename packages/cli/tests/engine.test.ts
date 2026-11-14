@@ -90,7 +90,7 @@ describe('install on a database', () => {
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 17 },
+      { scope: 'core', n: 18 },
       { scope: 'module:grid', n: 2 },
       { scope: 'pack:fr', n: 1 },
     ]);
@@ -104,7 +104,7 @@ describe('install on a database', () => {
     expect(order.slice(0, firstModule).every((s) => s === 'core')).toBe(true);
     expect(order.lastIndexOf('module:weather')).toBeLessThan(order.indexOf('pack:fr'));
     const later = await install(sqlClient(db), { root: repoRoot, modules: ['solar'], packs: [] });
-    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar']);
+    expect(later.applied.map((s) => s.scope)).toEqual(['module:solar', 'module:solar', 'module:solar', 'module:solar', 'module:solar']);
     const modules = await db.query<{ code: string }>('select code from nexgen.modules order by code');
     expect(modules.rows.map((r) => r.code)).toEqual(['grid', 'solar', 'weather']);
   });
