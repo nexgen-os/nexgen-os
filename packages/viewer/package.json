@@ -1,0 +1,17 @@
+{
+  "name": "@nexgen-os/viewer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What a viewer of Nexgen OS draws: the scene of a participant's place — its ground, its buildings raised to their heights, its models placed by their rows — read from the description as the person who opens it, in one local frame of metres.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/viewer"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./src/index.ts"
+}

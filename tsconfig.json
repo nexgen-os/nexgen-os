@@ -125,6 +125,9 @@
       ],
       "@nexgen-os/easee": [
         "./packages/connectors/easee/src/index.ts"
+      ],
+      "@nexgen-os/viewer": [
+        "./packages/viewer/src/index.ts"
       ]
     }
   },
