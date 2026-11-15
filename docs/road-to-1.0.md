@@ -58,6 +58,14 @@ integration written against one release keeps working against every later
   `drawings` and `tilesets` (3D Tiles built by a calculation), beside the
   georeferenced `models` and `model_to_world()` the module holds since
   0.4.0.
+- **A viewer beside the core**
+  ([0061](decisions/0061-a-viewer-is-a-package-beside-the-core.md)): a
+  package that shows a participant's place in 3D as the person who opens
+  it — the terrain and the aerial photograph from the sources of the
+  place's pack, the parcels, the footprints raised to their heights, the
+  models placed by their rows, the photographs of the place seen from
+  their pose — and keeps its views in its own address, never in the
+  database; it reads the `tilesets` above once a calculation builds them.
 - **Modules** ([`modules/README.md`](../modules/README.md)):
   `heating`, `thermal`, `monitoring`, `sensors`,
   `wind`, each starting from the participant and its devices
