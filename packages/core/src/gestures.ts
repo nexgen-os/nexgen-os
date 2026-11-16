@@ -132,7 +132,8 @@ export async function parameterOf(db: Db, kind: string, id: string, attributeTyp
   return value;
 }
 
-async function requireModule(db: Db, code: string): Promise<void> {
+/** Refuses `module_not_installed` when the module of that code is not installed. */
+export async function requireModule(db: Db, code: string): Promise<void> {
   const [found] = await rows(db, 'select 1 from modules where code = $1', [code]);
   if (found === undefined) throw new GestureError(`module_not_installed: the ${code} module is not installed on this database`);
 }

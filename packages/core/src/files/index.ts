@@ -14,3 +14,4 @@ export * from './dsmr.js';
 export * from './project.js';
 export * from './project-sheet.js';
 export * from './evcc.js';
+export * from './pvsol.js';

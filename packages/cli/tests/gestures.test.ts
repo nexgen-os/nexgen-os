@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type { PGlite } from '@electric-sql/pglite';
 import { main } from '../src/index.js';
 import { USER_A, USER_B, freshDatabase, organisation, sqlClient } from '../../../tests/helpers/db.js';
+import { study } from '../../formats/pvsol/tests/study.js';
 
 let db: PGlite;
 let org: string;
@@ -107,6 +108,18 @@ describe('the gestures as commands', () => {
     const workbook = fileURLToPath(new URL('../../formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url));
     const plan = await json(['project', 'import', '--organisation', org, '--file', workbook, '--dry-run']);
     expect(plan.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
+  });
+
+  it('reads a PV*SOL study, in the country given, into the solar module', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nexgen-pvsol-'));
+    const file = join(dir, 'warehouse.pvprj');
+    await writeFile(file, study());
+    const refused = await run(['project', 'import', '--organisation', org, '--file', file, '--dry-run']);
+    expect(refused.code).not.toBe(0);
+    expect(refused.err).toMatch(/country/);
+    // This database has no solar module, which holds the arrays: the study is refused by name before anything is written.
+    const withoutSolar = await run(['project', 'import', '--organisation', org, '--file', file, '--country', 'ZZ', '--dry-run']);
+    expect(withoutSolar.err).toMatch(/^module_not_installed: the solar module/);
   });
 
   it('issues, lists and withdraws a key, and the key acts as its issuer', async () => {
