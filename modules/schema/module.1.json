@@ -51,7 +51,7 @@
     },
     "licence": {
       "type": "string",
-      "description": "The SPDX identifier of the module's licence: the modules are AGPL-3.0-only, like the core (decision 0005)."
+      "description": "The SPDX identifier of the module's licence: the modules are AGPL-3.0-only, like the core, and `solar` is MIT (decision 0005)."
     }
   },
   "$defs": {

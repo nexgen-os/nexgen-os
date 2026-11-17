@@ -1,4 +1,4 @@
-# 0005 — The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
+# 0005 — The core is AGPL, the libraries and the solar module MIT, and a sign-off is enough to contribute
 
 > Status: accepted
 
@@ -19,6 +19,11 @@ split.
 modules, the installer and the core package: whoever runs a modified copy
 as a service offers its source to the people who use it.
 
+**The solar module is MIT**, with its own licence file in its folder, so
+that one PV yield engine can be taken into any product, open or not. Its
+copyright holder made that choice for this module only; the core it calls
+stays AGPL-3.0, and so do the other modules.
+
 **The format libraries and the connectors are MIT**, each package with its
 own licence file, so that they can be taken into any product. A program
 connector wrapping a third party's tool keeps that tool's licence for the
@@ -32,7 +37,7 @@ check refuses a commit without it.
 
 **There is no contributor licence agreement**, and nothing in the sign-off
 lets anyone, the maintainers included, relicense the core: it is AGPL-3.0,
-and the libraries are MIT, for good.
+and the libraries and the solar module are MIT, for good.
 
 **Paid services sit beside the open core, not inside it.** Hosting,
 support, studies and commercial platforms built on the foundation are
@@ -43,6 +48,7 @@ services around it; no part of the open model is held back for them
 
 - A contributor licence agreement, or any clause that would let the core
   change licence.
+- A module other than `solar` under a licence other than AGPL-3.0.
 - A commit without its sign-off.
 - A feature of the open model reserved to a paid service.
 

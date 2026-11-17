@@ -327,3 +327,10 @@ new computation that names it (`replaces`) replaces it. Named errors: `device_no
   by [`packages/formats/weather-files`](../../packages/formats/weather-files/README.md),
   PAN and OND product files by
   [`packages/formats/panond`](../../packages/formats/panond/README.md).
+
+## Licence
+
+The solar module is MIT ([LICENSE](LICENSE)): its code, its manifest and its
+migrations can be taken into any product. It calls the core,
+`@nexgen-os/core`, which stays AGPL-3.0 like the other modules
+([decision 0005](../../docs/decisions/0005-agpl-core-mit-libraries-sign-off.md)).

@@ -381,9 +381,9 @@ How to install both, and what the bridge needs when they share a database:
 ## Licence
 
 The core, the modules, the packs and the installer are AGPL-3.0
-([LICENSE](LICENSE)). The format libraries, the connectors and the
-Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
-can live inside any product.
+([LICENSE](LICENSE)). The format libraries, the connectors, the
+Python client and the `solar` module are MIT, each folder with its own `LICENSE`, so that a reader, a connector
+or the PV yield engine can live inside any product.
 
 In practice: a product that reads and writes a Nexgen OS database through
 its tables, its functions or the MCP server keeps its own licence; a
