@@ -75,4 +75,5 @@ What it never does: look up a code, geocode an address, correct a cell.
 Into Nexgen OS, `importProjectSheet()` of `@nexgen-os/core` gives each
 project of the sheet to `importProject()`, which writes it through the
 gestures of the schema and finds what is already there
-(`nexgen-os project import --file <sheet.csv|sheet.xlsx>`).
+(`nexgen-os project import --file <sheet.csv|sheet.xlsx> [--worksheet <name>]`,
+or the MCP tool `import_project_sheet`, which takes a workbook in base64).
