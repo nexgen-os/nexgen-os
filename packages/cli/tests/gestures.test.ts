@@ -108,6 +108,11 @@ describe('the gestures as commands', () => {
     const workbook = fileURLToPath(new URL('../../formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url));
     const plan = await json(['project', 'import', '--organisation', org, '--file', workbook, '--dry-run']);
     expect(plan.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
+    const named = await json(['project', 'import', '--organisation', org, '--file', workbook, '--worksheet', 'community', '--dry-run']);
+    expect(named.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
+    const missing = await run(['project', 'import', '--organisation', org, '--file', workbook, '--worksheet', 'Budget', '--dry-run']);
+    expect(missing.code).toBe(1);
+    expect(missing.err).toMatch(/sheet_not_found: Budget/);
   });
 
   it('reads a PV*SOL study, in the country given, into the solar module', async () => {

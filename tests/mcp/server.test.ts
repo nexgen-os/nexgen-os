@@ -165,6 +165,19 @@ describe('the server', () => {
     expect(refused.error).toBe(true);
     expect(refused.text).toMatch(/sheet_unreadable: line 2 invalid_number device_rated_power_kw/);
   });
+
+  it('imports the .xlsx workbook of a project sheet handed in base64, its worksheet named', async () => {
+    const workbook = readFileSync(new URL('../../packages/formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url)).toString('base64');
+    const plan = await call(writer, 'import_project_sheet', { organisation_id: org, workbook, worksheet: 'community', dry_run: true });
+    expect(plan.error, plan.text).toBe(false);
+    expect(plan.value.projects[0].counts.meter).toEqual({ found: 0, created: 2 });
+    const missing = await call(writer, 'import_project_sheet', { organisation_id: org, workbook, worksheet: 'Budget', dry_run: true });
+    expect(missing.text).toMatch(/^sheet_not_found: Budget/);
+    const twice = await call(writer, 'import_project_sheet', { organisation_id: org, workbook, sheet: 'project,participant\n', dry_run: true });
+    expect(twice.text).toMatch(/^sheet_required:/);
+    const notBase64 = await call(writer, 'import_project_sheet', { organisation_id: org, workbook: 'not base64!', dry_run: true });
+    expect(notBase64.text).toMatch(/Input validation error.* at workbook/);
+  });
 });
 
 describe('keys and geocoders', () => {

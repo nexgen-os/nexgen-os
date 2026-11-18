@@ -16,6 +16,12 @@ import type { Db } from '../db.js';
 import { GestureError } from '../refusal.js';
 import { importProject, type IdentifierDescription, type ProjectDescription, type ProjectImport, type ProjectImportOptions } from './project.js';
 
+/** How a sheet is imported: as a project is, and, for a workbook, which of its worksheets. */
+export interface ProjectSheetImportOptions extends ProjectImportOptions {
+  /** The worksheet of an .xlsx workbook that holds the sheet, by its name; the first one otherwise. */
+  worksheet?: string;
+}
+
 export interface ProjectSheetImport {
   dry_run: boolean;
   /** What the reader left aside: the columns it does not know. */
@@ -80,16 +86,34 @@ function said(p: SheetProblem): string {
 /**
  * Writes the projects of a sheet — its text (CSV), the bytes of an .xlsx
  * workbook, or the sheet already read — into an organisation, or finds them there: see the head of this file.
- * Refuses `sheet_unreadable` with every problem the reader named, and
- * `sheet_empty` for a sheet that describes no project.
+ * Refuses `sheet_unreadable` with every problem the reader named,
+ * `sheet_empty` for a sheet that describes no project, `workbook_unreadable`
+ * for bytes that are not an .xlsx workbook, `sheet_not_found` for a
+ * worksheet the workbook does not have, and `worksheet_without_workbook`
+ * for a worksheet named beside a sheet that is no workbook.
  */
-export async function importProjectSheet(db: Db, organisationId: string, sheet: string | Uint8Array | ProjectSheet, options: ProjectImportOptions = {}): Promise<ProjectSheetImport> {
+export async function importProjectSheet(db: Db, organisationId: string, sheet: string | Uint8Array | ProjectSheet, options: ProjectSheetImportOptions = {}): Promise<ProjectSheetImport> {
+  const { worksheet, ...importOptions } = options;
+  if (worksheet !== undefined && !(sheet instanceof Uint8Array)) {
+    throw new GestureError(`worksheet_without_workbook: ${worksheet} names a worksheet, and only an .xlsx workbook has worksheets`);
+  }
   const read = typeof sheet === 'string' ? readProjectSheet(sheet)
-    : sheet instanceof Uint8Array ? readProjectWorkbook(sheet) : sheet;
+    : sheet instanceof Uint8Array ? workbook(sheet, worksheet) : sheet;
   const errors = read.problems.filter((p) => p.level === 'error');
   if (errors.length > 0) throw new GestureError(`sheet_unreadable: ${errors.map(said).join('; ')}`);
   if (read.projects.length === 0) throw new GestureError('sheet_empty: the sheet describes no project');
   const projects: ProjectImport[] = [];
-  for (const project of read.projects) projects.push(await importProject(db, organisationId, projectOfSheet(project), options));
-  return { dry_run: options.dryRun ?? false, warnings: read.problems.filter((p) => p.level === 'warning'), projects };
+  for (const project of read.projects) projects.push(await importProject(db, organisationId, projectOfSheet(project), importOptions));
+  return { dry_run: importOptions.dryRun ?? false, warnings: read.problems.filter((p) => p.level === 'warning'), projects };
+}
+
+/** A workbook read, what its reader refuses given back as a refusal of the gesture, by the reader's name. */
+function workbook(bytes: Uint8Array, worksheet: string | undefined): ProjectSheet {
+  try {
+    return readProjectWorkbook(bytes, worksheet === undefined ? {} : { sheet: worksheet });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (/^(workbook_unreadable|sheet_not_found):/.test(message)) throw new GestureError(message);
+    throw new GestureError(`workbook_unreadable: ${message}`);
+  }
 }

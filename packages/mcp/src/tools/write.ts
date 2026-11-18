@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { tool, type Tool } from './tool.js';
 
 const uuid = z.string().uuid();
+/** Base64 as a file travels in JSON: its alphabet, padding at the end, line breaks allowed. */
+const BASE64 = /^[A-Za-z0-9+/\r\n]*={0,2}\s*$/;
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('An ISO date, 2026-06-15');
 
 const target = {
@@ -88,14 +90,22 @@ export const WRITE_TOOLS: Tool[] = [
   tool({
     name: 'import_project_sheet',
     title: 'Import a project sheet',
-    description: 'A project sheet — the CSV a spreadsheet saves from the template of @nexgen-os/project-sheet: one row per meter or device of a participant, columns project, country, participant, its place, meter_scheme, meter_identifier, device_type, device_name… — read, then each project of it imported as import_project does (importProjectSheet()). A sheet with a cell that cannot be read is refused whole, sheet_unreadable, naming each problem with its line: show them to the person, never correct a cell yourself. Run it with dry_run first. The country is the sheet\'s, never assumed.',
+    description: 'A project sheet — the table of the template of @nexgen-os/project-sheet: one row per meter or device of a participant, columns project, country, participant, its place, meter_scheme, meter_identifier, device_type, device_name… — read, then each project of it imported as import_project does (importProjectSheet()). Give it as the person saved it: `sheet`, the text of a CSV, or `workbook`, the bytes of an .xlsx workbook in base64, with `worksheet` naming the worksheet when it is not the first. A sheet with a cell that cannot be read is refused whole, sheet_unreadable, naming each problem with its line: show them to the person, never correct a cell yourself. Run it with dry_run first. The country is the sheet\'s, never assumed.',
     input: z.object({
       organisation_id: uuid,
-      sheet: z.string().describe('The text of the sheet, its header first; comma, semicolon or tab separated'),
+      sheet: z.string().optional().describe('The text of a CSV sheet, its header first; comma, semicolon or tab separated'),
+      workbook: z.string().max(14_000_000).regex(BASE64).optional().describe('The bytes of an .xlsx workbook, in base64'),
+      worksheet: z.string().min(1).optional().describe('The worksheet of the workbook that holds the sheet, by its name; the first one otherwise'),
       dry_run: z.boolean().default(false).describe('Look for everything, write nothing'),
     }),
     writes: true,
-    run: ({ db }, a) => core.importProjectSheet(db, a.organisation_id, a.sheet, { dryRun: a.dry_run }),
+    run: ({ db }, a) => {
+      if ((a.sheet === undefined) === (a.workbook === undefined)) {
+        throw new core.GestureError('sheet_required: give the sheet once, as the text of a CSV (sheet) or as an .xlsx workbook in base64 (workbook)');
+      }
+      const sheet = a.workbook === undefined ? a.sheet! : new Uint8Array(Buffer.from(a.workbook, 'base64'));
+      return core.importProjectSheet(db, a.organisation_id, sheet, { dryRun: a.dry_run, ...(a.worksheet === undefined ? {} : { worksheet: a.worksheet }) });
+    },
   }),
   tool({
     name: 'store_series',

@@ -72,9 +72,8 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os key list --organisation <id>                                            the keys, never a secret
   nexgen-os key revoke <id>                                                         withdraw a key
   nexgen-os project create --organisation <id> --name <n> --country <cc> [--kind k]
-  nexgen-os project import --organisation <id> --file <description.json|sheet.csv|sheet.xlsx> [--dry-run]   a project, its participants, meters, devices; again without a duplicate
-  nexgen-os project import --organisation <id> --file <study.pvprj> --country <cc> [--time-zone tz] [--dry-run]   a PV*SOL study: its participant, inverters and PV system
-  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
+  nexgen-os project import --organisation <id> --file <description.json|sheet.csv|sheet.xlsx> [--worksheet <name>] [--dry-run]   a project, its participants, meters, devices; again without a duplicate
+  nexgen-os project import --organisation <id> --file <study.pvprj> --country <cc> [--time-zone tz] [--dry-run]   a PV*SOL study: its participant, inverters and PV system  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
   nexgen-os meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
   nexgen-os series import --format homeassistant --file <path> --entity <id> --organisation <id>
@@ -92,7 +91,7 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   organisation: 'value', name: 'value', country: 'value', kind: 'value', project: 'value', place: 'value', address: 'value',
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
-  format: 'value', file: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
+  format: 'value', file: 'value', worksheet: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
   write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value', loss: 'value', user: 'value', role: 'value',
 };
 
@@ -171,7 +170,8 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
       }
       if (/\.json$/i.test(file)) return importProject(db, need(f, 'organisation'), JSON.parse(await readFile(file, 'utf8')), options);
       const sheet = /\.xlsx$/i.test(file) ? new Uint8Array(await readFile(file)) : await readFile(file, 'utf8');
-      return importProjectSheet(db, need(f, 'organisation'), sheet, options);
+      const worksheet = optional(f, 'worksheet');
+      return importProjectSheet(db, need(f, 'organisation'), sheet, { ...options, ...(worksheet === undefined ? {} : { worksheet }) });
     }
     case 'participant add': {
       const place = optional(f, 'place');

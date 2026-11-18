@@ -96,6 +96,15 @@ describe('a project sheet imported', () => {
     await expect(asUser(db, USER_A, () => importProjectSheet(db, org, rounded))).rejects.toThrow(/^sheet_unreadable: line 2 number_rounded L2 "5.414488E\+017"; /);
   });
 
+  it('reads the worksheet named, and refuses by name a worksheet or a workbook it cannot find', async () => {
+    const workbook = new Uint8Array(await readFile(new URL('../packages/formats/project-sheet/tests/fixtures/community-libreoffice.xlsx', import.meta.url)));
+    const plan = await asUser(db, USER_A, () => importProjectSheet(db, org, workbook, { dryRun: true, worksheet: 'community' }));
+    expect(plan.projects[0]?.counts.participant).toEqual({ found: 0, created: 2 });
+    await expect(asUser(db, USER_A, () => importProjectSheet(db, org, workbook, { worksheet: 'Budget' }))).rejects.toThrow(/^sheet_not_found: Budget/);
+    await expect(asUser(db, USER_A, () => importProjectSheet(db, org, new TextEncoder().encode('project,participant\n')))).rejects.toThrow(/^workbook_unreadable: /);
+    await expect(asUser(db, USER_A, () => importProjectSheet(db, org, 'project,participant\n', { worksheet: 'community' }))).rejects.toThrow(/^worksheet_without_workbook: community/);
+  });
+
   it('passes on what the model refuses, by its name', async () => {
     const noCountry = 'project,participant\r\nNowhere,Someone\r\n';
     await expect(asUser(db, USER_A, () => importProjectSheet(db, org, noCountry))).rejects.toThrow(/^country_required: project/);
