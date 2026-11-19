@@ -131,6 +131,9 @@
       ],
       "@nexgen-os/viewer": [
         "./packages/viewer/src/index.ts"
+      ],
+      "@nexgen-os/mqtt": [
+        "./packages/connectors/mqtt/src/index.ts"
       ]
     }
   },
