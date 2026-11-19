@@ -51,6 +51,7 @@ release may break, and says how. How a release is cut:
 ### Fixed
 
 - `importEnergyBill()` and `importWeatherFile()` write a file whole or not at all: one transaction, or a savepoint when the caller already holds one, through `atomically()` of `@nexgen-os/core`. A bill refused after its document was attached left the document behind, and the same bill was then refused as `already_imported`; a weather file refused at one quantity kept the series stored before it.
+- Ekwo OS sharing the database writes a company's archive, and applies its updates, again once the `billing` module is linked to it: `billing.reference_ekwo()` now declares `billing.organisations`, `billing.contacts` and `billing.invoices` to Ekwo's `company_archive_registry` as excluded, with their reason (`billing.declare_to_ekwo_archive()`), and leaves a row already there as it is. Until now the foreign keys made them reach an Ekwo company unclassified, and Ekwo OS refused every archive as `unclassified_table`. `nexgen-os migrate` applies `modules/billing/supabase/migrations/0003_ekwo_archive.sql`, which declares them on an installation already linked; without Ekwo OS it does nothing.
 
 ## [0.4.2] — 2026-11-02
 

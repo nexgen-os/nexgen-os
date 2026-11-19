@@ -188,6 +188,16 @@ or by running `npx nexgen-os migrate` again, which calls it. Until then,
 shares the database, in the schema it names, and the module holds no
 foreign key to it.
 
+Once the keys are there, three tables of the module reach an Ekwo company,
+and Ekwo OS writes no archive of a company — and applies no update, which
+archives first — while such a table is not classified in its
+`company_archive_registry` (`unclassified_table`). `billing.reference_ekwo()`
+classifies them each time it runs (`billing.declare_to_ekwo_archive()`):
+`billing.organisations`, `billing.contacts` and `billing.invoices` are
+excluded, being Nexgen OS's data, while the Ekwo company, contact and
+document they point at travel with the books. A row already in the registry
+for one of them is left as it is.
+
 `nexgen-os doctor` names each row whose Ekwo id is not in Ekwo OS
 (`billing_key_unlinked`). When Ekwo OS runs elsewhere, the columns are plain
 references, and the module does not reach it:
