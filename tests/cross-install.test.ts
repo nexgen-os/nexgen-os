@@ -36,6 +36,28 @@ type Layout = 'ekwo' | 'public';
 const EKWO_MOVE = '20261028040000';
 
 /**
+ * The classification of the billing tables in Ekwo's company archive, as
+ * `billing.declare_to_ekwo_archive()` writes it: excluded, Nexgen OS's data.
+ * The same rows as an installation that wrote them by hand on 19/11/2026.
+ */
+const BILLING_ARCHIVE = [
+  { table_name: 'contacts', disposition: 'excluded', reason: 'Nexgen OS billing data: the customer of the energy invoices, linked to its Ekwo contact. It belongs to Nexgen OS, which shares this database, and stays with it.' },
+  { table_name: 'invoices', disposition: 'excluded', reason: 'Nexgen OS billing data: the energy invoice behind an Ekwo document. It belongs to Nexgen OS, which shares this database; the Ekwo document travels with the books.' },
+  { table_name: 'organisations', disposition: 'excluded', reason: 'Nexgen OS billing data: the supplier organisation of the energy invoices. It belongs to Nexgen OS, which shares this database, and stays with it; an Ekwo archive carries the books.' },
+];
+
+/** The rows of Ekwo's company archive registry for the billing tables. */
+async function billingArchive(db: PGlite, schema: string) {
+  return (await db.query(`select table_name, disposition, reason from ${schema}.company_archive_registry
+                           where table_schema = 'billing' order by table_name`)).rows;
+}
+
+/** What stops an Ekwo archive among the billing tables (Ekwo's `company_archive_unclassified()`). */
+async function billingUnclassified(db: PGlite, schema: string) {
+  return (await db.query(`select table_name, problem from ${schema}.company_archive_unclassified() where table_schema = 'billing'`)).rows;
+}
+
+/**
  * A Supabase project as both installers find it: the roles and `auth` of the
  * shim, PostGIS in `extensions` as Supabase places it, and the API roles
  * allowed to use that schema.
@@ -354,6 +376,31 @@ describe.each(CASES)('Nexgen OS and Ekwo OS on one database, Ekwo OS in %s, %s',
       ).rejects.toThrow(/foreign key/);
     });
 
+    it("declares its tables to Ekwo's company archive, so that Ekwo OS writes an archive and applies an update", async () => {
+      // reference_ekwo() ran above, or at the installation: the keys and the classification together.
+      expect(await billingArchive(db, E)).toEqual(BILLING_ARCHIVE);
+      expect(await billingUnclassified(db, E)).toEqual([]);
+      // Again: nothing added, nothing declared twice.
+      expect(await one(db, 'select billing.reference_ekwo() k, billing.declare_to_ekwo_archive() d')).toEqual({ k: [], d: [] });
+      expect(await billingArchive(db, E)).toEqual(BILLING_ARCHIVE);
+    });
+
+    it('declares the tables of an installation linked before, through its migration, and keeps a row written by hand', async () => {
+      // Linked before the module declared its tables: Ekwo OS sees them unclassified.
+      await db.exec(`delete from ${E}.company_archive_registry where table_schema = 'billing'`);
+      expect(await billingUnclassified(db, E)).toEqual(
+        ['contacts', 'invoices', 'organisations'].map((t) => ({ table_name: t, problem: 'belongs to a company and is neither exported nor excluded' })),
+      );
+      const byHand = 'Written by hand on this installation, and kept as it is.';
+      await db.query(`insert into ${E}.company_archive_registry (table_schema, table_name, disposition, reason) values ('billing', 'contacts', 'excluded', $1)`, [byHand]);
+      await db.exec(await readFile(join(repoRoot, 'modules', 'billing', 'supabase', 'migrations', '0003_ekwo_archive.sql'), 'utf8'));
+      await db.exec(`set search_path = nexgen, ${E}, extensions`);
+      expect(await billingUnclassified(db, E)).toEqual([]);
+      expect(await billingArchive(db, E)).toEqual([{ ...BILLING_ARCHIVE[0], reason: byHand }, ...BILLING_ARCHIVE.slice(1)]);
+      await db.query(`update ${E}.company_archive_registry set reason = $1 where (table_schema, table_name) = ('billing', 'contacts')`, [BILLING_ARCHIVE[0].reason]);
+      expect(await billingArchive(db, E)).toEqual(BILLING_ARCHIVE);
+    });
+
     describe('a participant billed in Ekwo', () => {
       let participantId: string;
       let documentId: string;
@@ -661,8 +708,11 @@ describe('Ekwo OS moves its core to ekwo with Nexgen OS beside it', () => {
       'invoices_ekwo_invoice_fk ekwo.documents true',
       'organisations_ekwo_company_fk ekwo.companies true',
     ]);
-    // The keys followed the tables: none is added again.
+    // The keys followed the tables: none is added again. The classification
+    // of the billing tables in Ekwo's archive moved with its registry.
     expect((await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k).toEqual([]);
+    expect(await billingArchive(db, 'ekwo')).toEqual(BILLING_ARCHIVE);
+    expect(await billingUnclassified(db, 'ekwo')).toEqual([]);
     expect((await db.query('select * from billing.unlinked_keys()')).rows).toEqual([]);
     expect((await doctor(sqlClient(db))).problems).toEqual([]);
     expect((await db.query('select ekwo_company_id from billing.organisations where organisation_id = $1', [organisationId])).rows)

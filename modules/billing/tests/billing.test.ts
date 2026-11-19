@@ -74,6 +74,16 @@ describe('billing without Ekwo OS', () => {
     expect((await one<{ k: string[] }>(db, 'select billing.reference_ekwo() k')).k).toEqual([]);
   });
 
+  it('declares nothing to an Ekwo company archive, and runs again without error', async () => {
+    expect((await one<{ d: string[] }>(db, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+    expect((await one<{ d: string[] }>(db, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+  });
+
+  it("declares nothing to an Ekwo company archive, and runs again without error", async () => {
+    expect((await one<{ d: string[] }>(db, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+    expect((await one<{ d: string[] }>(db, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+  });
+
   it('records a bill between two participants with any Ekwo id, and lists it', async () => {
     const id = await uuid();
     await asUser(db, USER_A, () => record([buyer, id, 'purchase', '2026-05-01', '2026-05-31', seller, settlement]));
@@ -176,7 +186,9 @@ describe('billing beside another application\'s tables in public', () => {
       // An application of its own holds contacts and documents in public, and no Ekwo OS.
       await platform.exec(`create table public.contacts (id uuid primary key, full_name text);
                            create table public.documents (id uuid primary key, path text);
-                           create table public.companies (id uuid primary key, label text);`);
+                           create table public.companies (id uuid primary key, label text);
+                           create table public.company_archive_registry (table_schema text, table_name text, disposition text, reason text,
+                                                                         primary key (table_schema, table_name));`);
       const report = await install(sqlClient(platform), { root: repoRoot, modules: ['billing'], packs: [] });
       expect(report.ekwoKeys).toEqual([]);
       const keys = await platform.query(
@@ -185,6 +197,12 @@ describe('billing beside another application\'s tables in public', () => {
       expect(keys.rows).toEqual([]);
       expect((await one<{ e: boolean; k: string[] }>(platform, 'select billing.ekwo_present() e, billing.reference_ekwo() k'))).toEqual({ e: false, k: [] });
       expect((await platform.query('select * from billing.unlinked_keys()')).rows).toEqual([]);
+      // Its own archive registry is not Ekwo's: nothing is declared in it.
+      expect((await one<{ d: string[] }>(platform, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+      expect((await platform.query('select * from public.company_archive_registry')).rows).toEqual([]);
+      // Its own archive registry is not Ekwo's: nothing is declared in it.
+      expect((await one<{ d: string[] }>(platform, 'select billing.declare_to_ekwo_archive() d')).d).toEqual([]);
+      expect((await platform.query('select * from public.company_archive_registry')).rows).toEqual([]);
       expect((await doctor(sqlClient(platform))).problems.filter((p) => ['billing_key_unlinked', 'billing_keys_missing'].includes(p.code))).toEqual([]);
     } finally {
       await platform.close();
