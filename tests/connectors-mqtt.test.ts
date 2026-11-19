@@ -7,10 +7,10 @@ import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { dongleIdentifier, listen, p1Stream, readP1Message, registerP1PortSource, topicMatches, type MqttClient } from '../src/index.js';
-import { freshDatabase, insert, one, organisation } from '../../../../tests/helpers/db.js';
+import { dongleIdentifier, listen, p1Stream, readP1Message, registerP1PortSource, topicMatches, type MqttClient } from '@nexgen-os/mqtt';
+import { freshDatabase, insert, one, organisation } from './helpers/db.js';
 
-const telegram = readFileSync(new URL('../../../formats/dsmr/tests/fixtures/emucs-three-phase.txt', import.meta.url), 'latin1');
+const telegram = readFileSync(new URL('../packages/formats/dsmr/tests/fixtures/emucs-three-phase.txt', import.meta.url), 'latin1');
 
 /** A P1M5 message, its meter on summer time. */
 const message = (dongle: string, stamp: string, t1: number, offtake: number) => JSON.stringify({

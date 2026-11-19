@@ -88,7 +88,8 @@ integration written against one release keeps working against every later
 - **Integrations** ([0014](decisions/0014-integrations-dashboards-warehouses-streams.md)),
   in the order installations ask for them: daily and monthly views of series
   for business intelligence tools; a reader of the InfluxDB line protocol;
-  an MQTT connector; a dashboard written from the objects of a project; a
+  an MQTT connector for the envelope of the series (the readings of P1
+  dongles come through `@nexgen-os/mqtt`); a dashboard written from the objects of a project; a
   Kafka connector and the change data capture publication; a guide for
   Power BI.
 - **Publications** ([0015](decisions/0015-publications.md)): the public
