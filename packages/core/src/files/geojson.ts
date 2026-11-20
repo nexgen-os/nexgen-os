@@ -309,7 +309,7 @@ export async function exportGeoJson(db: Db, target: GeoJsonTarget, options: GeoJ
       kind,
       name,
       ...columns,
-      ...(kind === 'participant' ? { location_source_code: source_code } : kind === 'site' || kind === 'building' || kind === 'surface' ? { source_code } : {}),
+      ...(kind === 'participant' ? { location_source_code: source_code } : kind === 'project' ? {} : { source_code }),
       attributes,
       identifiers: identifiers.map(({ scheme, value }) => ({ scheme, value })),
       calculations: calculations.get(id) ?? [],

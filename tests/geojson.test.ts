@@ -5,12 +5,14 @@
 // export leaves out the address lines, the serial numbers and whatever came from a
 // source that may not be passed on; a project goes out with its perimeter;
 // row level security decides what is there at all.
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { bbox, type Feature } from '@nexgen-os/geojson';
 import { exportGeoJson, importGeoJsonParticipants, type FeatureProperties, type GeoJsonExport as FeatureCollection } from '@nexgen-os/core';
+import { unsupportedKeywords, validate, type Schema } from '../packages/cli/src/pack/schema.js';
 import { USER_A, USER_B, asUser, freshDatabase, insert, organisation, repoRoot } from './helpers/db.js';
 
 const ORG = '00000000-0000-4000-8000-000400000001';
@@ -261,5 +263,58 @@ describe('participants read back from GeoJSON', () => {
     await expect(importGeoJsonParticipants(db, project, nameless, file('c'))).rejects.toThrow(/^name_required: feature 0/);
     await expect(importGeoJsonParticipants(db, project, countryless, file('c'))).rejects.toThrow(/^country_required: feature 0 \(Barn\)/);
     await expect(importGeoJsonParticipants(db, project, countryless, { ...file('c'), checksum: 'abc' })).rejects.toThrow(/^checksum_required/);
+  });
+});
+
+describe('the document, as its schema describes it', () => {
+  const schema = JSON.parse(readFileSync(join(repoRoot, 'packages', 'core', 'schema', 'geojson-export.1.json'), 'utf8')) as Schema;
+  const properties = Object.keys(((schema.$defs as Record<string, Schema>).properties.properties) as Schema);
+
+  it('uses only the keywords the validator walks', () => {
+    expect(unsupportedKeywords(schema)).toEqual([]);
+  });
+
+  it('describes the export of a participant, the open one, one without calculations and the export of a project', async () => {
+    const project = (await db.query<{ id: string }>(`select project_id id from participants where project_id is not null order by created_at desc limit 1`)).rows[0]!.id;
+    for (const fc of [
+      await exportGeoJson(db, { participantId: FARM }),
+      await exportGeoJson(db, { participantId: FARM }, { open: true }),
+      await exportGeoJson(db, { participantId: FARM }, { calculations: false, at: '2025-06-01T00:00:00Z' }),
+      await exportGeoJson(db, { projectId: project }),
+    ]) {
+      expect(validate(fc, schema)).toEqual([]);
+    }
+  });
+
+  it('refuses a property it does not describe: the export and its schema change together', async () => {
+    const fc = await exportGeoJson(db, { participantId: FARM });
+    const drifted = { ...fc, features: [{ ...fc.features[0], properties: { ...fc.features[0].properties, roof_colour: 'red' } }] };
+    expect(validate(drifted, schema)).toEqual([
+      expect.objectContaining({ path: 'features[0].properties', keyword: 'additionalProperties', field: 'roof_colour' }),
+    ]);
+  });
+
+  it('describes every column the export writes, and the open export leaves out what it says it never carries', async () => {
+    const full = await exportGeoJson(db, { participantId: FARM });
+    const open = await exportGeoJson(db, { participantId: FARM }, { open: true });
+    const written = new Set(full.features.flatMap((f) => Object.keys(f.properties)));
+    expect([...written].filter((p) => !properties.includes(p))).toEqual([]);
+    const never = properties.filter((p) => /Never in an open export/.test(String((((schema.$defs as Record<string, Schema>).properties.properties as Record<string, Schema>)[p]).description)));
+    expect(never.sort()).toEqual(['address_line1', 'address_line2', 'metadata', 'serial_number']);
+    expect(open.features.flatMap((f) => Object.keys(f.properties)).filter((p) => never.includes(p))).toEqual([]);
+  });
+
+  it('names the source that described a device, and owes it', async () => {
+    await db.query(
+      `insert into sources (code, name, kind, license, attribution, redistributable)
+       values ('device_register', 'A register of installations', 'api', 'CC-BY-4.0', '© The register', true)`,
+    );
+    const pump = await insert(db, 'devices', {
+      organisation_id: ORG, participant_id: FARM, name: 'Barn heat pump', device_type: 'heat_pump', source_code: 'device_register',
+    });
+    const fc = await exportGeoJson(db, { participantId: FARM }, { open: true });
+    expect(byId(fc, pump).properties.source_code).toBe('device_register');
+    expect(fc.nexgen_os.sources.map((s) => s.code)).toContain('device_register');
+    expect(validate(fc, schema)).toEqual([]);
   });
 });

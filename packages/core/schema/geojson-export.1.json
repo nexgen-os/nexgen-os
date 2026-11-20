@@ -1,0 +1,605 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nexgen-os/nexgen-os/blob/main/packages/core/schema/geojson-export.1.json",
+  "title": "Nexgen OS GeoJSON export, version 1",
+  "description": "The document `exportGeoJson()` of `@nexgen-os/core` writes: a participant, or a project and every participant taking part in it, as one RFC 7946 FeatureCollection — the places and the figures computed on them together, so that a study can be shown to the people it concerns. With `open: true` it is the document meant for the public (a citizens' portal, a consultation, an open-data catalogue, a publication): no street line, no serial number, no metadata, nothing from a source that may not be passed on. `importGeoJsonParticipants()` reads the participants of such a document back. A property is added to this schema in the same change that adds it to the export; a property renamed or removed is a version 2.",
+  "type": "object",
+  "required": [
+    "type",
+    "features",
+    "nexgen_os"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "FeatureCollection"
+    },
+    "bbox": {
+      "$ref": "#/$defs/bbox"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/feature"
+      }
+    },
+    "nexgen_os": {
+      "$ref": "#/$defs/about"
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "bbox": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "number"
+      },
+      "description": "West, south, east, north — with the lowest and highest heights when the positions carry one: around every position of the collection (RFC 7946 §5)."
+    },
+    "feature": {
+      "type": "object",
+      "required": [
+        "type",
+        "id",
+        "geometry",
+        "properties"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "Feature"
+        },
+        "id": {
+          "$ref": "#/$defs/uuid",
+          "description": "The object's identifier in Nexgen OS."
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "properties": {
+          "$ref": "#/$defs/properties"
+        }
+      }
+    },
+    "geometry": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "WGS 84 longitude, latitude and, when known, height in metres, seven decimals; outer rings counter-clockwise, holes clockwise (RFC 7946 §3.1.6). Null for a device (a device is not placed) and for an object described without a shape.",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "Point",
+            "MultiPoint",
+            "LineString",
+            "MultiLineString",
+            "Polygon",
+            "MultiPolygon",
+            "GeometryCollection"
+          ]
+        },
+        "coordinates": {
+          "type": "array"
+        },
+        "geometries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/geometry"
+          }
+        },
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        }
+      }
+    },
+    "properties": {
+      "type": "object",
+      "description": "The columns of the object, named as the model names them, then what is attached to it. A property a kind of object does not have is absent, and a property an open export never carries is absent from it.",
+      "required": [
+        "kind",
+        "name",
+        "attributes",
+        "identifiers",
+        "calculations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "project",
+            "participant",
+            "site",
+            "building",
+            "surface",
+            "device"
+          ],
+          "description": "Which object of the model the feature is: the project (first, when a project is exported), a participant, and — with the `building` module — its ground (`site`), its buildings and their surfaces; then the devices."
+        },
+        "name": {
+          "type": "string",
+          "description": "The object's name."
+        },
+        "attributes": {
+          "type": "object",
+          "description": "The attributes of the object holding at the export's moment (`nexgen_os.at`), as `attributes_of()` reads them: attribute type → value. An open export leaves out those a source that may not be passed on gave."
+        },
+        "identifiers": {
+          "type": "array",
+          "description": "The identifiers the object is known by elsewhere (a register, a meter point, a building identifier), scheme by scheme, holding at the export's moment. An open export leaves out those a source that may not be passed on gave.",
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "calculations": {
+          "type": "array",
+          "description": "The figures the installed modules computed on the object, each as its module keeps it (`solar.estimates`, `community.settlements`…), oldest first. The export computes nothing; empty when the export was asked without them. An open export keeps them: a study shown to the public is its figures beside its places.",
+          "items": {
+            "$ref": "#/$defs/calculation"
+          }
+        },
+        "project_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "project: its kind, a code of `project_kinds`."
+        },
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "project, participant: the country, ISO 3166-1 alpha-2. A participant is a feature only when it has one."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "project, participant, building, device: its status, as the model keeps it."
+        },
+        "start_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "project: the day it starts.",
+          "format": "date"
+        },
+        "end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "project: the day it ends.",
+          "format": "date"
+        },
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the project it takes part in.",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: its category (`consumer`, `producer`, `prosumer`…)."
+        },
+        "segment": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: its segment, a code of `segments`."
+        },
+        "address_line1": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the street line of its address. Never in an open export."
+        },
+        "address_line2": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the second street line of its address. Never in an open export."
+        },
+        "postal_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the postal code of its address."
+        },
+        "city": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the city of its address."
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the region of its address."
+        },
+        "municipality": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the code of its municipality, in the scheme of its country."
+        },
+        "time_zone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: its IANA time zone, which its daily readings follow."
+        },
+        "location_precision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: how precisely its geometry places it (a building, an address, a postal code, a municipality…)."
+        },
+        "location_source_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "participant: the source that placed it, a code of `nexgen_os.sources`. An open export keeps the address of a participant placed by a source that may not be passed on, and drops its geometry."
+        },
+        "participant_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "site, building, surface, device: the participant it belongs to.",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "site_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "building, surface: the ground it stands on.",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "building_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "surface: the building it is a face of; null for a ground area.",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "use": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "site, building: what it is used for."
+        },
+        "area_m2": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "site, surface: its area in square metres."
+        },
+        "elevation_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "building: the height of its ground above sea level, in metres."
+        },
+        "height_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "building: its height above its ground, in metres."
+        },
+        "year_built": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "building: the year it was built."
+        },
+        "floors_above_ground": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "building: its floors above ground."
+        },
+        "floors_below_ground": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "building: its floors below ground."
+        },
+        "floor_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "building: its floor area, in square metres."
+        },
+        "energy_label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "building: its energy label, as its country writes it."
+        },
+        "surface_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "surface: a roof face, a facade, a ground area…"
+        },
+        "azimuth_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "surface: the direction it faces, in degrees clockwise from true north."
+        },
+        "tilt_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "surface: its tilt from the horizontal, in degrees."
+        },
+        "material": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "surface: its material."
+        },
+        "u_value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "surface: its thermal transmittance, in W/(m²·K)."
+        },
+        "is_external": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "surface: whether it faces the outside."
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "site, building, surface: its identifier in the source it was read from (an IFC GlobalId, an OpenStreetMap way…)."
+        },
+        "source_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "site, building, surface, device: the source that described it, a code of `nexgen_os.sources`. An open export withholds an object described by a source that may not be passed on, with everything on it."
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "site, building, surface: what its source said beyond the columns. Never in an open export."
+        },
+        "device_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "device: its type, a code of `device_types`."
+        },
+        "manufacturer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "device: its manufacturer."
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "device: its model."
+        },
+        "serial_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "device: its serial number. Never in an open export."
+        },
+        "rated_power_kw": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "device: its rated power, in kW."
+        },
+        "unit_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "device: how many units it counts (modules of an array, points of a charging station…)."
+        },
+        "installation_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "device: the day it was installed.",
+          "format": "date"
+        }
+      }
+    },
+    "identifier": {
+      "type": "object",
+      "required": [
+        "scheme",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "description": "A code of `identifier_schemes`."
+        },
+        "value": {
+          "type": "string",
+          "description": "The identifier, as its scheme writes it."
+        }
+      }
+    },
+    "calculation": {
+      "type": "object",
+      "required": [
+        "id",
+        "module",
+        "table",
+        "provenance",
+        "updated_at",
+        "results"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "module": {
+          "type": "string",
+          "description": "The code of the module that keeps it."
+        },
+        "table": {
+          "type": "string",
+          "description": "The module's table it is kept in: `estimates`, `settlements`…"
+        },
+        "provenance": {
+          "type": "string",
+          "description": "Where it comes from: the program and the version that computed it."
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "When the module last wrote it, ISO 8601 in UTC.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+        },
+        "results": {
+          "description": "The results, exactly as the module keeps them."
+        }
+      }
+    },
+    "about": {
+      "type": "object",
+      "description": "Foreign member: what the document is and what it owes. Nothing in it depends on the moment the export ran: the same database gives the same document.",
+      "required": [
+        "schema_version",
+        "at",
+        "open",
+        "sources",
+        "withheld"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "description": "The version of the Nexgen OS schema the document was read from.",
+          "pattern": "^\\d+\\.\\d+\\.\\d+"
+        },
+        "at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The moment attributes and identifiers were read at, ISO 8601 in UTC; null for the moment of the export."
+        },
+        "open": {
+          "type": "boolean",
+          "description": "Whether this is the open export, meant for the public."
+        },
+        "sources": {
+          "type": "array",
+          "description": "Every source a feature, an attribute or an identifier of the document came from, with its licence and its attribution, by code.",
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "withheld": {
+          "type": "integer",
+          "description": "How many objects an open export left out because their source, or the source of the object they belong to, may not be passed on.",
+          "minimum": 0
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "code",
+        "name",
+        "license",
+        "attribution"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "The source's code in `sources`."
+        },
+        "name": {
+          "type": "string",
+          "description": "The source's name."
+        },
+        "license": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Its licence, an SPDX identifier when there is one."
+        },
+        "attribution": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The attribution it asks for, to show beside what it gave."
+        }
+      }
+    }
+  }
+}

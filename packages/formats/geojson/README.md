@@ -63,6 +63,15 @@ keeps them. The export computes nothing.
   on with its licence and attribution, and how many objects were withheld.
 - The same database gives the same document: no export time inside it.
 
+The document is described by a JSON Schema,
+[`geojson-export.1.json`](../../core/schema/geojson-export.1.json), shipped
+in `@nexgen-os/core` (`schema/`): every property of every kind of feature
+with its type and what it says, the `nexgen_os` member, and what an open
+export never carries. A portal, a catalogue or another program checks the
+file it receives against it before showing it. The tests validate every
+export against it and refuse a property it does not describe, so the export
+and its schema change together; a property renamed or removed is a version 2.
+
 ### The open export
 
 `open: true` is the document meant for the public — a citizens' portal, a
