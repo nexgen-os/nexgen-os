@@ -141,3 +141,26 @@ describe('a PV array', () => {
     expect(r).toEqual({ participant: owner, azimuth_deg: '180.00', tilt_deg: '15.00' });
   });
 });
+
+describe('the orientation of a face read from its geometry', () => {
+  // A roof face 11 m wide rising 3 m towards the north: it looks south.
+  const face = 'POLYGON Z ((4.9 52.37 8, 4.90016 52.37 8, 4.90016 52.37003 11, 4.9 52.37003 11, 4.9 52.37 8))';
+
+  it('gives the azimuth and the tilt of a 3D polygon, and nothing for a flat drawing', async () => {
+    const o = await one<{ azimuth_deg: string; tilt_deg: string }>(
+      db, `select azimuth_deg, tilt_deg from building.surface_orientation(ST_GeomFromText($1, 4326))`, [face]);
+    expect(Number(o.azimuth_deg)).toBeCloseTo(180, 0);
+    expect(Number(o.tilt_deg)).toBeGreaterThan(38);
+    expect(Number(o.tilt_deg)).toBeLessThan(46);
+    const plan = await one<{ azimuth_deg: string | null; tilt_deg: string | null }>(
+      db, `select azimuth_deg, tilt_deg from building.surface_orientation(ST_Force2D(ST_GeomFromText($1, 4326)))`, [face]);
+    expect(plan).toEqual({ azimuth_deg: null, tilt_deg: null });
+  });
+
+  it('calls no function newer than PostGIS 3.3, the version a hosted Postgres often runs', async () => {
+    const { def } = await one<{ def: string }>(
+      db, `select pg_get_functiondef('building.surface_orientation(geometry)'::regprocedure) def`);
+    expect(def.toLowerCase()).not.toContain('st_hasz');
+    expect(def.toLowerCase()).toContain('st_ndims');
+  });
+});

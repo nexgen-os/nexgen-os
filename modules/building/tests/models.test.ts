@@ -94,8 +94,8 @@ afterAll(async () => {
 });
 
 describe('a model is a row that points to its file', () => {
-  it('is registered by the module at 0.4.0, under the security of its organisation', async () => {
-    expect((await one<{ version: string }>(db, `select version from modules where code = 'building'`)).version).toBe('0.4.0');
+  it('is registered by the module at 0.4.1, under the security of its organisation', async () => {
+    expect((await one<{ version: string }>(db, `select version from modules where code = 'building'`)).version).toBe('0.4.1');
     const t = await one<{ rls: boolean }>(db, `select relrowsecurity rls from pg_class where oid = 'building.models'::regclass`);
     expect(t.rls).toBe(true);
     const seen = async (user: string) => asUser(db, user, async () => (await one<{ n: number }>(db, 'select count(*)::int n from building.models')).n);
