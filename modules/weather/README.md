@@ -44,6 +44,18 @@ It publishes the attribute type `weather_source` (a participant or a project pin
   `resample(s, from, to, '1 day', weather.time_zone_of(s))`. A time zone
   Postgres does not know is refused as `time_zone_unknown`.
 - `weather.cell_of(position, grid_deg)` — the cell a position falls in.
+- `weather.degree_days(series, from, to, base, kind)` — the degree-days of
+  each local day of a temperature series, a point's or a participant's own,
+  by the mean daily temperature method: `heating` (the default),
+  `max(base − mean, 0)`; `cooling`, `max(mean − base, 0)`, in kelvin days,
+  with the mean temperature of the day and its samples as `resample()`
+  gives them. The base is the caller's — a pack, a study, the standard it
+  cites — and the module holds none. Days are cut in the time zone of
+  `time_zone_of()`; a day without values has no degree-days. Refuses
+  `base_required`, `degree_day_kind_unknown`, `series_not_found` (a series
+  the caller cannot see too), `temperature_required` and
+  `time_zone_required`:
+  `select sum(degree_days) from weather.degree_days(s, '2025-10-01', '2026-05-01', 15)`.
 
 ## What stays out
 
