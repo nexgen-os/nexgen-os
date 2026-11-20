@@ -73,7 +73,8 @@ describe('the nexgen schema', () => {
   it('holds every core table and function, and public holds none of them', async () => {
     const tables = await db.query<{ table_schema: string; n: number }>(
       `select table_schema, count(*)::int n from information_schema.tables
-        where table_name in ('organisations', 'participants', 'meters', 'devices', 'series', 'series_values', 'documents', 'modules')
+        where table_type = 'BASE TABLE'
+          and table_name in ('organisations', 'participants', 'meters', 'devices', 'series', 'series_values', 'documents', 'modules')
         group by 1 order by 1`,
     );
     expect(tables.rows).toEqual([{ table_schema: 'nexgen', n: 8 }]);

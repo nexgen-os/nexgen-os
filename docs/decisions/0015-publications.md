@@ -49,6 +49,16 @@ anonymous role reaches neither it nor the gestures: the schema the public
 reads is the only one it may be given, and an installation makes nothing
 public until an owner publishes.
 
+**The schema the public reads** is `published`, and its one view
+`published.documents`: the publications not withdrawn, each with what its
+document was (name, kind, uri, media type, size, checksum), its licence,
+its sources with their licences, its version, its date, the sha256 the
+database wrote and the name of the organisation that published it — no
+identifier of the organisation, of its document or of its people. The view
+reads the core with the rights of its owner and is the only relation the
+anonymous role may read; PostgREST serves it once `published` is listed
+among the project's exposed schemas.
+
 ## What it forbids
 
 - A grant to the anonymous role on the core or on a module schema.

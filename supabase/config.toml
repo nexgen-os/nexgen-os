@@ -28,8 +28,13 @@ sql_paths = ["./seed/0001_core_vocabularies.sql"]
 #
 #   schemas = ["nexgen", "building", "solar", "weather"]
 #
-# Nothing is given to the anonymous role: everything is read signed in, under
-# row level security.
+# Nothing of the core or of a module is given to the anonymous role:
+# everything is read signed in, under row level security. The one schema it
+# may read is `published`, the publications an owner made (decision 0015);
+# list it here, and among the exposed schemas of a hosted project, to serve
+# them to the public:
+#
+#   schemas = ["nexgen", "published"]
 [api]
 enabled = true
 schemas = ["nexgen"]

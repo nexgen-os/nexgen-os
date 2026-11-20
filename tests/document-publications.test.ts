@@ -131,3 +131,61 @@ describe('the anonymous role', () => {
     expect(r).toEqual({ t: false, p: false, w: false });
   });
 });
+
+describe('what the public reads', () => {
+  const asAnonymous = async <T>(fn: () => Promise<T>): Promise<T> => {
+    await db.exec(`set request.jwt.claims = '${JSON.stringify({ role: 'anon' })}'`);
+    await db.exec('set role anon');
+    try {
+      return await fn();
+    } finally {
+      await db.exec('reset role');
+      await db.exec(`set request.jwt.claims = ''`);
+    }
+  };
+
+  it('is the publications not withdrawn, in published.documents, without the organisation\'s identifiers', async () => {
+    const rows = await asAnonymous(async () => (await db.query<Record<string, unknown>>(
+      'select * from published.documents order by name, version')).rows);
+    expect(rows.map((r) => [r.name, r.version])).toEqual([['By hand', 1], ['District solar study', 2]]);
+    const study = rows[1]!;
+    expect(Object.keys(study).sort()).toEqual([
+      'byte_size', 'checksum', 'id', 'kind', 'license', 'media_type', 'name', 'published_at', 'publisher', 'sha256', 'sources', 'uri', 'version',
+    ]);
+    expect(study).toMatchObject({
+      uri: 's3://studies/district-v2.pdf', checksum: CHECKSUM, publisher: 'A city',
+      sources: [{ code: 'open_register', name: 'An open register', license: 'CC-BY-4.0', attribution: 'The register' }],
+    });
+    const kept = await one<{ id: string; sha256: string }>(db, `select id, sha256 from document_publications where uri = 's3://studies/district-v2.pdf'`);
+    expect(study).toMatchObject(kept);
+  });
+
+  it('follows a withdrawal: a publication withdrawn is no longer public', async () => {
+    const { id } = await one<{ id: string }>(db, `select id from document_publications where name = 'By hand'`);
+    await owner(() => db.query('select withdraw($1)', [id]));
+    const names = await asAnonymous(async () => (await db.query<{ name: string }>('select name from published.documents')).rows.map((r) => r.name));
+    expect(names).toEqual(['District solar study']);
+  });
+
+  it('reads it signed in as well, whatever the organisation', async () => {
+    const rows = await asUser(db, USER_B, async () => (await db.query('select id from published.documents')).rows);
+    expect(rows).toHaveLength(1);
+  });
+
+  it('writes nothing there, and reaches no table of the core or of a module', async () => {
+    expect(await one(db, `select has_table_privilege('anon', 'published.documents', 'insert, update, delete, truncate') w,
+                                 has_table_privilege('authenticated', 'published.documents', 'insert, update, delete, truncate') a`))
+      .toEqual({ w: false, a: false });
+    await expect(asAnonymous(() => db.query('select * from nexgen.document_publications'))).rejects.toThrow(/permission denied/);
+    await expect(asAnonymous(() => db.query('select * from nexgen.organisations'))).rejects.toThrow(/permission denied/);
+    // Every relation the anonymous role may read, outside the system and the extensions.
+    const readable = await db.query<{ relation: string }>(
+      `select n.nspname || '.' || c.relname relation
+         from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where c.relkind in ('r', 'v', 'm', 'p', 'f')
+          and n.nspname not in ('pg_catalog', 'information_schema', 'extensions', 'pg_toast')
+          and has_table_privilege('anon', c.oid, 'select')
+        order by 1`);
+    expect(readable.rows.map((r) => r.relation)).toEqual(['published.documents']);
+  });
+});

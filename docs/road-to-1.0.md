@@ -93,11 +93,12 @@ integration written against one release keeps working against every later
   Kafka connector and the change data capture publication; a guide for
   Power BI.
 - **Publications** ([0015](decisions/0015-publications.md)): the public
-  schema, one document per row (an open GeoJSON export of a project, with
-  title, SPDX licence, publisher, date and sha256 written by the database),
-  published and withdrawn by owners, read by the anonymous role through one
-  view; then series, documents, an embeddable map, and a check of a
-  publication's licence against its sources'.
+  schema `published` is in place — one document per row, with title, SPDX
+  licence, publisher, date and sha256 written by the database, published
+  and withdrawn by owners, read by the anonymous role through one view,
+  `published.documents`; next, an open GeoJSON export of a project
+  published as one gesture, then series, an embeddable map, and a check of
+  a publication's licence against its sources'.
 - **An activity log**: who did what, and when, on the six objects of the
   core ([0006](decisions/0006-the-core-names-six-objects.md)) and on the
   figures the modules write about them — the person or the agent acting

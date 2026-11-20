@@ -25,7 +25,7 @@ import { FORMER_SOCLE_SCHEMA, SOCLE_SCHEMA, socleMarkerInCatalogue } from '@ekwo
 import { doctor, install } from '../packages/cli/src/index.js';
 import { asUser, emptyDatabase, one, repoRoot, sqlClient, USER_A, USER_B } from './helpers/db.js';
 
-const NEXGEN_SCHEMAS = ['nexgen', 'billing'];
+const NEXGEN_SCHEMAS = ['nexgen', 'published', 'billing'];
 // Ekwo's schemas: its core's, of today and of before its move (Ekwo OS 0.22
 // creates `ekwo` empty before it moves), and its history.
 const EKWO_SCHEMAS = ['ekwo', 'public', 'supabase_migrations'];

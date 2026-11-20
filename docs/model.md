@@ -418,7 +418,10 @@ same check.
   (`publication_digest()`). `publish(document, licence, sources)` and
   `withdraw(publication)` are its only gestures (`publications.manage`, the
   owner's); the withdrawal is its only change, and it outlives its
-  document.
+  document. The public reads the publications not withdrawn in
+  `published.documents`, the one view of the schema `published`, without
+  the organisation's identifiers: the only relation the anonymous role is
+  given.
 
 ## Countries and defaults
 
