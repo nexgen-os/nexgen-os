@@ -192,3 +192,81 @@ describe('the time zone of a point', () => {
     expect((await one<{ tz: string | null }>(db, 'select weather.time_zone_of($1) tz', [none])).tz).toBeNull();
   });
 });
+
+describe('degree_days', () => {
+  let house: string;
+  let temperature: string;
+  // Local days of Brussels in January, UTC+1: 5 January starts at 23:00 UTC on the 4th.
+  const from = '2026-01-04T23:00:00Z';
+  const to = '2026-01-07T23:00:00Z';
+  const days = (base: number | null, kind?: string) =>
+    db.query<{ day: string; mean_temperature: number | null; degree_days: number | null; samples: number }>(
+      kind === undefined
+        ? 'select day::text, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4)'
+        : 'select day::text, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4, $5)',
+      kind === undefined ? [temperature, from, to, base] : [temperature, from, to, base, kind],
+    );
+
+  beforeAll(async () => {
+    const firm = await organisation(db, 'A heating engineer', USER_A);
+    house = await participant(db, { organisation_id: firm, name: 'House', country: 'BE', time_zone: 'Europe/Brussels', geometry: point(4.36, 50.84) });
+    // Hourly readings of a sensor of the house over two local days, the
+    // third left empty: 5 °C all day on the 5th, 14 and 18 °C in turn on the 6th.
+    const hours = Array.from({ length: 48 }, (_, h) => new Date(Date.UTC(2026, 0, 4, 23 + h)).toISOString());
+    const values = hours.map((_, h) => (h < 24 ? 5 : h % 2 === 0 ? 14 : 18));
+    await db.query(`select store(null, $1::timestamptz[], $2::float8[], p_series => $3::jsonb)`, [
+      hours, values, JSON.stringify({
+        object_kind: 'participant', object_id: house, quantity_code: 'temperature', value_kind: 'instant', step: '1 hour',
+        source_code: 'pvgis', name: 'Living room sensor',
+      }),
+    ]);
+    temperature = (await one<{ id: string }>(db, `select id from series where object_id = $1 and quantity_code = 'temperature'`, [house])).id;
+  });
+
+  it('counts heating degree-days by the mean of each local day', async () => {
+    const r = await days(15);
+    const kept = r.rows.filter((d) => d.samples > 0);
+    expect(kept.map((d) => [d.day.slice(0, 10), d.mean_temperature, d.degree_days])).toEqual([
+      ['2026-01-05', 5, 10],
+      ['2026-01-06', 16, 0],
+    ]);
+    // A day without values has no degree-days, never zero.
+    for (const d of r.rows.filter((x) => x.samples === 0)) expect(d.degree_days).toBeNull();
+  });
+
+  it('counts cooling degree-days above the base', async () => {
+    const kept = (await days(15, 'cooling')).rows.filter((d) => d.samples > 0);
+    expect(kept.map((d) => d.degree_days)).toEqual([0, 1]);
+  });
+
+  it('cuts the days of a weather point in its time zone', async () => {
+    const point = (await one<{ id: string }>(db, `select weather.point_for($1, 'open_meteo') id`, [house])).id;
+    const firm = (await one<{ organisation_id: string }>(db, 'select organisation_id from participants where id = $1', [house])).organisation_id;
+    const hours = Array.from({ length: 24 }, (_, h) => new Date(Date.UTC(2026, 0, 4, 23 + h)).toISOString());
+    await db.query(`select store(null, $1::timestamptz[], $2::float8[], p_series => $3::jsonb)`, [
+      hours, hours.map(() => -2), JSON.stringify({
+        object_kind: 'organisation', object_id: firm, quantity_code: 'temperature', value_kind: 'instant', step: '1 hour',
+        source_code: 'open_meteo', external_ref: point, name: 'Open-Meteo point',
+      }),
+    ]);
+    const series = (await one<{ id: string }>(db, `select id from series where external_ref = $1`, [point])).id;
+    const r = await db.query<{ day: string; degree_days: number }>(
+      `select day::text, degree_days from weather.degree_days($1, '2026-01-04T23:00:00Z', '2026-01-05T23:00:00Z', 18)`, [series]);
+    expect(r.rows.map((d) => d.degree_days)).toEqual([20]);
+  });
+
+  it('refuses by name what it cannot count', async () => {
+    await expect(days(null)).rejects.toThrow(/base_required/);
+    await expect(days(15, 'both')).rejects.toThrow(/degree_day_kind_unknown/);
+    const energy = (await one<{ id: string }>(db, `select series_ensure('participant', $1, 'offtake_energy', 'measured', 'interval', '15 minutes') id`, [house])).id;
+    await expect(db.query(`select * from weather.degree_days($1, $2, $3, 15)`, [energy, from, to])).rejects.toThrow(/temperature_required/);
+    await expect(db.query(`select * from weather.degree_days(gen_random_uuid(), $1, $2, 15)`, [from, to])).rejects.toThrow(/series_not_found/);
+  });
+
+  it('reads under the caller\'s rights', async () => {
+    const mine = await asUser(db, USER_A, () => db.query(`select * from weather.degree_days($1, $2, $3, 15)`, [temperature, from, to]));
+    expect(mine.rows.length).toBeGreaterThan(0);
+    await expect(asUser(db, USER_B, () => db.query(`select * from weather.degree_days($1, $2, $3, 15)`, [temperature, from, to])))
+      .rejects.toThrow(/series_not_found/);
+  });
+});
