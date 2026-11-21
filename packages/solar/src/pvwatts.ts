@@ -29,7 +29,8 @@
 // 365-day grid (8,760 hours), 29 February left out. Nothing here reads a
 // database or the network.
 
-import { offsetAt, type SeriesPoint } from '@nexgen-os/core';
+import type { SeriesPoint } from './series.js';
+import { offsetAt } from './time.js';
 
 const HOUR_MS = 3_600_000;
 const MINUTE_MS = 60_000;

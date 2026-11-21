@@ -8,7 +8,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import type { Fetch } from '@nexgen-os/core';
 import { openMeteo } from '@nexgen-os/open-meteo';
 import { pvgis } from '@nexgen-os/pvgis';
-import { remainingAfterLosses, withSoiling } from '../src/pvwatts.js';
+import { remainingAfterLosses, withSoiling } from '@nexgen-os/solar';
 import { estimateYield } from '../src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from '../../../tests/helpers/db.js';
 import { syntheticArchive } from '../../../tests/helpers/weather.js';

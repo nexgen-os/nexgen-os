@@ -4,7 +4,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { storeSeries, type SeriesPoint } from '@nexgen-os/core';
-import { EXCEEDANCE_ENGINE_VERSION, exceedance, normalQuantile } from '../src/exceedance.js';
+import { normalQuantile } from '@nexgen-os/solar';
+import { EXCEEDANCE_ENGINE_VERSION, exceedance } from '../src/exceedance.js';
 import { USER_A, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 
 const HOUR = 3_600_000;

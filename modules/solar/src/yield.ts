@@ -46,7 +46,7 @@ import {
   typicalYear,
   withSoiling,
   withinLocalYears,
-} from './pvwatts.js';
+} from '@nexgen-os/solar';
 import { sandiaFromOnd } from './inverter.js';
 import { lossChain, writeEstimate, type OwnedSeries } from './estimates.js';
 

@@ -9,14 +9,11 @@
 // ISO 8601 strings in UTC; a page localises them, with the `Temporal` API
 // or its polyfill, never by resampling again.
 
+import type { SeriesPoint } from '@nexgen-os/solar';
 import type { Db } from './db.js';
 
-/** One value at one instant, ISO 8601 with its offset, with its quality code (0 measured when absent; 3 missing). */
-export interface SeriesPoint {
-  at: string;
-  value: number;
-  quality?: number;
-}
+/** One value at one instant: the type the computations of `@nexgen-os/solar` read, one definition for both. */
+export type { SeriesPoint };
 
 /** What names a series when it may not exist yet: the keys of `series_ensure()`. */
 export interface SeriesIdentity {

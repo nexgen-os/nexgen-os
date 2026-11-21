@@ -27,6 +27,7 @@
     "vitest": "5.0.3"
   },
   "workspaces": [
+    "packages/solar",
     "packages/formats/*",
     "packages/core",
     "packages/connectors/*",

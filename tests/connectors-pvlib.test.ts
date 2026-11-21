@@ -12,7 +12,7 @@ import { hourStart } from '@nexgen-os/pvgis';
 import { PVLIB_ENGINE, type PvYieldRequest, type PvYieldResult } from '@nexgen-os/core';
 import { describeEngine, runEngine, type EngineSpec } from '@nexgen-os/core';
 import { sandiaFromOnd } from '../modules/solar/src/inverter.js';
-import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '../modules/solar/src/pvwatts.js';
+import { alignWeather, arrayEnergy, cleanWeather, remainingAfterLosses } from '@nexgen-os/solar';
 import { estimateYield } from '../modules/solar/src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, repoRoot, participant } from './helpers/db.js';
 import { answering, fixture, syntheticArchive } from './helpers/weather.js';

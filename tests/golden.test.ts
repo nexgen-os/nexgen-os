@@ -21,7 +21,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { packFolders, readGoldens, readPack, readSchema, type GoldenCase } from '../packages/cli/src/index.js';
 import { settleSharing } from '../modules/community/src/sharing.js';
-import { arrayEnergy, remainingAfterLosses } from '../modules/solar/src/pvwatts.js';
+import { arrayEnergy, remainingAfterLosses } from '@nexgen-os/solar';
 import { freshDatabase, one, organisation, repoRoot, shippedModules } from './helpers/db.js';
 import { installed, sharingExample } from './helpers/engines.js';
 

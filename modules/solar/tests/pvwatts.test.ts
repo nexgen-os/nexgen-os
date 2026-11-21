@@ -31,7 +31,7 @@ import {
   total,
   typicalYear,
   withinLocalYears,
-} from '../src/pvwatts.js';
+} from '@nexgen-os/solar';
 import { estimateYield } from '../src/yield.js';
 import { USER_A, freshDatabase, insert, one, organisation, participant } from '../../../tests/helpers/db.js';
 import { answering, fixture, syntheticArchive } from '../../../tests/helpers/weather.js';
