@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/zaptec",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Zaptec charging stations read from their cloud as a Nexgen OS connector: the chargers of an account, their state, and their completed sessions with the energy delivered, as sessions and series of the charger.",
   "license": "MIT",
   "repository": {

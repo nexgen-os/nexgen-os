@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/solar",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "The computations of a PV yield as plain functions: the PVWatts DC model, the Faiman cell temperature, the typical year chosen by Finkelstein-Schafer and the exceedance levels of an annual energy. No database, no network, no dependency.",
   "license": "MIT",
   "repository": {

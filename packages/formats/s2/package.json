@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/s2",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "S2 (EN 50491-12-2), the messages between a customer energy manager and the resource manager of a device, read, checked against the S2 JSON schemas and written. No database, no dependency.",
   "license": "MIT",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/project-sheet",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A project sheet — a project, its participants, their meters and devices as one CSV table a spreadsheet saves — read with its problems named, and written back. No database, no dependency.",
   "license": "MIT",
   "repository": {

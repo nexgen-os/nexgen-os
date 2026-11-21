@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/nominatim",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Nominatim (OpenStreetMap) as a Nexgen OS geocoder.",
   "license": "MIT",
   "repository": {

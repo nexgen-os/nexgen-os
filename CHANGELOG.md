@@ -8,6 +8,12 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-11-21
+
+### Fixed
+
+- 0.5.1 completes 0.5.0 on npm. The release run of 0.5.0 stopped on a test of the `weather` module that held only in the time zone of the machine that ran it, after the new packages of 0.5.0 were on the registry and before the others; 0.5.1 is the same code with that test corrected, and every package is published at it. Nothing changes for an installation: no migration, the schema stays 0.5.0.
+
 ## [0.5.0] — 2026-11-21
 
 Three country packs, `de`, `it` and `nl`; the `forecast` and `energy_contracts` modules; `@nexgen-os/solar`, the computations of a PV yield under MIT; a project imported from a description, a spreadsheet or a PV\*SOL study; documents published as they were; P1 meters, charging stations and the Flemish and Walloon grid hubs read by new connectors. One change breaks a direct caller: `readPan()` of `@nexgen-os/panond` (under *Changed*).

@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/icar",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "The Walloon geocoding service (ICAR) as a Nexgen OS geocoder.",
   "license": "MIT",
   "repository": {

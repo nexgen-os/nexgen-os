@@ -102,7 +102,10 @@ worse than one not cut.
    ```
 
    A tag is never moved and never deleted. It starts the **Release**
-   workflow, see *npm* below.
+   workflow, see *npm* below. That run is on a GitHub-hosted runner, in
+   UTC, and the tests of the CI run in UTC for that reason. When the run of
+   a tag fails on what the tag carries, the correction goes to `main` and a
+   patch release follows with its own tag, as 0.5.1 did for 0.5.0.
 4. Publish a GitHub Release on that tag, with the changelog section as its
    body.
 

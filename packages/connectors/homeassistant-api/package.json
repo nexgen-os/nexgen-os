@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/homeassistant-api",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A live Home Assistant installation read over its WebSocket API: floors, areas, devices, entities and the recorder's states as the snapshot @nexgen-os/homeassistant reads.",
   "license": "MIT",
   "repository": {

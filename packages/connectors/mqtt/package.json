@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/mqtt",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "The readings of P1 dongles received from an MQTT broker as the series of the meters they read: a P1M5 message or a DSMR telegram, the meter found by the dongle's identifier, dated in its participant's time zone, thinned and written by store() in batches. Any MQTT client fits; no broker library is shipped.",
   "license": "MIT",
   "repository": {
