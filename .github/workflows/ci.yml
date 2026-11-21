@@ -32,7 +32,11 @@ jobs:
       - name: wait for this machine to be free of another test suite
         if: ${{ vars.CI_RUNNER }}
         run: sh scripts/wait-for-a-free-machine.sh
+      # In UTC whatever the zone of the runner: the Release workflow runs
+      # there, and a test that reads a local date must not depend on the machine.
       - run: npm test
+        env:
+          TZ: UTC
 
   connector-pvlib:
     name: connector-pvlib
