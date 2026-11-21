@@ -43,7 +43,7 @@ describes; its record is written once the fix has shipped.
 - [0009](0009-what-applies-follows-the-region.md) · What applies to a place follows its region, its municipality or its area · accepted
 - [0026](0026-a-device-belongs-to-its-participant.md) · A device belongs to its participant; the `building` module describes the place, and a space is one notion with a kind · accepted
 - [0008](0008-the-building-module-describes-what-is-built.md) · The `building` module describes what is built; a 3D model is a file a row points to, and it enriches a place without changing it · accepted
-- [0061](0061-a-viewer-is-a-package-beside-the-core.md) · A viewer is a package beside the core: it reads the description as a person and keeps nothing of its own in the database · proposed
+- [0062](0062-a-viewer-is-a-package-beside-the-core.md) · A viewer is a package beside the core: it reads the description as a person and keeps nothing of its own in the database · proposed
 
 ## Series
 

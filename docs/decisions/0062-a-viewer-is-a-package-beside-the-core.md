@@ -1,4 +1,4 @@
-# 0061 — A viewer is a package beside the core: it reads the description as a person and keeps nothing of its own in the database
+# 0062 — A viewer is a package beside the core: it reads the description as a person and keeps nothing of its own in the database
 
 > Status: proposed
 

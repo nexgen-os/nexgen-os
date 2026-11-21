@@ -78,6 +78,6 @@ paths, rendered videos) is not part of the description.
 - [0003](0003-geometry-wgs84-3d-utm.md) — the frame of all geometry.
 - [0035](0035-a-format-library-touches-no-database.md) — the readers of IFC,
   CityJSON and 3D Tiles are format libraries.
-- [0061](0061-a-viewer-is-a-package-beside-the-core.md) — the program that
+- [0062](0062-a-viewer-is-a-package-beside-the-core.md) — the program that
   shows a place reads this description and keeps nothing of its own.
 - [`modules/building/README.md`](../../modules/building/README.md).

@@ -92,4 +92,4 @@ What stays outside the open repository: drone flights and their outputs
 API keys, the Mapbox `model` layer and Standard style.
 A program that shows a place in 3D reads this description as the person
 who opens it and keeps its views in its own address, never in a table of
-the module ([0061](../../docs/decisions/0061-a-viewer-is-a-package-beside-the-core.md)).
+the module ([0062](../../docs/decisions/0062-a-viewer-is-a-package-beside-the-core.md)).

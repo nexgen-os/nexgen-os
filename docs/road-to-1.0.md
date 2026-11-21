@@ -59,7 +59,7 @@ integration written against one release keeps working against every later
   georeferenced `models` and `model_to_world()` the module holds since
   0.4.0.
 - **A viewer beside the core**
-  ([0061](decisions/0061-a-viewer-is-a-package-beside-the-core.md)): a
+  ([0062](decisions/0062-a-viewer-is-a-package-beside-the-core.md)): a
   package that shows a participant's place in 3D as the person who opens
   it — the terrain and the aerial photograph from the sources of the
   place's pack, the parcels, the footprints raised to their heights, the
