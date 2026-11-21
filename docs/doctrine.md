@@ -134,6 +134,7 @@ device belongs to its participant.
 - [0040](decisions/0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) A release has a tag, a schema version and a schema floor
 - [0005](decisions/0005-agpl-core-mit-libraries-sign-off.md) The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
 - [0063](decisions/0063-the-computations-of-a-pv-yield-are-mit.md) The computations of a PV yield are an MIT package; the solar module that writes them stays AGPL
+- [0064](decisions/0064-an-mit-package-reaches-no-agpl-package.md) An MIT package reaches no AGPL package; what a connector speaks is an MIT package of its own
 
 ## Inherited
 

@@ -333,6 +333,7 @@ packs/                 one folder per country, data only (fr, be, es: identity a
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
 packages/solar/        `@nexgen-os/solar`, MIT: the computations of a PV yield as plain functions (PVWatts, Faiman, the Finkelstein-Schafer typical year, exceedance levels), no dependency; the `solar` module computes with it
+packages/connector/    `@nexgen-os/connector`, MIT: what a connector speaks (the point, the series it brings back, the weather interface, `Fetch`, `azimuthFromSouth()`), the core re-exports it
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
 packages/formats/      one MIT package per file format (cityjson, dsmr, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, s2, sunspec, utilityrate5, weather-files)
 packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis), geocoders (nominatim, photon, ban, geopunt, urbis, icar, mapbox), meter data under mandate (switchgrid, enedis-sge, fluvius, ores), a smart meter read on the place's own network (homewizard), charging stations from their cloud (zaptec, easee), and the programs in other languages, JSON in and out (pvlib, optional)
@@ -389,6 +390,10 @@ can live inside any product. So are the computations of a PV yield,
 cell temperature, the typical year and the exceedance levels, with no
 dependency, for an application that embeds them; the `solar` module that
 writes them as estimates stays AGPL ([0063](docs/decisions/0063-the-computations-of-a-pv-yield-are-mit.md)).
+An MIT package reaches no AGPL package at run time: what a connector speaks
+is [`@nexgen-os/connector`](packages/connector/README.md), MIT, and the
+continuous integration refuses an MIT package that brings the core with it,
+outside the connectors still on their way ([0064](docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).
 
 In practice: a product that reads and writes a Nexgen OS database through
 its tables, its functions or the MCP server keeps its own licence; a

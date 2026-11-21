@@ -10,7 +10,8 @@ run. Decision [0011](../../docs/decisions/0011-external-data.md).
 A connector comes in one of two kinds:
 
 - **a client of an external API**, in TypeScript: a library that implements
-  one of the interfaces of [`@nexgen-os/core`](../core/src/connectors/interfaces.ts) and
+  one of the interfaces of [`@nexgen-os/connector`](../connector/README.md) (MIT, re-exported by
+  [`@nexgen-os/core`](../core/src/connectors/interfaces.ts)) and
   answers in the core's terms, so that what it brings back lands on ordinary
   objects, attributes, documents and series, each carrying its source;
 - **a program in any language** that reads one JSON request on stdin and
@@ -327,3 +328,10 @@ The last line answers the versions in use. Details: [`pvlib/README.md`](pvlib/RE
 ## Licence
 
 MIT, every connector in its own folder with its own [`LICENSE`](pvgis/LICENSE).
+An MIT connector reaches no package under the AGPL at run time: it imports
+what it speaks from [`@nexgen-os/connector`](../connector/README.md), and
+`scripts/check-licences.mjs` refuses one that brings the core with it
+(`licence_crossed`). `open-meteo` and `pvgis` depend on the package alone;
+the connectors that still write through the core are listed in
+`STILL_CROSSING` until they move
+([0064](../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).

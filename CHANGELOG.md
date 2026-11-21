@@ -8,6 +8,15 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+### Added
+
+- `@nexgen-os/connector`, MIT: what a connector speaks — `Point`, `CollectedSeries`, `WeatherProvider`, `Fetch` and `azimuthFromSouth()` — as types and one pure function, its only dependency `@nexgen-os/solar` for the type of a series point. The core re-exports every name, so a caller that imported them from `@nexgen-os/core` keeps them. Decision [0064](docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md).
+
+### Changed
+
+- `@nexgen-os/open-meteo` and `@nexgen-os/pvgis` depend on `@nexgen-os/connector` instead of `@nexgen-os/core`: an application that embeds them no longer brings the AGPL core with them. Their exports do not change.
+- `scripts/check-licences.mjs` refuses an MIT package of this repository that reaches an AGPL one at run time (`licence_crossed`), outside the connectors listed in `STILL_CROSSING`, a list that only shrinks (`licence_crossing_listed`).
+
 ## [0.5.1] — 2026-11-21
 
 ### Fixed
