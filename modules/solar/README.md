@@ -10,6 +10,16 @@ estimate, kept in `solar.estimates` with its provenance and its inputs,
 and written by the function that computed it
 ([0004](../../docs/decisions/0004-a-figure-says-where-it-comes-from.md)).
 
+**Licences.** This module — its SQL, its estimates written with their
+provenance, the yield by PVGIS, by PVWatts or by an engine, sizing,
+performance indicators, products and the Sandia inverter fit — is AGPL-3.0
+like the core. The models it computes with are MIT, in
+[`@nexgen-os/solar`](../../packages/solar/README.md): the PVWatts DC model,
+the Faiman cell temperature, the Finkelstein-Schafer typical year and the
+exceedance levels, plain functions with no dependency that an application
+may embed without the AGPL; the module imports them and keeps no copy
+([0063](../../docs/decisions/0063-the-computations-of-a-pv-yield-are-mit.md)).
+
 ## Production, measured first
 
 Production is a device's: a `production_energy` series of a PV system. A
@@ -188,7 +198,7 @@ power; a system without arrays has no orientation and is refused
 | Profile | Computed by | Weather | What else the request may give |
 |---|---|---|---|
 | `pvgis_like` | PVGIS `seriescalc`, one call per array | PVGIS's radiation database for the place (SARAH3, or ERA5 outside its coverage), the years asked | `raddatabase` to force one |
-| `pvwatts` | this module (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked in the participant's local calendar | `gammaPdc`, `typicalYear`, `anchor` |
+| `pvwatts` | this module, with the models of [`@nexgen-os/solar`](../../packages/solar/README.md) (`pvwatts.ts`) | Open-Meteo's ERA5 archive (`history()`), hourly plane-of-array irradiance transposed by Open-Meteo, air temperature at 2 m, wind at 10 m, the years asked in the participant's local calendar | `gammaPdc`, `typicalYear`, `anchor` |
 
 `pvwatts` needs the participant's time zone (`participants.time_zone`, IANA); without
 it, it throws a named error (`time_zone_required`). Days, months and years

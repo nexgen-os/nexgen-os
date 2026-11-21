@@ -17,7 +17,9 @@ split.
 
 **The core and the modules are AGPL-3.0.** The schema, its functions, the
 modules, the installer and the core package: whoever runs a modified copy
-as a service offers its source to the people who use it.
+as a service offers its source to the people who use it. The computations
+of a PV yield, the project's own pure functions, are an MIT package the
+`solar` module computes with ([0063](0063-the-computations-of-a-pv-yield-are-mit.md)).
 
 **The format libraries and the connectors are MIT**, each package with its
 own licence file, so that they can be taken into any product. A program
@@ -68,3 +70,5 @@ services around it; no part of the open model is held back for them
 - [`CONTRIBUTING.md`](../../CONTRIBUTING.md), "Sign-off".
 - [0035](0035-a-format-library-touches-no-database.md) — a format library
   is MIT.
+- [0063](0063-the-computations-of-a-pv-yield-are-mit.md) — the
+  computations of a PV yield are an MIT package.

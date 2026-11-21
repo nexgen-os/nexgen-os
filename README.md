@@ -332,6 +332,7 @@ modules/               one Postgres schema per module (actions, battery, billing
 packs/                 one folder per country, data only (fr, be, es: identity and regions, identifiers, sources, frames of projects, municipalities, grid operators, defaults, golden cases), and the schema they are written against
 packages/cli/          the installer, `nexgen-os`: init, migrate, doctor, status, pack build and check, try in memory, and the gestures of the model as a person
 packages/mcp/          `@nexgen-os/mcp`: the MCP server, over stdio and Streamable HTTP, acting as the person
+packages/solar/        `@nexgen-os/solar`, MIT: the computations of a PV yield as plain functions (PVWatts, Faiman, the Finkelstein-Schafer typical year, exceedance levels), no dependency; the `solar` module computes with it
 packages/core/         `@nexgen-os/core`: the database seam, the standard place and the geocoder chain, the series API, the connector interfaces and the runner of the program connectors
 packages/formats/      one MIT package per file format (cityjson, dsmr, energy-bill, enedis-r6x, geojson, homeassistant, ifc, ocpp, panond, parquet, s2, sunspec, utilityrate5, weather-files)
 packages/connectors/   code that reaches outside, MIT: one package per outside service, weather (open-meteo, pvgis), geocoders (nominatim, photon, ban, geopunt, urbis, icar, mapbox), meter data under mandate (switchgrid, enedis-sge, fluvius, ores), a smart meter read on the place's own network (homewizard), charging stations from their cloud (zaptec, easee), and the programs in other languages, JSON in and out (pvlib, optional)
@@ -383,7 +384,11 @@ How to install both, and what the bridge needs when they share a database:
 The core, the modules, the packs and the installer are AGPL-3.0
 ([LICENSE](LICENSE)). The format libraries, the connectors and the
 Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
-can live inside any product.
+can live inside any product. So are the computations of a PV yield,
+[`@nexgen-os/solar`](packages/solar/README.md): the PVWatts model, the Faiman
+cell temperature, the typical year and the exceedance levels, with no
+dependency, for an application that embeds them; the `solar` module that
+writes them as estimates stays AGPL ([0063](docs/decisions/0063-the-computations-of-a-pv-yield-are-mit.md)).
 
 In practice: a product that reads and writes a Nexgen OS database through
 its tables, its functions or the MCP server keeps its own licence; a

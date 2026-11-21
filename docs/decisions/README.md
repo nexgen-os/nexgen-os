@@ -104,6 +104,7 @@ describes; its record is written once the fix has shipped.
 
 - [0040](0040-a-release-has-a-tag-a-schema-version-and-a-floor.md) · A release has a tag, a schema version and a schema floor · accepted
 - [0005](0005-agpl-core-mit-libraries-sign-off.md) · The core is AGPL, the libraries MIT, and a sign-off is enough to contribute · accepted
+- [0063](0063-the-computations-of-a-pv-yield-are-mit.md) · The computations of a PV yield are an MIT package; the solar module that writes them stays AGPL · accepted
 
 ## Records of single modules
 

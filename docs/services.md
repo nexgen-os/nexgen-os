@@ -1,7 +1,8 @@
 # What is open, and what is a service around it
 
 *Everything in this repository is AGPL-3.0 (the core and the modules) or MIT
-(the format libraries and the connectors), and always will be. This page
+(the format libraries, the connectors and the computations of a PV yield),
+and always will be. This page
 says where this repository stops, so that nobody confuses the open
 foundation with a commercial product built on it.*
 
