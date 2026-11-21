@@ -19,42 +19,10 @@ import type { Db } from '../db.js';
 import { GestureError } from '../refusal.js';
 import { storeSeries, type CollectedSeries, type MeterDataProvider, type MeterOfHub } from './interfaces.js';
 
-/** What a mandate allows to be read: the values of `grid.mandates.scope`. */
-export type MandateScope = 'load_curve' | 'daily_index' | 'energy_history' | 'technical_data';
-
-/** The approved mandate `grid.authorise_reading()` found: what a connector under mandate reads with. */
-export interface MeterMandate {
-  id: string;
-  /** The operator whose hub the data is read at (`grid.operators.code`). */
-  operator: string;
-  scope: MandateScope[];
-  /** The finest step it allows, an ISO 8601 duration. */
-  granularity: string;
-  /** The readings it covers, `YYYY-MM-DD`, null when open. */
-  data_from: string | null;
-  data_to: string | null;
-  valid_to: string | null;
-  /** The reference the operator or the intermediary gave the consent. */
-  external_reference: string | null;
-}
-
-/**
- * The conventions of an operator's data hub, read from its pack row
- * (`grid.operators.meter_data`): never written in a connector.
- */
-export interface MeterDataHub {
-  operator: string;
-  /** The IANA time zone the hub's files date their steps in, when they carry no offset. */
-  time_zone: string | null;
-  /** The hub's quality flags mapped to the core's codes (0–3) and the pack's (100 and up). */
-  quality_codes: Record<string, number>;
-  /** The sources that read this hub, in the pack's order. */
-  sources: string[];
-  /** How far back the hub serves readings, in months, when it says. */
-  history_months: number | null;
-  /** The steps the hub publishes load curves at, ISO 8601 durations. */
-  steps: string[];
-}
+// What a connector of a meter data hub speaks lives in `@nexgen-os/connector`,
+// MIT (decision 0064); the core re-exports it.
+export { requireMandate, type MandateScope, type MeterDataHub, type MeterMandate } from '@nexgen-os/connector';
+import type { MandateScope, MeterDataHub, MeterMandate } from '@nexgen-os/connector';
 
 export interface ReadingRequest {
   /** The organisation's `connectors` row: its source says whether a mandate is needed. */
@@ -88,20 +56,6 @@ export async function authoriseReading(db: Db, request: ReadingRequest): Promise
     `select id, operator, scope, granularity, data_from::text, data_to::text, valid_to::text, external_reference
        from grid.mandates where id = $1`, [id]);
   return mandate.rows[0]!;
-}
-
-/**
- * Refuses a reading under mandate without the mandate the check returned:
- * what every connector whose source has `auth = 'mandate'` calls first.
- */
-export function requireMandate(sourceCode: string, mandate: MeterMandate | null | undefined, scope: MandateScope = 'load_curve'): MeterMandate {
-  if (!mandate) {
-    throw new GestureError(`mandate_missing: ${sourceCode} reads under mandate; pass the mandate grid.authorise_reading() returned`);
-  }
-  if (!mandate.scope.includes(scope)) {
-    throw new GestureError(`mandate_scope: mandate ${mandate.id} does not allow ${scope}`);
-  }
-  return mandate;
 }
 
 /** The conventions of the hub of the operator that runs a meter, from its pack row. */

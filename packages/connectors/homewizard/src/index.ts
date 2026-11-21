@@ -36,7 +36,7 @@
 // dongle comes from the organisation's `connectors` row.
 
 import { readFileSync } from 'node:fs';
-import { GestureError, type CollectedSeries, type SourceRow } from '@nexgen-os/core';
+import { GestureError, type CollectedSeries, type SourceRow } from '@nexgen-os/connector';
 import { instantsOf } from '@nexgen-os/enedis-r6x';
 
 /** The subset of `fetch` the connector uses, so a test or a proxy can stand in. */

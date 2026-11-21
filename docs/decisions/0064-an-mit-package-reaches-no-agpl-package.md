@@ -32,7 +32,9 @@ in the core's terms, and nothing that reads a database or the network:
 `Point`, `CollectedSeries`, `WeatherProvider`, `Fetch` and
 `azimuthFromSouth()` for the weather connectors; `Address`, `Place`,
 `Precision`, `SearchOptions`, `Geocoder` and `SourceRow` for the
-geocoders. Its only dependency is `@nexgen-os/solar`, MIT
+geocoders; `MeterOfHub`, `MeterReadingOptions`, `MeterDataProvider`,
+`MeterMandate`, `MandateScope`, `MeterDataHub`, `requireMandate()`,
+`GestureError` and `refusalCode()` for the meter data hubs. Its only dependency is `@nexgen-os/solar`, MIT
 and without dependency, for the type of a series point
 (`SeriesPoint`), so that one type serves the core, the computations and the
 connectors. **The core re-exports every name of the package**: an
@@ -42,8 +44,10 @@ imported a name from the core keeps it.
 **A connector moves onto the package when what it imports from the core is
 there.** The weather and PV connectors (`open-meteo`, `pvgis`) and the
 geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
-`urbis`, and `grb`, which reads its buildings with `@nexgen-os/cityjson`)
-import the package, never the core. A connector
+`urbis`, and `grb`, which reads its buildings with `@nexgen-os/cityjson`),
+the meter data hubs (`enedis-sge`, `fluvius`, `ores`) and the meters read
+on the place's network (`homewizard`, `homeassistant-api`) import the
+package, never the core. A connector
 that writes through the core (`storeSeries()`, `registerSource()`,
 `requireMandate()`) moves once it hands what it collected to its caller
 instead, the caller being the core or a module, which write it with its

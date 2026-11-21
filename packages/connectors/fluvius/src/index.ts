@@ -23,7 +23,7 @@ import { X509Certificate, createHash, createSign, randomUUID } from 'node:crypto
 import {
   GestureError, requireMandate,
   type CollectedSeries, type MeterDataHub, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions,
-} from '@nexgen-os/core';
+} from '@nexgen-os/connector';
 import { instantsOf } from '@nexgen-os/enedis-r6x';
 
 /** The subset of `fetch` the connector uses, so a test or a proxy can stand in. */

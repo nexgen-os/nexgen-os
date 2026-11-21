@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/connector",
   "version": "0.5.1",
-  "description": "What a connector of Nexgen OS speaks: the point it is asked about, the series it brings back, the interface of a weather source, the subset of fetch it calls and the azimuth counted from south. Types and pure functions, MIT, no database, no network.",
+  "description": "What a connector of Nexgen OS speaks: the point and the series it brings back, the weather, geocoder and meter data hub interfaces, the mandate check, a refusal by name, the sources row, the subset of fetch it calls. Types and pure functions, MIT, no database, no network.",
   "license": "MIT",
   "repository": {
     "type": "git",

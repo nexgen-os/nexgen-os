@@ -17,48 +17,16 @@
 
 import type { Db } from '../db.js';
 import { store } from '../series.js';
-import type { MandateScope, MeterDataHub, MeterMandate } from './meter-data.js';
 
 
 // What a connector speaks lives in `@nexgen-os/connector`, MIT, so
 // that a connector runs without the core (decision 0064); the core
 // re-exports it, one definition for both.
-export { azimuthFromSouth, type CollectedSeries, type Point, type SourceRow, type WeatherProvider } from '@nexgen-os/connector';
+export {
+  azimuthFromSouth,
+  type CollectedSeries, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions, type Point, type SourceRow, type WeatherProvider,
+} from '@nexgen-os/connector';
 import type { Address, CollectedSeries, Point, SourceRow } from '@nexgen-os/connector';
-
-/** A meter as its operator's hub knows it: its identifier in a scheme, and what it can do. */
-export interface MeterOfHub {
-  identifier: string;
-  scheme: string;
-  /** Take from the grid, inject into it, or both (`meters.direction`). */
-  direction?: 'offtake' | 'injection' | 'both';
-}
-
-/** What a reading of a meter is given beside the meter and the period. */
-export interface MeterReadingOptions {
-  /** The step asked, an ISO 8601 duration (`PT30M`); the hub's own when absent. */
-  step?: string;
-  /** What is read; `load_curve` by default. */
-  scope?: MandateScope;
-  /**
-   * The mandate `grid.authorise_reading()` returned: a connector whose
-   * source reads under mandate refuses without it (`requireMandate()`).
-   */
-  mandate?: MeterMandate | null;
-  /** The conventions of the operator's hub, from its pack row: its time zone and its quality flags. */
-  hub?: MeterDataHub;
-}
-
-/**
- * Readings of a meter from the grid operator's hub or a data hub, by its
- * identifier and scheme, from `from` to `to` (`YYYY-MM-DD`, `to` excluded).
- * `collectMeterReadings()` checks the mandate, calls it and stores what it
- * returns on the meter.
- */
-export interface MeterDataProvider {
-  readonly source_code: string;
-  readings(meter: MeterOfHub, from: string, to: string, options?: MeterReadingOptions): Promise<CollectedSeries[]>;
-}
 
 /** A place a register or a map knows: becomes a participant or a building, with its identifiers and attributes. */
 export interface PlaceRecord {

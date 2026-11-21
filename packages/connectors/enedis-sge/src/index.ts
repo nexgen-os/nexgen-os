@@ -16,7 +16,7 @@
 import {
   GestureError, requireMandate,
   type CollectedSeries, type MeterDataHub, type MeterDataProvider, type MeterMandate, type MeterOfHub, type MeterReadingOptions,
-} from '@nexgen-os/core';
+} from '@nexgen-os/connector';
 import { durationMs } from '@nexgen-os/enedis-r6x';
 import {
   SGE_SERVICES, collectionOrderRequest, detailedMeasuresRequest, searchPointRequest, technicalDataRequest,

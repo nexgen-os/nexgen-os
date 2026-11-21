@@ -27,7 +27,7 @@ import { Agent, request as httpsRequest } from 'node:https';
 import {
   GestureError, requireMandate,
   type CollectedSeries, type MeterDataHub, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions,
-} from '@nexgen-os/core';
+} from '@nexgen-os/connector';
 import { energySeries, mandateStatusOf, seconds, startOfDay, type ConsentLink, type HttpFetch } from '@nexgen-os/fluvius';
 
 export type { ConsentLink, HttpFetch };

@@ -331,7 +331,7 @@ MIT, every connector in its own folder with its own [`LICENSE`](pvgis/LICENSE).
 An MIT connector reaches no package under the AGPL at run time: it imports
 what it speaks from [`@nexgen-os/connector`](../connector/README.md), and
 `scripts/check-licences.mjs` refuses one that brings the core with it
-(`licence_crossed`). The weather connectors and the geocoders depend on the
-package, not on the core; the connectors that still write through the core are listed in
-`STILL_CROSSING` until they move
+(`licence_crossed`). Every connector depends on the package rather than the
+core, except the four that still write through it (`easee`, `zaptec`,
+`mqtt`, `switchgrid`), listed in `STILL_CROSSING` until they move
 ([0064](../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).

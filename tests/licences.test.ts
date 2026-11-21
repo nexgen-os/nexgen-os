@@ -115,7 +115,7 @@ describe('what a package ships', () => {
     const repoLock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
     const crossing = (licenceProblems(repoLock, workspaces(), []) as string[]).filter((p) => p.startsWith('licence_crossed'));
     expect(crossing.map((p) => p.split(' ')[1]).sort()).toEqual([...STILL_CROSSING].sort());
-    for (const name of ['@nexgen-os/connector', '@nexgen-os/open-meteo', '@nexgen-os/pvgis', '@nexgen-os/solar', '@nexgen-os/ban', '@nexgen-os/geopunt', '@nexgen-os/icar', '@nexgen-os/mapbox', '@nexgen-os/nominatim', '@nexgen-os/photon', '@nexgen-os/urbis', '@nexgen-os/grb']) {
+    for (const name of ['@nexgen-os/connector', '@nexgen-os/open-meteo', '@nexgen-os/pvgis', '@nexgen-os/solar', '@nexgen-os/ban', '@nexgen-os/geopunt', '@nexgen-os/icar', '@nexgen-os/mapbox', '@nexgen-os/nominatim', '@nexgen-os/photon', '@nexgen-os/urbis', '@nexgen-os/grb', '@nexgen-os/enedis-sge', '@nexgen-os/fluvius', '@nexgen-os/ores', '@nexgen-os/homeassistant-api', '@nexgen-os/homewizard']) {
       expect(STILL_CROSSING, name).not.toContain(name);
     }
   });

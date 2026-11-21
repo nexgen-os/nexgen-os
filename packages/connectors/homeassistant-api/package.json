@@ -32,7 +32,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/core": "^0.5.0",
+    "@nexgen-os/connector": "^0.5.0",
     "@nexgen-os/homeassistant": "^0.5.0"
   }
 }

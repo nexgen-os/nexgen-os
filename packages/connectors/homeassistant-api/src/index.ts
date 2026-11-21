@@ -25,7 +25,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { GestureError } from '@nexgen-os/core';
+import { GestureError } from '@nexgen-os/connector';
 import type { HaArea, HaDevice, HaEntity, HaFloor, HaSnapshot, HaState } from '@nexgen-os/homeassistant';
 
 /** The part of a WebSocket the connector uses: the standard one of Node 22 and browsers, `ws`, or a test's. */
