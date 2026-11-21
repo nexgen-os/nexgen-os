@@ -23,7 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
+          # A self-hosted runner keeps its own npm cache on its disk: saving
+          # it to GitHub's cache took longer than the job itself.
+          cache: ${{ !vars.CI_RUNNER && 'npm' || '' }}
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
@@ -40,7 +42,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          # A self-hosted runner keeps its own npm cache on its disk: saving
+          # it to GitHub's cache took longer than the job itself.
+          cache: ${{ !vars.CI_RUNNER && 'npm' || '' }}
       - uses: actions/setup-python@v5
         if: ${{ !vars.CI_RUNNER }}
         with:
@@ -72,7 +76,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          # A self-hosted runner keeps its own npm cache on its disk: saving
+          # it to GitHub's cache took longer than the job itself.
+          cache: ${{ !vars.CI_RUNNER && 'npm' || '' }}
       - uses: actions/setup-python@v5
         if: ${{ !vars.CI_RUNNER }}
         with:
@@ -103,7 +109,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          # A self-hosted runner keeps its own npm cache on its disk: saving
+          # it to GitHub's cache took longer than the job itself.
+          cache: ${{ !vars.CI_RUNNER && 'npm' || '' }}
       - run: npm ci
       # The country seeds are compiled from packs/. A seed that is not the
       # exact output of its pack means the two have drifted, and the pack is
