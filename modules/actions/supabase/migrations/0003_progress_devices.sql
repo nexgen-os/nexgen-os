@@ -66,3 +66,5 @@ grant execute on function actions.progress(uuid, date) to authenticated, service
 update modules
    set description = 'What has to be done on an object of the core, now or later: steps of a project planned from templates per country, region and condition, recommendations resting on an estimate, commands asked of a device in real time — one lifecycle for all three — and the progress of a participant or a project on a day, its actions and its devices.'
  where code = 'actions';
+
+update nexgen.modules set version = '0.5.0' where code = 'actions';

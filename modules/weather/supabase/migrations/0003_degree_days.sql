@@ -62,3 +62,5 @@ comment on function weather.degree_days(uuid, timestamptz, timestamptz, double p
   'Degree-days of each local day of a temperature series, by the mean daily temperature method: heating, max(base - mean, 0); cooling, max(mean - base, 0), in kelvin days. The base is given by the caller, never a default. Days are cut in the time zone of the series (weather.time_zone_of()); a day without values has no degree-days. Returns the mean temperature, samples and expected as resample() does. Refuses base_required, degree_day_kind_unknown, series_not_found, temperature_required, and time_zone_required from resample().';
 
 grant execute on function weather.degree_days(uuid, timestamptz, timestamptz, double precision, text) to authenticated, service_role;
+
+update nexgen.modules set version = '0.5.0' where code = 'weather';

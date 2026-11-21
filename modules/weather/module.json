@@ -3,7 +3,7 @@
   "code": "weather",
   "name": "Weather",
   "description": "Weather points participants are linked to, weather sources, and the source each participant reads, resolved from its attribute, its organisation, the pack and the coverage.",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "schema": "weather",
   "requires": {
     "core": "0.3.0",

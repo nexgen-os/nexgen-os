@@ -289,4 +289,4 @@ grant execute on function building.model_to_world(uuid, geometry), building.mode
   building.add_model(uuid, text, text, text, geometry, integer, numeric, numeric, numeric, text, text, numeric[], text, text, bigint, text, jsonb, text, timestamptz, jsonb)
   to authenticated, service_role;
 
-update nexgen.modules set version = '0.4.0' where code = 'building';
+update nexgen.modules set version = '0.5.0' where code = 'building';

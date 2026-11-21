@@ -33,3 +33,5 @@ update solar.yield_profiles
    set losses = '[{"code": "system", "pct": null}]',
        description = replace(description, 'one aggregate system loss, 14 % as in the PVWatts API example (the API has no default);', 'one aggregate system loss, the system_loss of the place (parameter_of(); the PVWatts API has no default);')
  where code = 'pvwatts';
+
+update nexgen.modules set version = '0.5.0' where code = 'solar';

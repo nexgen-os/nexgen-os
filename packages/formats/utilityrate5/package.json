@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/utilityrate5",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "SAM utilityrate5 rates read and written: the energy charges, the 12 x 24 weekday and weekend schedules, the time-series rates, and the hourly rates of a year they give. No database, no dependency.",
   "license": "MIT",
   "repository": {

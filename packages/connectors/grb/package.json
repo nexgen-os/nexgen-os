@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/grb",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "The buildings of a place in Flanders from open data — GRB footprints and their ground, eave and ridge from DHM Vlaanderen II — as a CityJSON model for the building module of Nexgen OS.",
   "license": "MIT",
   "repository": {
@@ -33,7 +33,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/cityjson": "^0.4.0",
-    "@nexgen-os/core": "^0.4.0"
+    "@nexgen-os/cityjson": "^0.5.0",
+    "@nexgen-os/core": "^0.5.0"
   }
 }

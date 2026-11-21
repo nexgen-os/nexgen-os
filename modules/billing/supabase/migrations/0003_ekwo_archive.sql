@@ -101,3 +101,5 @@ revoke execute on function billing.declare_to_ekwo_archive() from public;
 
 -- An installation already linked: its tables are declared now.
 select billing.declare_to_ekwo_archive();
+
+update nexgen.modules set version = '0.5.0' where code = 'billing';

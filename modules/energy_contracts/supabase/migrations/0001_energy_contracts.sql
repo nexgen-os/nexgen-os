@@ -378,5 +378,5 @@ grant execute on function energy_contracts.in_force(uuid, text, date) to authent
 grant execute on function energy_contracts.price_at(uuid, text, timestamptz) to authenticated, service_role;
 
 insert into modules (code, name, version, schema_name, requires_core_min, description)
-values ('energy_contracts', 'Energy contracts', '0.4.0', 'energy_contracts', '0.4.0',
+values ('energy_contracts', 'Energy contracts', '0.5.0', 'energy_contracts', '0.4.0',
         'The contracts of a participant — supply, injection, physical or virtual PPA, internal tariff of a community, market — with the other party, the flow they price, their cascade and their prices as signals, fixed or indexed on a price series.');

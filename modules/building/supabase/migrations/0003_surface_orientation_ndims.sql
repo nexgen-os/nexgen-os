@@ -62,4 +62,4 @@ begin
 end;
 $$;
 
-update nexgen.modules set version = '0.4.1' where code = 'building';
+update nexgen.modules set version = '0.5.0' where code = 'building';

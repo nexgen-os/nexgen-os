@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/mdns",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "The devices of a place found on its own network, by DNS-SD over multicast DNS, for Nexgen OS.",
   "license": "MIT",
   "repository": {

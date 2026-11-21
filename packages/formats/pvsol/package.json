@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/pvsol",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "A PV*SOL study (.pvprj) read into a plain project: its arrays with their orientation and modules, its inverters, its imported load profile at its own step, its losses and the results PV*SOL simulated. No database, no dependency.",
   "license": "MIT",
   "repository": {
