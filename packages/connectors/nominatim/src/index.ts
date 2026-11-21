@@ -1,7 +1,7 @@
 // Nominatim — https://nominatim.org, the OpenStreetMap geocoder, as a connector.
 // Source `nominatim`; the data is OpenStreetMap's (ODbL).
 
-import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/connector';
 
 export interface NominatimOptions {
   /**

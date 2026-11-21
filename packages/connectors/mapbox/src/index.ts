@@ -10,7 +10,7 @@
 // placed by it keeps the point.
 
 import { readFileSync } from 'node:fs';
-import type { Fetch, Geocoder, Place, Precision, SearchOptions, SourceRow } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision, SearchOptions, SourceRow } from '@nexgen-os/connector';
 
 export interface MapboxOptions {
   /** The access token, resolved by the caller from the `secret_ref` of the organisation's `connectors` row; never stored. */

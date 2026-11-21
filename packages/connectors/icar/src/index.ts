@@ -1,7 +1,7 @@
 // ICAR — the geocoding service of the Service public de Wallonie as a Geocoder
 // of the core's shape. Open, no key.
 
-import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/connector';
 
 interface Common {
   baseUrl?: string;

@@ -9,7 +9,7 @@ const geocoder = urbis({ languages: ['fr', 'nl'] });
 const [place] = await geocoder.search('Wetstraat 16, 1000 Brussel');
 ```
 
-The place is the standard shape of `@nexgen-os/core` (address, WGS 84 point,
+The place is the standard shape of `@nexgen-os/connector` (address, WGS 84 point,
 precision, source); `placeFields(place)` gives the place columns of `participants` it fills.
 Decision [0009](../../../docs/decisions/0009-what-applies-follows-the-region.md).
 

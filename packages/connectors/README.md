@@ -30,7 +30,7 @@ A connector comes in one of two kinds:
 | `DeviceReadingsProvider` | series of a device from its maker's platform, an aggregator or its local interface, by its identifier in the platform's scheme | `series` of kind `measured` on the device |
 | `CommandCarrier` | the answer of a device to a command of the `actions` module: the instant it acknowledged it, or why not | the command done and its value in the setpoint or command series of the device, or failed with why (`actions.report()`) |
 | `PlacesProvider` | places around a point, with their external identifier, address and attributes | `participants` / `building.buildings`, `identifiers`, `attributes` with `source_code` |
-| `Geocoder` (in [`@nexgen-os/core`](../core/src/address.ts)) | an address ⇄ a point | the participant's address and point, with precision and source |
+| `Geocoder` (in [`@nexgen-os/connector`](../connector/README.md)) | an address ⇄ a point | the participant's address and point, with precision and source |
 
 A meter is read at its operator's hub only under the customer's mandate:
 `collectMeterReadings(db, provider, request)` asks the one check
@@ -331,7 +331,7 @@ MIT, every connector in its own folder with its own [`LICENSE`](pvgis/LICENSE).
 An MIT connector reaches no package under the AGPL at run time: it imports
 what it speaks from [`@nexgen-os/connector`](../connector/README.md), and
 `scripts/check-licences.mjs` refuses one that brings the core with it
-(`licence_crossed`). `open-meteo` and `pvgis` depend on the package alone;
-the connectors that still write through the core are listed in
+(`licence_crossed`). The weather connectors and the geocoders depend on the
+package, not on the core; the connectors that still write through the core are listed in
 `STILL_CROSSING` until they move
 ([0064](../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).

@@ -1,7 +1,7 @@
 // UrbIS — the Brussels address register (Paradigm geolocation service) as a Geocoder
 // of the core's shape. Open, no key.
 
-import type { Fetch, Geocoder, Place } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place } from '@nexgen-os/connector';
 
 interface Common {
   baseUrl?: string;

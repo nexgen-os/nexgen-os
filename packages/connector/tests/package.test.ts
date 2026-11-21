@@ -32,13 +32,15 @@ describe('the MIT boundary of @nexgen-os/connector', () => {
   it('is the one definition the core re-exports', () => {
     expect(coreAzimuthFromSouth).toBe(azimuthFromSouth);
     expect(read('packages/core/src/connectors/interfaces.ts')).not.toMatch(/export (interface|function) (Point|CollectedSeries|WeatherProvider|azimuthFromSouth)\b/);
-    expect(read('packages/core/src/address.ts')).not.toMatch(/export type Fetch =/);
+    expect(read('packages/core/src/connectors/interfaces.ts')).not.toMatch(/export interface SourceRow\b/);
+    expect(read('packages/core/src/address.ts')).not.toMatch(/export (type Fetch =|type Precision =|interface (Address|Place|SearchOptions|Geocoder)\b)/);
   });
 
-  it('is what the weather connectors import, in place of the core', () => {
-    for (const connector of ['open-meteo', 'pvgis']) {
+  it('is what the weather connectors and the geocoders import, in place of the core', () => {
+    for (const connector of ['open-meteo', 'pvgis', 'ban', 'geopunt', 'icar', 'mapbox', 'nominatim', 'photon', 'urbis', 'grb']) {
       const dependencies = Object.keys((JSON.parse(read(`packages/connectors/${connector}/package.json`)) as { dependencies?: Record<string, string> }).dependencies ?? {});
-      expect(dependencies, connector).toEqual(['@nexgen-os/connector']);
+      expect(dependencies, connector).toContain('@nexgen-os/connector');
+      expect(dependencies, connector).not.toContain('@nexgen-os/core');
       for (const { name, specifier } of specifiers(`packages/connectors/${connector}/src`)) {
         expect(specifier, `${connector}/${name} imports ${specifier}`).not.toMatch(/^@nexgen-os\/core/);
       }

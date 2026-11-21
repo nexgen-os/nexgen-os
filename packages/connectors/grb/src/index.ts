@@ -14,7 +14,7 @@
 //   siteModel(area)                all of it, as a CityModel for `importCityJson()`
 
 import { readFileSync } from 'node:fs';
-import type { SourceRow } from '@nexgen-os/core';
+import type { SourceRow } from '@nexgen-os/connector';
 import type { CityBuilding, CityModel, Point as CityPoint } from '@nexgen-os/cityjson';
 import { readGeoTiff, type Raster } from './geotiff.js';
 

@@ -9,7 +9,7 @@ const geocoder = nominatim({ userAgent: 'my-app (contact@example.org)' });
 const [place] = await geocoder.search('Rue de la Loi 12, Bruxelles');
 ```
 
-The place is the standard shape of `@nexgen-os/core` (address, WGS 84 point,
+The place is the standard shape of `@nexgen-os/connector` (address, WGS 84 point,
 precision, source); `placeFields(place)` gives the place columns of `participants` it fills.
 Decision [0009](../../../docs/decisions/0009-what-applies-follows-the-region.md).
 

@@ -16,16 +16,15 @@
 // registers its `sources` rows; the core and the pages never import it.
 
 import type { Db } from '../db.js';
-import type { Address } from '../address.js';
 import { store } from '../series.js';
 import type { MandateScope, MeterDataHub, MeterMandate } from './meter-data.js';
 
 
-// What a weather connector speaks lives in `@nexgen-os/connector`, MIT, so
+// What a connector speaks lives in `@nexgen-os/connector`, MIT, so
 // that a connector runs without the core (decision 0064); the core
 // re-exports it, one definition for both.
-export { azimuthFromSouth, type CollectedSeries, type Point, type WeatherProvider } from '@nexgen-os/connector';
-import type { CollectedSeries, Point } from '@nexgen-os/connector';
+export { azimuthFromSouth, type CollectedSeries, type Point, type SourceRow, type WeatherProvider } from '@nexgen-os/connector';
+import type { Address, CollectedSeries, Point, SourceRow } from '@nexgen-os/connector';
 
 /** A meter as its operator's hub knows it: its identifier in a scheme, and what it can do. */
 export interface MeterOfHub {
@@ -114,29 +113,6 @@ export async function storeSeries(
     step: series.step, source_code: target.sourceCode, name: series.name ?? target.name ?? null,
   }, series.values, { unit: series.unit ?? null, issuedAt: options.issuedAt ?? null });
   return { seriesId: stored.seriesId, inserted: stored.changed };
-}
-
-/**
- * A `sources` row as a connector package ships it (decision 0011): what
- * exists outside, who serves it, its licence and how long what it gives may
- * be kept. The countries a source serves are data of its row, never code.
- */
-export interface SourceRow {
-  code: string;
-  name: string;
-  description?: string | null;
-  kind?: 'api' | 'file' | 'registry' | 'device' | 'manual' | 'text';
-  base_url?: string | null;
-  docs_url?: string | null;
-  auth?: 'none' | 'api_key' | 'oauth2' | 'certificate' | 'mandate';
-  countries?: string[];
-  regions?: string[];
-  license?: string | null;
-  attribution?: string | null;
-  retention_days?: number | null;
-  redistributable?: boolean;
-  /** The package that brings it, `@nexgen-os/<name>`. */
-  published_by: string;
 }
 
 /**

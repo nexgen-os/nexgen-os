@@ -4,7 +4,7 @@
 // the register as a source (`ban`); the adapter lives here with the other
 // geocoders, as code never belongs in a pack.
 
-import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/connector';
 
 export const SOURCE_CODE = 'ban';
 

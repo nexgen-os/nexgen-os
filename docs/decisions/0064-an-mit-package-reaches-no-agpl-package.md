@@ -30,7 +30,9 @@ taken off.
 MIT.** It holds the types and the pure functions a connector needs to answer
 in the core's terms, and nothing that reads a database or the network:
 `Point`, `CollectedSeries`, `WeatherProvider`, `Fetch` and
-`azimuthFromSouth()` first. Its only dependency is `@nexgen-os/solar`, MIT
+`azimuthFromSouth()` for the weather connectors; `Address`, `Place`,
+`Precision`, `SearchOptions`, `Geocoder` and `SourceRow` for the
+geocoders. Its only dependency is `@nexgen-os/solar`, MIT
 and without dependency, for the type of a series point
 (`SeriesPoint`), so that one type serves the core, the computations and the
 connectors. **The core re-exports every name of the package**: an
@@ -38,8 +40,10 @@ installation and a connector share one definition, and a caller that
 imported a name from the core keeps it.
 
 **A connector moves onto the package when what it imports from the core is
-there.** The weather and PV connectors, `open-meteo` and `pvgis`, import
-only the package and depend on nothing else of this repository. A connector
+there.** The weather and PV connectors (`open-meteo`, `pvgis`) and the
+geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
+`urbis`, and `grb`, which reads its buildings with `@nexgen-os/cityjson`)
+import the package, never the core. A connector
 that writes through the core (`storeSeries()`, `registerSource()`,
 `requireMandate()`) moves once it hands what it collected to its caller
 instead, the caller being the core or a module, which write it with its

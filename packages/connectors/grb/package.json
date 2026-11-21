@@ -34,6 +34,6 @@
   },
   "dependencies": {
     "@nexgen-os/cityjson": "^0.5.0",
-    "@nexgen-os/core": "^0.5.0"
+    "@nexgen-os/connector": "^0.5.0"
   }
 }

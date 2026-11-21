@@ -15,7 +15,7 @@ await geocoder.reverse(4.3521, 50.8467);                       // the full addre
 ```
 
 Every answer is a place in the standard shape of
-[`@nexgen-os/core`](../../core/src/address.ts): the address in the fields
+[`@nexgen-os/connector`](../../connector/README.md): the address in the fields
 every country has, the region in ISO 3166-2 (`region_code_full`), the point,
 its precision and the source `mapbox`.
 

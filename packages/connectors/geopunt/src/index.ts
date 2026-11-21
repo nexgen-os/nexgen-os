@@ -1,7 +1,7 @@
 // Geopunt — the Flemish address register as a Geocoder of the core's shape.
 // Open, no key.
 
-import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/connector';
 
 interface Common {
   baseUrl?: string;

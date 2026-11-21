@@ -1,7 +1,7 @@
 // Photon — https://github.com/komoot/photon, search as you type on OpenStreetMap, as a connector.
 // Source `photon`; the data is OpenStreetMap's (ODbL).
 
-import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/core';
+import type { Fetch, Geocoder, Place, Precision } from '@nexgen-os/connector';
 
 export interface PhotonOptions {
   /** Default: the public instance of komoot. */

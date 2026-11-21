@@ -61,10 +61,8 @@ export const COPYLEFT = [
  * crossing; none is ever added.
  */
 export const STILL_CROSSING = [
-  '@nexgen-os/ban', '@nexgen-os/easee', '@nexgen-os/enedis-sge', '@nexgen-os/fluvius', '@nexgen-os/geopunt',
-  '@nexgen-os/grb', '@nexgen-os/homeassistant-api', '@nexgen-os/homewizard', '@nexgen-os/icar', '@nexgen-os/mapbox',
-  '@nexgen-os/mqtt', '@nexgen-os/nominatim', '@nexgen-os/ores', '@nexgen-os/photon', '@nexgen-os/switchgrid',
-  '@nexgen-os/urbis', '@nexgen-os/zaptec',
+  '@nexgen-os/easee', '@nexgen-os/enedis-sge', '@nexgen-os/fluvius', '@nexgen-os/homeassistant-api', '@nexgen-os/homewizard',
+  '@nexgen-os/mqtt', '@nexgen-os/ores', '@nexgen-os/switchgrid', '@nexgen-os/zaptec',
 ];
 
 /** What a package of this repository may ship, by its own licence. */
