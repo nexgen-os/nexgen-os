@@ -10,8 +10,7 @@
 // dates an hour at its start; PVGIS gives power in watts, the core keeps
 // kilowatts and kilowatt-hours.
 
-import type { Fetch } from '@nexgen-os/core';
-import { azimuthFromSouth, type CollectedSeries, type Point } from '@nexgen-os/core';
+import { azimuthFromSouth, type CollectedSeries, type Fetch, type Point } from '@nexgen-os/connector';
 
 export const SOURCE_CODE = 'pvgis';
 

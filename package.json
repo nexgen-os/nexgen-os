@@ -28,6 +28,7 @@
   },
   "workspaces": [
     "packages/solar",
+    "packages/connector",
     "packages/formats/*",
     "packages/core",
     "packages/connectors/*",

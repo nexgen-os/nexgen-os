@@ -1,0 +1,37 @@
+{
+  "name": "@nexgen-os/connector",
+  "version": "0.5.1",
+  "description": "What a connector of Nexgen OS speaks: the point it is asked about, the series it brings back, the interface of a weather source, the subset of fetch it calls and the azimuth counted from south. Types and pure functions, MIT, no database, no network.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexgen-os/nexgen-os.git",
+    "directory": "packages/connector"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nexgen-os/solar": "^0.5.0"
+  }
+}

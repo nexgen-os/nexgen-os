@@ -10,8 +10,7 @@
 // a plane is counted from south, west positive, where the core counts from
 // true north, clockwise.
 
-import type { Fetch } from '@nexgen-os/core';
-import { azimuthFromSouth, type CollectedSeries, type Point, type WeatherProvider } from '@nexgen-os/core';
+import { azimuthFromSouth, type CollectedSeries, type Fetch, type Point, type WeatherProvider } from '@nexgen-os/connector';
 
 export const SOURCE_CODE = 'open_meteo';
 

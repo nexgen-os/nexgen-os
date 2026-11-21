@@ -63,8 +63,8 @@ export interface Geocoder {
   reverse(lon: number, lat: number, options?: Pick<SearchOptions, 'language'>): Promise<Place | null>;
 }
 
-/** The subset of `fetch` the adapters use, so a test or a proxy can stand in. */
-export type Fetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
+/** The subset of `fetch` the adapters use, from `@nexgen-os/connector` (decision 0064). */
+export type { Fetch } from '@nexgen-os/connector';
 
 /**
  * The place columns of `participants` a place fills: the address, the
