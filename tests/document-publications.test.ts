@@ -110,6 +110,26 @@ describe('a publication is kept as it was published', () => {
       .rejects.toThrow(/^publication_withdrawn/);
   });
 
+  it('is withdrawn once whatever the clock says: twice in one transaction, the second is refused', async () => {
+    // now() is the time the transaction started: both calls read the same
+    // instant, as two calls within one tick of the clock do. Rolled back,
+    // the publication leaves nothing for the tests after it.
+    await db.exec('begin');
+    try {
+      const refused = await owner(async () => {
+        const id = (await one<{ id: string }>(db, `select publish($1, 'CC-BY-4.0') id`, [doc])).id;
+        await db.query('select withdraw($1)', [id]);
+        await db.exec('savepoint twice');
+        const error = await db.query('select withdraw($1)', [id]).then(() => null, (e: Error) => e);
+        await db.exec('rollback to savepoint twice');
+        return error;
+      });
+      expect(refused?.message).toMatch(/^publication_withdrawn/);
+    } finally {
+      await db.exec('rollback');
+    }
+  });
+
   it('outlives the document it was published from', async () => {
     await db.query('delete from documents where id = $1', [doc]);
     const rows = await db.query<{ document_id: string | null; uri: string; same: boolean }>(

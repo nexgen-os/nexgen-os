@@ -225,6 +225,12 @@ begin
     raise exception 'not_allowed: a publication is withdrawn by a person who holds publications.manage on its organisation, an owner'
       using errcode = '42501';
   end if;
+  -- Asked of the row, never of the clock: a second call that reads the same
+  -- now() — in one transaction, or within one tick — is refused as well.
+  if p.withdrawn_at is not null then
+    raise exception 'publication_withdrawn: publication % was withdrawn on %', p.id, p.withdrawn_at
+      using errcode = 'check_violation';
+  end if;
   update document_publications set withdrawn_at = now(), withdrawn_by = auth.uid() where id = p_publication_id;
   return now();
 end;
