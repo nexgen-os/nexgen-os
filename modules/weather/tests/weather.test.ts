@@ -197,13 +197,15 @@ describe('degree_days', () => {
   let house: string;
   let temperature: string;
   // Local days of Brussels in January, UTC+1: 5 January starts at 23:00 UTC on the 4th.
+  // A day comes back as the instant it starts; the test reads its date in the
+  // zone of the house, so the session's time zone changes nothing.
   const from = '2026-01-04T23:00:00Z';
   const to = '2026-01-07T23:00:00Z';
   const days = (base: number | null, kind?: string) =>
     db.query<{ day: string; mean_temperature: number | null; degree_days: number | null; samples: number }>(
       kind === undefined
-        ? 'select day::text, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4)'
-        : 'select day::text, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4, $5)',
+        ? `select (day at time zone 'Europe/Brussels')::date::text as day, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4)`
+        : `select (day at time zone 'Europe/Brussels')::date::text as day, mean_temperature, degree_days, samples from weather.degree_days($1, $2, $3, $4, $5)`,
       kind === undefined ? [temperature, from, to, base] : [temperature, from, to, base, kind],
     );
 
