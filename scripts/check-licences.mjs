@@ -49,6 +49,12 @@ export const COPYLEFT = [
 
 /** What a package of this repository may ship, by its own licence. */
 export function accepted(licence) {
+  // Both sides of an AND bind the package: MIT code with Apache-2.0 data ships what MIT code may.
+  const sides = licence.split(' AND ');
+  if (sides.length > 1) {
+    const named = sides.filter((side) => side === 'MIT' || /^AGPL-3\.0/.test(side));
+    if (named.length === 1 && sides.every((side) => named.includes(side) || PERMISSIVE.includes(side))) return accepted(named[0]);
+  }
   if (licence === 'MIT') return new Set([...PERMISSIVE, ...FILE_COPYLEFT]);
   if (/^AGPL-3\.0/.test(licence)) return new Set([...PERMISSIVE, ...FILE_COPYLEFT, ...COPYLEFT]);
   throw new Error(`licence_unknown: a package of this repository under ${licence}, which decision 0005 does not name`);

@@ -58,6 +58,8 @@ describe('an SPDX expression', () => {
 
   it('is asked of a package of this repository only under a licence decision 0005 names', () => {
     expect(() => accepted('Apache-2.0')).toThrow(/^licence_unknown/);
+    expect(accepted('MIT AND Apache-2.0')).toEqual(mit);
+    expect(() => accepted('Apache-2.0 AND CC0-1.0')).toThrow(/^licence_unknown/);
   });
 });
 
