@@ -15,11 +15,18 @@
  * What a package brings is read from `package-lock.json`: every package its
  * `dependencies`, `optionalDependencies` and `peerDependencies` reach,
  * transitively, the way Node resolves them. Development dependencies are not
- * shipped and are not read. A package of this repository is crossed, never
- * judged: its own licence is decision 0005's.
+ * shipped and are not read. A package of this repository is crossed: its own
+ * licence is decision 0005's.
+ *
+ * A package of this repository is crossed, and judged on one point only: an
+ * MIT package that reaches one under the AGPL, by any path, leaves whoever
+ * embeds it under the AGPL, whatever its own licence says (decision 0064).
  *
  * A refusal is named `licence_refused`, with the package of this repository,
- * the path that brings the third-party package and its licence.
+ * the path that brings the third-party package and its licence;
+ * `licence_crossed` when an MIT package reaches an AGPL one of this
+ * repository, with the path; `licence_crossing_listed` when a package of
+ * `STILL_CROSSING` no longer does, so that the list only shrinks.
  */
 
 import { readFileSync } from 'node:fs';
@@ -45,6 +52,19 @@ export const FILE_COPYLEFT = ['MPL-2.0'];
 export const COPYLEFT = [
   'AGPL-3.0-only', 'AGPL-3.0-or-later', 'GPL-3.0-only', 'GPL-3.0-or-later',
   'LGPL-2.1-or-later', 'LGPL-3.0-only', 'LGPL-3.0-or-later',
+];
+
+/**
+ * The MIT packages of this repository that still reach the AGPL core at run
+ * time, each until it imports what it speaks from `@nexgen-os/connector`
+ * instead (decision 0064). A package leaves this list when it stops
+ * crossing; none is ever added.
+ */
+export const STILL_CROSSING = [
+  '@nexgen-os/ban', '@nexgen-os/easee', '@nexgen-os/enedis-sge', '@nexgen-os/fluvius', '@nexgen-os/geopunt',
+  '@nexgen-os/grb', '@nexgen-os/homeassistant-api', '@nexgen-os/homewizard', '@nexgen-os/icar', '@nexgen-os/mapbox',
+  '@nexgen-os/mqtt', '@nexgen-os/nominatim', '@nexgen-os/ores', '@nexgen-os/photon', '@nexgen-os/switchgrid',
+  '@nexgen-os/urbis', '@nexgen-os/zaptec',
 ];
 
 /** What a package of this repository may ship, by its own licence. */
@@ -127,12 +147,13 @@ function resolve(packages, from, name) {
  * Every refusal for the packages of this repository, from a lockfile
  * (`packages` of `package-lock.json`, version 2 or 3) and the workspaces.
  */
-export function licenceProblems(lock, list) {
+export function licenceProblems(lock, list, stillCrossing = STILL_CROSSING) {
   const packages = lock.packages ?? {};
   const problems = [];
   for (const { directory, pkg } of list) {
     if (pkg.private === true) continue;
     const allowed = accepted(pkg.license);
+    let crosses = false;
     const seen = new Set([directory]);
     const queue = [[directory, [pkg.name]]];
     while (queue.length) {
@@ -163,8 +184,17 @@ export function licenceProblems(lock, list) {
             `licence_refused: ${pkg.name} (${pkg.license}): ${[...path, name].join(' > ')} is under ${target.license ?? 'no licence'}`,
           );
         }
+        if (ours && !allows(target.license, allowed)) {
+          crosses = true;
+          if (!stillCrossing.includes(pkg.name)) {
+            problems.push(`licence_crossed: ${pkg.name} (${pkg.license}): ${[...path, name].join(' > ')} is under ${target.license}`);
+          }
+        }
         queue.push([found, [...path, name]]);
       }
+    }
+    if (!crosses && stillCrossing.includes(pkg.name)) {
+      problems.push(`licence_crossing_listed: ${pkg.name} reaches no package under the AGPL any more; take it off STILL_CROSSING`);
     }
   }
   return problems;

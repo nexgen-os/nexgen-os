@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — a plain script of the repository, with no types of its own
-import { accepted, allows, licenceProblems } from '../scripts/check-licences.mjs';
+import { STILL_CROSSING, accepted, allows, licenceProblems } from '../scripts/check-licences.mjs';
 // @ts-expect-error — a plain script of the repository, with no types of its own
 import { workspaces } from '../scripts/publish.mjs';
 // @ts-expect-error — a plain script of the repository, with no types of its own
@@ -77,19 +77,47 @@ describe('what a package ships', () => {
     ]);
   });
 
-  it('crosses a package of this repository without judging it', () => {
-    const repo = {
-      packages: {
-        'packages/connectors/c': { license: 'MIT', dependencies: { '@nexgen-os/core': '^0.4.0' } },
-        'node_modules/@nexgen-os/core': { resolved: 'packages/core', link: true },
-        'packages/core': { license: 'AGPL-3.0-only', dependencies: { bad: '1.0.0' } },
-        'node_modules/bad': { license: 'CC-BY-NC-4.0' },
-      },
-    };
-    const list = [{ directory: 'packages/connectors/c', pkg: { name: '@nexgen-os/c', license: 'MIT' } }];
-    expect(licenceProblems(repo, list)).toEqual([
+  const repo = {
+    packages: {
+      'packages/connectors/c': { license: 'MIT', dependencies: { '@nexgen-os/core': '^0.4.0' } },
+      'node_modules/@nexgen-os/core': { resolved: 'packages/core', link: true },
+      'packages/core': { license: 'AGPL-3.0-only', dependencies: { bad: '1.0.0' } },
+      'node_modules/bad': { license: 'CC-BY-NC-4.0' },
+      'packages/connectors/d': { license: 'MIT', dependencies: { '@nexgen-os/connector': '^0.5.0' } },
+      'node_modules/@nexgen-os/connector': { resolved: 'packages/connector', link: true },
+      'packages/connector': { license: 'MIT' },
+    },
+  };
+  const c = { directory: 'packages/connectors/c', pkg: { name: '@nexgen-os/c', license: 'MIT' } };
+  const d = { directory: 'packages/connectors/d', pkg: { name: '@nexgen-os/d', license: 'MIT' } };
+
+  it('crosses a package of this repository, and reads what it brings', () => {
+    expect(licenceProblems(repo, [c], ['@nexgen-os/c'])).toEqual([
       'licence_refused: @nexgen-os/c (MIT): @nexgen-os/c > @nexgen-os/core > bad is under CC-BY-NC-4.0',
     ]);
+  });
+
+  it('refuses an MIT package that reaches an AGPL package of this repository', () => {
+    expect(licenceProblems(repo, [c], [])).toEqual([
+      'licence_crossed: @nexgen-os/c (MIT): @nexgen-os/c > @nexgen-os/core is under AGPL-3.0-only',
+      'licence_refused: @nexgen-os/c (MIT): @nexgen-os/c > @nexgen-os/core > bad is under CC-BY-NC-4.0',
+    ]);
+    expect(licenceProblems(repo, [d], [])).toEqual([]);
+  });
+
+  it('names a package still listed as crossing once it no longer does, so the list only shrinks', () => {
+    expect(licenceProblems(repo, [d], ['@nexgen-os/d'])).toEqual([
+      'licence_crossing_listed: @nexgen-os/d reaches no package under the AGPL any more; take it off STILL_CROSSING',
+    ]);
+  });
+
+  it('lets no MIT package of this repository reach the AGPL but the connectors still listed', () => {
+    const repoLock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+    const crossing = (licenceProblems(repoLock, workspaces(), []) as string[]).filter((p) => p.startsWith('licence_crossed'));
+    expect(crossing.map((p) => p.split(' ')[1]).sort()).toEqual([...STILL_CROSSING].sort());
+    for (const name of ['@nexgen-os/connector', '@nexgen-os/open-meteo', '@nexgen-os/pvgis', '@nexgen-os/solar']) {
+      expect(STILL_CROSSING, name).not.toContain(name);
+    }
   });
 
   it('holds for every package of this repository today', () => {
