@@ -47,8 +47,14 @@ A variable reads one of two things:
   (`kpis.series_of()`). Several series of an energy add up, several of a
   mean quantity (an irradiance) average. Options: `kind`; `step` and `combine` (`sum`, `mean`, `max`, `min`) to read the
   quantity on a finer step and combine those values into the bucket — the
-  heaviest hour of a month, the irradiation of its hours; `shift` to read
-  the same bucket shifted (`-1 year`). A quantity is checked when the
+  heaviest hour of a month, the irradiation of its hours; never finer than
+  the series are kept: a variable that names a step reads its series on
+  that step or on the coarsest step they are kept at, whichever is coarser
+  (`kpis.own_step()`: each series' `step`, or for an irregular series the
+  smallest gap between two of its readings), and the figure says the step
+  read (`steps`); `per` (a duration under a day) to read the amount of each
+  read bucket over its length — an energy per `1 hour`, a mean power in kW;
+  `shift` to read the same bucket shifted (`-1 year`). A quantity is checked when the
   indicator is computed (`quantity_unknown`): a module installed after this
   one publishes it.
   Without a `kind`, a variable reads the measured series, and the
@@ -138,7 +144,7 @@ place's own production is `direct + discharge`; what is not injected is
 | `shared_rate` | `shared_injection / production` | ratio; a project's collective self-consumption rate |
 | `shared_coverage_rate` | `shared_offtake / (offtake + direct + discharge)` | ratio; how much less a place depends on the grid than without the sharing |
 | `residual_offtake_energy` | `offtake - shared_offtake` | kWh bought from a supplier |
-| `peak_offtake_power` | `offtake`, read by hour, the heaviest | kW, the highest hourly mean |
+| `peak_offtake_power` | `offtake`, read by quarter-hours per hour, the heaviest | kW, the highest mean power over the step the meters keep: a quarter of an hour for a meter read every 15 minutes, an hour for an hourly series |
 | `specific_yield` | `production / installed_power` | kWh/kWp: the final yield of IEC 61724-1, the full-load hours of any generator |
 | `performance_ratio` | `production / (installed_power * irradiation / 1000)`, the in-plane irradiation summed by hour | ratio, IEC 61724-1 |
 | `co2_avoided` | `direct_co2 + discharge_co2`: the energy of each hour at the carbon intensity series of the bidding zone, or without one `(direct + discharge) * factor` month by month, `grid_co2_factor` | kg |
