@@ -6,25 +6,28 @@ what the meter says every second or every few seconds: the JSON message of
 the open P1M5 firmware, or the DSMR telegram as the meter wrote it. This
 package places each message on the meter (or the device) its dongle is
 known by, dates it by the meter's clock in the time zone of that object's
-participant, keeps one reading a minute, and writes the kept readings in
-batches through `store()`, the one write path of the core. MIT.
+participant, keeps one reading a minute, and hands the kept readings in
+batches to its caller, which writes them: the core's `measuredObjects(db)`
+writes through `store()`, the one write path. MIT, and it runs without the
+core ([0064](../../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).
 
 The broker is a protocol, never a library this package ships
 ([0014](../../../docs/decisions/0014-integrations-dashboards-warehouses-streams.md)):
 any client that subscribes and emits `message` events fits, MQTT.js as it
 is. The readings themselves are read by [`@nexgen-os/dsmr`](../../formats/dsmr/README.md)
-and turned into series by `meterSeriesOfDsmr()` of `@nexgen-os/core`, the
-same mapping a file of telegrams goes through.
+and turned into series by `meterSeriesOfDsmr()` of
+[`@nexgen-os/connector`](../../connector/README.md), the same mapping a file of telegrams goes through.
 
 ## Use
 
 ```ts
 import mqtt from 'mqtt';
-import { listen, p1Stream, registerP1PortSource } from '@nexgen-os/mqtt';
+import { measuredObjects, registerSource } from '@nexgen-os/core';
+import { listen, P1_PORT_SOURCE, p1Stream } from '@nexgen-os/mqtt';
 
-await registerP1PortSource(db); // the `p1_port` source, once
+await registerSource(db, P1_PORT_SOURCE); // the `p1_port` source, once
 const client = mqtt.connect(process.env.BROKER_URL!, { username, password }); // the secret from the vault
-const stream = p1Stream(db, { scheme: 'p1_dongle', organisationId });
+const stream = p1Stream(measuredObjects(db), { scheme: 'p1_dongle', organisationId });
 const listening = listen(client, stream, {
   topics: ['p1/+/data/readings'],
   onReceived: (r) => { if (r.status === 'refused') console.warn(r.identifier, r.problems); },
@@ -47,8 +50,9 @@ select add_identifier('meter', '<meter id>', 'p1_dongle', 'P1000001');
    message, otherwise the meter's equipment identifier (`0-0:96.1.1`) of a
    telegram; `identifierOf` replaces it (a segment of the topic, say).
 2. **Its object.** The identifier, valid now, in the stream's `scheme` (and
-   `organisationId` when given), read under the connection's rights: a
-   meter or a device. Found or not, a dongle is remembered for
+   `organisationId` when given), asked of the caller's `byIdentifier()`;
+   `measuredObjects(db)` reads it under the connection's rights: a meter or
+   a device. Found or not, a dongle is remembered for
    `rememberSeconds` (300) before it is looked up again.
 3. **Its time.** The reading is dated by the meter's clock in the time zone
    of the object's participant, never by the time it was received.
@@ -57,7 +61,8 @@ select add_identifier('meter', '<meter id>', 'p1_dongle', 'P1000001');
    quarter hours `resample()` gives lose nothing, and the power and voltage
    are kept once a minute.
 5. **Written.** `flush()` (every `flushEverySeconds`, 60, under `listen()`)
-   writes each object's batch as its series of kind `measured` under the
+   hands each object's batch to the caller's `write()`, which
+   `measuredObjects(db)` writes as its series of kind `measured` under the
    source `p1_port`: the energy registers as cumulative `offtake_energy` /
    `injection_energy` series by tariff, the power and the voltage as
    instants by phase.
@@ -71,7 +76,7 @@ select add_identifier('meter', '<meter id>', 'p1_dongle', 'P1000001');
 | a message naming no dongle, or not a message | refused, `identifier_missing`, `telegram_unreadable` |
 | a reading without the meter's time | refused, `time_missing` |
 | a telegram whose checksum does not match | left out at the flush, in `skipped` |
-| a batch the core refuses (another value kind on the series) | the flush's `error`, its readings dropped |
+| a batch the caller refuses (another value kind on the series) | the flush's `error`, its readings dropped |
 
 A refusal never stops the stream: the next message is read.
 

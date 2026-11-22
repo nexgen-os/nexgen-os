@@ -36,12 +36,15 @@ geocoders; `MeterOfHub`, `MeterReadingOptions`, `MeterDataProvider`,
 `MeterMandate`, `MandateScope`, `MeterDataHub`, `requireMandate()`,
 `GestureError` and `refusalCode()` for the meter data hubs, with
 `readMeterFile()` and `meterSeriesOfR6x()` for an operator's R63 or R64
-file read as the series of a meter;
-`ChargerReading` and `ChargingSessionRecord` for the charging stations. Its dependencies are MIT and depend on nothing:
+file read as the series of a meter, and `meterSeriesOfDsmr()` for the
+readings of a P1 port;
+`ChargerReading` and `ChargingSessionRecord` for the charging stations;
+`MeasuredObjects`, `MeasuredTarget` and `MeasuredFound` for a stream of
+readings that lands on the meter or the device an identifier names. Its dependencies are MIT and depend on nothing:
 `@nexgen-os/solar`, for the type of a series point
 (`SeriesPoint`), so that one type serves the core, the computations and the
-connectors, and `@nexgen-os/enedis-r6x`, the format library that reads the
-operator's files. **The core re-exports every name of the package**: an
+connectors, and the format libraries `@nexgen-os/enedis-r6x`, which reads
+the operator's files, and `@nexgen-os/dsmr`, which reads a P1 port. **The core re-exports every name of the package**: an
 installation and a connector share one definition, and a caller that
 imported a name from the core keeps it.
 
@@ -51,14 +54,17 @@ geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
 `urbis`, and `grb`, which reads its buildings with `@nexgen-os/cityjson`),
 the meter data hubs (`enedis-sge`, `fluvius`, `ores`) the meters read
 on the place's network (`homewizard`, `homeassistant-api`) and the charging
-stations read from their cloud (`easee`, `zaptec`) and the intermediary
-that relays the operator's files (`switchgrid`) import the
-package, never the core. A connector
+stations read from their cloud (`easee`, `zaptec`), the intermediary
+that relays the operator's files (`switchgrid`) and the stream of P1
+dongles received from a broker (`mqtt`) import the package, never the
+core: `STILL_CROSSING` is empty. A connector
 that writes through the core (`storeSeries()`, `registerSource()`,
 `requireMandate()`) moves once it hands what it collected to its caller
 instead, the caller being the core or a module, which write it with its
 provenance, as `easee` and `zaptec` hand a `ChargerReading` to
-`recordCharger()` of the `charging` module; until then it stays listed.
+`recordCharger()` of the `charging` module, and as `mqtt` finds its meters
+and writes their series through the `MeasuredObjects` that
+`measuredObjects(db)` of the core gives it.
 
 **What moves is the project's own code only.** Every definition that moved
 was written under the project's identity, with no contributor's change in

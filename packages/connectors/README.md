@@ -332,5 +332,5 @@ An MIT connector reaches no package under the AGPL at run time: it imports
 what it speaks from [`@nexgen-os/connector`](../connector/README.md), and
 `scripts/check-licences.mjs` refuses one that brings the core with it
 (`licence_crossed`). Every connector depends on the package rather than the
-core, except `mqtt`, which still writes through it, listed in `STILL_CROSSING` until they move
+core; one that writes hands what it read to its caller, the core or a module
 ([0064](../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).

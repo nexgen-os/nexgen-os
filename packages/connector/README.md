@@ -4,8 +4,9 @@ The types and the pure functions a connector of Nexgen OS answers in, so
 that it runs without the core: the point it is asked about, the series it
 brings back for one quantity, the interface of a weather source, the shape
 of a place and the interface of a geocoder, a meter data hub and the mandate
-it reads under, an operator's meter file as the series of a meter, what a
-charging station's connector read of a charger, a
+it reads under, an operator's meter file and the readings of a P1 port as
+the series of a meter, the meters and devices a stream of readings lands
+on, what a charging station's connector read of a charger, a
 refusal by name, the `sources` row it ships, the
 subset of `fetch` it calls, and the azimuth counted from south that weather and PV
 services expect. No database, no network.
@@ -22,6 +23,8 @@ services expect. No database, no network.
 | `MeterMandate`, `MandateScope`, `MeterDataHub`, `requireMandate()` | the mandate a reading needs, what it allows, the conventions of the hub from its pack row, and the check a connector under mandate makes before it reads (`mandate_missing`, `mandate_scope`) |
 | `ChargerReading`, `ChargingSessionRecord` | what a connector read of one charger over a window: its sessions in the shape `charging.record()` takes, each with the reference of its station, and its series; `recordCharger()` of the `charging` module writes it |
 | `readMeterFile()`, `meterSeriesOfR6x()` | an operator's R63 or R64 file read with the zone and the quality table of its hub, by [`@nexgen-os/enedis-r6x`](../formats/enedis-r6x/README.md), and the series of one metering point in it, ready for `storeSeries()` or `collectMeterReadings()` of the core (`meter_file_unreadable`, `meter_file_empty`) |
+| `meterSeriesOfDsmr()`, `DsmrMeterSeries` | the readings of a P1 port read by [`@nexgen-os/dsmr`](../formats/dsmr/README.md) as the series of the electricity meter or of a meter of its bus, ready for `storeSeries()` of the core; a reading undated or whose checksum fails is left out in `skipped` |
+| `MeasuredObjects`, `MeasuredTarget`, `MeasuredFound` | what a connector that streams readings asks of its caller: the meter or device an identifier names, with its participant's time zone (`identifier_unknown`, `identifier_ambiguous`, `object_not_measured`, `time_zone_required`), and the write of one measured series; `measuredObjects(db)` of the core gives it |
 | `GestureError`, `refusalCode()` | a refusal with its name first and the sentence that explains it, the one error class of every surface |
 | `SourceRow` | the `sources` row a connector package ships, with its licence and retention; `registerSource()` of the core writes it |
 | `Fetch` | the subset of `fetch` a connector calls, so a test or a proxy can stand in |
@@ -41,9 +44,9 @@ a connector share one definition.
 
 ## What is MIT, and what is AGPL
 
-**This package is MIT** ([LICENSE](LICENSE)); its two dependencies,
-`@nexgen-os/solar` and the format library `@nexgen-os/enedis-r6x`, are MIT
-and depend on nothing. A connector that imports
+**This package is MIT** ([LICENSE](LICENSE)); its three dependencies,
+`@nexgen-os/solar` and the format libraries `@nexgen-os/enedis-r6x` and
+`@nexgen-os/dsmr`, are MIT and depend on nothing. A connector that imports
 what it speaks from here, rather than from the core, runs without the AGPL
 of the core: the weather and PV connectors (`open-meteo`, `pvgis`) and the
 geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
@@ -51,8 +54,8 @@ geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
 the meters read on the place's network (`homewizard`,
 `homeassistant-api`), the charging stations read from their cloud
 (`easee`, `zaptec`) and the intermediary that relays the operator's files
-(`switchgrid`) do. The licence
-check of the repository refuses an MIT package that reaches an AGPL one by
-any path (`licence_crossed`), outside the connectors still listed while they
-move. Why the line runs there: decision
+(`switchgrid`) and the stream of P1 dongles received from a broker (`mqtt`)
+do: every connector of the repository. The licence check of the repository
+refuses an MIT package that reaches an AGPL one by any path
+(`licence_crossed`). Why the line runs there: decision
 [0064](../../docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md).
