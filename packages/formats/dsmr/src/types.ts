@@ -65,11 +65,23 @@ export interface DsmrProblem {
   detail: string;
 }
 
+/** A meter on the bus of the P1 port (channel 1 to 4): gas, water, heat. */
+export interface DsmrBusMeter {
+  /** The channel (B), 1 to 4. */
+  channel: number;
+  /** Its device type as the meter writes it (`0-n:24.1.0`): `003` gas, `007` water, `004` heat in DSMR; null when absent. */
+  device_type: string | null;
+  /** Its equipment identifier (`0-n:96.1.0`, or `0-n:96.1.1` in e-MUCS), decoded from its hexadecimal octets; null when absent. */
+  equipment_id: string | null;
+}
+
 export interface DsmrReading {
   /** The identification line without its `/` (`ISK5\2M550E-1012`); null in a P1M5 message. */
   header: string | null;
   /** The meter's equipment identifier (`0-0:96.1.1`), decoded from its hexadecimal octets. */
   equipment_id: string | null;
+  /** The meters of its bus, by channel, as the telegram names them. */
+  bus: DsmrBusMeter[];
   /** The version of the P1 interface the meter speaks (`1-3:0.2.8`, or `0-0:96.1.4` in Belgium). */
   version: string | null;
   /** The instant of the reading, the meter's clock (`0-0:1.0.0`), ISO 8601 in UTC. */

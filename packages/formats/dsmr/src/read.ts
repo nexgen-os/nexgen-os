@@ -16,7 +16,7 @@
 
 import { obisMeaning } from './obis.js';
 import { meterTime } from './time.js';
-import type { DsmrLine, DsmrOptions, DsmrProblem, DsmrReading, DsmrValue } from './types.js';
+import type { DsmrBusMeter, DsmrLine, DsmrOptions, DsmrProblem, DsmrReading, DsmrValue } from './types.js';
 
 const OBIS = /^\d+-\d+:\d+\.\d+\.\d+$/;
 const OBJECT = /^(\d+-\d+:\d+\.\d+\.\d+)((?:\([^()]*\))*)\s*$/;
@@ -142,9 +142,16 @@ function interpret(
   }
   if (values.length === 0) problems.push({ code: 'no_values', detail: 'no measure was read' });
   const id = text('0-0:96.1.1');
+  const bus: DsmrBusMeter[] = [];
+  for (let channel = 1; channel <= 4; channel++) {
+    if (!lines.some((l) => l.obis.startsWith(`0-${channel}:`))) continue;
+    const busId = text(`0-${channel}:96.1.0`) ?? text(`0-${channel}:96.1.1`);
+    bus.push({ channel, device_type: text(`0-${channel}:24.1.0`), equipment_id: busId === null ? null : decodeOctets(busId) });
+  }
   return {
     header,
     equipment_id: id === null ? null : decodeOctets(id),
+    bus,
     version: text('0-0:96.1.4') ?? text('1-3:0.2.8'),
     at,
     local,
@@ -192,5 +199,5 @@ function dedupe(problems: DsmrProblem[]): DsmrProblem[] {
 }
 
 function empty(problem: DsmrProblem, crc: DsmrReading['crc']): DsmrReading {
-  return { header: null, equipment_id: null, version: null, at: null, local: null, tariff: null, crc, values: [], lines: [], fields: {}, problems: [problem] };
+  return { header: null, equipment_id: null, bus: [], version: null, at: null, local: null, tariff: null, crc, values: [], lines: [], fields: {}, problems: [problem] };
 }

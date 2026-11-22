@@ -103,6 +103,8 @@ export type P1Received =
 export interface P1Flushed {
   objectKind: 'meter' | 'device';
   objectId: string;
+  /** The channel of the bus written: 0 the electricity meter, 1 to 4 a gas, water or heat meter of its bus. */
+  channel: number;
   readings: number;
   /** Readings left out whole (undated, checksum), by their index in the batch. */
   skipped: { index: number; problems: DsmrProblem[] }[];
@@ -127,6 +129,8 @@ interface Known {
 
 interface Batch {
   target: P1Target;
+  /** The channel of the bus the batch reads: 0 the electricity meter, 1 to 4 a gas, water or heat meter. */
+  channel: number;
   readings: DsmrReading[];
 }
 
@@ -143,6 +147,16 @@ export function p1Stream(objects: MeasuredObjects, options: P1StreamOptions): P1
   const lastKept = new Map<string, number>();
   let batches = new Map<string, Batch>();
   let pending = 0;
+
+  function queue(target: P1Target, channel: number, reading: DsmrReading): void {
+    const key = `${target.objectKind} ${target.objectId} ${channel}`;
+    let batch = batches.get(key);
+    if (!batch) {
+      batch = { target, channel, readings: [] };
+      batches.set(key, batch);
+    }
+    batch.readings.push(reading);
+  }
 
   async function find(identifier: string): Promise<Known> {
     const remembered = known.get(identifier);
@@ -181,14 +195,19 @@ export function p1Stream(objects: MeasuredObjects, options: P1StreamOptions): P1
         return { status: 'thinned', identifier, target, at: reading.at };
       }
       if (last === undefined || at > last) lastKept.set(key, at);
-      let batch = batches.get(key);
-      if (!batch) {
-        batch = { target, readings: [] };
-        batches.set(key, batch);
+      queue(target, 0, reading);
+      // The meters of its bus land on the objects their own equipment
+      // identifiers name, in the same scheme; one the installation did not
+      // record is said, and the electricity meter is written all the same.
+      const problems = [...reading.problems];
+      for (const bus of reading.bus) {
+        if (!bus.equipment_id) continue;
+        const found = await find(bus.equipment_id);
+        if (found.target) queue(found.target, bus.channel, reading);
+        else problems.push(problem('bus_meter_unknown', `channel ${bus.channel}: ${found.problem!.detail}`));
       }
-      batch.readings.push(reading);
       pending += 1;
-      return { status: 'queued', identifier, target, at: reading.at, problems: reading.problems };
+      return { status: 'queued', identifier, target, at: reading.at, problems };
     },
 
     async flush() {
@@ -196,9 +215,9 @@ export function p1Stream(objects: MeasuredObjects, options: P1StreamOptions): P1
       batches = new Map();
       pending = 0;
       const out: P1Flushed[] = [];
-      for (const { target, readings } of taken.values()) {
-        const { series, skipped } = meterSeriesOfDsmr(readings);
-        const done: P1Flushed = { objectKind: target.objectKind, objectId: target.objectId, readings: readings.length, skipped, series: [] };
+      for (const { target, channel, readings } of taken.values()) {
+        const { series, skipped } = meterSeriesOfDsmr(readings, { channel });
+        const done: P1Flushed = { objectKind: target.objectKind, objectId: target.objectId, channel, readings: readings.length, skipped, series: [] };
         try {
           for (const s of series) {
             const stored = await objects.write(target, sourceCode, s);

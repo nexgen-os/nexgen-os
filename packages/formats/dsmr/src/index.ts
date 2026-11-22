@@ -10,4 +10,4 @@
 export { readTelegram, readP1m5, crc16 } from './read.js';
 export { obisMeaning, type ObisMeaning } from './obis.js';
 export { meterTime, type MeterTime } from './time.js';
-export type { DsmrKind, DsmrLine, DsmrMeasure, DsmrOptions, DsmrProblem, DsmrReading, DsmrValue } from './types.js';
+export type { DsmrBusMeter, DsmrKind, DsmrLine, DsmrMeasure, DsmrOptions, DsmrProblem, DsmrReading, DsmrValue } from './types.js';

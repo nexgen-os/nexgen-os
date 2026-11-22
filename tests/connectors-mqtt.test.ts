@@ -127,6 +127,31 @@ describe('a stream of dongles on a database', () => {
     expect(await status()).toBe('queued');
   });
 
+  it('writes the gas meter of its bus on the meter its own identifier names, and says a meter of the bus nobody recorded', async () => {
+    const home = (await one<{ id: string }>(db, `select participant_of('meter', $1) id`, [meter])).id;
+    const gas = (await one<{ id: string }>(db, `select declare_meter($1, '541448000000000011', 'gs1_gsrn', 'gas', 'offtake') id`, [home])).id;
+    await db.query(`insert into identifier_schemes (code, name, pattern) values ('p1_meter', 'A meter on a P1 port', '^[0-9A-Z]+$')`);
+    await db.query(`select add_identifier('meter', $1, 'p1_meter', 'P1000001')`, [meter]);
+    // The telegram names its electricity meter by the topic, and the gas meter of its bus by its own identifier.
+    const stream = p1Stream(measuredObjects(db), {
+      scheme: 'p1_meter', identifierOf: (topic) => topic.split('/')[1] ?? null, keepEverySeconds: 0, rememberSeconds: 0, now: () => clock,
+    });
+    const unknown = await stream.receive('p1/P1000001/telegram', telegram);
+    expect(unknown).toMatchObject({ status: 'queued', problems: [{ code: 'bus_meter_unknown' }] });
+    await db.query(`select add_identifier('meter', $1, 'p1_meter', '7FLO2123456789')`, [gas]);
+    expect(await stream.receive('p1/P1000001/telegram', telegram)).toMatchObject({ status: 'queued', problems: [] });
+    const flushed = await stream.flush();
+    const electricity = flushed.filter((f) => f.objectId === meter);
+    expect(electricity).toEqual([expect.objectContaining({ channel: 0, readings: 2 })]);
+    const ofGas = flushed.find((f) => f.objectId === gas)!;
+    expect(ofGas).toMatchObject({ objectKind: 'meter', channel: 1, readings: 1, skipped: [] });
+    expect(ofGas.error).toBeUndefined();
+    expect(ofGas.series).toEqual([expect.objectContaining({ quantity_code: 'volume', inserted: 1 })]);
+    const volume = await one<{ value: number; at: string }>(
+      db, `select v.value::float8 value, v.at::text from series_values v where v.series_id = $1`, [ofGas.series[0]!.seriesId]);
+    expect(volume.value).toBeCloseTo(872.234, 3);
+  });
+
   it('listens to a client on its topics, one message at a time, and writes what is left when stopped', async () => {
     const client = new (class extends EventEmitter {
       subscribed: string[] = [];

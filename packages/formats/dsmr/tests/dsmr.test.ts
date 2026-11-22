@@ -91,6 +91,10 @@ describe('a three-phase telegram of the Belgian variant', () => {
     });
   });
 
+  it('names the meter of its bus by its channel, its device type and its equipment identifier', () => {
+    expect(r.bus).toEqual([{ channel: 1, device_type: '003', equipment_id: '7FLO2123456789' }]);
+  });
+
   it('keeps every object as written, those that are not measures included', () => {
     expect(r.lines).toHaveLength(33);
     expect(r.lines.find((l) => l.obis === '0-0:98.1.0')!.values).toHaveLength(9);
@@ -107,6 +111,7 @@ describe('a single-phase telegram of DSMR 5', () => {
     expect(r.problems).toEqual([]);
     expect(r).toMatchObject({ version: '50', at: '2026-01-14T07:15:00.000Z', equipment_id: 'E0043007001234560', tariff: '0002' });
     expect(value(r, '0-1:24.2.1')).toMatchObject({ value: 1234.567, unit: 'm3', at: '2026-01-14T07:00:00.000Z', channel: 1 });
+    expect(r.bus).toEqual([{ channel: 1, device_type: '003', equipment_id: 'G0039001751234567' }]);
     expect(r.values.filter((v) => v.phase === 'L2' || v.phase === 'L3')).toEqual([]);
   });
 
