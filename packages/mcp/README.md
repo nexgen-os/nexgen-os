@@ -171,6 +171,7 @@ client can ask before calling them.
 | `add_participant` | A participant joins a project with its place (`join_project()`), given as a point or found through the configured geocoder chain |
 | `declare_meter` | A meter by its identifier in a scheme, which checks it (`declare_meter()`) |
 | `install_device` | A device, from a product of the catalogue or with a stated power (`install_device()`) |
+| `set_device_status` | Where a device stands through the works, on the day it happened: `installed`, `in_service`, `out_of_service` (`set_device_status()`) |
 | `import_project` | A project described as data — participants, meters, devices, identifiers — through the same functions (`importProject()`); given again, it creates only what is new; `dry_run` writes nothing |
 | `import_project_sheet` | A project sheet ([`@nexgen-os/project-sheet`](../formats/project-sheet/README.md)), as the text of the CSV a spreadsheet saves (`sheet`) or as its `.xlsx` workbook in base64 (`workbook`, the worksheet named by `worksheet`, the first otherwise), each of its projects imported as `import_project` does (`importProjectSheet()`); a sheet with a cell it cannot read is refused whole, `sheet_unreadable`, each problem with its line |
 | `store_series` | Values through `store()`, each dated at the start of its interval, with their source |
