@@ -37,7 +37,9 @@ await listening.stop(); // writes what is left
 ```
 
 The installation records each dongle once, as an identifier of the meter it
-reads, in a scheme of its own (the scheme is data, the package names none):
+reads, in a scheme of its own (the scheme is data, the package names none),
+and the gas, water or heat meter of its bus by its equipment identifier in
+the same scheme when it wants its volume:
 
 ```sql
 insert into identifier_schemes (code, name, pattern) values ('p1_dongle', 'A P1 dongle', '^[A-Z0-9]+$');
@@ -66,6 +68,11 @@ select add_identifier('meter', '<meter id>', 'p1_dongle', 'P1000001');
    source `p1_port`: the energy registers as cumulative `offtake_energy` /
    `injection_energy` series by tariff, the power and the voltage as
    instants by phase.
+6. **Its bus.** A gas, water or heat meter on the bus of the port (channel
+   1 to 4) is found by its own equipment identifier (`bus` of the reading),
+   in the same `scheme`: its volume is written on that meter, at the stamp
+   it sent, as a cumulative `volume` series. A flush names the `channel` of
+   each batch, 0 for the electricity meter.
 
 | What came | What it gives |
 |---|---|
@@ -75,6 +82,7 @@ select add_identifier('meter', '<meter id>', 'p1_dongle', 'P1000001');
 | a participant without a time zone | refused, `time_zone_required` |
 | a message naming no dongle, or not a message | refused, `identifier_missing`, `telegram_unreadable` |
 | a reading without the meter's time | refused, `time_missing` |
+| a meter of the bus whose identifier no object carries | said, `bus_meter_unknown`, among the problems of the message; the electricity meter is written all the same |
 | a telegram whose checksum does not match | left out at the flush, in `skipped` |
 | a batch the caller refuses (another value kind on the series) | the flush's `error`, its readings dropped |
 
@@ -82,8 +90,5 @@ A refusal never stops the stream: the next message is read.
 
 ## Not yet
 
-- The meters of the bus (gas, water, heat on channels 1 to 4): their volume
-  is in the telegram, and `meterSeriesOfDsmr(readings, { channel })` gives
-  it; the stream writes the electricity meter only.
 - The one message shape of the stream door, the envelope of the
   connectors' series, received from any broker.

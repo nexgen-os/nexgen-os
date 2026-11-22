@@ -31,7 +31,10 @@ console.log(reading.at, reading.problems); // the meter's clock in UTC; problems
 
 Both give the same reading: `equipment_id` (`0-0:96.1.1`, decoded from its
 hexadecimal octets), `version` (`0-0:96.1.4`, or `1-3:0.2.8`), the tariff
-the meter counts in now (`0-0:96.14.0`), the measures in `values`, and
+the meter counts in now (`0-0:96.14.0`), the meters of its bus in `bus`
+(one per channel 1 to 4 the telegram writes, with its device type
+`0-n:24.1.0` and its equipment identifier `0-n:96.1.0`, or `0-n:96.1.1` in
+e-MUCS, decoded the same way), the measures in `values`, and
 every object as written in `lines`, those that are not measures included
 (identifiers, switches, messages, logs, the history of the monthly peaks):
 nothing is lost.
