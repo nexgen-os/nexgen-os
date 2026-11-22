@@ -60,9 +60,7 @@ export const COPYLEFT = [
  * instead (decision 0064). A package leaves this list when it stops
  * crossing; none is ever added.
  */
-export const STILL_CROSSING = [
-  '@nexgen-os/mqtt',
-];
+export const STILL_CROSSING = [];
 
 /** What a package of this repository may ship, by its own licence. */
 export function accepted(licence) {

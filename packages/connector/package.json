@@ -1,7 +1,7 @@
 {
   "name": "@nexgen-os/connector",
   "version": "0.5.1",
-  "description": "What a connector of Nexgen OS speaks: the point and the series it brings back, the weather, geocoder and meter data hub interfaces, the mandate check, an operator's meter file read as series, a refusal by name, the sources row, the subset of fetch it calls. Types and pure functions, MIT, no database, no network.",
+  "description": "What a connector of Nexgen OS speaks: the point and the series it brings back, the weather, geocoder and meter data hub interfaces, the mandate check, an operator's meter file and the readings of a P1 port read as series, the meters and devices a stream of readings lands on, a refusal by name, the sources row, the subset of fetch it calls. Types and pure functions, MIT, no database, no network.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
+    "@nexgen-os/dsmr": "^0.5.0",
     "@nexgen-os/enedis-r6x": "^0.5.0",
     "@nexgen-os/solar": "^0.5.0"
   }

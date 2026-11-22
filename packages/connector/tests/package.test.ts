@@ -1,12 +1,12 @@
 // `@nexgen-os/connector` is MIT so that a connector runs without the AGPL of
 // the core (decision 0064). These tests hold it: its code imports nothing but
 // its own files, the MIT computations of `@nexgen-os/solar` (for the type
-// of a series point) and the MIT reader of `@nexgen-os/enedis-r6x` (for an
-// operator's meter file), the core re-exports its names rather than defining them
+// of a series point) and the MIT readers of `@nexgen-os/enedis-r6x` (for an
+// operator's meter file) and `@nexgen-os/dsmr` (for a P1 port), the core re-exports its names rather than defining them
 // again, and the connectors moved onto it no longer import the core.
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GestureError, azimuthFromSouth, meterSeriesOfR6x, readMeterFile, requireMandate } from '@nexgen-os/connector';
+import { GestureError, azimuthFromSouth, meterSeriesOfDsmr, meterSeriesOfR6x, readMeterFile, requireMandate } from '@nexgen-os/connector';
 import * as core from '@nexgen-os/core';
 
 const root = new URL('../../../', import.meta.url);
@@ -18,15 +18,15 @@ const specifiers = (directory: string) =>
     .flatMap((name) => [...read(`${directory}/${name}`).matchAll(/(?:from|import)\s*\(?\s*'([^']+)'/g)].map(([, specifier]) => ({ name, specifier })));
 
 describe('the MIT boundary of @nexgen-os/connector', () => {
-  it('is MIT, with its own licence file, and depends on the MIT computations and the MIT meter file reader only', () => {
+  it('is MIT, with its own licence file, and depends on the MIT computations and the MIT meter readers only', () => {
     expect(manifest.license).toBe('MIT');
     expect(read('packages/connector/LICENSE')).toMatch(/^MIT License\n/);
-    expect(Object.keys(manifest.dependencies ?? {}).sort()).toEqual(['@nexgen-os/enedis-r6x', '@nexgen-os/solar']);
+    expect(Object.keys(manifest.dependencies ?? {}).sort()).toEqual(['@nexgen-os/dsmr', '@nexgen-os/enedis-r6x', '@nexgen-os/solar']);
   });
 
-  it('imports nothing but its own files, the platform, @nexgen-os/solar and @nexgen-os/enedis-r6x', () => {
+  it('imports nothing but its own files, the platform, @nexgen-os/solar, @nexgen-os/enedis-r6x and @nexgen-os/dsmr', () => {
     for (const { name, specifier } of specifiers('packages/connector/src')) {
-      expect(specifier, `${name} imports ${specifier}`).toMatch(/^(\.\/|node:|@nexgen-os\/(solar|enedis-r6x)$)/);
+      expect(specifier, `${name} imports ${specifier}`).toMatch(/^(\.\/|node:|@nexgen-os\/(solar|enedis-r6x|dsmr)$)/);
     }
   });
 
@@ -36,6 +36,8 @@ describe('the MIT boundary of @nexgen-os/connector', () => {
     expect(core.requireMandate).toBe(requireMandate);
     expect(core.meterSeriesOfR6x).toBe(meterSeriesOfR6x);
     expect(core.readMeterFile).toBe(readMeterFile);
+    expect(core.meterSeriesOfDsmr).toBe(meterSeriesOfDsmr);
+    expect(read('packages/core/src/files/dsmr.ts')).not.toMatch(/export function meterSeriesOfDsmr\b/);
     expect(core.explain(new GestureError('mandate_missing: x'))).toBeInstanceOf(GestureError);
     expect(read('packages/core/src/connectors/interfaces.ts')).not.toMatch(/export (interface|function) (Point|CollectedSeries|WeatherProvider|azimuthFromSouth)\b/);
     expect(read('packages/core/src/connectors/interfaces.ts')).not.toMatch(/export interface (SourceRow|MeterOfHub|MeterReadingOptions|MeterDataProvider)\b/);
@@ -45,7 +47,7 @@ describe('the MIT boundary of @nexgen-os/connector', () => {
   });
 
   it('is what the connectors import, in place of the core', () => {
-    for (const connector of ['open-meteo', 'pvgis', 'ban', 'geopunt', 'icar', 'mapbox', 'nominatim', 'photon', 'urbis', 'grb', 'enedis-sge', 'fluvius', 'ores', 'homeassistant-api', 'homewizard', 'easee', 'zaptec', 'switchgrid']) {
+    for (const connector of ['open-meteo', 'pvgis', 'ban', 'geopunt', 'icar', 'mapbox', 'nominatim', 'photon', 'urbis', 'grb', 'enedis-sge', 'fluvius', 'ores', 'homeassistant-api', 'homewizard', 'easee', 'zaptec', 'switchgrid', 'mqtt']) {
       const dependencies = Object.keys((JSON.parse(read(`packages/connectors/${connector}/package.json`)) as { dependencies?: Record<string, string> }).dependencies ?? {});
       expect(dependencies, connector).toContain('@nexgen-os/connector');
       expect(dependencies, connector).not.toContain('@nexgen-os/core');

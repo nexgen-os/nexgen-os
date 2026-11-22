@@ -7,7 +7,8 @@ import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { dongleIdentifier, listen, p1Stream, readP1Message, registerP1PortSource, topicMatches, type MqttClient } from '@nexgen-os/mqtt';
+import { measuredObjects, registerSource } from '@nexgen-os/core';
+import { dongleIdentifier, listen, P1_PORT_SOURCE, p1Stream, readP1Message, topicMatches, type MqttClient } from '@nexgen-os/mqtt';
 import { freshDatabase, insert, one, organisation } from './helpers/db.js';
 
 const telegram = readFileSync(new URL('../packages/formats/dsmr/tests/fixtures/emucs-three-phase.txt', import.meta.url), 'latin1');
@@ -69,7 +70,7 @@ describe('a stream of dongles on a database', () => {
     await db.query(`select add_identifier('meter', $1, 'p1_dongle', 'P1000001')`, [meter]);
     await db.query(`select add_identifier('meter', $1, 'p1_dongle', 'P1000002')`, [other]);
     await db.query(`select add_identifier('project', $1, 'p1_dongle', 'P1000003')`, [project]);
-    await registerP1PortSource(db);
+    await registerSource(db, P1_PORT_SOURCE);
   });
 
   afterAll(async () => {
@@ -77,7 +78,7 @@ describe('a stream of dongles on a database', () => {
   });
 
   it('writes the readings of a dongle on its meter, one a minute, and the quarter hours give the energy taken', async () => {
-    const stream = p1Stream(db, { scheme: 'p1_dongle', now: () => clock });
+    const stream = p1Stream(measuredObjects(db), { scheme: 'p1_dongle', now: () => clock });
     const received = [];
     for (const [stamp, t1] of [['261015140000S', 1234.0], ['261015140010S', 1234.001], ['261015141500S', 1234.1], ['261015143000S', 1234.2]] as const) {
       received.push(await stream.receive('p1/P1000001/data/readings', message('P1000001', stamp, t1, 0.4)));
@@ -101,7 +102,7 @@ describe('a stream of dongles on a database', () => {
   });
 
   it('refuses by name a message it cannot place, and goes on', async () => {
-    const stream = p1Stream(db, { scheme: 'p1_dongle', now: () => clock });
+    const stream = p1Stream(measuredObjects(db), { scheme: 'p1_dongle', now: () => clock });
     const codes = async (payload: string) => {
       const r = await stream.receive('p1/x/data/readings', payload);
       return r.status === 'refused' ? r.problems.map((p) => p.code) : r.status;
@@ -117,7 +118,7 @@ describe('a stream of dongles on a database', () => {
   });
 
   it('remembers a dongle for a while, then looks it up again', async () => {
-    const stream = p1Stream(db, { scheme: 'p1_dongle', rememberSeconds: 60, now: () => clock });
+    const stream = p1Stream(measuredObjects(db), { scheme: 'p1_dongle', rememberSeconds: 60, now: () => clock });
     const status = async () => (await stream.receive('p1/x', message('P1000009', '261016140000S', 1, 0))).status;
     expect(await status()).toBe('refused');
     await db.query(`select add_identifier('meter', $1, 'p1_dongle', 'P1000009')`, [meter]);
@@ -133,7 +134,7 @@ describe('a stream of dongles on a database', () => {
         this.subscribed.push(...[topics].flat());
       }
     })();
-    const stream = p1Stream(db, { scheme: 'p1_dongle', keepEverySeconds: 0, now: () => clock });
+    const stream = p1Stream(measuredObjects(db), { scheme: 'p1_dongle', keepEverySeconds: 0, now: () => clock });
     const statuses: string[] = [];
     const listening = listen(client as unknown as MqttClient, stream, {
       topics: ['p1/+/data/readings'],

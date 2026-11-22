@@ -9,9 +9,13 @@
  * object it belongs to by the dongle's identifier in the core's
  * `identifiers` (a scheme the installation names), reads it with
  * `@nexgen-os/dsmr` in the time zone of that object's participant, keeps one
- * reading per object every `keepEverySeconds`, and writes what it kept in
- * batches (`flush()`) through `meterSeriesOfDsmr()` and `storeSeries()`, the
- * one write path of the core. `listen()` ties a stream to any MQTT client
+ * reading per object every `keepEverySeconds`, and hands what it kept in
+ * batches (`flush()`), as series by `meterSeriesOfDsmr()`, to be written.
+ * Finding the object and writing its series are its caller's
+ * (`MeasuredObjects` of `@nexgen-os/connector`): the core gives them with
+ * `measuredObjects(db)`, which reads under the connection's rights and
+ * writes through `store()`, the one write path, so that this package runs
+ * without the core (decision 0064). `listen()` ties a stream to any MQTT client
  * that subscribes and emits `message` events (MQTT.js, or another): the
  * broker is a protocol, never a library this package ships
  * ([0014](../../../docs/decisions/0014-integrations-dashboards-warehouses-streams.md)).
@@ -21,16 +25,10 @@
  * `object_not_measured`, `time_zone_required`. A stream is never stopped by
  * one bad message.
  */
-import {
-  meterSeriesOfDsmr,
-  registerSource,
-  storeSeries,
-  type Db,
-  type SourceRow,
-} from '@nexgen-os/core';
+import { meterSeriesOfDsmr, type MeasuredObjects, type MeasuredTarget, type SourceRow } from '@nexgen-os/connector';
 import { readP1m5, readTelegram, type DsmrOptions, type DsmrProblem, type DsmrReading } from '@nexgen-os/dsmr';
 
-/** The source of what a P1 port says, as this package ships it. */
+/** The source of what a P1 port says, as this package ships it: write it once with `registerSource()`. */
 export const P1_PORT_SOURCE: SourceRow = {
   code: 'p1_port',
   name: 'The P1 port of a smart meter',
@@ -41,11 +39,6 @@ export const P1_PORT_SOURCE: SourceRow = {
   redistributable: false,
   published_by: '@nexgen-os/mqtt',
 };
-
-/** Writes the `sources` row of the P1 port, once. */
-export async function registerP1PortSource(db: Db): Promise<void> {
-  await registerSource(db, P1_PORT_SOURCE);
-}
 
 /**
  * Reads one message of a dongle: a P1M5 JSON message (text starting with
@@ -98,12 +91,7 @@ export interface P1StreamOptions {
 }
 
 /** The object a dongle's readings land on. */
-export interface P1Target {
-  organisationId: string;
-  objectKind: 'meter' | 'device';
-  objectId: string;
-  timeZone: string;
-}
+export type P1Target = MeasuredTarget;
 
 /** What became of one message. */
 export type P1Received =
@@ -119,7 +107,7 @@ export interface P1Flushed {
   /** Readings left out whole (undated, checksum), by their index in the batch. */
   skipped: { index: number; problems: DsmrProblem[] }[];
   series: { quantity_code: string; name: string | null; seriesId: string; inserted: number }[];
-  /** The refusal of the core when the batch could not be written; its readings are dropped. */
+  /** The refusal of the caller when the batch could not be written; its readings are dropped. */
   error?: string;
 }
 
@@ -144,8 +132,8 @@ interface Batch {
 
 const problem = (code: string, detail: string): DsmrProblem => ({ code, detail });
 
-/** A stream that writes the readings of dongles on the objects their identifiers name. */
-export function p1Stream(db: Db, options: P1StreamOptions): P1Stream {
+/** A stream that writes the readings of dongles on the objects their identifiers name, found and written by `objects`. */
+export function p1Stream(objects: MeasuredObjects, options: P1StreamOptions): P1Stream {
   const sourceCode = options.sourceCode ?? P1_PORT_SOURCE.code;
   const keepMs = (options.keepEverySeconds ?? 60) * 1000;
   const rememberMs = (options.rememberSeconds ?? 300) * 1000;
@@ -159,29 +147,8 @@ export function p1Stream(db: Db, options: P1StreamOptions): P1Stream {
   async function find(identifier: string): Promise<Known> {
     const remembered = known.get(identifier);
     if (remembered && remembered.until > now()) return remembered;
-    const { rows } = await db.query<{ organisation_id: string; object_kind: string; object_id: string; time_zone: string | null }>(
-      `select i.organisation_id::text, i.object_kind, i.object_id::text, p.time_zone
-         from identifiers i
-         left join participants p on p.id = participant_of(i.object_kind, i.object_id)
-        where i.scheme = $1 and i.value = $2
-          and (i.valid_from is null or i.valid_from <= now())
-          and (i.valid_to is null or i.valid_to > now())
-          and ($3::uuid is null or i.organisation_id = $3::uuid)`,
-      [options.scheme, identifier, options.organisationId ?? null],
-    );
-    let found: Known = { until: now() + rememberMs, target: null, problem: null };
-    const row = rows[0];
-    if (!row) {
-      found.problem = problem('identifier_unknown', `no meter or device is known by ${options.scheme} ${identifier}`);
-    } else if (rows.length > 1) {
-      found.problem = problem('identifier_ambiguous', `${options.scheme} ${identifier} names an object in ${rows.length} organisations; give organisationId`);
-    } else if (row.object_kind !== 'meter' && row.object_kind !== 'device') {
-      found.problem = problem('object_not_measured', `${options.scheme} ${identifier} names a ${row.object_kind}, not a meter or a device`);
-    } else if (!row.time_zone) {
-      found.problem = problem('time_zone_required', `the participant of ${row.object_kind} ${row.object_id} has no time zone: the meter's clock cannot be dated`);
-    } else {
-      found = { ...found, target: { organisationId: row.organisation_id, objectKind: row.object_kind, objectId: row.object_id, timeZone: row.time_zone } };
-    }
+    const answer = await objects.byIdentifier(options.scheme, identifier, options.organisationId ? { organisationId: options.organisationId } : {});
+    const found: Known = { until: now() + rememberMs, target: answer.target ?? null, problem: answer.problem ?? null };
     known.set(identifier, found);
     return found;
   }
@@ -234,9 +201,7 @@ export function p1Stream(db: Db, options: P1StreamOptions): P1Stream {
         const done: P1Flushed = { objectKind: target.objectKind, objectId: target.objectId, readings: readings.length, skipped, series: [] };
         try {
           for (const s of series) {
-            const stored = await storeSeries(db, {
-              organisationId: target.organisationId, objectKind: target.objectKind, objectId: target.objectId, sourceCode, kind: 'measured',
-            }, s);
+            const stored = await objects.write(target, sourceCode, s);
             done.series.push({ quantity_code: s.quantity_code, name: s.name ?? null, seriesId: stored.seriesId, inserted: stored.inserted });
           }
         } catch (error) {
