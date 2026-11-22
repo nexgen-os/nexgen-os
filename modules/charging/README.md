@@ -52,6 +52,16 @@ converted from the unit the station gave to the unit of its quantity. A
 value per phase, and a measurand with no quantity (voltage, frequency), is
 counted as skipped.
 
+`recordCharger(db, { organisationId, deviceId }, reading)`
+(`src/collect.ts`) writes what a charging station's connector read of a
+charger from its cloud, a `ChargerReading` of
+[`@nexgen-os/connector`](../../packages/connector/README.md)
+([`easee`](../../packages/connectors/easee/README.md),
+[`zaptec`](../../packages/connectors/zaptec/README.md)): each session once
+through `charging.record()` (source `station`, the reference of its station
+as `source_ref`), each series as a `measured` series of the charger with
+the connector's source. The connector reads; the module writes.
+
 ## Steering: a charging profile is a command
 
 Decision [0047](../../docs/decisions/0047-a-charging-profile-is-a-command.md).

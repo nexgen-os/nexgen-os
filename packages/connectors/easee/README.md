@@ -15,11 +15,12 @@ report to Easee's cloud.
 ## What it reads
 
 ```ts
-import { collectEasee, easee } from '@nexgen-os/easee';
+import { easee, readEasee } from '@nexgen-os/easee';
 
 const cloud = easee({ username, password }); // the secret of the connectors row
 await cloud.chargers();                      // the chargers the account reaches
-await collectEasee(db, cloud, { organisationId, deviceId, chargerId, from, to });
+const reading = await readEasee(cloud, { chargerId, from, to });
+await recordCharger(db, { organisationId, deviceId }, reading); // of the charging module
 ```
 
 | Call | Endpoint | Gives |
@@ -38,8 +39,11 @@ cloud dates in.
 
 ## Sessions
 
-`collectEasee(db, connector, request)` writes a window on a charger
-described in `charging.devices` (`charger_not_described` otherwise):
+`readEasee(connector, { chargerId, from, to })` reads a window of a
+charger as a `ChargerReading` of `@nexgen-os/connector`; this package
+reaches neither the database nor the core. `recordCharger()` of the
+`charging` module writes it on a charger described in `charging.devices`
+(`charger_not_described` otherwise):
 
 - each session through `charging.record()`, once per session id: source
   `station` (the cloud is the station's central system), `source_ref` the

@@ -15,12 +15,13 @@ report to Zaptec's cloud only, as most household stations do.
 ## What it reads
 
 ```ts
-import { collectZaptecSessions, zaptec } from '@nexgen-os/zaptec';
+import { readZaptecSessions, zaptec } from '@nexgen-os/zaptec';
 
 const cloud = zaptec({ username, password }); // the secret of the connectors row
 await cloud.chargers();       // the chargers the account reaches
 await cloud.state(chargerId); // what one reported last
-await collectZaptecSessions(db, cloud, { organisationId, deviceId, chargerId, from, to });
+const reading = await readZaptecSessions(cloud, { chargerId, from, to });
+await recordCharger(db, { organisationId, deviceId }, reading); // of the charging module
 ```
 
 | Call | Endpoint | Gives |
@@ -40,9 +41,11 @@ cloud dates in.
 
 ## Sessions and their energy
 
-`collectZaptecSessions(db, connector, request)` writes a window of sessions
-on a charger described in `charging.devices` (`charger_not_described`
-otherwise):
+`readZaptecSessions(connector, { chargerId, from, to })` reads a window of
+sessions as a `ChargerReading` of `@nexgen-os/connector`; this package
+reaches neither the database nor the core. `recordCharger()` of the
+`charging` module writes it on a charger described in `charging.devices`
+(`charger_not_described` otherwise):
 
 - each session through `charging.record()`, once per session id: source
   `station` (the cloud is the station's central system), `source_ref` the
