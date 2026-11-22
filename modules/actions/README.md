@@ -113,7 +113,11 @@ project, are in each status of the core (`planned`, `installed`,
 `in_service`, `out_of_service`, `removed`), the share in service among
 those not removed, and the ones not yet in service, by name — what a site
 board shows. A device's status is its own, kept by the core: the module
-reads it and never writes it.
+reads it and never writes it. A device moves through the works with
+`set_device_status(device, status, day)` of the core — `installed`, then
+`in_service`, or `out_of_service` when it fails its commissioning — and what
+was done to get there (the test, its report, the photos) is a step of the
+`commissioning` phase and the documents of the device.
 
 ## What stays outside
 

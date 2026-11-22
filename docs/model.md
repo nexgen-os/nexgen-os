@@ -258,7 +258,10 @@ Any other key is refused (`place_key_unknown`).
   ([0026](decisions/0026-a-device-belongs-to-its-participant.md)); what a file
   said about it is an attribute the module that read the file declares
   (`file_record` of `building`). `install_device` (with the nameplate of
-  the file it was read from, when no product is named), `retire_device`,
+  the file it was read from, when no product is named), `set_device_status`
+  (planned to installed or in service, the day it leaves planned becoming
+  its installation date; in service to out of service and back; refused by
+  name otherwise, `device_status_invalid`), `retire_device`,
   `replace_device` (a new device of the same participant, installed the day
   the old one is retired). A module derives the types
   it owns: `call derive_devices('solar.devices', 'solar')` makes a table
