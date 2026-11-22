@@ -34,11 +34,14 @@ in the core's terms, and nothing that reads a database or the network:
 `Precision`, `SearchOptions`, `Geocoder` and `SourceRow` for the
 geocoders; `MeterOfHub`, `MeterReadingOptions`, `MeterDataProvider`,
 `MeterMandate`, `MandateScope`, `MeterDataHub`, `requireMandate()`,
-`GestureError` and `refusalCode()` for the meter data hubs;
-`ChargerReading` and `ChargingSessionRecord` for the charging stations. Its only dependency is `@nexgen-os/solar`, MIT
-and without dependency, for the type of a series point
+`GestureError` and `refusalCode()` for the meter data hubs, with
+`readMeterFile()` and `meterSeriesOfR6x()` for an operator's R63 or R64
+file read as the series of a meter;
+`ChargerReading` and `ChargingSessionRecord` for the charging stations. Its dependencies are MIT and depend on nothing:
+`@nexgen-os/solar`, for the type of a series point
 (`SeriesPoint`), so that one type serves the core, the computations and the
-connectors. **The core re-exports every name of the package**: an
+connectors, and `@nexgen-os/enedis-r6x`, the format library that reads the
+operator's files. **The core re-exports every name of the package**: an
 installation and a connector share one definition, and a caller that
 imported a name from the core keeps it.
 
@@ -48,7 +51,8 @@ geocoders (`ban`, `geopunt`, `icar`, `mapbox`, `nominatim`, `photon`,
 `urbis`, and `grb`, which reads its buildings with `@nexgen-os/cityjson`),
 the meter data hubs (`enedis-sge`, `fluvius`, `ores`) the meters read
 on the place's network (`homewizard`, `homeassistant-api`) and the charging
-stations read from their cloud (`easee`, `zaptec`) import the
+stations read from their cloud (`easee`, `zaptec`) and the intermediary
+that relays the operator's files (`switchgrid`) import the
 package, never the core. A connector
 that writes through the core (`storeSeries()`, `registerSource()`,
 `requireMandate()`) moves once it hands what it collected to its caller
