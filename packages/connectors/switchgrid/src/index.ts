@@ -10,7 +10,8 @@
 // the order lists the operator's raw files behind links valid 15 minutes
 // (`dataUrls`); each file is read by `@nexgen-os/enedis-r6x` with the zone
 // and the quality table of the operator's hub, and comes back as the series
-// of the meter. `collectMeterReadings()` of `@nexgen-os/core` checks the
+// of the meter (`readMeterFile()` and `meterSeriesOfR6x()` of
+// `@nexgen-os/connector`). `collectMeterReadings()` of `@nexgen-os/core` checks the
 // mandate first and stores them.
 //
 // Nothing here reads the environment or the database: the token is given by
@@ -21,7 +22,7 @@ import { readFileSync } from 'node:fs';
 import {
   GestureError, meterSeriesOfR6x, readMeterFile, requireMandate,
   type CollectedSeries, type MeterDataHub, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions, type SourceRow,
-} from '@nexgen-os/core';
+} from '@nexgen-os/connector';
 
 /** The subset of `fetch` the connector uses, so a test or a proxy can stand in. */
 export type HttpFetch = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) =>

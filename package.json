@@ -28,8 +28,8 @@
   },
   "workspaces": [
     "packages/solar",
-    "packages/connector",
     "packages/formats/*",
+    "packages/connector",
     "packages/core",
     "packages/connectors/*",
     "packages/cli",

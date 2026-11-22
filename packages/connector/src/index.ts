@@ -1,7 +1,8 @@
 // `@nexgen-os/connector`: what a connector of Nexgen OS speaks, MIT
 // (decision 0064) — the point it is asked about, the series it brings back,
 // the interface of a weather source, the shape of a place and the interface
-// of a geocoder, a meter data hub and the mandate it reads under, what a
+// of a geocoder, a meter data hub and the mandate it reads under, an
+// operator's meter file as the series of a meter, what a
 // charging station's connector read of a charger, a refusal
 // by name, the `sources` row it ships, the subset of `fetch` it calls and the
 // azimuth counted from south that weather and PV services expect. Types and
@@ -12,6 +13,7 @@
 export * from './charger.js';
 export * from './fetch.js';
 export * from './meter.js';
+export * from './meter-file.js';
 export * from './place.js';
 export * from './refusal.js';
 export * from './source.js';
