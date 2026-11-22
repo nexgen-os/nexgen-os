@@ -21,11 +21,11 @@
 //   register that falls back as a reset, so the sessions of a charger make
 //   one series: `resample()` gives the energy of each hour or day.
 //
-// `collectZaptecSessions()` writes a window of sessions on a charger
-// described in `charging.devices`: the sessions through `charging.record()`
-// (source `station`, the charger's serial as `source_ref`), once per session
-// id, and the energy through `storeSeries()`; a second collection of the
-// same window changes nothing.
+// `readZaptecSessions()` reads a window of sessions of a charger as the
+// `ChargerReading` of `@nexgen-os/connector`: the sessions, the station's
+// serial as their `source_ref`, and their energy as one register. The caller
+// writes it (`recordCharger()` of the `charging` module): this package
+// reaches neither the database nor the core (decision 0064).
 //
 // Left out, on purpose: the user who authorised a session (a person's name
 // and e-mail: the token name the station read is kept, as for OCPP), the
@@ -39,7 +39,7 @@
 // installation's vault.
 
 import { readFileSync } from 'node:fs';
-import { GestureError, storeSeries, type CollectedSeries, type Db, type SeriesPoint, type SourceRow } from '@nexgen-os/core';
+import { GestureError, type ChargerReading, type CollectedSeries, type SeriesPoint, type SourceRow } from '@nexgen-os/connector';
 
 /** The subset of `fetch` the connector uses, so a test or a proxy can stand in. */
 export type HttpFetch = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) =>
@@ -356,45 +356,38 @@ export function sessionsOfZaptec(archived: unknown[]): ZaptecSessions {
   return out;
 }
 
-export interface CollectedSessions {
-  /** The sessions recorded, by id in `charging.sessions`, in the order of the cloud. */
-  sessions: string[];
-  /** The energy series of the charger, and the readings it received. */
-  energy: { seriesId: string; inserted: number } | null;
+export interface ReadZaptecSessions extends ChargerReading {
+  source_code: 'zaptec';
   skipped: ZaptecSessions['skipped'];
 }
 
 /**
- * The sessions of a Zaptec charger that ended in a window, written on its
- * device described in `charging.devices`: each session once by
- * `charging.record()` (source `station`, `source_ref` the station's serial),
- * the energy as one `consumption_energy` register of the device, `measured`,
- * source `zaptec`. Refuses as `charging.record()` does (`charger_not_described`).
+ * The sessions of a Zaptec charger that ended in a window, ready for
+ * `recordCharger()` of the `charging` module: each session with the serial
+ * of the station that delivered it as its `source_ref`, and their energy as
+ * one `consumption_energy` register of the charger (none when no session
+ * brought a reading), and what was left out.
  */
-export async function collectZaptecSessions(
-  db: Db,
+export async function readZaptecSessions(
   connector: Pick<ZaptecConnector, 'sessions'>,
-  request: { organisationId: string; deviceId: string; chargerId: string; from: string; to: string },
-): Promise<CollectedSessions> {
-  const read = await connector.sessions({ chargerId: request.chargerId, from: request.from, to: request.to });
-  const sessions: string[] = [];
-  for (const s of read.sessions) {
-    const r = await db.query<{ id: string }>('select charging.record($1, $2::jsonb, $3, $4) id', [
-      request.deviceId, JSON.stringify(s.record), 'station', s.record.metadata.device_id,
-    ]);
-    sessions.push(r.rows[0]!.id);
-  }
+  window: { chargerId: string; from: string; to: string },
+): Promise<ReadZaptecSessions> {
+  const read = await connector.sessions(window);
   // A session that starts at the instant the one before it ended keeps the
   // end of the earlier one: the core counts the next reading below it as a
   // reset, the energy of the new session from zero.
   const byInstant = new Map<string, number>();
   for (const p of read.sessions.flatMap((s) => s.energy)) byInstant.set(p.at, Math.max(byInstant.get(p.at) ?? -Infinity, p.value));
   const values = [...byInstant].sort(([a], [b]) => a.localeCompare(b)).map(([at, value]) => ({ at, value }));
-  const energy = values.length
-    ? await storeSeries(db, { organisationId: request.organisationId, objectKind: 'device', objectId: request.deviceId, sourceCode: 'zaptec', kind: 'measured' },
-      { quantity_code: 'consumption_energy', value_kind: 'cumulative', step: null, unit: 'KiloW-HR', values })
-    : null;
-  return { sessions, energy, skipped: read.skipped };
+  const series: CollectedSeries[] = values.length
+    ? [{ quantity_code: 'consumption_energy', value_kind: 'cumulative', step: null, unit: 'KiloW-HR', values }]
+    : [];
+  return {
+    source_code: 'zaptec',
+    sessions: read.sessions.map((s) => ({ record: s.record, source_ref: s.record.metadata.device_id })),
+    series,
+    skipped: read.skipped,
+  };
 }
 
 /** The `sources` row this package ships (`source.json`): write it with `registerSource()`. */

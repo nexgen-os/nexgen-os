@@ -42,7 +42,7 @@ describe('the MIT boundary of @nexgen-os/connector', () => {
   });
 
   it('is what the connectors import, in place of the core', () => {
-    for (const connector of ['open-meteo', 'pvgis', 'ban', 'geopunt', 'icar', 'mapbox', 'nominatim', 'photon', 'urbis', 'grb', 'enedis-sge', 'fluvius', 'ores', 'homeassistant-api', 'homewizard']) {
+    for (const connector of ['open-meteo', 'pvgis', 'ban', 'geopunt', 'icar', 'mapbox', 'nominatim', 'photon', 'urbis', 'grb', 'enedis-sge', 'fluvius', 'ores', 'homeassistant-api', 'homewizard', 'easee', 'zaptec']) {
       const dependencies = Object.keys((JSON.parse(read(`packages/connectors/${connector}/package.json`)) as { dependencies?: Record<string, string> }).dependencies ?? {});
       expect(dependencies, connector).toContain('@nexgen-os/connector');
       expect(dependencies, connector).not.toContain('@nexgen-os/core');

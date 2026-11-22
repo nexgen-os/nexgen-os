@@ -61,7 +61,7 @@ export const COPYLEFT = [
  * crossing; none is ever added.
  */
 export const STILL_CROSSING = [
-  '@nexgen-os/easee', '@nexgen-os/mqtt', '@nexgen-os/switchgrid', '@nexgen-os/zaptec',
+  '@nexgen-os/mqtt', '@nexgen-os/switchgrid',
 ];
 
 /** What a package of this repository may ship, by its own licence. */

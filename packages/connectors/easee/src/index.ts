@@ -15,11 +15,11 @@
 //   (`GET /api/sessions/charger/{id}/sessions/{from}/{to}`), each as the
 //   record `charging.record()` takes.
 //
-// `collectEasee()` writes a window on a charger described in
-// `charging.devices`: the sessions through `charging.record()` (source
-// `station`, the charger's serial as `source_ref`), once per session id, and
-// the series through `storeSeries()`; a second collection of the same window
-// changes nothing.
+// `readEasee()` reads a window of a charger as the `ChargerReading` of
+// `@nexgen-os/connector`: its sessions, the charger's serial as their
+// `source_ref`, and its series. The caller writes it (`recordCharger()` of
+// the `charging` module): this package reaches neither the database nor the
+// core (decision 0064).
 //
 // The cloud limits how often it is asked (two lists of chargers a minute, ten
 // lists of sessions an hour): a collection asks each endpoint once per
@@ -38,7 +38,7 @@
 // installation's vault.
 
 import { readFileSync } from 'node:fs';
-import { GestureError, storeSeries, type CollectedSeries, type Db, type SourceRow } from '@nexgen-os/core';
+import { GestureError, type ChargerReading, type CollectedSeries, type SourceRow } from '@nexgen-os/connector';
 
 /** The subset of `fetch` the connector uses, so a test or a proxy can stand in. */
 export type HttpFetch = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) =>
@@ -263,40 +263,29 @@ export function sessionsOfEasee(sessions: unknown[]): EaseeSessions {
   return out;
 }
 
-export interface CollectedEasee {
-  /** The sessions recorded, by id in `charging.sessions`, in the order of the cloud. */
-  sessions: string[];
-  /** The series of the charger written, with the readings each received. */
-  series: { quantity: string; seriesId: string; inserted: number }[];
+export interface ReadEasee extends ChargerReading {
+  source_code: 'easee';
   skipped: { observations: EaseeReadings['skipped']; sessions: EaseeSessions['skipped'] };
 }
 
 /**
- * A window of an Easee charger written on its device described in
- * `charging.devices`: each session once by `charging.record()` (source
- * `station`, `source_ref` the charger's serial), the lifetime energy
- * register and the power as `measured` series of the device, source `easee`.
- * Refuses as `charging.record()` does (`charger_not_described`).
+ * A window of an Easee charger, ready for `recordCharger()` of the `charging`
+ * module: each session with the charger's serial as its `source_ref`, the
+ * lifetime energy register and the power as series of the charger, and what
+ * was left out.
  */
-export async function collectEasee(
-  db: Db,
+export async function readEasee(
   connector: Pick<EaseeConnector, 'observations' | 'sessions'>,
-  request: { organisationId: string; deviceId: string; chargerId: string; from: string; to: string },
-): Promise<CollectedEasee> {
-  const window = { chargerId: request.chargerId, from: request.from, to: request.to };
+  window: { chargerId: string; from: string; to: string },
+): Promise<ReadEasee> {
   const sessions = await connector.sessions(window);
-  const recorded: string[] = [];
-  for (const s of sessions.sessions) {
-    const r = await db.query<{ id: string }>('select charging.record($1, $2::jsonb, $3, $4) id', [request.deviceId, JSON.stringify(s), 'station', request.chargerId]);
-    recorded.push(r.rows[0]!.id);
-  }
   const readings = await connector.observations(window);
-  const series: CollectedEasee['series'] = [];
-  for (const s of readings.series) {
-    const stored = await storeSeries(db, { organisationId: request.organisationId, objectKind: 'device', objectId: request.deviceId, sourceCode: 'easee', kind: 'measured' }, s);
-    series.push({ quantity: s.quantity_code, ...stored });
-  }
-  return { sessions: recorded, series, skipped: { observations: readings.skipped, sessions: sessions.skipped } };
+  return {
+    source_code: 'easee',
+    sessions: sessions.sessions.map((record) => ({ record, source_ref: window.chargerId })),
+    series: readings.series,
+    skipped: { observations: readings.skipped, sessions: sessions.skipped },
+  };
 }
 
 /** The `sources` row this package ships (`source.json`): write it with `registerSource()`. */

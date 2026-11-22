@@ -7,7 +7,8 @@ import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { registerSource, resample } from '@nexgen-os/core';
-import { collectZaptecSessions, instantOf, sessionsOfZaptec, stateOfZaptec, zaptec, zaptecSource, type HttpFetch } from '../src/index.js';
+import { recordCharger } from '../../../../modules/charging/src/collect.js';
+import { instantOf, readZaptecSessions, sessionsOfZaptec, stateOfZaptec, zaptec, zaptecSource, type HttpFetch } from '../src/index.js';
 import { freshDatabase, insert, one, organisation } from '../../../../tests/helpers/db.js';
 
 const json = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as unknown;
@@ -160,6 +161,8 @@ describe('collected on a charger of the charging module', () => {
   let db: PGlite;
   let org: string;
   let charger: string;
+  const collect = async (client: ReturnType<typeof zaptec>) => recordCharger(db, { organisationId: org, deviceId: charger },
+    await readZaptecSessions(client, { chargerId: CHARGER, from: '2026-11-09T00:00:00Z', to: '2026-11-11T00:00:00Z' }));
 
   beforeAll(async () => {
     db = await freshDatabase(['actions', 'charging']);
@@ -179,21 +182,20 @@ describe('collected on a charger of the charging module', () => {
 
   it('refuses a charger the module does not describe', async () => {
     const client = zaptec({ username: 'u', password: 'p', fetch: cloud().fetch });
-    await expect(collectZaptecSessions(db, client, { organisationId: org, deviceId: charger, chargerId: CHARGER, from: '2026-11-09T00:00:00Z', to: '2026-11-11T00:00:00Z' }))
-      .rejects.toThrow(/charger_not_described/);
+    await expect(collect(client)).rejects.toThrow(/charger_not_described/);
   });
 
   it('records each session once and the energy as one register, read back by hour and by day', async () => {
     await insert(db, 'charging.devices', { id: charger, max_power_kw: 11 });
     const client = zaptec({ username: 'u', password: 'p', fetch: cloud().fetch });
-    const request = { organisationId: org, deviceId: charger, chargerId: CHARGER, from: '2026-11-09T00:00:00Z', to: '2026-11-11T00:00:00Z' };
-    const first = await collectZaptecSessions(db, client, request);
+    const first = await collect(client);
     expect(first.sessions).toHaveLength(3);
-    expect(first.energy!.inserted).toBe(6);
+    expect(first.series.map((s) => [s.quantity, s.inserted])).toEqual([['consumption_energy', 6]]);
+    const energy = first.series[0]!.seriesId;
 
-    const again = await collectZaptecSessions(db, client, request);
+    const again = await collect(client);
     expect(again.sessions).toEqual(first.sessions);
-    expect(again.energy!.seriesId).toBe(first.energy!.seriesId);
+    expect(again.series.map((s) => s.seriesId)).toEqual([energy]);
     expect((await one<{ n: number }>(db, 'select count(*)::int n from charging.sessions')).n).toBe(3);
 
     const rows = (await db.query<Record<string, unknown>>(`select transaction_id, energy_kwh, id_token, source, source_ref, metadata->>'signed' signed
@@ -203,17 +205,17 @@ describe('collected on a charger of the charging module', () => {
       ['3', 3.2, null, 'station', 'ZAP000101', 'false'],
       ['4', 2, null, 'station', 'ZAP000101', 'false'],
     ]);
-    const series = await one<Record<string, unknown>>(db, 'select quantity_code, value_kind, kind, source_code from series where id = $1', [first.energy!.seriesId]);
+    const series = await one<Record<string, unknown>>(db, 'select quantity_code, value_kind, kind, source_code from series where id = $1', [energy]);
     expect(series).toEqual({ quantity_code: 'consumption_energy', value_kind: 'cumulative', kind: 'measured', source_code: 'zaptec' });
 
-    const hours = await resample(db, first.energy!.seriesId, '2026-11-09T18:00:00Z', '2026-11-10T09:00:00Z', '1 hour');
+    const hours = await resample(db, energy, '2026-11-09T18:00:00Z', '2026-11-10T09:00:00Z', '1 hour');
     expect(hours.map((b) => [b.bucket, Math.round(b.value! * 100) / 100])).toEqual([
       ['2026-11-09T18:00:00.000Z', 9.1],
       ['2026-11-09T19:00:00.000Z', 5.7],
       ['2026-11-09T20:00:00.000Z', 0.6],
       ['2026-11-10T07:00:00.000Z', 3.2],
     ]);
-    const days = await resample(db, first.energy!.seriesId, '2026-11-09T00:00:00Z', '2026-11-11T00:00:00Z', '1 day', { timeZone: 'UTC' });
+    const days = await resample(db, energy, '2026-11-09T00:00:00Z', '2026-11-11T00:00:00Z', '1 day', { timeZone: 'UTC' });
     expect(days.map((b) => Math.round(b.value! * 100) / 100)).toEqual([15.4, 3.2]);
   });
 });

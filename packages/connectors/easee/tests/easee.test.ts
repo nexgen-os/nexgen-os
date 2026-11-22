@@ -8,7 +8,8 @@ import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { registerSource, resample } from '@nexgen-os/core';
-import { collectEasee, easee, easeeSource, seriesOfEasee, sessionsOfEasee, type HttpFetch } from '../src/index.js';
+import { recordCharger } from '../../../../modules/charging/src/collect.js';
+import { easee, easeeSource, readEasee, seriesOfEasee, sessionsOfEasee, type HttpFetch } from '../src/index.js';
 import { freshDatabase, insert, one, organisation } from '../../../../tests/helpers/db.js';
 
 const json = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as unknown;
@@ -126,7 +127,8 @@ describe('collected on a charger of the charging module', () => {
   let db: PGlite;
   let org: string;
   let charger: string;
-  const request = () => ({ organisationId: org, deviceId: charger, chargerId: CHARGER, from: FROM, to: TO });
+  const window = { chargerId: CHARGER, from: FROM, to: TO };
+  const collect = async (client: ReturnType<typeof easee>) => recordCharger(db, { organisationId: org, deviceId: charger }, await readEasee(client, window));
 
   beforeAll(async () => {
     db = await freshDatabase(['actions', 'charging']);
@@ -145,17 +147,17 @@ describe('collected on a charger of the charging module', () => {
   });
 
   it('refuses a charger the module does not describe', async () => {
-    await expect(collectEasee(db, easee({ username: 'u', password: 'p', fetch: cloud().fetch }), request())).rejects.toThrow(/charger_not_described/);
+    await expect(collect(easee({ username: 'u', password: 'p', fetch: cloud().fetch }))).rejects.toThrow(/charger_not_described/);
   });
 
   it('records each session once, and the register gives the energy of each hour and day', async () => {
     await insert(db, 'charging.devices', { id: charger, max_power_kw: 11 });
     const client = easee({ username: 'u', password: 'p', fetch: cloud().fetch });
-    const first = await collectEasee(db, client, request());
+    const first = await collect(client);
     expect(first.sessions).toHaveLength(2);
     expect(first.series.map((s) => [s.quantity, s.inserted])).toEqual([['consumption_power', 2], ['consumption_energy', 6]]);
 
-    const again = await collectEasee(db, client, request());
+    const again = await collect(client);
     expect(again.sessions).toEqual(first.sessions);
     expect(again.series.map((s) => s.seriesId)).toEqual(first.series.map((s) => s.seriesId));
 

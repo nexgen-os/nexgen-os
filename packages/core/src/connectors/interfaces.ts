@@ -24,7 +24,7 @@ import { store } from '../series.js';
 // re-exports it, one definition for both.
 export {
   azimuthFromSouth,
-  type CollectedSeries, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions, type Point, type SourceRow, type WeatherProvider,
+  type ChargerReading, type ChargingSessionRecord, type CollectedSeries, type MeterDataProvider, type MeterOfHub, type MeterReadingOptions, type Point, type SourceRow, type WeatherProvider,
 } from '@nexgen-os/connector';
 import type { Address, CollectedSeries, Point, SourceRow } from '@nexgen-os/connector';
 
