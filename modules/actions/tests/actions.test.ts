@@ -177,14 +177,14 @@ describe('where a project stands', () => {
   });
 
   it('says where the devices of the works stand: a device in service leaves the list, a removed one leaves the share', async () => {
-    await db.query(`update devices set status = 'installed', installation_date = '2026-06-19' where id = $1`, [GROUND_ARRAY]);
+    await db.query(`select set_device_status($1, 'installed', '2026-06-19')`, [GROUND_ARRAY]);
     expect((await progress(FARM, '2026-06-22')).devices).toMatchObject({
       by_status: { in_service: 3, installed: 1, planned: 1 },
       in_service_share: 0.6,
       not_in_service: [{ name: 'Car park array', status: 'planned' }, { name: 'Lower field ground array', status: 'installed' }],
     });
-    await db.query(`update devices set status = 'in_service' where id = $1`, [GROUND_ARRAY]);
-    await db.query(`update devices set status = 'removed', removal_date = '2026-06-20' where id = $1`, [CARPORT_ARRAY]);
+    await db.query(`select set_device_status($1, 'in_service', '2026-06-20')`, [GROUND_ARRAY]);
+    await db.query(`select retire_device($1, '2026-06-20')`, [CARPORT_ARRAY]);
     expect((await progress(FARM, '2026-06-22')).devices).toEqual({
       total: 5,
       by_status: { in_service: 4, removed: 1 },
