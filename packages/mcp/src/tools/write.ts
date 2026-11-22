@@ -76,6 +76,14 @@ export const WRITE_TOOLS: Tool[] = [
     run: ({ db }, a) => core.installDevice(db, a),
   }),
   tool({
+    name: 'set_device_status',
+    title: 'Move a device through the works',
+    description: 'Where a device stands, moved on a day by a named transition (set_device_status()): planned to installed or in_service, the day becoming its installation date; installed to in_service, or out_of_service when it failed its commissioning; in_service to out_of_service and back. Only on a day that has come, and only what the person says happened: what was done to get there (the commissioning test, its report, the photos) is a step of the commissioning phase and the documents of the device. Removing a device is not this tool. Refuses device_status_invalid, device_day_invalid, device_retired, not_allowed.',
+    input: z.object({ device_id: uuid, status: z.enum(['installed', 'in_service', 'out_of_service']), on: date.optional().describe('The day it happened; today otherwise') }),
+    writes: true,
+    run: ({ db }, a) => core.setDeviceStatus(db, a),
+  }),
+  tool({
     name: 'import_project',
     title: 'Import a project described as data',
     description: 'A project described as data — its participants with their place and time zone, the meters they carry, the devices behind them, and the identifiers each is known by elsewhere — written through create_project(), join_project(), declare_meter(), install_device() and add_identifier() (importProject()). Each object is looked for first, by an identifier it carries, then by its name in its parent (a meter by its scheme and identifier): the same description given again creates nothing. Run it with dry_run first and show the person what it would create. The country is the person\'s, never assumed.',

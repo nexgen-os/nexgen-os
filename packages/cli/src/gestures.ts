@@ -27,6 +27,7 @@ import {
   importProjectSheet,
   importPvsolStudy,
   installDevice,
+  setDeviceStatus,
   kpisOf,
   listApiKeys,
   listMembers,
@@ -54,7 +55,7 @@ export const GESTURE_COMMANDS: Record<string, string[]> = {
   project: ['create', 'import'],
   participant: ['add'],
   meter: ['declare'],
-  device: ['install'],
+  device: ['install', 'status'],
   series: ['import'],
   size: [],
   kpis: ['', 'compute'],
@@ -73,9 +74,11 @@ Gestures, as a person (NEXGEN_API_KEY, NEXGEN_ACCESS_TOKEN or NEXGEN_ACT_AS_USER
   nexgen-os key revoke <id>                                                         withdraw a key
   nexgen-os project create --organisation <id> --name <n> --country <cc> [--kind k]
   nexgen-os project import --organisation <id> --file <description.json|sheet.csv|sheet.xlsx> [--worksheet <name>] [--dry-run]   a project, its participants, meters, devices; again without a duplicate
-  nexgen-os project import --organisation <id> --file <study.pvprj> --country <cc> [--time-zone tz] [--dry-run]   a PV*SOL study: its participant, inverters and PV system  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
+  nexgen-os project import --organisation <id> --file <study.pvprj> --country <cc> [--time-zone tz] [--dry-run]   a PV*SOL study: its participant, inverters and PV system
+  nexgen-os participant add --project <id> --name <n> [--place <json>|--address <text>] [--country cc] [--time-zone tz] [--category c]
   nexgen-os meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]
   nexgen-os device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]
+  nexgen-os device status <id> --status installed|in_service|out_of_service [--on yyyy-mm-dd]   where it stands, on the day it happened
   nexgen-os series import --format homeassistant --file <path> --entity <id> --organisation <id>
                           --object-kind <k> --object <id> --quantity <code> --source <code>
   nexgen-os size --module solar|battery --request <file.json>                       to size, with a named criterion
@@ -92,7 +95,7 @@ export const GESTURE_FLAGS: Record<string, 'value' | 'switch'> = {
   'time-zone': 'value', category: 'value', participant: 'value', identifier: 'value', scheme: 'value', direction: 'value',
   type: 'value', product: 'value', power: 'value', 'object-kind': 'value', object: 'value', quantity: 'value', source: 'value',
   format: 'value', file: 'value', worksheet: 'value', entity: 'value', module: 'value', request: 'value', indicator: 'value', from: 'value', to: 'value',
-  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value', loss: 'value', user: 'value', role: 'value',
+  write: 'switch', expires: 'value', lon: 'value', lat: 'value', kwp: 'value', azimuth: 'value', tilt: 'value', year: 'value', loss: 'value', user: 'value', role: 'value', status: 'value', on: 'value',
 };
 
 function need(flags: Flags, name: string): string {
@@ -196,6 +199,14 @@ async function gesture(db: Db, command: string, sub: string | undefined, operand
         ...(optional(f, 'product') ? { product_id: optional(f, 'product')! } : {}),
         ...(optional(f, 'power') ? { rated_power_kw: Number(optional(f, 'power')) } : {}),
       });
+    case 'device status': {
+      if (operand === undefined) throw new NexgenError('usage', 'device status <id> --status installed|in_service|out_of_service [--on yyyy-mm-dd]');
+      const status = need(f, 'status');
+      if (status !== 'installed' && status !== 'in_service' && status !== 'out_of_service') {
+        throw new NexgenError('usage', '--status installed, in_service or out_of_service; a device is removed by retire_device()');
+      }
+      return setDeviceStatus(db, { device_id: operand, status, ...(optional(f, 'on') ? { on: optional(f, 'on')! } : {}) });
+    }
     case 'series import': {
       if (need(f, 'format') !== 'homeassistant') throw new NexgenError('usage', '--format homeassistant is the format this command reads');
       const target: SeriesTarget = {

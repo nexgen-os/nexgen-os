@@ -61,7 +61,7 @@ describe('the server', () => {
     const { tools } = await writer.listTools();
     const names = tools.map((t) => t.name);
     for (const name of ['status', 'list_organisations', 'list_projects', 'list_participants', 'list_meters', 'list_devices', 'list_series',
-      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'import_project', 'import_project_sheet', 'store_series',
+      'get_object', 'read_series', 'parameter_of', 'create_project', 'add_participant', 'declare_meter', 'install_device', 'set_device_status', 'import_project', 'import_project_sheet', 'store_series',
       'import_series', 'list_modules', 'kpis_of', 'kpis_compute', 'solar_size', 'solar_describe_system', 'solar_estimate_yield', 'solar_estimates',
       'actions_of_project', 'actions_propose', 'actions_validate']) {
       expect(names).toContain(name);
@@ -89,6 +89,12 @@ describe('the server', () => {
     expect(meter.error, meter.text).toBe(false);
     const device = await call(writer, 'install_device', { participant_id: pid, device_type: 'solar', name: 'Roof array', rated_power_kw: 9 });
     expect(device.error, device.text).toBe(false);
+    const installed = await call(writer, 'set_device_status', { device_id: device.value.id, status: 'installed', on: '2026-03-02' });
+    expect(installed.value, installed.text).toEqual({ id: device.value.id, status: 'installed', installation_date: '2026-03-02' });
+    const backwards = await call(writer, 'set_device_status', { device_id: device.value.id, status: 'installed', on: '2026-03-03' });
+    expect(backwards.error).toBe(true);
+    expect(backwards.text).toMatch(/^device_status_invalid/);
+    expect((await call(writer, 'set_device_status', { device_id: device.value.id, status: 'in_service', on: '2026-03-09' })).value).toMatchObject({ status: 'in_service' });
 
     const stored = await call(writer, 'store_series', {
       organisation_id: org, object_kind: 'meter', object_id: meter.value.id, quantity_code: 'offtake_energy', source_code: 'zz_meter_export',

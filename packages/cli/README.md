@@ -137,6 +137,7 @@ person, under row level security, in one transaction each:
 | `participant add --project <id> --name <n> [--place <json>\|--address <text>] [--country cc] [--time-zone tz] [--category c]` | `join_project()`; an address through the geocoders of `NEXGEN_GEOCODERS` |
 | `meter declare --participant <id> --identifier <v> --scheme <s> [--direction d]` | `declare_meter()` |
 | `device install --participant <id> --type <t> --name <n> [--product <id>] [--power kw]` | `install_device()` |
+| `device status <id> --status installed\|in_service\|out_of_service [--on yyyy-mm-dd]` | `set_device_status()` |
 | `series import --format homeassistant --file <path> --entity <id> --organisation <id> --object-kind <k> --object <id> --quantity <code> --source <code>` | The readings of a Home Assistant export, through `store()` |
 | `size --module solar\|battery --request <file.json>` | To size with a named criterion ([0045](../../docs/decisions/0045-to-size-is-one-gesture.md)); the request is the module's |
 | `kpis --object-kind <k> --object <id> --from <iso> --to <iso>` · `kpis compute … --indicator <code>` | `kpis.of()`, `kpis.compute()` |

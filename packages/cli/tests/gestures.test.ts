@@ -49,6 +49,9 @@ describe('the gestures as commands', () => {
     expect(meter.id).toMatch(/^[0-9a-f-]{36}$/);
     const device = await json(['device', 'install', '--participant', participant.id, '--type', 'solar', '--name', 'Roof array', '--power', '9']);
     expect(device.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(await json(['device', 'status', device.id, '--status', 'in_service', '--on', '2026-03-02']))
+      .toEqual({ id: device.id, status: 'in_service', installation_date: '2026-03-02' });
+    expect((await run(['device', 'status', device.id, '--status', 'removed'])).code).not.toBe(0);
 
     const dir = await mkdtemp(join(tmpdir(), 'nexgen-gestures-'));
     const file = join(dir, 'home.json');

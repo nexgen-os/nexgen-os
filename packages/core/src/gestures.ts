@@ -265,6 +265,25 @@ export async function installDevice(db: Db, d: DeviceInput): Promise<{ id: strin
      d.source_code ?? null, d.unit_count ?? null]);
 }
 
+/** The statuses a device moves to through the works and its life; `removed` is `retire_device()`'s. */
+export type DeviceStatus = 'installed' | 'in_service' | 'out_of_service';
+
+/**
+ * Moves a device on a day by a named transition (`set_device_status()`):
+ * planned to installed or in service, the day becoming its installation
+ * date; installed to in service, or out of service when it failed its
+ * commissioning; in service to out of service and back. Refuses
+ * `device_status_invalid`, `device_day_invalid`, `device_retired`,
+ * `device_not_found`, `not_allowed`. Returns where the device stands.
+ */
+export async function setDeviceStatus(
+  db: Db,
+  d: { device_id: string; status: DeviceStatus; on?: string },
+): Promise<{ id: string; status: string; installation_date: string | null }> {
+  await db.query('select set_device_status($1, $2, coalesce($3::date, current_date))', [d.device_id, d.status, d.on ?? null]);
+  return first(db, 'select id::text, status, installation_date::text from devices where id = $1', [d.device_id]);
+}
+
 export interface PvArrayInput {
   name: string;
   /** Degrees clockwise from true north: 180 faces south. */
