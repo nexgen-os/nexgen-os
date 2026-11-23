@@ -18,6 +18,8 @@ const engineName = z.string().regex(/^[a-z0-9_-]+$/)
 const economics = z.object({
   offtakePricePerKwh: z.number(), injectionPricePerKwh: z.number(), costPerKwp: z.number(),
   horizonYears: z.number().int().positive(), discountRate: z.number(), currency: z.string().length(3),
+  degradationPctPerYear: z.number().min(0).max(5).optional()
+    .describe('The yearly loss of output from ageing, in percent a year (0.5 for 0.5 %/year), as the person or the datasheet states it; omitted, no ageing is counted and the sizing says so'),
 }).describe('The money of the person, in the currency of the place. Never assumed');
 
 export const MODULE_TOOLS: Tool[] = [

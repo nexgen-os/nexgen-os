@@ -19,7 +19,13 @@
 // The criteria are the core's vocabulary `sizing_criteria`; money is the
 // caller's, in the currency of the place: the price of the energy taken
 // from the grid, the price of the energy injected, the cost of a kWp, the
-// horizon and the discount rate.
+// horizon and the discount rate — and the yearly loss of output from
+// ageing, in percent a year as a PV system keeps it
+// (`solar.devices.degradation_pct_per_year`, 0 to 5): year t produces the
+// first year's curve times (1 - d/100)^(t-1), and what it saves is split
+// again step by step, so that the payback and the net present value count
+// the years the modules lose. A sizing that is not told the rate counts no
+// ageing and says so in its warnings.
 //
 // The answer is a row of `solar.estimates` about the participant, kind
 // `sizing`: its inputs (the criterion, the bounds and where the limit came
@@ -30,9 +36,11 @@ import type { Db } from '@nexgen-os/core';
 import { resample } from '@nexgen-os/core';
 import { writeEstimate } from './estimates.js';
 
-export const SIZING_ENGINE_VERSION = 'solar-size-0.3.0';
+export const SIZING_ENGINE_VERSION = 'solar-size-0.4.0';
 const SWEEP_POINTS = 100;
 const YEAR_MS = 365.25 * 86_400_000;
+/** The longest payback a sweep looks for, in years: beyond it, a power does not pay back. */
+const PAYBACK_MAX_YEARS = 100;
 
 export interface SizingEconomics {
   /** The price of a kWh taken from the grid, saved by each kWh consumed on the spot. */
@@ -47,6 +55,12 @@ export interface SizingEconomics {
   discountRate: number;
   /** The currency of these figures, ISO 4217. */
   currency: string;
+  /**
+   * The yearly loss of output from ageing, in percent a year (0 to 5), the
+   * unit of `solar.devices.degradation_pct_per_year`: 0.5 for 0.5 %/year.
+   * Not given: no ageing is counted, and the sizing says so.
+   */
+  degradationPctPerYear?: number;
 }
 
 export interface SizingRequest {
@@ -83,6 +97,8 @@ export interface SizingResult {
   recommended: SizingPoint;
   curve: SizingPoint[];
   limit: { maxKwp: number; by: string };
+  /** What the figures do not count, each starting with its name. */
+  warnings: string[];
 }
 
 interface Criterion {
@@ -100,6 +116,10 @@ export async function size(db: Db, request: SizingRequest): Promise<SizingResult
   }
   if ((criterion.code === 'payback' || criterion.code === 'net_present_value') && !request.economics) {
     throw new Error(`economics_required: ${criterion.code} reads the prices, the cost of a kWp, the horizon and the discount rate`);
+  }
+  const degradation = request.economics?.degradationPctPerYear;
+  if (degradation !== undefined && !(degradation >= 0 && degradation <= 5)) {
+    throw new Error(`degradation_out_of_range: ${degradation} %/year; the yearly loss of output from ageing is between 0 and 5 percent a year`);
   }
   if (!(request.shape.kwp > 0)) throw new Error('shape_invalid: the production series is given with the power it was computed for');
 
@@ -146,15 +166,43 @@ export async function size(db: Db, request: SizingRequest): Promise<SizingResult
     };
     const e = request.economics;
     if (e) {
-      const yearly = ((self * e.offtakePricePerKwh) + ((production - self) * e.injectionPricePerKwh)) / years;
+      // Year t produces the first year's curve times (1 - d)^(t-1); what it
+      // saves is split again, the share consumed on the spot growing as the
+      // output falls. Gains per year over the period, scaled to a year.
+      const keep = 1 - (e.degradationPctPerYear ?? 0) / 100;
+      const gainOf = (factor: number): number => {
+        let selfT = 0;
+        let productionT = 0;
+        for (const at of steps) {
+          const p = factor * kwp * shape.get(at)!;
+          productionT += p;
+          selfT += Math.min(p, consumption.get(at)!);
+        }
+        return ((selfT * e.offtakePricePerKwh) + ((productionT - selfT) * e.injectionPricePerKwh)) / years;
+      };
+      const first = gainOf(1);
+      const gain = (t: number): number => (keep === 1 || t === 1 ? first : gainOf(keep ** (t - 1)));
       const cost = kwp * e.costPerKwp;
       let npv = -cost;
-      for (let t = 1; t <= e.horizonYears; t += 1) npv += yearly / (1 + e.discountRate) ** t;
+      let cumulated = 0;
+      let payback: number | null = null;
+      for (let t = 1; t <= Math.max(e.horizonYears, PAYBACK_MAX_YEARS) && (t <= e.horizonYears || payback === null); t += 1) {
+        const g = gain(t);
+        if (t <= e.horizonYears) npv += g / (1 + e.discountRate) ** t;
+        if (payback === null && kwp > 0 && g > 0 && cumulated + g >= cost) payback = t - 1 + (cost - cumulated) / g;
+        cumulated += g;
+        // Ageing only lowers the gain: once a year earns nothing, none after it will.
+        if (payback === null && g <= 0 && t >= e.horizonYears) break;
+      }
       pt.netPresentValue = round(npv, 2);
-      pt.paybackYears = kwp > 0 && yearly > 0 ? round(cost / yearly, 2) : null;
+      pt.paybackYears = payback === null ? null : round(payback, 2);
     }
     return pt;
   };
+
+  const warnings = request.economics && degradation === undefined
+    ? ['degradation_not_counted: no yearly loss of output from ageing was given (economics.degradationPctPerYear); every year of the payback and the net present value produces as the first']
+    : [];
 
   // The sweep, then a finer one around the best point.
   const coarse = limit.maxKwp / SWEEP_POINTS;
@@ -176,12 +224,13 @@ export async function size(db: Db, request: SizingRequest): Promise<SizingResult
       consumption: { series_id: consumptionRows[0].series_id, kind: consumptionRows[0].kind, kwh: round(consumed, 3) },
       production_shape: { series_id: request.shape.seriesId, kwp: request.shape.kwp },
       economics: request.economics ?? null,
-      method: 'a sweep of powers up to the limit; at each step, self-consumed = min(production, consumption), injected = the rest',
+      method: 'a sweep of powers up to the limit; at each step, self-consumed = min(production, consumption), injected = the rest; '
+        + 'year t of the economics produces the curve times (1 - degradation)^(t-1), split again step by step',
       conventions: { energy: 'kWh over the period', money: 'the currency of the economics, per year over the period' },
     },
-    results: () => ({ recommended: best, curve }),
+    results: () => ({ recommended: best, curve, warnings }),
   });
-  return { estimateId, recommended: best, curve, limit };
+  return { estimateId, recommended: best, curve, limit, warnings };
 }
 
 /** The best point for a criterion: the closest to its target, the largest or the smallest value it reads. */

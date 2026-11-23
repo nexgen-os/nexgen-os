@@ -51,7 +51,7 @@ describe('a computation through the server', () => {
     const sized = JSON.parse(r.content[0]!.text);
     expect(sized.recommended.kwp).toBeCloseTo(2.5, 6);
     const estimates = (await client.callTool({ name: 'solar_estimates', arguments: { participant_id: home } })) as { content: { text: string }[] };
-    expect(JSON.parse(estimates.content[0]!.text)).toMatchObject([{ id: sized.estimateId, kind: 'sizing', provenance: 'solar-size-0.3.0' }]);
+    expect(JSON.parse(estimates.content[0]!.text)).toMatchObject([{ id: sized.estimateId, kind: 'sizing', provenance: 'solar-size-0.4.0' }]);
   });
 
   it('describes a PV system and its arrays as the solar module reads them', async () => {

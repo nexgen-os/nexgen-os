@@ -44,7 +44,7 @@ describe('solar.size()', () => {
     expect(r.limit).toEqual({ maxKwp: 10, by: 'stated', source: 'the owner' });
     const row = await one<{ kind: string; participant_id: string; device_id: string | null; provenance: string; inputs: Record<string, any> }>(db,
       'select kind, participant_id, device_id, provenance, inputs from solar.estimates where id = $1', [r.estimateId]);
-    expect(row).toMatchObject({ kind: 'sizing', participant_id: home, device_id: null, provenance: 'solar-size-0.3.0' });
+    expect(row).toMatchObject({ kind: 'sizing', participant_id: home, device_id: null, provenance: 'solar-size-0.4.0' });
     expect(row.inputs).toMatchObject({ criterion: { code: 'self_consumption_rate', aim: 'target', target: 0.8 }, production_shape: { series_id: shapeSeries, kwp: 1 }, consumption: { kind: 'measured', kwh: 48 } });
   });
 
@@ -67,6 +67,34 @@ describe('solar.size()', () => {
     const r = await size(db, { ...base, bounds: undefined, criterion: 'max_power' });
     expect(r.limit).toMatchObject({ maxKwp: 8, by: 'roof', roof_m2: 40, per_area: { value: 0.2, level: 'organisation' } });
     expect(r.recommended.kwp).toBe(8);
+  });
+
+  it('counts the ageing of the modules in the payback and the net present value, year after year', async () => {
+    // 2 kWp produce 1 kWh an hour from 8 to 16, all consumed on the spot:
+    // 16 kWh over two days at 0.25, 730.5 a year, falling 0.5 % a year.
+    const capped = { ...base, bounds: { maxKwp: 2, source: 'the owner' }, criterion: 'max_power' };
+    const aged = await size(db, { ...capped, economics: { ...economics, degradationPctPerYear: 0.5 } });
+    const first = (16 * 0.25 * 365.25) / 2;
+    const npv = Array.from({ length: 20 }, (_, i) => (first * 0.995 ** i) / 1.04 ** (i + 1)).reduce((a, b) => a + b, -2000);
+    expect(aged.recommended.kwp).toBe(2);
+    expect(aged.recommended.netPresentValue).toBeCloseTo(npv, 1);
+    // Two years bring 1457.35, the third 723.2 of which 542.65 are still owed.
+    expect(aged.recommended.paybackYears).toBeCloseTo(2.75, 2);
+    expect(aged.warnings).toEqual([]);
+
+    const flat = await size(db, { ...capped, economics });
+    expect(flat.recommended.paybackYears).toBeCloseTo(2.74, 2);
+    expect(flat.recommended.netPresentValue!).toBeGreaterThan(aged.recommended.netPresentValue!);
+    expect(flat.warnings).toEqual([expect.stringMatching(/^degradation_not_counted/)]);
+    const row = await one<{ inputs: Record<string, any>; results: Record<string, any> }>(db, 'select inputs, results from solar.estimates where id = $1', [aged.estimateId]);
+    expect(row.inputs.economics).toMatchObject({ degradationPctPerYear: 0.5 });
+    expect(row.results.warnings).toEqual([]);
+
+    // Past 2 kWp, the share consumed on the spot grows as the output falls:
+    // the best net present value moves up, never down.
+    const best = await size(db, { ...base, criterion: 'net_present_value', economics: { ...economics, degradationPctPerYear: 2 } });
+    expect(best.recommended.kwp).toBeGreaterThanOrEqual(2);
+    await expect(size(db, { ...capped, economics: { ...economics, degradationPctPerYear: 50 } })).rejects.toThrow(/^degradation_out_of_range/);
   });
 
   it('refuses by name what it cannot size', async () => {
