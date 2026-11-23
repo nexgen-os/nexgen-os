@@ -273,6 +273,16 @@ async function pricesOf(db: Db, perimeter: Perimeter, participantId: string | nu
   return { offtake: energy === null || fees === null ? null : energy + fees, injection, read, missing, currency };
 }
 
+/** The years until the gains of each year cover the capex, within the years given; null past them. */
+function paybackOf(capex: number, yearly: number[]): number | null {
+  let cumulated = 0;
+  for (let y = 0; y < yearly.length; y++) {
+    if (yearly[y] > 0 && cumulated + yearly[y] >= capex) return round(y + (capex - cumulated) / yearly[y], 3);
+    cumulated += yearly[y];
+  }
+  return null;
+}
+
 /**
  * What a dispatch saves over its period: the offtake it avoided at the
  * price of each interval (the price series, else the offtake price), less
@@ -425,6 +435,12 @@ const SAME_POWER_KW = 1e-3;
  *   payback            the shortest simple payback, capex over yearly savings;
  *   net_present_value  the greatest net present value over `battery_lifetime`
  *       years at `discount_rate`, none when no capacity pays back;
+ *
+ * When `battery_end_of_life_capacity` and `battery_lifetime` are said, the
+ * capacity fades linearly from full to that share over the lifetime, each
+ * year dispatched again at what is left: the payback is then the years its
+ * savings take to cover the capex within the lifetime, and the net present
+ * value discounts each year's own savings.
  *   max_power          the smallest capacity giving the lowest peak of
  *       offtake, the battery run for peak shaving under `peakThresholdKw`.
  *
@@ -463,6 +479,9 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
   const optional = async (property: string) => (economic ? need(property) : await parameter(db, kind, id, property, request.from));
   const cost = await optional('battery_cost');
   const opex = await parameter(db, kind, id, 'battery_opex', request.from);
+  // The share of its capacity a battery keeps at the end of its lifetime:
+  // with the lifetime, the capacity fades linearly year after year.
+  const endOfLife = await parameter(db, kind, id, 'battery_end_of_life_capacity', request.from);
   const lifetime = request.criterion === 'net_present_value' ? await need('battery_lifetime') : await parameter(db, kind, id, 'battery_lifetime', request.from);
   const discount = request.criterion === 'net_present_value' ? await need('discount_rate') : await parameter(db, kind, id, 'discount_rate', request.from);
   const prices = await pricesOf(db, request.perimeter, place.participantId ?? existing[0]?.participantId ?? null, request.from, request.offtakePrice);
@@ -514,6 +533,11 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     ? [`period_under_a_year: ${periodDays} day${periodDays === 1 ? '' : 's'}, scaled to a year of 365.25; the season of the period weighs on the savings, the payback, the net present value and the rates`]
     : [];
   const annuity = lifetime ? Array.from({ length: lifetime.value }, (_, y) => (1 + (discount?.value ?? 0)) ** -(y + 1)).reduce((s, v) => s + v, 0) : null;
+  // The share of the capacity left in each year of the lifetime, counted at
+  // the start of the year: full the first, end_of_life after the last.
+  const fade = endOfLife && lifetime && endOfLife.value < 1
+    ? Array.from({ length: lifetime.value }, (_, y) => 1 - ((1 - endOfLife.value) * y) / lifetime.value)
+    : null;
   const curve: SizePoint[] = [];
   for (let capacity = minKwh; capacity <= maxKwh + 1e-9; capacity += stepKwh) {
     const battery: Battery = {
@@ -528,6 +552,17 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     const opexPerYear = opex ? round((capacity * opex.value) / 1000, 2) : null;
     // What a year brings once the battery is kept running.
     const net = perYear === null ? null : round(perYear - (opexPerYear ?? 0), 2);
+    // With a capacity that fades, each year of the lifetime is dispatched
+    // again at what is left of it: what a year saves is not proportional
+    // to the capacity.
+    const yearly = net !== null && fade
+      ? fade.map((f, y) => {
+          if (y === 0) return net;
+          const aged: Battery = { ...battery, capacityKwh: capacity * f };
+          const s = savingsOf(left, dispatchChain(left, [aged])[0], prices, fees);
+          return s === null ? 0 : s / years - (opexPerYear ?? 0);
+        })
+      : null;
     curve.push({
       capacity_kwh: round(capacity, 3),
       discharge_kwh: k.discharge_kwh,
@@ -537,8 +572,10 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
       savings_per_year: perYear,
       opex_per_year: opexPerYear,
       capex,
-      payback_years: capex !== null && net !== null && net > 0 ? round(capex / net, 3) : null,
-      net_present_value: capex !== null && net !== null && annuity !== null ? round(net * annuity - capex, 2) : null,
+      payback_years: capex === null || net === null ? null : yearly ? paybackOf(capex, yearly) : net > 0 ? round(capex / net, 3) : null,
+      net_present_value: capex === null || net === null || annuity === null ? null
+        : yearly ? round(yearly.reduce((sum, g, y) => sum + g * (1 + (discount?.value ?? 0)) ** -(y + 1), -capex), 2)
+        : round(net * annuity - capex, 2),
     });
   }
 
@@ -572,6 +609,7 @@ export async function size(db: Db, request: SizeRequest): Promise<SizeResult> {
     parameters: {
       battery_c_rate: cRate.from, round_trip_efficiency: efficiency.from,
       battery_cost: cost?.from ?? null, battery_opex: opex?.from ?? null, battery_lifetime: lifetime?.from ?? null, discount_rate: discount?.from ?? null,
+      battery_end_of_life_capacity: endOfLife?.from ?? null,
     },
     prices: { read: prices.read, missing: prices.missing, currency: prices.currency },
   };

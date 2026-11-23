@@ -141,7 +141,7 @@ describe('dispatch() on a participant\'s place', () => {
     expect(r.savings).toBe(2.5);
     const e = await one<{ device_id: string; participant_id: string | null; provenance: string; inputs: any; results: any; organisation_id: string }>(
       db, 'select * from battery.estimates where id = $1', [r.estimateId]);
-    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'battery-dispatch-0.3.1']);
+    expect([e.device_id, e.participant_id, e.organisation_id, e.provenance]).toEqual([battery, null, org, 'battery-dispatch-0.3.2']);
     expect(e.inputs.period).toEqual({ from: FROM, to: TO, step: '01:00:00', intervals: 24 });
     expect(e.inputs.battery.usable_capacity_kwh).toEqual({ value: 10, level: 'device' });
     expect(e.inputs.prices.read.energy_price_household).toMatchObject({ value: 200, level: 'organisation' });
@@ -306,6 +306,29 @@ describe('size()', () => {
     const e1 = await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [withOpex.estimateId]);
     expect(e1.inputs.parameters.battery_opex).toMatchObject({ value: 10_000, level: 'organisation' });
     await db.query(`delete from attributes where object_kind = 'organisation' and object_id = $1 and attribute_type = 'battery_opex'`, [org]);
+  });
+
+  it('fades the capacity over its lifetime when the share it keeps at the end is said, each year dispatched again', async () => {
+    const request = { perimeter: { kind: 'participant' as const, id: roof }, from: FROM, to: TO, criterion: 'net_present_value' as const };
+    const fresh = await size(db, request);
+    expect((await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [fresh.estimateId])).inputs.parameters.battery_end_of_life_capacity).toBeNull();
+    // 70 % left after 15 years: year y holds 1 - 0.3 × (y - 1) / 15 of its capacity.
+    await attribute('organisation', org, 'battery_end_of_life_capacity', 0.7);
+    const aged = await size(db, request);
+    const before = fresh.curve.at(-1)!;
+    const after = aged.curve.at(-1)!;
+    // The first year is the same; every later one saves no more than it.
+    expect(after.savings_per_year).toBe(before.savings_per_year);
+    expect(after.net_present_value!).toBeLessThan(before.net_present_value!);
+    // 12 kWh of capacity, all of it cycled once a day: a year saves in proportion to what is left.
+    const perKwhDay = 0.3 * Math.sqrt(0.9) - 0.05 / Math.sqrt(0.9);
+    const npv = Array.from({ length: 15 }, (_, y) => (12 * (1 - (0.3 * y) / 15) * perKwhDay * 365.25) / 1.05 ** (y + 1)).reduce((a, b) => a + b, -after.capex!);
+    expect(after.net_present_value!).toBeCloseTo(npv, 0);
+    expect(after.payback_years!).toBeGreaterThan(before.payback_years!);
+    const e = await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [aged.estimateId]);
+    expect(e.inputs.parameters.battery_end_of_life_capacity).toMatchObject({ value: 0.7, level: 'organisation' });
+    await expect(attribute('organisation', org, 'battery_end_of_life_capacity', 1.5)).rejects.toThrow();
+    await db.query(`delete from attributes where object_kind = 'organisation' and object_id = $1 and attribute_type = 'battery_end_of_life_capacity'`, [org]);
   });
 
   it('sizes for the peak under a threshold', async () => {

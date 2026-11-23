@@ -1,4 +1,5 @@
--- Nexgen OS — module `battery`: the unit of each figure, on its column.
+-- Nexgen OS — module `battery`: the unit of each figure, on its column,
+-- and the capacity a battery keeps at the end of its lifetime.
 --
 -- A battery's figures were in two conventions a reader had to guess: the
 -- round-trip efficiency and the capacity left at the end of life are
@@ -34,3 +35,18 @@ comment on column battery.devices.max_charge_level is
   'The highest state of charge it is kept at, in percent of its usable capacity, 0 to 100: 90 for 90 % (the unit of the quantity charge_level).';
 comment on column battery.devices.peak_threshold_kw is
   'For peak shaving: the power the consumption taken from the grid is kept under, in kW.';
+
+-- A sizing counted the savings of the first year every year of the
+-- lifetime, at a capacity that never faded. `battery_end_of_life_capacity`
+-- is the share of its usable capacity a battery keeps after
+-- `battery_lifetime` years, the figure a product states as its
+-- `end_of_life_capacity`; a sizing, which has no product yet, reads it by
+-- parameter_of() and fades the capacity linearly to it. Nobody's figure is
+-- shipped: a sizing counts no fade when nobody says it, and says so in its
+-- inputs.
+insert into attribute_types (code, name, description, datatype, quantity_code, minimum, maximum, applies_to, published_by) values
+  ('battery_end_of_life_capacity', 'Capacity left at the end of life',
+   'The share of its usable capacity a battery keeps after battery_lifetime years, a ratio from 0 to 1 (0.7 for 70 %), read by a sizing that fades the capacity linearly to it.',
+   'number', 'ratio', 0, 1, '{device,participant,project,organisation}', 'battery');
+
+update nexgen.modules set version = '0.5.0' where code = 'battery';

@@ -47,7 +47,7 @@
 // kWh. No figure is a constant of this file: the battery comes with every
 // one of its own.
 
-export const BATTERY_ENGINE_VERSION = 'battery-dispatch-0.3.1';
+export const BATTERY_ENGINE_VERSION = 'battery-dispatch-0.3.2';
 
 export const OBJECTIVES = ['self_consumption', 'peak_shaving', 'arbitrage'] as const;
 export type Objective = (typeof OBJECTIVES)[number];
