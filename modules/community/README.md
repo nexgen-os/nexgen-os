@@ -34,6 +34,17 @@ The module keeps the model and an engine shares:
   first (`consumption.curve()`), netted step by step — what it consumes of
   its own production is min(production, consumption), never more — and the
   settlement's inputs name the series read;
+- the perimeter of the operation is applied, on the first day of the
+  period, where the rules of the places say one (`check_perimeter()`,
+  below): a consumer outside it is left out of the sharing,
+  `outside_perimeter`; a producer or a prosumer outside it is kept — the
+  operation stands around its production; under a distance between the
+  members furthest apart both ends of the pair are out, and the consumer is
+  the one that goes — `producer_outside_perimeter`; one that cannot be
+  decided is kept, `perimeter_undecided`. A power of the operation above
+  the cap its rules say is named, `power_over_cap` (`check_power()`). Each
+  is a line of the settlement's `warnings`, starting with its name, and its
+  inputs keep what was checked;
 - the engine's answer is checked against physics before anything is
   stored: at every step a participant receives at most its offtake and gives
   at most its injection, and the project shares no more than it gave, nor
@@ -53,7 +64,7 @@ await settleSharing(db, {
   projectId, from: '2026-05-01T22:00:00Z', to: '2026-05-02T22:00:00Z', step: '15 minutes',
   engine: { name: 'sharing_example' }, // started from NEXGEN_ENGINE_SHARING_EXAMPLE
 });
-// { settlementId, engine: 'sharing_example 0.3.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } } }
+// { settlementId, engine: 'sharing_example 0.3.0', sharedKwh, series: { <participant>: { shared_offtake_energy: <id>, … } }, warnings: [] }
 ```
 
 Refusals before an engine starts: `project_not_found`, `period_empty`,
@@ -114,5 +125,15 @@ extension whose limits the model does not hold — answers `null`, never
 guessed. Producers are the participants producing or self-producing.
 Refusals: `project_not_found`, `participants_missing`, `producer_missing`,
 `perimeter_rule_differs`, `perimeter_rule_unknown`, `parameter_missing`.
+
+`community.check_power(project, day)` reads the installed power of the
+operation against the greatest its rules allow:
+`{max_kw, installed_kw, within, producers, value_from}`. The cap is
+`sharing_max_power_kw`, resolved for the project by `parameter_of()` (a
+default of its pack for the kind of the project, or the project's own
+attribute with its source); the power is never entered, it is the sum of
+`installed_power()` of the producers and prosumers taking part, computed
+from their devices ([0065](../../docs/decisions/0065-a-value-is-written-once.md)).
+`within` is null when either is missing.
 
 Install: `npx nexgen-os init --modules community`.
