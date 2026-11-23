@@ -121,7 +121,9 @@ erDiagram
   `project_kind_foreign`), and null when it has no particular frame (a
   study is a project in `simulation`; [0057](decisions/0057-one-word-per-thing-in-the-lists-of-the-core.md)); with the country whose rules apply, a perimeter on the map, a status from
   `simulation` to `archived` and its dates. The allocation key of a
-  community, the installed power of a set of buildings are attributes; the actions of
+  community is an attribute; its installed power is the sum of the rated
+  powers of its devices (`installed_power()`,
+  [0065](decisions/0065-a-value-is-written-once.md)); the actions of
   its works are the `actions` module's.
 - **participants** — the node of a project
   ([0043](decisions/0043-the-participant-is-the-node.md)): an actor — a

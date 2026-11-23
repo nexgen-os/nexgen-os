@@ -209,7 +209,7 @@ export async function estimateYield(db: Db, request: YieldRequest, clients: Yiel
 async function loadContext(db: Db, deviceId: string, profileCode: string, needsTimeZone: boolean, years: { from: number } | undefined): Promise<Context> {
   const device = (
     await db.query<SystemRow>(
-      `select d.organisation_id, d.participant_id, s.time_zone, p.kwp_dc,
+      `select d.organisation_id, d.participant_id, s.time_zone, coalesce(p.kwp_dc, d.rated_power_kw) kwp_dc,
               ST_X(ST_Centroid(s.geometry)) lon, ST_Y(ST_Centroid(s.geometry)) lat
          from solar.devices p
          join devices d on d.id = p.id

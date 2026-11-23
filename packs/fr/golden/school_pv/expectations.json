@@ -41,7 +41,7 @@
       "indicator": "specific_yield",
       "value": 2.866667,
       "tolerance": 1e-06,
-      "source": "86 kWh over the 30 kWp the school's installed_power says."
+      "source": "86 kWh over the 30 kWp of the school's PV system, its rated power."
     },
     {
       "object": "participant:school",

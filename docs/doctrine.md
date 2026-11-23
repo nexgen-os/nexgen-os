@@ -18,7 +18,8 @@ bookkeeping core built on the same playbook, is the measure.
   ([0006](decisions/0006-the-core-names-six-objects.md), [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md)).
 - **Factorised.** Two objects that are one are merged; one shape of a place;
   one way to write a series; one function per gesture; nothing implemented
-  twice ([0028](decisions/0028-two-objects-that-are-one-are-merged.md),
+  twice, and no value written twice: a total is computed from its rows
+  ([0065](decisions/0065-a-value-is-written-once.md), [0028](decisions/0028-two-objects-that-are-one-are-merged.md),
   [0025](decisions/0025-a-place-has-one-shape.md),
   [0031](decisions/0031-one-way-to-write-a-series-one-way-to-read-it.md),
   [0018](decisions/0018-one-function-per-gesture.md)).
@@ -64,6 +65,7 @@ bookkeeping core built on the same playbook, is the measure.
 - [0023](decisions/0023-an-organisation-is-an-object.md) An organisation is an object
 - [0019](decisions/0019-a-column-only-for-what-every-row-has.md) A column only for what every row has and every query filters on; the rest is an attribute with its period and its source
 - [0022](decisions/0022-the-instrument-is-a-device-the-point-is-the-series.md) The instrument is a device, the point is the series
+- [0065](decisions/0065-a-value-is-written-once.md) A value is written once: a total is computed from its rows (the installed power of a participant or a project is its devices'), and a copy kept for an older reader is written by the database alone and guarded by a named refusal
 - [0027](decisions/0027-a-product-is-a-catalogue-entry.md) A product is a catalogue entry, and a device is an instance of it
 - [0028](decisions/0028-two-objects-that-are-one-are-merged.md) Two objects that are one are merged, and the absorbed one is retired
 - [0002](decisions/0002-standards-as-vocabulary-mappings.md) A standard enters as a mapping of a vocabulary row

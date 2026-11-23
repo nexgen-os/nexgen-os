@@ -77,7 +77,7 @@ interface SeriesRead {
 export async function performanceIndicators(db: Db, request: PerformanceRequest): Promise<PerformanceResult> {
   const device = (
     await db.query<{ time_zone: string | null; kwp_dc: string; start: string; end: string }>(
-      `select s.time_zone, p.kwp_dc,
+      `select s.time_zone, solar.system_kwp(p.id) kwp_dc,
               (($2::date)::timestamp at time zone coalesce(s.time_zone, 'UTC'))::text start,
               (($3::date + 1)::timestamp at time zone coalesce(s.time_zone, 'UTC'))::text "end"
          from solar.devices p

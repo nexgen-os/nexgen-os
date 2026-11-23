@@ -30,6 +30,7 @@ describes; its record is written once the fix has shipped.
 - [0023](0023-an-organisation-is-an-object.md) · An organisation is an object · accepted
 - [0019](0019-a-column-only-for-what-every-row-has.md) · A column only for what every row has and every query filters on · accepted
 - [0022](0022-the-instrument-is-a-device-the-point-is-the-series.md) · The instrument is a device, the point is the series · accepted
+- [0065](0065-a-value-is-written-once.md) · A value is written once; a total is computed, and a copy kept for an older reader is written by the database alone · accepted
 - [0027](0027-a-product-is-a-catalogue-entry.md) · A product is a catalogue entry, and a device is an instance of it · accepted
 - [0028](0028-two-objects-that-are-one-are-merged.md) · Two objects that are one are merged, and the absorbed one is retired · accepted
 - [0002](0002-standards-as-vocabulary-mappings.md) · A standard enters as a mapping of a vocabulary row · accepted

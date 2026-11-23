@@ -47,14 +47,7 @@
       ]
     }
   ],
-  "attributes": [
-    {
-      "object": "participant:school",
-      "attribute_type": "installed_power",
-      "value": 30,
-      "source": "An input of the case: the 30 kWp of the roof."
-    }
-  ],
+  "attributes": [],
   "series": [
     {
       "object": "device:pv",

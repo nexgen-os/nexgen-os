@@ -139,7 +139,7 @@ place's own production is `direct + discharge`; what is not injected is
 | `shared_coverage_rate` | `shared_offtake / (offtake + direct + discharge)` | ratio; how much less a place depends on the grid than without the sharing |
 | `residual_offtake_energy` | `offtake - shared_offtake` | kWh bought from a supplier |
 | `peak_offtake_power` | `offtake`, read by hour, the heaviest | kW, the highest hourly mean |
-| `specific_yield` | `production / installed_power` | kWh/kWp: the final yield of IEC 61724-1, the full-load hours of any generator |
+| `specific_yield` | `production / installed_power` | kWh/kWp: the final yield of IEC 61724-1, the full-load hours of any generator; `installed_power` is the sum of the rated powers of the producing devices (`installed_power()`), the attribute declared by hand only where no device carries one |
 | `performance_ratio` | `production / (installed_power * irradiation / 1000)`, the in-plane irradiation summed by hour | ratio, IEC 61724-1 |
 | `co2_avoided` | `direct_co2 + discharge_co2`: the energy of each hour at the carbon intensity series of the bidding zone, or without one `(direct + discharge) * factor` month by month, `grid_co2_factor` | kg |
 | `scope2_location_based` | `offtake_co2`: the energy taken from the grid hour by hour at the carbon intensity of the zone, or `offtake * factor` month by month | kg, GHG Protocol Scope 2, location-based |

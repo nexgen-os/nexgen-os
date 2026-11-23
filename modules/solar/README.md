@@ -101,7 +101,16 @@ Refusals: `participant_not_found`, `sizing_criterion_unknown`,
 
 `solar.system_kwp(system, variant?)` gives the DC power of a system: the sum
 of its arrays (those of reality, and those of the variant and the
-variants it builds on), or its own `kwp_dc` when it has none.
+variants it builds on), or its own `kwp_dc` when it has none, or the rated
+power of its device when the module describes none.
+
+The power of a PV system is one figure
+([0065](../../docs/decisions/0065-a-value-is-written-once.md)): the rated
+power of its device is its peak DC power, and the database keeps it equal
+to what the module describes — the sum of the arrays of reality when they
+carry a power, which is then the system's `kwp_dc` too, else the system's
+`kwp_dc`. Writing another figure on the device or on the system is refused,
+`power_from_arrays`: change the arrays.
 
 ## Soiling of a place
 

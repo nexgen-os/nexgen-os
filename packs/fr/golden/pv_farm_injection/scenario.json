@@ -47,14 +47,7 @@
       ]
     }
   ],
-  "attributes": [
-    {
-      "object": "participant:farm",
-      "attribute_type": "installed_power",
-      "value": 250,
-      "source": "An input of the case: 250 kWp."
-    }
-  ],
+  "attributes": [],
   "series": [
     {
       "object": "device:pv",

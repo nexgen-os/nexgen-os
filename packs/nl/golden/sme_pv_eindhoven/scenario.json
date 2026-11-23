@@ -47,14 +47,7 @@
       ]
     }
   ],
-  "attributes": [
-    {
-      "object": "participant:sme",
-      "attribute_type": "installed_power",
-      "value": 50,
-      "source": "An input of the case: 50 kWp."
-    }
-  ],
+  "attributes": [],
   "series": [
     {
       "object": "device:pv",

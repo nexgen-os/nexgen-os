@@ -335,7 +335,9 @@ insert into units (code, name, symbol, quantity_kind, factor, "offset", currency
 insert into attribute_types (code, name, datatype, quantity_code, minimum, maximum, allowed_values, applies_to) values
   ('efficiency',           'Efficiency',            'number',  'ratio',  0,    1,    null, '{device}'),
   ('annual_consumption',   'Annual consumption',    'number',  'energy', 0,    null, null, '{participant}'),
-  -- The sum over a participant or a project; a device's own is its rated power.
+  -- The sum over a participant or a project, computed from the rated powers
+  -- of its producing devices (`installed_power()`); the attribute is the
+  -- figure declared where no device carries a power, read only then.
   ('installed_power',      'Installed power',       'number',  'power',  0,    null, null, '{project,participant}'),
   -- What the contract of a connection point allows it to take.
   ('subscribed_power',     'Subscribed power',      'number',  'power',  0,    null, null, '{meter}'),
