@@ -28,7 +28,14 @@ participant's, its project's, its organisation's, then its pack's:
 published by this module, `battery_cost` (installed cost per MWh of usable
 capacity, in the currency of the country), `battery_opex` (operating cost
 per MWh of usable capacity and per year, none counted when nobody says it),
-`battery_lifetime` (years) and `discount_rate`.
+`battery_lifetime` (years), `discount_rate` and
+`battery_end_of_life_capacity` (the share of its usable capacity a battery
+keeps after its lifetime, a ratio from 0 to 1, no fade counted when nobody
+says it). Every figure of `battery.devices` and `battery.products` says its
+unit on its column: efficiencies and the capacity left at the end of life
+are ratios from 0 to 1, the band of state of charge (`min_charge_level`,
+`max_charge_level`) is in percent of the usable capacity, the unit of the
+quantity `charge_level`.
 
 This module publishes `battery_c_rate` (0.4) and `round_trip_efficiency`
 (0.85) **at the generic level of `parameter_of()`**, valid in every
@@ -173,6 +180,13 @@ threshold — with its power from `battery_c_rate` and its efficiency from
 | `payback` | the shortest simple payback, the capex (capacity at `battery_cost`) over the savings of a year less its operating cost (capacity at `battery_opex`) |
 | `net_present_value` | the greatest net present value of the savings of a year less its operating cost over `battery_lifetime` years at `discount_rate`, less the capex; none when no capacity has a positive one (`reason`). With a discount rate of 0 it is the net benefit the rule taken from maximised, times the lifetime |
 | `max_power` | the smallest capacity giving the lowest peak of offtake, the battery run for peak shaving under `peakThresholdKw` |
+
+When `battery_end_of_life_capacity` and `battery_lifetime` are both said,
+the capacity fades linearly from full in the first year to that share after
+the last, each year counted at its start and dispatched again at what is
+left: the net present value discounts each year's own savings, and the
+payback is the years they take to cover the capex within the lifetime
+(none past it).
 
 The savings of the period are scaled to a year of 365.25 days. On a period
 under a year, the season it covers weighs on the savings, the payback, the

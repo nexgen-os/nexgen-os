@@ -61,13 +61,19 @@ answers the PV power that best meets a criterion of the core's
   their target, `net_present_value` the largest value (prices, cost per kWp,
   horizon and discount rate from the caller, in the currency of the place),
   `payback` the shortest, `max_power` the limit; ties go to the smaller
-  power. The rule is the platform's (`utils/solarSizing.ts`: the economic
+  power. The economics count the ageing of the modules when the caller
+  gives `degradationPctPerYear` (percent a year, 0 to 5, the unit of
+  `solar.devices.degradation_pct_per_year`): year t produces the first
+  year's curve times (1 − d/100)^(t−1), split again step by step, and the
+  payback is the years the gains of each year take to cover the cost (up to
+  100). Not given, no ageing is counted and `warnings` says
+  `degradation_not_counted`. The rule is the platform's (`utils/solarSizing.ts`: the economic
   criterion and the target self-consumption rate);
 - the curve and the recommended point are a row of `solar.estimates` about
   the participant, `kind = 'sizing'`, with its inputs.
 
 Refusals: `participant_not_found`, `sizing_criterion_unknown`,
-`target_required`, `economics_required`, `shape_invalid`, `bounds_invalid`,
+`target_required`, `economics_required`, `degradation_out_of_range`, `shape_invalid`, `bounds_invalid`,
 `max_power_required`, `consumption_curve_missing`, `series_incomplete`,
 `parameter_missing`.
 
@@ -84,12 +90,30 @@ Refusals: `participant_not_found`, `sizing_criterion_unknown`,
 - Losses are an ordered list; each percentage applies to what the previous
   ones left, a negative one is a gain.
 
+## Units and the power of a system
+
+Every figure of `solar.devices` and `solar.pv_arrays` says its unit on its
+column, where the catalogue and the REST API show it: powers in kWp or
+kVA, angles in degrees (azimuth clockwise from true north, tilt from 0,
+flat, to 90, vertical), a name ending in `_pct` a percent (0.5 for 0.5 %),
+a share without that suffix a ratio from 0 to 1 (`soiling_loss`,
+`albedo`: 0.02 for 2 %).
+
+`solar.power_warnings(device)` names what does not add up in the power of
+a PV system, one row `{code, message, figures}` a warning, and refuses
+nothing — the figure stated may be the true one, the person decides:
+
+| Code | When |
+|---|---|
+| `kwp_not_modules` | an array's `kwp_dc` differs by more than 1 % from its module count × its module product's unit power |
+| `kwp_over_roof` | the PV systems of its participant carry more than its roof, carport and ground faces (`building.surfaces`) × `pv_power_per_area`; nothing is said when the building module, the faces or that parameter are missing |
+
 ## Tables
 
 | Table | What it is |
 |---|---|
 | `solar.devices` | a device of type `solar`, same id (`derive_devices`): `kwp_dc`, `kva_ac`, `grid_connection` (`injection`, `self_consumption`, `off_grid`), `commissioned_on`, `degradation_pct_per_year`, `first_year_loss_pct` |
-| `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given |
+| `solar.pv_arrays` | one group of modules of a system, its participant the system's, with its own azimuth and tilt, its own soiling loss when the place says it, and nothing else of where it is ([0026](../../docs/decisions/0026-a-device-belongs-to-its-participant.md)); `kwp_dc` from the module product's unit power × count unless given; `module_count = modules_per_string × strings` when all three are given; tilt from 0 (flat) to 90 (vertical) |
 | `solar.module_products`, `solar.inverter_products` | the physics of a `products` product, same id: `model` and `parameters` (one JSON object). The keys pvlib infers each model from are required — modules: `pvwatts` `pdc0, gamma_pdc`; `cec` `a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s, Adjust`; `pvsyst` `gamma_ref, mu_gamma, R_sh_0, R_sh_exp`; `sapm` `A0, A1, C3`. Inverters: `pvwatts` `pdc0, eta_inv_nom`; `sandia` `C0, C1, C2`; `adr` `ADRCoefficients`; `ond` free. Shared rows are read by everyone signed in, like `products`. A PAN or OND file fills them: [`packages/formats/panond`](../../packages/formats/panond/README.md) reads it, `importProduct()` of [`src/products.ts`](src/products.ts) writes the product and its physics |
 | `solar.horizons` | the far horizon of a participant or of a PV system, `[azimuth_deg, elevation_deg]` pairs, one per object and variant, with its source |
 | `solar.variants` | a design variant of a participant's PV, on top of another one when it has a parent (`solar.create_variant()`): the arrays and horizons with a variant exist only in it and the variants built on it |
@@ -173,7 +197,7 @@ losses, and where it is held in this module:
 | system loss (PVGIS, PVWatts) | `system_loss` on the system, the participant, the project, the organisation; 14 % at the generic level | `pvgis_like`, `pvwatts` |
 | mismatch, wiring, LID, module quality, availability | the profile's ordered losses | every estimate |
 | temperature coefficient γ | the module product (`gamma_pdc`), else the request | `pvwatts`, engines on the PVWatts DC model |
-| degradation | `solar.devices.degradation_pct_per_year`, `first_year_loss_pct` | not yet applied to an estimate |
+| degradation | `solar.devices.degradation_pct_per_year`, `first_year_loss_pct`; `economics.degradationPctPerYear` of a sizing | the economics of `size()`; not yet applied to a yield |
 
 ## Yield profiles shipped
 

@@ -311,6 +311,13 @@ Any other key is refused (`place_key_unknown`).
   currency a country declares (`currency_units()`: `EUR-PER-MegaW-HR`,
   `EUR/MWh`); two currencies never convert. `quantity_unit(quantity,
   currency)` gives the unit a value is stored in.
+- **the unit of a column** — a figure kept in a column of a module, not in
+  a series, says its unit on the column (`comment on column`, which the
+  catalogue and the REST API show): powers in kW, kWp or kVA, energies in
+  kWh, angles in degrees, a name ending in `_pct` a percent (0.5 for
+  0.5 %), a share without that suffix a ratio from 0 to 1 (0.02 for 2 %),
+  a state of charge in percent, the unit of the quantity `charge_level`.
+  An attribute says its unit through its quantity (`attribute_types.quantity_code`).
 - **quantities of a place that produces and stores** — beside the energy
   taken from and injected into the grid, produced and consumed:
   `self_consumption_energy` (produced and consumed on the spot),
