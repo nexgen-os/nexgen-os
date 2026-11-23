@@ -1,6 +1,6 @@
 {
   "name": "A collective self-consumption in Madrid, by transformer station and by 500 m",
-  "description": "A PV roof of an office building shares through the grid with a flat fed from the same transformer station 700 m away, a bakery 300 m away on another station, and an office 800 m away on that other station: the flat is in by its station, the bakery by the 500 m, the office out. The example engine shares among every participant: it applies no perimeter.",
+  "description": "A PV roof of an office building shares through the grid with a flat fed from the same transformer station 700 m away, a bakery 300 m away on another station, and an office 800 m away on that other station: the flat is in by its station, the bakery by the 500 m, the office out. The settlement leaves the office out of the sharing; the example engine shares among the others.",
   "period": {
     "from": "2026-06-15T09:00:00Z",
     "to": "2026-06-15T13:00:00Z",

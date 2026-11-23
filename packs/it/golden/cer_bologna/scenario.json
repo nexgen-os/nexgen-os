@@ -1,6 +1,6 @@
 {
   "name": "A renewable energy community of Bologna under one primary substation",
-  "description": "A PV roof of a warehouse shares with a flat under the same primary substation (cabina primaria) and a shop under another: the flat is in by the substation, the shop out. The example engine shares among every participant: it applies no perimeter.",
+  "description": "A PV roof of a warehouse shares with a flat under the same primary substation (cabina primaria) and a shop under another: the flat is in by the substation, the shop out. The settlement leaves the shop out of the sharing; the example engine shares among the others.",
   "period": {
     "from": "2026-06-15T09:00:00Z",
     "to": "2026-06-15T13:00:00Z",

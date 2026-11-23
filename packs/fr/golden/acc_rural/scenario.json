@@ -1,6 +1,6 @@
 {
   "name": "A collective self-consumption in rural Ain, within 20 km",
-  "description": "A barn roof of Arandas (rural, very dispersed) shares with a farm of Arandas and a dairy and a sawmill of Anglefort (a rural town): rural municipalities extend the perimeter to 20 km. The sawmill, 23 km from the barn, breaks it for both. The example engine shares among every participant: it applies no perimeter.",
+  "description": "A barn roof of Arandas (rural, very dispersed) shares with a farm of Arandas and a dairy and a sawmill of Anglefort (a rural town): rural municipalities extend the perimeter to 20 km. The sawmill, 23 km from the barn, breaks it for both. The settlement leaves the sawmill out of the sharing and keeps the barn; the example engine shares among the others.",
   "period": {
     "from": "2026-06-15T09:00:00Z",
     "to": "2026-06-15T13:00:00Z",

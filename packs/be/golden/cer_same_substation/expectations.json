@@ -53,40 +53,38 @@
   ],
   "settlement": {
     "engine": "sharing_example",
-    "shared_kwh": 123.0,
+    "shared_kwh": 70.0,
     "participants": {
       "solar": {
         "shared_offtake_energy": 0.0,
-        "shared_injection_energy": 123.0
+        "shared_injection_energy": 70.0
       },
       "school": {
-        "shared_offtake_energy": 66.888889,
-        "shared_injection_energy": 0.0
-      },
-      "shop": {
-        "shared_offtake_energy": 56.111111,
+        "shared_offtake_energy": 70.0,
         "shared_injection_energy": 0.0
       }
     },
+    "warnings": [
+      "outside_perimeter"
+    ],
     "tolerance_kwh": 1e-06,
-    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. At 11:00 the demand (45 kWh) exceeds the pool (38 kWh): the school receives 38 × 20/45, the shop 38 × 25/45."
+    "source": "The shop, outside the perimeter, is left out of the sharing (outside_perimeter). The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The pool (28, 38, 38, 28 kWh) exceeds the school's offtake (15, 20, 20, 15 kWh) at every hour: the school receives all it takes, 70 kWh."
   },
   "kpis": [
     {
       "object": "project",
       "indicator": "shared_rate",
-      "value": 0.878571,
+      "value": 0.5,
       "tolerance": 1e-06,
       "after": "settlement",
-      "source": "123 kWh shared over 140 kWh produced."
+      "source": "70 kWh shared over 140 kWh produced."
     },
     {
       "object": "participant:shop",
       "indicator": "residual_offtake_energy",
-      "value": 3.888889,
-      "tolerance": 1e-06,
+      "refusal": "series_not_found",
       "after": "settlement",
-      "source": "60 kWh taken less what the key shared to the shop."
+      "source": "Left out of the sharing, the shop has no shared series: the model refuses rather than take what it was not shared for zero."
     }
   ]
 }

@@ -11,6 +11,18 @@
 // gave to it, and what is left for its supplier and the grid — as
 // simulated series of the settlement, on the participant.
 //
+// The perimeter of the operation is applied, not only checked: where the
+// rules of the participants' places say one (`sharing_perimeter`), a
+// participant `community.check_perimeter()` finds outside it on the first
+// day of the period is left out of the sharing and named in the warnings
+// (`outside_perimeter`) — a producer or a prosumer is kept, the operation
+// standing around its production, and named (`producer_outside_perimeter`):
+// under a distance between the members furthest apart both ends of the
+// pair are out, and the consumer is the one that goes — one it cannot
+// decide is kept and named (`perimeter_undecided`); where the rules cap the installed power of the
+// operation (`sharing_max_power_kw`), a power above it is named
+// (`power_over_cap`, `community.check_power()`).
+//
 // Conventions: every stamp dates the start of its step, in UTC; energy in
 // kWh per step. A participant with no series of a direction (a producer's
 // offtake) sends zeros for it; one whose series misses steps of the period
@@ -52,6 +64,16 @@ export interface SettlementResult {
   sharedKwh: number;
   /** For each participant, the series of each output. */
   series: Record<string, Record<string, string>>;
+  /** What the settlement left out or could not decide, each starting with its name. */
+  warnings: string[];
+}
+
+interface PerimeterRow {
+  participant_id: string;
+  name: string;
+  in_perimeter: boolean | null;
+  criteria: unknown;
+  rule: unknown;
 }
 
 interface KeyRow {
@@ -138,6 +160,32 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
   ).rows;
   if (participants.length === 0) throw new Error(`participants_missing: the project has no participant taking part from ${from} to ${to}`);
 
+  // The perimeter and the power of the operation on the first day of the period.
+  const day = from.slice(0, 10);
+  const warnings: string[] = [];
+  const perimeter = await perimeterOf(db, request.projectId, day);
+  const producing = new Set(participants.filter((p) => p.category === 'producer' || p.category === 'prosumer').map((p) => p.id));
+  const out = perimeter?.filter((r) => r.in_perimeter === false) ?? [];
+  const outside = new Set(out.filter((r) => !producing.has(r.participant_id)).map((r) => r.participant_id));
+  const kept = out.filter((r) => producing.has(r.participant_id));
+  const undecided = perimeter?.filter((r) => r.in_perimeter === null) ?? [];
+  if (outside.size > 0) {
+    warnings.push(`outside_perimeter: ${participants.filter((p) => outside.has(p.id)).map((p) => p.name).join(', ')} outside the perimeter of the operation on ${day}, left out of the sharing`);
+  }
+  if (kept.length > 0) {
+    warnings.push(`producer_outside_perimeter: ${kept.map((r) => r.name).join(', ')} outside the perimeter of the operation on ${day}, kept as the production the operation stands around`);
+  }
+  if (undecided.length > 0) {
+    warnings.push(`perimeter_undecided: whether ${undecided.map((r) => r.name).join(', ')} are within the perimeter cannot be decided on ${day} (a place, a municipality or a substation not said); kept`);
+  }
+  const power = (await db.query<{ p: { max_kw: number | null; installed_kw: number | null; within: boolean | null } }>(
+    'select community.check_power($1, $2::date) p', [request.projectId, day])).rows[0].p;
+  if (power.within === false) {
+    warnings.push(`power_over_cap: the producers of the operation carry ${power.installed_kw} kW on ${day}, above the ${power.max_kw} kW the rules allow`);
+  }
+  const sharing = participants.filter((p) => !outside.has(p.id));
+  if (sharing.length === 0) throw new Error(`participants_missing: no participant of the project is within the perimeter of the operation on ${day}`);
+
 
   // The curves of the modules that hold them, when installed: what a
   // participant with no metered series of its own is read from.
@@ -150,7 +198,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
 
   const sent: SharingParticipant[] = [];
   const read: Record<string, Record<string, unknown>> = {};
-  for (const p of participants) {
+  for (const p of sharing) {
     const metered: Record<string, Map<number, number>> = {};
     const ids: Record<string, string[]> = {};
     for (const quantity of SHARING_INPUTS) {
@@ -217,7 +265,9 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
     key: { method: key.value.method, parameters, valid_from: key.valid_from && iso(key.valid_from), valid_to: key.valid_to && iso(key.valid_to), source: key.source, source_code: key.source_code },
     rules: request.rules ?? {},
     period: { from, to, step: request.step },
-    participants: participants.map((p) => ({ id: p.id, name: p.name, category: p.category, attributes: p.attributes, series: read[p.id] })),
+    participants: sharing.map((p) => ({ id: p.id, name: p.name, category: p.category, attributes: p.attributes, series: read[p.id] })),
+    perimeter: { on: day, participants: perimeter, left_out: [...outside] },
+    power,
     conventions: { time: 'interval start, UTC', energy: 'kWh per step', missing_direction: 'zeros' },
   };
 
@@ -238,7 +288,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
   // the answer is stored as it comes, once checked against the request.
   const settlementId = await writeSettlement(db, request, described.version, inputs);
   const stored: Record<string, Record<string, string>> = {};
-  for (const p of participants) {
+  for (const p of sharing) {
     const answered = answer.result.participants?.find((r) => r.id === p.id);
     if (!answered) throw new Error(`engine_contract_mismatch: ${request.engine.name} answered nothing for participant ${p.name}`);
     stored[p.id] = {};
@@ -257,10 +307,27 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
   const results = {
     totals: answer.result.totals,
     meta: answer.result.meta,
-    participants: participants.map((p) => ({ id: p.id, totals: answer.result.participants.find((r) => r.id === p.id)!.totals, series: stored[p.id] })),
+    warnings,
+    participants: sharing.map((p) => ({ id: p.id, totals: answer.result.participants.find((r) => r.id === p.id)!.totals, series: stored[p.id] })),
   };
   await db.query('update community.settlements set results = $2::jsonb where id = $1', [settlementId, JSON.stringify(results)]);
-  return { settlementId, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored };
+  return { settlementId, engine: answer.version, sharedKwh: Number(answer.result.totals?.shared_energy ?? 0), series: stored, warnings };
+}
+
+/**
+ * Each participant within the perimeter of the operation on a day, as
+ * `community.check_perimeter()` decides it; null where the rules of the
+ * places say no perimeter (`sharing_perimeter` decided nowhere).
+ */
+async function perimeterOf(db: Db, projectId: string, day: string): Promise<PerimeterRow[] | null> {
+  try {
+    return (await db.query<PerimeterRow>(
+      'select participant_id, name, in_perimeter, criteria, rule from community.check_perimeter($1, $2::date)', [projectId, day])).rows;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (/^(parameter_missing|parameter_not_decided): sharing_perimeter\b/.test(message)) return null;
+    throw e;
+  }
 }
 
 // An engine writes its values to the micro-kWh: each one may be off by its

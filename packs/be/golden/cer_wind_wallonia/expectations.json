@@ -125,6 +125,9 @@
         "shared_injection_energy": 0.0
       }
     },
+    "warnings": [
+      "perimeter_undecided"
+    ],
     "tolerance_kwh": 1e-06,
     "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The turbine injects more than both take at every hour: each receives its whole offtake."
   },

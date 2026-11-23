@@ -102,3 +102,29 @@ describe('Wallonia: a renewable energy community', () => {
     expect(wind['Charleroi shop'].criteria[0]).toMatchObject({ criterion: 'same_municipality', in: null, extension: [{ value_m: 9000, source_code: 'be_wal_energy_sharing_order' }] });
   });
 });
+
+describe('the power of an operation', () => {
+  it('is the sum of the installed powers of its producers, read against the cap its rules say, and nothing where none is said', async () => {
+    const acc = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'ACC power', 'fr_acc', 'FR') returning id`, [org])).id;
+    const plant = await join(acc, 'Plant', 'producer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 0) });
+    const farm = await join(acc, 'Farm', 'prosumer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 1) });
+    await join(acc, 'Home', 'consumer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 2) });
+    const power = async () => (await one<{ p: Record<string, any> }>(db, `select community.check_power($1, '2026-06-01') p`, [acc])).p;
+
+    // No device carries a power, no rule caps it: nothing decided.
+    expect(await power()).toMatchObject({ max_kw: null, installed_kw: null, within: null, value_from: null });
+
+    await db.query(`select install_device($1, 'solar', 'Roof', p_rated_power_kw => 250)`, [plant]);
+    await db.query(`select install_device($1, 'solar', 'Barn', p_rated_power_kw => 36)`, [farm]);
+    expect(await power()).toMatchObject({
+      installed_kw: 286, within: null,
+      producers: [{ name: 'Farm', installed_kw: 36 }, { name: 'Plant', installed_kw: 250 }],
+    });
+
+    // The cap, said for the project with its source: 300 kW holds, 250 does not.
+    await db.query(`select set_attribute('project', $1, 'sharing_max_power_kw', '300'::jsonb, null, null, 'the operation''s agreement')`, [acc]);
+    expect(await power()).toMatchObject({ max_kw: 300, installed_kw: 286, within: true, value_from: { level: 'object', value: 300 } });
+    await db.query(`update attributes set value = '250' where object_id = $1 and attribute_type = 'sharing_max_power_kw'`, [acc]);
+    expect(await power()).toMatchObject({ max_kw: 250, within: false });
+  });
+});

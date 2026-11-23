@@ -181,48 +181,46 @@
   ],
   "settlement": {
     "engine": "sharing_example",
-    "shared_kwh": 112.0,
+    "shared_kwh": 60.0,
     "participants": {
       "plant": {
         "shared_offtake_energy": 0.0,
-        "shared_injection_energy": 112.0
+        "shared_injection_energy": 60.0
       },
       "flat": {
-        "shared_offtake_energy": 21.7,
+        "shared_offtake_energy": 22.0,
         "shared_injection_energy": 0.0
       },
       "bakery": {
-        "shared_offtake_energy": 37.4,
-        "shared_injection_energy": 0.0
-      },
-      "office": {
-        "shared_offtake_energy": 52.9,
+        "shared_offtake_energy": 38.0,
         "shared_injection_energy": 0.0
       }
     },
+    "warnings": [
+      "outside_perimeter"
+    ],
     "tolerance_kwh": 1e-06,
-    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take. At 11:00 the demand (40 kWh) exceeds the pool (38 kWh): the flat receives 38 × 6/40, the bakery 38 × 12/40, the office 38 × 22/40; at the other hours every consumer receives what it takes."
+    "source": "The office, outside the perimeter, is left out of the sharing (outside_perimeter). The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The pool (28, 38, 38, 28 kWh) exceeds the demand of the flat and the bakery (13, 16, 18, 13 kWh) at every hour: each receives all it takes, 22 and 38 kWh."
   },
   "kpis": [
     {
       "object": "project",
       "indicator": "shared_rate",
-      "value": 0.8,
+      "value": 0.428571,
       "tolerance": 1e-06,
       "after": "settlement",
       "read": {
         "production": "measured",
         "shared_injection": "simulated"
       },
-      "source": "112 kWh shared over 140 kWh produced."
+      "source": "60 kWh shared over 140 kWh produced."
     },
     {
       "object": "participant:office",
       "indicator": "residual_offtake_energy",
-      "value": 1.1,
-      "tolerance": 1e-06,
+      "refusal": "series_not_found",
       "after": "settlement",
-      "source": "54 kWh taken from the grid less the 52.9 kWh shared to the office."
+      "source": "Left out of the sharing, the office has no shared series: the model refuses rather than take what it was not shared for zero."
     },
     {
       "object": "participant:plant",

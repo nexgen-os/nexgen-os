@@ -100,6 +100,8 @@ export interface GoldenExpectations {
     engine: string;
     shared_kwh: number;
     participants: Record<string, { shared_offtake_energy: number; shared_injection_energy: number }>;
+    /** The names of what the settlement left out or could not decide (`outside_perimeter`…), in its order. */
+    warnings?: string[];
     tolerance_kwh: number;
   };
   solar?: Sourced & { energy_kwh: number; tolerance_pct: number };

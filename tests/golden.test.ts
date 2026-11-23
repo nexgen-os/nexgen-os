@@ -210,6 +210,8 @@ describe.each(packs)('the golden cases of packs/%s', (pack) => {
       const st = e.settlement!;
       const r = await settleSharing(db, { projectId: ids.get('project')!, from: s.period.from, to: s.period.to, step: s.period.step, engine: sharingExample });
       close(r.sharedKwh, st.shared_kwh, st.tolerance_kwh);
+      // What the settlement left out or could not decide, by name.
+      expect(r.warnings.map((w) => w.split(':')[0])).toEqual(st.warnings ?? []);
       const settled = await one<{ results: { participants: { id: string; totals: Record<string, number> }[] } }>(
         db, 'select results from community.settlements where id = $1', [r.settlementId]);
       for (const [ref, want] of Object.entries(st.participants)) {

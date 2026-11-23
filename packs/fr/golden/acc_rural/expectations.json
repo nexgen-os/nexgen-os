@@ -110,36 +110,36 @@
   ],
   "settlement": {
     "engine": "sharing_example",
-    "shared_kwh": 264.0,
+    "shared_kwh": 240.0,
     "participants": {
       "plant": {
         "shared_offtake_energy": 0.0,
-        "shared_injection_energy": 264.0
+        "shared_injection_energy": 240.0
       },
       "farm": {
-        "shared_offtake_energy": 82.194444,
+        "shared_offtake_energy": 90.0,
         "shared_injection_energy": 0.0
       },
       "dairy": {
-        "shared_offtake_energy": 136.222222,
-        "shared_injection_energy": 0.0
-      },
-      "sawmill": {
-        "shared_offtake_energy": 45.583333,
+        "shared_offtake_energy": 150.0,
         "shared_injection_energy": 0.0
       }
     },
+    "warnings": [
+      "outside_perimeter",
+      "producer_outside_perimeter"
+    ],
     "tolerance_kwh": 1e-06,
-    "source": "The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The pool (56, 76, 76, 56 kWh) is below the demand at every hour: all of it is shared."
+    "source": "The sawmill, outside the perimeter, is left out of the sharing (outside_perimeter); the barn roof, the other end of the pair furthest apart, is kept as the production the operation stands around (producer_outside_perimeter). The proportional key of the sharing_example engine worked by hand: at each hour the energy shared is the smaller of what the participants inject and what they take; each receives in proportion to its offtake and gives in proportion to its injection. The pool (56, 76, 76, 56 kWh) exceeds the demand of the farm and the dairy (50, 65, 75, 50 kWh) at every hour: each receives all it takes, 90 and 150 kWh."
   },
   "kpis": [
     {
       "object": "project",
       "indicator": "shared_rate",
-      "value": 0.942857,
+      "value": 0.857143,
       "tolerance": 1e-06,
       "after": "settlement",
-      "source": "264 kWh shared over 280 kWh produced."
+      "source": "240 kWh shared over 280 kWh produced."
     },
     {
       "object": "participant:dairy",
@@ -151,10 +151,9 @@
     {
       "object": "participant:sawmill",
       "indicator": "residual_offtake_energy",
-      "value": 4.416667,
-      "tolerance": 1e-06,
+      "refusal": "series_not_found",
       "after": "settlement",
-      "source": "50 kWh taken less what the key shared to the sawmill."
+      "source": "Left out of the sharing, the sawmill has no shared series: the model refuses rather than take what it was not shared for zero."
     }
   ]
 }
