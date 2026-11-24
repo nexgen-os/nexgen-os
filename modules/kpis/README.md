@@ -40,10 +40,14 @@ value — never a zero.
 A variable reads one of two things:
 
 - `{"quantity": "<code>"}`: the amount of the object's series of that
-  quantity in a bucket, as `resample()` gives it. The series are the
-  object's own; for a participant with none, those of its meters, else
-  those of its devices, so that a production read by a meter and by its
-  inverter counts once; for a project, those of each of its participants
+  quantity in a bucket, as `resample()` gives it. The series are those
+  holding values in the period read: for a participant, those the core's
+  `participant_series()` chooses, the path the consumption curve reads too
+  — its own, else its meters', else its devices', so that a production
+  read by a meter and by its inverter counts once, never a device's
+  consumption alone, the latest estimate of each object, a planned
+  device's simulated energy added to an estimate; for a project, those of
+  each of its participants; for a meter or a device, its own
   (`kpis.series_of()`). Several series of an energy add up, several of a
   mean quantity (an irradiance) average. Options: `kind`; `step` and `combine` (`sum`, `mean`, `max`, `min`) to read the
   quantity on a finer step and combine those values into the bucket — the

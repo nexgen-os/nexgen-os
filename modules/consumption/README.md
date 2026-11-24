@@ -77,14 +77,19 @@ those of the estimate.
 
 ```sql
 select * from consumption.curve(:participant, '2026-01-12', '2026-01-19', '1 day');
--- bucket, value (kWh), series_id, kind ('measured' or 'simulated')
+-- bucket, value (kWh), series ({"<series id>": "measured" or "simulated"})
 ```
 
-Of the `consumption_energy` series of the participant or of anything of it (a
-meter, a building) holding values in the period: a measured one first,
-the one on the participant itself before the others; otherwise the latest
-estimate of this module. `consumption.curve_series()` says which
-series that is. Both read under the caller's row level security, through
+The curve reads the series the core's `participant_series()` chooses, the
+one path the indicators read too (`kpis.series_of()`), holding values in
+the period: the measured ones first — the participant's own, else its
+meters', added up; a device's sub-meter is that device's consumption,
+never the participant's whole — otherwise the latest estimate, to which
+the simulated consumption of a planned device (a heat pump the
+participant plans) is added: no bill and no reading of the place saw it.
+A device in service is in the estimate already. The curve is the sum of
+these series, and names each with its kind; `consumption.curve_series()`
+lists them. Both read under the caller's row level security, through
 `resample()`.
 
 ## A device recognised by disaggregation
