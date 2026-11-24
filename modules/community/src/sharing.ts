@@ -233,7 +233,7 @@ export async function settleSharing(db: Db, request: SettlementRequest): Promise
       };
       const production = curves.production ? await curve('select bucket, value, series from solar.curve($1, $2, $3, $4::interval)') : null;
       const consumption = curves.consumption
-        ? await curve(`select bucket, value, jsonb_build_object(series_id, kind) series from consumption.curve($1, $2, $3, $4::interval)`)
+        ? await curve('select bucket, value, series from consumption.curve($1, $2, $3, $4::interval)')
         : null;
       if ((production?.values.size ?? 0) + (consumption?.values.size ?? 0) > 0) {
         const off = new Map<number, number>();

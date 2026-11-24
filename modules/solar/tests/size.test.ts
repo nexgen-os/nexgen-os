@@ -11,6 +11,7 @@ import { size, type SizingRequest } from '../src/size.js';
 let db: PGlite;
 let org: string;
 let home: string;
+let consumptionSeries: string;
 let shapeSeries: string;
 const hours = Array.from({ length: 48 }, (_, h) => new Date(Date.UTC(2026, 5, 1, h)).toISOString());
 let base: Omit<SizingRequest, 'criterion'>;
@@ -27,7 +28,7 @@ beforeAll(async () => {
     one<{ series_id: string }>(db, `select series_id from store(null, $1::timestamptz[], $2::float8[], p_series => $3::jsonb)`, [hours, values, JSON.stringify(object)]);
   shapeSeries = (await store({ object_kind: 'device', object_id: pv, quantity_code: 'production_energy', step: '1 hour' },
     hours.map((_, h) => (h % 24 >= 8 && h % 24 < 16 ? 0.5 : 0)))).series_id;
-  await store({ object_kind: 'participant', object_id: home, quantity_code: 'consumption_energy', step: '1 hour' }, hours.map(() => 1));
+  consumptionSeries = (await store({ object_kind: 'participant', object_id: home, quantity_code: 'consumption_energy', step: '1 hour' }, hours.map(() => 1))).series_id;
   base = { participantId: home, from: hours[0], to: '2026-06-03T00:00:00.000Z', step: '1 hour', shape: { seriesId: shapeSeries, kwp: 1 }, bounds: { maxKwp: 10, source: 'the owner' } };
 });
 
@@ -45,7 +46,7 @@ describe('solar.size()', () => {
     const row = await one<{ kind: string; participant_id: string; device_id: string | null; provenance: string; inputs: Record<string, any> }>(db,
       'select kind, participant_id, device_id, provenance, inputs from solar.estimates where id = $1', [r.estimateId]);
     expect(row).toMatchObject({ kind: 'sizing', participant_id: home, device_id: null, provenance: 'solar-size-0.4.0' });
-    expect(row.inputs).toMatchObject({ criterion: { code: 'self_consumption_rate', aim: 'target', target: 0.8 }, production_shape: { series_id: shapeSeries, kwp: 1 }, consumption: { kind: 'measured', kwh: 48 } });
+    expect(row.inputs).toMatchObject({ criterion: { code: 'self_consumption_rate', aim: 'target', target: 0.8 }, production_shape: { series_id: shapeSeries, kwp: 1 }, consumption: { series: { [consumptionSeries]: 'measured' }, kwh: 48 } });
   });
 
   it('meets a target self-sufficiency, the largest power the limit allows, and the best net present value', async () => {

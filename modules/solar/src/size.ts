@@ -131,8 +131,8 @@ export async function size(db: Db, request: SizingRequest): Promise<SizingResult
   ).rows[0].ok;
   if (!hasConsumption) throw new Error('consumption_curve_missing: the consumption module reads the curve a sizing is made against');
   const consumptionRows = (
-    await db.query<{ bucket: string | Date; value: number | null; series_id: string; kind: string }>(
-      'select bucket, value, series_id, kind from consumption.curve($1, $2::timestamptz, $3::timestamptz, $4::interval)',
+    await db.query<{ bucket: string | Date; value: number | null; series: Record<string, string> }>(
+      'select bucket, value, series from consumption.curve($1, $2::timestamptz, $3::timestamptz, $4::interval)',
       [request.participantId, request.from, request.to, request.step],
     )
   ).rows;
@@ -221,7 +221,7 @@ export async function size(db: Db, request: SizingRequest): Promise<SizingResult
       criterion: { code: criterion.code, aim: criterion.aim, target: request.target ?? null },
       period: { from: request.from, to: request.to, step: request.step, steps: steps.length },
       limit,
-      consumption: { series_id: consumptionRows[0].series_id, kind: consumptionRows[0].kind, kwh: round(consumed, 3) },
+      consumption: { series: consumptionRows[0].series, kwh: round(consumed, 3) },
       production_shape: { series_id: request.shape.seriesId, kwp: request.shape.kwp },
       economics: request.economics ?? null,
       method: 'a sweep of powers up to the limit; at each step, self-consumed = min(production, consumption), injected = the rest; '

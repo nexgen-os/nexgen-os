@@ -14,6 +14,8 @@ const ORG = '00000000-0000-4000-8000-000700000001';
 const BLOCK = '00000000-0000-4000-8000-000700000010';
 const PROJECT = '00000000-0000-4000-8000-000700000005';
 const ELECTRICITY = '00000000-0000-4000-8000-000700000041';
+const HEAT_PUMP = '00000000-0000-4000-8000-000700000052';
+const PLANNED_HEAT_PUMP = '00000000-0000-4000-8000-000700000054';
 const TZ = 'Europe/Berlin';
 
 let db: PGlite;
@@ -31,7 +33,7 @@ const WEEKDAYS_8_TO_18 = [1, 2, 3, 4, 5].map((weekday) => ({ weekday, opens: '08
 const localHour = (at: string) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' }).format(new Date(at)));
 
 beforeAll(async () => {
-  db = await freshDatabase(['building', 'grid', 'actions', 'consumption']);
+  db = await freshDatabase(['building', 'grid', 'actions', 'consumption', 'kpis']);
   await db.exec(await readFile(join(repoRoot, 'docs', 'demo', '07-office-heating.sql'), 'utf8'));
   await db.query('insert into auth.users (id) values ($1), ($2) on conflict do nothing', [USER_A, USER_B]);
   await db.query(`insert into organisation_members (organisation_id, user_id, role) values ($1, $2, 'owner')`, [ORG, USER_A]);
@@ -224,29 +226,66 @@ describe('a typical curve from the annual consumption', () => {
 describe('the curve of a participant', () => {
   const from = '2026-01-12T00:00:00+01:00';
   const to = '2026-01-19T00:00:00+01:00';
+  const hourly = (value: number) => {
+    const instants: { at: string; value: number }[] = [];
+    for (let t = Date.parse(from); t < Date.parse(to); t += 3_600_000) instants.push({ at: new Date(t).toISOString(), value });
+    return instants;
+  };
+  type Day = { value: number; series: Record<string, string> };
+  const week = async () => (await db.query<Day>(`select value, series from consumption.curve($1, $2, $3, '1 day')`, [BLOCK, from, to])).rows;
+  /** The series the indicators read for the participant, of a kind, over the week. */
+  const indicatorSeries = async (kind: string) =>
+    (await db.query<{ s: string }>(`select s from kpis.series_of('participant', $1, 'consumption_energy', $2, $3, $4) s order by s`, [BLOCK, kind, from, to])).rows.map((r) => r.s);
+  let estimate: string;
 
   it('is the last estimate while nothing is measured', async () => {
     const r = await estimateConsumption(db, { participantId: BLOCK, from: '2026-01-12', to: '2026-01-19', profileCode: 'office_hours', energy: { kwh: 9_000, source: 'weekly estimate' } });
-    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [BLOCK, from, to]);
-    expect(days.rows).toHaveLength(7);
-    expect(days.rows.every((d) => d.series_id === r.seriesId && d.kind === 'simulated')).toBe(true);
-    expect(days.rows.reduce((sum, d) => sum + d.value, 0)).toBeCloseTo(9_000, 3);
+    estimate = r.seriesId;
+    const days = await week();
+    expect(days).toHaveLength(7);
+    // The annual estimate covers the week too: the latest one replaces it, never adds to it.
+    expect(days.every((d) => JSON.stringify(d.series) === JSON.stringify({ [r.seriesId]: 'simulated' }))).toBe(true);
+    expect(days.reduce((sum, d) => sum + d.value, 0)).toBeCloseTo(9_000, 3);
+    expect(await indicatorSeries('simulated')).toEqual([r.seriesId]);
+  });
+
+  it('never becomes the sub-meter of one of its devices: the heat pump\'s consumption is the heat pump\'s', async () => {
+    const { seriesId: subMeter } = await store(db, { object_kind: 'device', object_id: HEAT_PUMP, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, hourly(10));
+    const days = await week();
+    expect(days.every((d) => JSON.stringify(d.series) === JSON.stringify({ [estimate]: 'simulated' }))).toBe(true);
+    expect(await indicatorSeries('measured')).toEqual([]);
+    // The device's own amount is still read on the device.
+    const own = await db.query<{ s: string }>(`select s from kpis.series_of('device', $1, 'consumption_energy', 'measured', $2, $3) s`, [HEAT_PUMP, from, to]);
+    expect(own.rows.map((r) => r.s)).toEqual([subMeter]);
+  });
+
+  it('adds to the estimate the simulated consumption of a planned device, and of a planned device only', async () => {
+    const { seriesId: planned } = await store(db, { object_kind: 'device', object_id: PLANNED_HEAT_PUMP, quantity_code: 'consumption_energy', kind: 'simulated', step: '1 hour', source: 'heat pump sizing' }, hourly(20));
+    // A device in service is in what the estimate describes already.
+    await store(db, { object_kind: 'device', object_id: HEAT_PUMP, quantity_code: 'consumption_energy', kind: 'simulated', step: '1 hour', source: 'heat pump model' }, hourly(5));
+    const days = await week();
+    expect(days).toHaveLength(7);
+    expect(days.every((d) => JSON.stringify(Object.entries(d.series).sort()) === JSON.stringify([[estimate, 'simulated'], [planned, 'simulated']].sort()))).toBe(true);
+    expect(days.reduce((sum, d) => sum + d.value, 0)).toBeCloseTo(9_000 + 20 * 168, 3);
+    // The indicators read the same series.
+    expect(await indicatorSeries('simulated')).toEqual([estimate, planned].sort());
+    const curve = await db.query<{ series_id: string }>(`select series_id from consumption.curve_series($1, $2, $3) order by series_id`, [BLOCK, from, to]);
+    expect(curve.rows.map((r) => r.series_id)).toEqual([estimate, planned].sort());
   });
 
   it('is the measured one as soon as a meter of the participant gives readings over the period', async () => {
-    const instants: { at: string; value: number }[] = [];
-    for (let t = Date.parse(from); t < Date.parse(to); t += 3_600_000) instants.push({ at: new Date(t).toISOString(), value: 50 });
-    const { seriesId: measured } = await store(db, { object_kind: 'meter', object_id: ELECTRICITY, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, instants);
-    const days = await db.query<{ value: number; series_id: string; kind: string }>(`select value, series_id, kind from consumption.curve($1, $2, $3, '1 day')`, [BLOCK, from, to]);
-    expect(days.rows.map((d) => [d.value, d.kind])).toEqual(Array(7).fill([1200, 'measured']));
-    expect(days.rows[0].series_id).toBe(measured);
-    // Before the readings start, an estimate still answers; before any curve, nothing does.
-    const before = await one<{ s: string | null; kind: string }>(
-      db, `select s, (select kind from series where id = s) kind from consumption.curve_series($1, '2026-01-05T00:00:00+01:00', '2026-01-12T00:00:00+01:00') s`, [BLOCK]);
-    expect(before.s).not.toBe(measured);
-    expect(before.kind).toBe('simulated');
-    const december = await one<{ s: string | null }>(db, `select consumption.curve_series($1, '2025-12-01T00:00:00+01:00', '2025-12-08T00:00:00+01:00') s`, [BLOCK]);
-    expect(december.s).toBeNull();
+    const { seriesId: measured } = await store(db, { object_kind: 'meter', object_id: ELECTRICITY, quantity_code: 'consumption_energy', kind: 'measured', step: '1 hour' }, hourly(50));
+    const days = await week();
+    expect(days.map((d) => [d.value, d.series])).toEqual(Array(7).fill([1200, { [measured]: 'measured' }]));
+    expect(await indicatorSeries('measured')).toEqual([measured]);
+    // Before the readings start, the estimate of that week answers; before any curve, nothing does.
+    const before = await db.query<{ series_id: string; kind: string }>(
+      `select series_id, kind from consumption.curve_series($1, '2026-01-05T00:00:00+01:00', '2026-01-12T00:00:00+01:00')`, [BLOCK]);
+    expect(before.rows).toHaveLength(1);
+    expect(before.rows[0].series_id).not.toBe(measured);
+    expect(before.rows[0].kind).toBe('simulated');
+    const december = await db.query(`select * from consumption.curve_series($1, '2025-12-01T00:00:00+01:00', '2025-12-08T00:00:00+01:00')`, [BLOCK]);
+    expect(december.rows).toEqual([]);
   });
 });
 
