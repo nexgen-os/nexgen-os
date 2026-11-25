@@ -421,3 +421,75 @@ describe('emission factors, hour by hour or month by month', () => {
     expect(factor.map((a) => [a.level, a.reference, a.quality])).toEqual([['country', 'residual mix 2025', 'published'], ['object', 'supplier disclosure 2025', 'published']]);
   });
 });
+
+describe('an energy price chosen by the segment of the participant', () => {
+  type Measured = { total: { value: number }; parameters: Record<string, { level: string }[]>; fallbacks: Record<string, unknown> };
+  const savings = async (kind: string, id: string) =>
+    (await one<{ m: Measured }>(db, `select kpis.measure($1, $2, 'self_consumption_savings', $3, $4) m`, [kind, id, FROM, TO])).m;
+  const segment = (id: string, code: string) => db.query('update participants set segment = $2 where id = $1', [id, code]);
+
+  beforeAll(async () => {
+    await db.query(`insert into defaults (attribute_type, country, value, source_code, published_by)
+                    values ('energy_price_business', 'ZZ', '80', 'zz_statistics', 'pack:zz')`);
+  });
+
+  afterAll(async () => {
+    await segment(prosumer, 'individual');
+    await segment(consumer, 'individual');
+  });
+
+  it('reads the household price for a residential participant, as the household indicator does', async () => {
+    const m = await savings('participant', prosumer);
+    const household = (await one<{ m: Measured }>(db,
+      `select kpis.measure('participant', $1, 'self_consumption_savings_household', $2, $3) m`, [prosumer, FROM, TO])).m;
+    // 6 kWh self-consumed at 100 + 50 per MWh: the golden case's 0.9.
+    expect(m.total.value).toBeCloseTo(0.9, 9);
+    expect(m.total.value).toBeCloseTo(household.total.value, 9);
+    expect(m.fallbacks).toEqual({});
+  });
+
+  it('reads the business price for a segment that refines professional', async () => {
+    await segment(prosumer, 'public_entity');
+    const m = await savings('participant', prosumer);
+    // 6 kWh at 80 + 50 per MWh.
+    expect(m.total.value).toBeCloseTo(0.78, 9);
+    expect(await one(db, `select kpis.parameter_by_segment('participant', $1, $2) code`,
+      [prosumer, JSON.stringify({ parameter: 'energy_price_household', by_segment: { professional: 'energy_price_business' } })]))
+      .toEqual({ code: 'energy_price_business' });
+    // The most specific segment named decides.
+    expect(await one(db, `select kpis.parameter_by_segment('participant', $1, $2) code`,
+      [prosumer, JSON.stringify({ parameter: 'energy_price_household', by_segment: { professional: 'energy_price_business', public_entity: 'grid_fees_and_taxes' } })]))
+      .toEqual({ code: 'grid_fees_and_taxes' });
+  });
+
+  it('reads for a project the price its participants share, and says so when they differ', async () => {
+    // The school is a public entity, the library a household.
+    const mixed = await savings('project', project);
+    expect(mixed.fallbacks).toEqual({ energy_price: { segments: 'mixed', parameter: 'energy_price_household' } });
+    await segment(consumer, 'association');
+    const shared = await savings('project', project);
+    expect(shared.fallbacks).toEqual({});
+    expect(shared.parameters.energy_price).toHaveLength(1);
+    // The project reads its own household price (set above) for a household,
+    // and the business price of its country for professionals: 6 × (80 + 50).
+    expect(shared.total.value).toBeCloseTo(0.78, 9);
+  });
+
+  it('is the savings the energy community report reads', async () => {
+    const layout = await one<{ l: { sheets: { sections: { indicators: string[] }[] }[] } }>(db,
+      `select layout l from kpis.templates where code = 'energy_community_report'`);
+    const read = layout.l.sheets.flatMap((s) => s.sections.flatMap((x) => x.indicators));
+    expect(read).toContain('self_consumption_savings');
+    expect(read).not.toContain('self_consumption_savings_household');
+  });
+
+  it('refuses a choice by segment that does not name a parameter, a segment or an attribute type', async () => {
+    const add = (variables: string) => refusal(
+      `insert into kpis.indicators (code, name, quantity_code, applies_to, formula, variables) values ('y', 'Y', 'amount', '{participant}', 'a', $1)`,
+      [variables]);
+    expect(await add('{"a": {"quantity": "energy", "by_segment": {"professional": "energy_price_business"}}}')).toBe('variable_invalid');
+    expect(await add('{"a": {"parameter": "energy_price_household", "by_segment": {"nobody": "energy_price_business"}}}')).toBe('segment_unknown');
+    expect(await add('{"a": {"parameter": "energy_price_household", "by_segment": {"professional": "no_such_price"}}}')).toBe('attribute_type_unknown');
+    expect(await add('{"a": {"parameter": "energy_price_household", "by_segment": {"professional": 3}}}')).toBe('variable_invalid');
+  });
+});

@@ -69,6 +69,13 @@
     },
     {
       "object": "participant:sme",
+      "indicator": "self_consumption_savings",
+      "value": 33.522,
+      "tolerance": 1e-06,
+      "source": "111 kWh at 102.5 + 199.5 €/MWh: a business reads the business energy price of packs/be (a professional segment), and the grid fees and taxes, 2025; the same figure as self_consumption_savings_business."
+    },
+    {
+      "object": "participant:sme",
       "indicator": "injection_value",
       "value": 2.0358,
       "tolerance": 1e-06,

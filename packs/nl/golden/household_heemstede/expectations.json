@@ -81,6 +81,13 @@
     },
     {
       "object": "participant:home",
+      "indicator": "self_consumption_savings",
+      "value": 2.2194,
+      "tolerance": 1e-06,
+      "source": "9 kWh at 146.7 + 99.9 €/MWh: a household reads the household energy price of packs/nl (a residential segment), and the grid fees and taxes, 2025; the same figure as self_consumption_savings_household."
+    },
+    {
+      "object": "participant:home",
       "indicator": "injection_value",
       "refusal": "parameter_missing",
       "source": "packs/nl has no injection_price_reference: what is paid for feeding back is the supplier's contract."
