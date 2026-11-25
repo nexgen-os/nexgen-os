@@ -89,8 +89,11 @@
       "object": "project",
       "attribute_type": "grid_co2_factor",
       "at": "2026-06-15",
-      "refusal": "parameter_missing",
-      "source": "packs/es decides no emission factor of grid electricity yet."
+      "value": 0.10839,
+      "level": "country",
+      "country": "ES",
+      "source_code": "es_ree_redata_co2",
+      "source": "packs/es/defaults.json: Red Eléctrica, the emission factor of the electricity generated in 2025, 0.10839 tCO2 eq./MWh."
     }
   ],
   "perimeter": {

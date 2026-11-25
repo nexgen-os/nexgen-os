@@ -68,6 +68,23 @@
       "valid_from": "2025-01-01"
     },
     {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.10305,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "es_ree_redata_co2",
+      "reference": "Emisiones y factor de emisión de CO2 en generación no renovables, national, 2024, yearly: 0.10305 tCO2 eq./MWh of the electricity generated, renewables counted at zero (27 044 848 tCO2 eq. in total)",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.10839,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "es_ree_redata_co2",
+      "reference": "Emisiones y factor de emisión de CO2 en generación no renovables, national, 2025, yearly (updated 11 May 2026): 0.10839 tCO2 eq./MWh of the electricity generated, renewables counted at zero (29 526 808 tCO2 eq. in total)",
+      "valid_from": "2025-01-01"
+    },
+    {
       "attribute_type": "vat_rate_electricity",
       "value": 0.21,
       "unit": "UNITLESS",

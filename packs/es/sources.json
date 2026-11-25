@@ -56,6 +56,17 @@
       "redistributable": true
     },
     {
+      "code": "es_ree_redata_co2",
+      "name": "Red Eléctrica — REData, emisiones y factor de emisión de CO2 en generación no renovables",
+      "description": "The transmission operator's yearly CO2 emissions of the non-renewable generation of the Spanish electricity system and the emission factor of all the electricity generated, renewables counted at zero, in tCO2 eq./MWh.",
+      "kind": "text",
+      "url": "https://apidatos.ree.es/es/datos/generacion/no-renovables-detalle-emisiones-CO2?start_date=2025-01-01T00:00&end_date=2025-12-31T23:59&time_trunc=year",
+      "docs_url": "https://www.ree.es/es/datos/generacion/no-renovables-detalle-emisiones-CO2",
+      "license": "Red Eléctrica legal notice: reproduction and reuse need its written authorisation (one published figure cited, not the data)",
+      "attribution": "© Red Eléctrica — REData",
+      "redistributable": false
+    },
+    {
       "code": "es_po_10_8_cups",
       "name": "Resolución de 16 de noviembre de 2009 — procedimiento de operación 10.8, «Códigos universales para puntos frontera de clientes y productores de régimen especial»",
       "description": "The operating procedure, approved by the Secretary of State for Energy, that sets the shape of a CUPS and how its control letters are computed.",

@@ -144,6 +144,17 @@
       "license": "CC-BY-4.0",
       "attribution": "© European Union, Eurostat",
       "redistributable": true
+    },
+    {
+      "code": "nl_cbs_emission_factors_electricity_2024",
+      "name": "CBS — Energie- en emissiefactoren elektriciteit, update 2024",
+      "description": "The statistics office's yearly energy and emission factors of the electricity produced in the Netherlands, by the integral method (all renewable and non-renewable production) and the reference park method.",
+      "kind": "text",
+      "url": "https://www.cbs.nl/-/media/_excel/2025/49/energie--en-emissiefactoren-elektriciteit---2024.xlsx",
+      "docs_url": "https://www.cbs.nl/nl-nl/achtergrond/2025/49/energie-en-emissiefactoren-elektriciteit-update-2024",
+      "license": "CC-BY-4.0",
+      "attribution": "Bron: CBS",
+      "redistributable": true
     }
   ]
 }

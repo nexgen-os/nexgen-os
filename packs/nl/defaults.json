@@ -113,6 +113,14 @@
       "source_code": "nl_wet_omzetbelasting",
       "reference": "Article 9, first paragraph: the tax is 21 percent; electricity is not among the goods and services of table I (9 percent). Held from 1 January 2023; the rates of earlier years were not read",
       "valid_from": "2023-01-01"
+    },
+    {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.2,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "nl_cbs_emission_factors_electricity_2024",
+      "reference": "Tabel 1, integral method, «CO2 emissiefactor (kg/kWh)», Totaal, 2024: 0.20 kg CO2 per kWh of net production delivered to the user (0.22 in 2023)",
+      "valid_from": "2024-01-01"
     }
   ]
 }

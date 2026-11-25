@@ -217,6 +217,14 @@
       "valid_from": "2013-10-01"
     },
     {
+      "attribute_type": "grid_co2_factor",
+      "value": 0.1926,
+      "unit": "KiloGM-PER-KiloW-HR",
+      "source_code": "it_ispra_r430_2026",
+      "reference": "Tabella 1.7, page 29, column «Consumi elettrici» (network losses and the imported share included), 2024: 192.6 g CO2/kWh; the 2025 figure (199.6) is preliminary and not loaded",
+      "valid_from": "2024-01-01"
+    },
+    {
       "attribute_type": "sharing_perimeter",
       "condition": {
         "project_kind": "it_cer"

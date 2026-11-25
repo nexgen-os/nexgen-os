@@ -130,6 +130,17 @@
       "license": "Terms not stated (official text)",
       "attribution": "Gazzetta Ufficiale della Repubblica Italiana",
       "redistributable": true
+    },
+    {
+      "code": "it_ispra_r430_2026",
+      "name": "ISPRA — Settore elettrico: emissioni di CO2 e altri impatti. Edizione 2026 (Rapporti 430/2026)",
+      "description": "The environment institute's yearly report on the CO2 of the Italian electricity sector, with the national emission factors of the production and of the consumption of electricity, under the DM MASE 224/2023.",
+      "kind": "text",
+      "url": "https://www.isprambiente.gov.it/files2026/pubblicazioni/rapporti/r430-2026-2.pdf",
+      "docs_url": "https://www.isprambiente.gov.it/it/pubblicazioni/rapporti/settore-elettrico-emissioni-di-co2-e-altri-impatti-edizione-2026",
+      "license": "Reproduction authorised with the source cited (legal page of the report)",
+      "attribution": "ISPRA (2026), Settore elettrico: emissioni di CO2 e altri impatti. Edizione 2026. Rapporti n. 430/26, ISPRA, Roma",
+      "redistributable": true
     }
   ]
 }

@@ -36,6 +36,16 @@
       "at": "2026-06-15",
       "refusal": "parameter_missing",
       "source": "The Netherlands have full consumption disclosure: the Association of Issuing Bodies publishes no residual mix for NL in 2024 (packs/nl/README.md)."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.2,
+      "level": "country",
+      "country": "NL",
+      "source_code": "nl_cbs_emission_factors_electricity_2024",
+      "source": "packs/nl/defaults.json: CBS, integral method, 0.20 kg CO2/kWh produced in 2024."
     }
   ],
   "operators": [
@@ -78,8 +88,9 @@
     {
       "object": "participant:home",
       "indicator": "co2_avoided",
-      "refusal": "parameter_missing",
-      "source": "packs/nl has no grid_co2_factor."
+      "value": 1.8,
+      "tolerance": 1e-06,
+      "source": "9 kWh at 0.20 kg/kWh (grid_co2_factor, CBS 2024)."
     }
   ]
 }

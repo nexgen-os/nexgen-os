@@ -26,6 +26,16 @@
       "at": "2020-06-15",
       "refusal": "parameter_missing",
       "source": "The pack loads the zones of the configuration in force from 1 January 2021; the earlier one is not loaded."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.1926,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_ispra_r430_2026",
+      "source": "packs/it/defaults.json: ISPRA, Rapporti 430/2026, Tabella 1.7, the factor of electricity consumption in 2024, 192.6 g CO2/kWh."
     }
   ],
   "operators": [
@@ -51,6 +61,13 @@
       "value": 0.948718,
       "tolerance": 1e-06,
       "source": "37 / (2 + 37)."
+    },
+    {
+      "object": "participant:workshop",
+      "indicator": "co2_avoided",
+      "value": 7.1262,
+      "tolerance": 1e-06,
+      "source": "37 kWh at 0.1926 kg/kWh (grid_co2_factor, ISPRA 2024)."
     }
   ]
 }

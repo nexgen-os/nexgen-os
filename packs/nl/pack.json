@@ -2,8 +2,8 @@
   "$schema": "../schema/pack.1.json",
   "country": "NL",
   "name": "Netherlands",
-  "version": "0.1.0",
-  "checksum": "sha256:a419cb4ed445c4eb2092503140b18f80f484b5fb6a5dda3c6fb13c7f075d7651",
+  "version": "0.2.0",
+  "checksum": "sha256:b52418464111ad87bfe8e2f846d58aa1e0892c6b020319c051ddf0a3812f29fc",
   "schema_min": "0.3.0",
   "seed_sequence": 15,
   "certification": {
