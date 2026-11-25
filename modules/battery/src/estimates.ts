@@ -48,7 +48,8 @@ export interface PeriodRequest {
   step?: string;
   /**
    * The series to read, by id. Absent: for a participant, its
-   * `production_energy` and `consumption_energy` series; for a project, its
+   * `production_energy` series and its consumption as the core reads it
+   * (`participant_curve()`, the path of `consumption.curve()`); for a project, its
    * `injection_energy` (the surplus left once energy is shared) and
    * `offtake_energy` (the residual) — measured first, then the latest; the
    * prices, an `energy_price` series of the participant, its project or its
@@ -80,7 +81,8 @@ interface Read {
   /** The buying price of each interval, per kWh, when a price series was read. */
   priceSeries: string | null;
   production: string;
-  consumption: string;
+  /** The consumption series read: the one the request named, or each series `participant_curve()` read with its kind. */
+  consumption: string | Record<string, string>;
   timeZone: string | null;
 }
 
@@ -131,15 +133,39 @@ async function priceSeriesOf(db: Db, objects: string[], from: string, to: string
   return r.rows[0]?.id ?? null;
 }
 
+/** The values of a curve on every bucket of the period; refuses a bucket without a value. */
+function onBuckets(rows: { bucket: Date | string; value: number | null }[], read: string, buckets: string[]): number[] {
+  const byBucket = new Map(rows.map((b) => [new Date(b.bucket).toISOString(), b.value]));
+  const values = buckets.map((b) => byBucket.get(b));
+  const missing = values.filter((v) => v === null || v === undefined).length;
+  if (missing > 0) throw new Error(`series_incomplete: ${read} has no value for ${missing} of the ${buckets.length} intervals of the period`);
+  return values.map(Number);
+}
+
 /** The values of a series on every bucket of the period; refuses a bucket without a value. */
 async function onGrid(db: Db, seriesId: string, from: string, to: string, step: string, buckets: string[]): Promise<number[]> {
   const r = await db.query<{ bucket: Date | string; value: number | null }>(
     'select bucket, value from resample($1, $2::timestamptz, $3::timestamptz, $4::interval)', [seriesId, from, to, step]);
-  const byBucket = new Map(r.rows.map((b) => [new Date(b.bucket).toISOString(), b.value]));
-  const values = buckets.map((b) => byBucket.get(b));
-  const missing = values.filter((v) => v === null || v === undefined).length;
-  if (missing > 0) throw new Error(`series_incomplete: series ${seriesId} has no value for ${missing} of the ${buckets.length} intervals of the period`);
-  return values as number[];
+  return onBuckets(r.rows, `series ${seriesId}`, buckets);
+}
+
+/**
+ * The consumption of a participant as the core reads it for every module
+ * (`participant_curve_series()`): measured first, its own or its meters'
+ * added up, never a device's sub-meter alone; else the latest estimate, to
+ * which a planned device's simulated consumption adds. With the coarsest
+ * step of the series read, the step a dispatch runs at when none is named.
+ */
+async function consumptionOf(db: Db, participantId: string, from: string, to: string): Promise<{ series: Record<string, string>; step: string | null }> {
+  const r = await db.query<{ series_id: string; kind: string; step: string | null }>(
+    `select c.series_id, c.kind, se.step::text step
+       from participant_curve_series($1, 'consumption_energy', $2::timestamptz, $3::timestamptz) c
+       join series se on se.id = c.series_id
+      order by se.step desc nulls last, c.series_id`,
+    [participantId, from, to],
+  );
+  if (r.rows.length === 0) throw new Error(`series_not_found: the participant ${participantId} has no consumption_energy series from ${from} to ${to}; name the series to read`);
+  return { series: Object.fromEntries(r.rows.map((s) => [s.series_id, s.kind])), step: r.rows[0].step };
 }
 
 async function readFlows(db: Db, request: PeriodRequest, place: Awaited<ReturnType<typeof perimeterOf>>): Promise<Read> {
@@ -148,9 +174,13 @@ async function readFlows(db: Db, request: PeriodRequest, place: Awaited<ReturnTy
   if (!(toMs > fromMs)) throw new Error(`period_empty: ${request.from} to ${request.to}`);
   const project = request.perimeter.kind === 'project';
   const production = request.series?.production ?? (await seriesOf(db, request.perimeter, project ? 'injection_energy' : 'production_energy'));
-  const consumption = request.series?.consumption ?? (await seriesOf(db, request.perimeter, project ? 'offtake_energy' : 'consumption_energy'));
-  const step = request.step ?? (await db.query<{ step: string | null }>('select step::text step from series where id = $1', [consumption])).rows[0]?.step;
-  if (!step) throw new Error(`step_required: series ${consumption} has no regular step; name the step of the dispatch`);
+  // A participant's consumption is read along the core's one path; a
+  // project's residual offtake, or a series the request names, by its id.
+  const named = request.series?.consumption ?? (project ? await seriesOf(db, request.perimeter, 'offtake_energy') : null);
+  const read = named === null ? await consumptionOf(db, request.perimeter.id, request.from, request.to) : null;
+  const step = request.step
+    ?? (read ? read.step : (await db.query<{ step: string | null }>('select step::text step from series where id = $1', [named])).rows[0]?.step);
+  if (!step) throw new Error(`step_required: the consumption series ${named ?? Object.keys(read!.series).join(', ')} have no regular step; name the step of the dispatch`);
   const seconds = Number((await db.query<{ s: number }>('select extract(epoch from $1::interval)::float8 s', [step])).rows[0].s);
   if (!(seconds > 0 && seconds < 86400 && (toMs - fromMs) % (seconds * 1000) === 0)) {
     throw new Error(`step_invalid: ${step}; a dispatch runs on a step under a day that divides the period`);
@@ -162,7 +192,11 @@ async function readFlows(db: Db, request: PeriodRequest, place: Awaited<ReturnTy
   return {
     flows: {
       production: await onGrid(db, production, request.from, request.to, step, buckets),
-      consumption: await onGrid(db, consumption, request.from, request.to, step, buckets),
+      consumption: named !== null
+        ? await onGrid(db, named, request.from, request.to, step, buckets)
+        : onBuckets((await db.query<{ bucket: Date | string; value: number | null }>(
+            `select bucket, value from participant_curve($1, 'consumption_energy', $2::timestamptz, $3::timestamptz, $4::interval)`,
+            [request.perimeter.id, request.from, request.to, step])).rows, `the consumption of participant ${request.perimeter.id}`, buckets),
       stepHours: seconds / 3600,
       // A price is kept per MWh (energy_price): per kWh here.
       prices: prices ? (await onGrid(db, prices, request.from, request.to, step, buckets)).map((p) => p / 1000) : null,
@@ -171,7 +205,7 @@ async function readFlows(db: Db, request: PeriodRequest, place: Awaited<ReturnTy
     step,
     priceSeries: prices,
     production,
-    consumption,
+    consumption: named ?? read!.series,
     timeZone: place.timeZone,
   };
 }
