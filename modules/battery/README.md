@@ -121,12 +121,17 @@ await dispatch(db, { perimeter: { kind: 'participant', id: participantId }, from
 // [{ estimateId, deviceId, indicators, savings, series: { charge, discharge, level } }]
 ```
 
-On a participant's place it reads its `production_energy` and
-`consumption_energy` series; on a project's sharing, the project's
+On a participant's place it reads its consumption as every module reads
+it, the core's `participant_curve()` (the path of `consumption.curve()`
+and of the indicators): measured first, its own or its meters' added up,
+never a device's sub-meter alone; otherwise the latest estimate, to which
+the simulated consumption of a planned device adds. Its production is its
+`production_energy` series; on a project's sharing, the project's
 `injection_energy` (the surplus left once the energy is shared) and
 `offtake_energy` (the residual) — measured first, the one on the perimeter
-itself first, then the latest — or the series the request names. The step
-is the request's or that of the consumption series, under a day, and
+itself first, then the latest. A series the request names is read in
+their place. The step is the request's or the coarsest of the consumption
+series read, under a day, and
 divides the period; a bucket without a value is refused
 (`series_incomplete`), never taken for zero.
 

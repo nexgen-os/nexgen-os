@@ -80,16 +80,20 @@ select * from consumption.curve(:participant, '2026-01-12', '2026-01-19', '1 day
 -- bucket, value (kWh), series ({"<series id>": "measured" or "simulated"})
 ```
 
-The curve reads the series the core's `participant_series()` chooses, the
-one path the indicators read too (`kpis.series_of()`), holding values in
-the period: the measured ones first — the participant's own, else its
+The curve is the core's `participant_curve()` for `consumption_energy`,
+the one computation of a participant's consumption that the indicators
+(`kpis.variable_series()`), the battery dispatch, the PV sizing and the
+sharing of a community read too. It reads the series the core's
+`participant_series()` chooses, holding values in the period: the measured ones first — the participant's own, else its
 meters', added up; a device's sub-meter is that device's consumption,
 never the participant's whole — otherwise the latest estimate, to which
 the simulated consumption of a planned device (a heat pump the
 participant plans) is added: no bill and no reading of the place saw it.
-A device in service is in the estimate already. The curve is the sum of
+A device in service is in the estimate already, and a measured
+participant reads the same with or without a simulated device: a
+measurement and a simulation are never mixed. The curve is the sum of
 these series, and names each with its kind; `consumption.curve_series()`
-lists them. Both read under the caller's row level security, through
+lists them (`participant_curve_series()` of the core). Both read under the caller's row level security, through
 `resample()`.
 
 ## A device recognised by disaggregation

@@ -48,7 +48,10 @@ A variable reads one of two things:
   consumption alone, the latest estimate of each object, a planned
   device's simulated energy added to an estimate; for a project, those of
   each of its participants; for a meter or a device, its own
-  (`kpis.series_of()`). Several series of an energy add up, several of a
+  (`kpis.series_of()`). A participant's variable that names no kind reads
+  the measured series, else the simulated ones, as the core's
+  `participant_curve_series()` chooses them for every module
+  (`kpis.variable_series()`). Several series of an energy add up, several of a
   mean quantity (an irradiance) average. Options: `kind`; `step` and `combine` (`sum`, `mean`, `max`, `min`) to read the
   quantity on a finer step and combine those values into the bucket — the
   heaviest hour of a month, the irradiation of its hours; `shift` to read
