@@ -206,8 +206,9 @@ both cores reads one way:
   `tests/golden.test.ts`; what their figures cannot reach yet is said by
   name in them: `enedis` lists no region and no identifier prefix, so a
   French meter not connected to its operator is not resolved; `be` decides
-  no location-based emission factor (`grid_co2_factor`), and `es` neither
-  that factor nor a reference price of injection.
+  no location-based emission factor (`grid_co2_factor`), which its
+  publishers give only quarter-hour by quarter-hour, and `es` no reference
+  price of injection.
 - **A project shared with a person, in every module**: the core, `grid`,
   `community` and `actions` let a member of a project read and write under
   it (`secure_table()` given the expression of a row's project), and so do

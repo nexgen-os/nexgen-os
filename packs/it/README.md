@@ -3,7 +3,7 @@
 The values Italy decides that a function of the model reads, compiled by
 `nexgen-os pack build it` into
 [`supabase/seed/14_pack_it.sql`](../../supabase/seed/14_pack_it.sql).
-Version 0.1.0, certification `community`: checked by the toolchain, read by
+Version 0.2.0, certification `community`: checked by the toolchain, read by
 no Italian professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads an
 Italian register yet, and an address is found by the open geocoders of the
@@ -13,7 +13,7 @@ core's chain.
 |---|---|
 | `pack.json` | Italy, the euro, Italian and the three languages with official standing in their regions (German in Trentino-Alto Adige, French in Valle d'Aosta, Slovene in Friuli Venezia Giulia), one time zone (`Europe/Rome`), five-digit postal codes (CAP), municipalities numbered by `istat`; the 20 regions of ISO 3166-2 at the region level `region` |
 | `identifiers.json` | `pod` (the withdrawal point: IT, three digits of the distribution operator, E, eight or nine digits), `istat` (the six-digit statistical code of a municipality), `partita_iva` (the VAT number, eleven digits, ISO 6523 code 0211), `codice_catastale_comune` (the cadastral code of a municipality, a letter and three digits), each with a pattern and an example that matches it |
-| `sources.json` | the statistics office's list of municipalities (`istat_municipalities`), the cadastre (`agenzia_entrate_catasto`), the energy services manager's page on shared self-consumption (`gse_cacer_portal`), and the published texts (`kind` `text`, code `it_…`) a value, a frame or an operator of the pack cites |
+| `sources.json` | the statistics office's list of municipalities (`istat_municipalities`), the cadastre (`agenzia_entrate_catasto`), the energy services manager's page on shared self-consumption (`gse_cacer_portal`), and the published texts and reports (`kind` `text`, code `it_…`) a value, a frame or an operator of the pack cites |
 | `project_kinds.json` | the frames of Decreto legislativo 199/2021: `it_autoconsumatore_a_distanza` (article 30, paragraph 1), refining `individual_self_consumption`; `it_gruppo_autoconsumatori` (article 30, paragraph 2), refining `collective_self_consumption`; `it_cer` (article 31), refining `energy_community` |
 | `municipalities.json` | ten municipalities of the ISTAT list, each under its region: the capitals of the regions the golden cases and the bidding zones use (Roma, Milano, Torino, Bologna, Firenze, Napoli, Bari, Reggio di Calabria, Palermo, Cagliari). A representative subset: the full list is the same file at full length, built from the ISTAT file of the statistical codes, or a connector writing the same `regions` rows. Italy's density grid is not read by any value of the pack |
 | `grid.json` | six operators: Terna (transmission and dispatching) and five distribution operators, each with the three-digit code its POD carries (`IT001` e-distribuzione, `IT002` Areti, `IT011` Inrete, `IT012` Unareti, `IT020` Ireti) |
@@ -38,6 +38,7 @@ country's ([0021](../../docs/decisions/0021-one-cascade-of-defaults.md)).
 |---|---|---|
 | `bidding_zone` | by region, from 1 January 2021: NORD `10Y1001A1001A73I` (Piemonte, Valle d'Aosta, Lombardia, Trentino-Alto Adige, Veneto, Friuli Venezia Giulia, Liguria, Emilia-Romagna), CNOR `10Y1001A1001A70O` (Toscana, Marche), CSUD `10Y1001A1001A71M` (Umbria, Lazio, Abruzzo, Campania), SUD `10Y1001A1001A788` (Molise, Puglia, Basilicata), CALA `10Y1001C--00096J` (Calabria), SICI `10Y1001A1001A75E`, SARD `10Y1001A1001A74G`; null for the country, which has seven | GME list of the market zones; ARERA deliberation 103/2019/R/eel; ENTSO-E area list for the codes |
 | `control_area` | `10YIT-GRTN-----B` for the whole country | ENTSO-E area list |
+| `grid_co2_factor` | 0.1926 kg CO2/kWh consumed, 2024: network losses and the imported share included | ISPRA, Rapporti 430/2026, Tabella 1.7 |
 | `vat_rate_electricity` | 0.22, the ordinary rate, from 1 October 2013, which the common parts of a condominium (`coproperty`) bear too; 0.10 for an `individual` participant (domestic use) | DPR 633/1972, article 16 and table A, part III, number 103; Agenzia delle Entrate, answer 142 of 3 March 2021 |
 | `sharing_perimeter` | `["same_substation"]` for a project `it_cer` or `it_autoconsumatore_a_distanza`, from 24 January 2024 | the incentive of the decree 414/2023 on the energy shared under one primary substation, as the Chamber of Deputies' note states it |
 | `sharing_settlement_period` | `PT1H` for the three frames, from 1 March 2023 | TIAD, the shared energy as the hourly minimum of injection and withdrawal |
@@ -91,10 +92,12 @@ figures an installation must find from it (`tests/golden.test.ts`,
 |---|---|---|
 | `cer_bologna` | `it_cer` in Bologna | a flat in by its primary substation, a shop out on another; the perimeter refused before 24 January 2024; the hourly settlement period; the zone NORD; the domestic VAT of a household; the shares of a proportional key and the shared rate |
 | `household_roma` | `pv_roof` in Roma | the operator of a meter found by its POD prefix (Areti), the zone CSUD, the control area, the domestic VAT, no household price loaded, self-consumption of a house |
-| `sme_palermo` | `pv_roof` in Palermo | the zone SICI and its refusal before 2021, the ordinary VAT of a business, the operator by POD prefix (e-distribuzione), self-consumption of a workshop |
+| `sme_palermo` | `pv_roof` in Palermo | the zone SICI and its refusal before 2021, the ordinary VAT of a business, the operator by POD prefix (e-distribuzione), self-consumption of a workshop and the CO2 it avoids at the ISPRA factor |
 
 ## What to check next
 
+- **The emission factor of 2025**: ISPRA gives 199.6 g CO2/kWh as a
+  preliminary figure; it is loaded when the next edition makes it final.
 - **The consolidated texts**: the figures were read on 7 November 2026
   through the publishers' pages and the notes of the Chamber of Deputies,
   the regulator and the energy services manager, not article by article on

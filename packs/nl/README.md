@@ -3,7 +3,7 @@
 The values the Netherlands decide that a function of the model reads,
 compiled by `nexgen-os pack build nl` into
 [`supabase/seed/15_pack_nl.sql`](../../supabase/seed/15_pack_nl.sql).
-Version 0.1.0, certification `community`: checked by the toolchain, read by
+Version 0.2.0, certification `community`: checked by the toolchain, read by
 no Dutch professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.
 
@@ -23,7 +23,7 @@ Gebiedsindelingscode elektriciteit puts it.
 |---|---|
 | `pack.json` | the Netherlands, the euro, Dutch and West Frisian (see below), `Europe/Amsterdam`, postal codes of four digits and two letters, municipalities numbered by `cbs_gemeentecode`; the twelve provinces at the region level `province` |
 | `identifiers.json` | `cbs_gemeentecode` (the 4-digit municipality code of Statistics Netherlands), `bag_nummeraanduiding` and `bag_pand` (the address and the building of the BAG, 16 digits, object types 20 and 10), `kvk_number` (the Business Register of the Chamber of Commerce, ISO 6523 code `0106`), each with a pattern and an example that matches it. A Dutch metering point, the 18-digit EAN code of an energy bill, is a GS1 Global Service Relation Number: it uses the core scheme `gs1_gsrn`, and the pack adds none of its own |
-| `sources.json` | five registers and services: `pdok_locatieserver` (the national geocoder), `bag` (Public Domain Mark 1.0, as the BAG API of PDOK states), `threedbag` (CC BY 4.0), `cbs` (CC BY 4.0), `kvk_handelsregister`; and the ten published texts (`kind` `text`, code `nl_…`) a value, a frame or a scheme of the pack cites |
+| `sources.json` | five registers and services: `pdok_locatieserver` (the national geocoder), `bag` (Public Domain Mark 1.0, as the BAG API of PDOK states), `threedbag` (CC BY 4.0), `cbs` (CC BY 4.0), `kvk_handelsregister`; and the eleven published texts and tables (`kind` `text`, code `nl_…`) a value, a frame or a scheme of the pack cites |
 | `project_kinds.json` | `nl_energiegemeenschap`, the one energy community of the Energiewet (article 1.1), refining `energy_community`; `nl_energie_delen`, energy sharing by an active customer or within an energy community (article 2.30), refining `collective_self_consumption` |
 | `municipalities.json` | 26 municipalities of the CBS division of 2026 under their province: the six largest cities and the twenty municipalities a distribution operator other than its province's serves. A subset: the full list is the same file at full length, or a connector writing the same `regions` rows from the CBS table. The Netherlands publish no density class the pack reads |
 | `grid.json` | seven operators — TenneT (transmission, the whole country) and Liander, Stedin, Enexis, Westland Infra, Coteq and Rendo (distribution) by province and municipality; the four voltage levels of the Netcode; the netting scheme (`salderingsregeling`) until 31 December 2026 |
@@ -48,6 +48,7 @@ language a page or an agent speaks is the application's.
 | `energy_price_household` | 170.2 €/MWh (2024), 146.7 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 116.9 €/MWh (2024), 101.0 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
 | `grid_fees_and_taxes` | 64.3 €/MWh (2024), 99.9 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_co2_factor` | 0.20 kg CO2/kWh produced, 2024, all production renewable and not | CBS, Energie- en emissiefactoren elektriciteit, update 2024, table 1 (integral method) |
 | `vat_rate_electricity` | 0.21 from 1 January 2023 | Wet op de omzetbelasting 1968, article 9, first paragraph; electricity is not in table I |
 | `voltage_levels` | low voltage up to 1 kV, medium voltage up to 35 kV, high voltage up to 150 kV, extra-high voltage 220 and 380 kV | Netcode elektriciteit, article 8.1 |
 
@@ -113,7 +114,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 
 | Case | Kind | What it checks |
 |---|---|---|
-| `household_heemstede` | `individual_self_consumption` in Heemstede | Stedin found by the municipality inside Liander's province, the household price, fees and VAT, the savings, no residual mix and no injection price (`parameter_missing`) |
+| `household_heemstede` | `individual_self_consumption` in Heemstede | Stedin found by the municipality inside Liander's province, the household price, fees and VAT, the savings, the CO2 avoided at the CBS factor, no residual mix and no injection price (`parameter_missing`) |
 | `energie_delen_westland` | `nl_energie_delen` in Westland | the quarter-hour sharing period, no perimeter decided (`parameter_missing`), Westland Infra by municipality, the shares of a proportional key worked by hand |
 | `sme_pv_eindhoven` | `pv_roof` in Eindhoven | Enexis by province, the business price, the metering step, a PVWatts yield within 0.1 %, specific yield and savings |
 
@@ -135,11 +136,11 @@ figures an installation must find from it (`tests/golden.test.ts`,
   through which a third party reads a customer's quarter-hour data are run
   by the grid operators' joint data service; its terms were not read, and
   no operator carries a `data_hub_url` or `meter_data` yet.
-- **Emission factors** (`market_co2_factor`, `grid_co2_factor`): the
-  Netherlands have full consumption disclosure, so the Association of
-  Issuing Bodies publishes no residual mix for them (European Residual
-  Mixes 2024, final version of 11 August 2025: `NA`); no yearly grid
-  intensity was found on a publisher's page.
+- **Residual mix** (`market_co2_factor`): the Netherlands have full
+  consumption disclosure, so the Association of Issuing Bodies publishes
+  no residual mix for them (European Residual Mixes 2024, final version of
+  11 August 2025: `NA`). The grid factor (`grid_co2_factor`) is the CBS
+  factor of the electricity produced; the imports are not counted in it.
 - **Price of injection** (`injection_price_reference`): no publisher's
   yearly mean of the Dutch day-ahead price was read. What a household is
   paid for its injection is its supplier's contract.

@@ -3,7 +3,7 @@
 The values Spain decides that a function of the model reads, compiled by
 `nexgen-os pack build es` into
 [`supabase/seed/12_pack_es.sql`](../../supabase/seed/12_pack_es.sql).
-Version 0.4.0, certification `community`: checked by the toolchain, read by
+Version 0.5.0, certification `community`: checked by the toolchain, read by
 no Spanish professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads a
 Spanish register yet, and an address is found by the open geocoders of the
@@ -13,7 +13,7 @@ core's chain.
 |---|---|
 | `pack.json` | Spain, the euro, Spanish, Catalan, Basque and Galician (official in their communities), two time zones (`Europe/Madrid` first, `Atlantic/Canary` for the Canary Islands, `ES-CN` and its provinces `ES-GC` and `ES-TF`), five-digit postal codes starting with a province number from 01 to 52, municipalities numbered by `ine`; 69 regions of ISO 3166-2: at the region level `province` the 50 provinces, each under its autonomous community, the 17 communities, and the autonomous cities of Ceuta (`ES-CE`) and Melilla (`ES-ML`), which have no province |
 | `identifiers.json` | `cups` (the supply point, with its control letters and the optional boundary or measuring point suffix), `ine` (the municipality code), `nif` (the tax number of a legal entity), `referencia_catastral` (a parcel in 14 characters, a property in 20), each with a pattern and an example that matches it |
-| `sources.json` | five registers and services: `ine_municipalities`, `catastro`, `cartociudad`, `datadis` (the distributors' platform of a customer's meter data, under the customer's authorisation, never passed on), `ree_esios`; and the published texts (`kind` `text`, code `es_…`) a value, a frame, a scheme or an operator of the pack cites |
+| `sources.json` | five registers and services: `ine_municipalities`, `catastro`, `cartociudad`, `datadis` (the distributors' platform of a customer's meter data, under the customer's authorisation, never passed on), `ree_esios`; and the published texts and figures (`kind` `text`, code `es_…`) a value, a frame, a scheme or an operator of the pack cites |
 | `project_kinds.json` | the frames of Spanish law: `es_autoconsumo_individual` and `es_autoconsumo_colectivo` (Real Decreto 244/2019, articles 3 m) and 4.3), refining `individual_self_consumption` and `collective_self_consumption`; `es_comunidad_energias_renovables` and `es_comunidad_ciudadana_energia` (Ley 24/2013, article 6.1 j) and k), articles 12 bis and 12 ter), refining `energy_community` |
 | `municipalities.json` | seventeen municipalities of the INE register of 1 January 2026, each under its province: the largest cities, Palma and Las Palmas de Gran Canaria, Ceuta and Melilla, and Soria, Ólvega and Teruel. A representative subset: the full list (8 132 municipalities in the 2026 file) is the same file at full length, built from the INE's yearly file by joining the province code and the municipality code (`CPRO` + `CMUN`, without the control digit `DC`), or a connector writing the same `regions` rows. Spain publishes no density class a rule of the pack reads |
 | `grid.json` | twelve operators: Red Eléctrica (transmission and system operation), the five largest distribution operators and five local ones, each with the CUPS prefix the transmission operator's list gives it, and the operators of Ceuta and Melilla with their city; the voltage categories of Real Decreto 223/2008 |
@@ -41,6 +41,7 @@ of the Canary Islands is written on `ES-CN`).
 | `energy_price_household` | 110.8 €/MWh (2024), 110.8 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 93.5 €/MWh (2024), 90.9 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
 | `grid_fees_and_taxes` | 127.5 €/MWh (2024), 153.0 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_co2_factor` | 0.10305 kg CO2/kWh (2024), 0.10839 kg CO2/kWh (2025): the CO2 of the electricity generated, renewables at zero | Red Eléctrica, REData, emissions and emission factor of the non-renewable generation, national, yearly |
 | `vat_rate_electricity` | 0.21 from 1 January 2025 to 21 March 2026; null in the Canary Islands, Ceuta and Melilla, outside the territory of VAT | Ley 37/1992, articles 90 and 3 |
 | `offpeak_hours` | null for the country (the periods follow the access tariff); `[["00:00", "08:00"]]` for a `residential` participant: period 3 of the 2.0 TD tariff on working days, every hour of weekends, 6 January and fixed national holidays being period 3 too | CNMC Circular 3/2020, article 7.3 |
 | `voltage_levels` | low voltage up to 1 kV; high voltage of the third category up to 30 kV, second up to 66 kV, first below 220 kV, special from 220 kV | Real Decreto 223/2008, article 3 |
@@ -100,7 +101,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 
 | Case | Kind | What it checks |
 |---|---|---|
-| `autoconsumo_colectivo_madrid` | `es_autoconsumo_colectivo` in Madrid | a flat in by its transformer station at 700 m, a bakery in by the 500 m on another station, an office out by both; the 5 000 m of the PV device; the 2.0 TD off-peak window of a household and none for a business; VAT in 2025 and refused after 21 March 2026; the shares of a proportional key, the shared rate and the savings |
+| `autoconsumo_colectivo_madrid` | `es_autoconsumo_colectivo` in Madrid | a flat in by its transformer station at 700 m, a bakery in by the 500 m on another station, an office out by both; the 5 000 m of the PV device; the 2.0 TD off-peak window of a household and none for a business; VAT in 2025 and refused after 21 March 2026; the emission factor of 2025; the shares of a proportional key, the shared rate and the savings |
 | `autoconsumo_colectivo_rural` | `es_autoconsumo_colectivo` in Ólvega (Soria) | a cooperative in at 450 m, a school out at 2.5 km by the 500 m the function applies; the rule refused before 22 March 2026 |
 | `household_surplus` | `es_autoconsumo_individual` in València | the operator of a meter found by its CUPS prefix, the household price, the off-peak window, self-consumption of a house with surplus |
 | `sme_canarias` | `pv_roof` in Las Palmas de Gran Canaria | VAT not decided in the Canary Islands, the business price, the operator by CUPS prefix, the savings of a workshop |
@@ -138,10 +139,13 @@ figures an installation must find from it (`tests/golden.test.ts`,
 - **Metering step** (`metering_step`): no text read states the step of the
   readings of each type of meter, so it is not loaded; the allocation of a
   collective self-consumption is hourly (`sharing_settlement_period`).
-- **Emission factor and price of injection** (`grid_co2_factor`,
-  `injection_price_reference`): the transmission operator's yearly report
-  and the market operator's yearly mean day-ahead price were not read; the
-  cases show the factor refused by name.
+- **Emission factor** (`grid_co2_factor`): the transmission operator
+  publishes the factor of the electricity generated, not of the electricity
+  consumed; Spain exports more than it imports, and the difference is not
+  modelled. Its terms of reuse ask for a written authorisation: the pack
+  cites the figure and does not carry the data.
+- **Price of injection** (`injection_price_reference`): the market
+  operator's yearly mean day-ahead price was not read.
 - **Imbalance settlement period**: the operator's procedures that set it
   were not read, so `grid.market_of()` gives none for a Spanish place.
 - **Bidding zone and control area of the non-peninsular systems**: whether
