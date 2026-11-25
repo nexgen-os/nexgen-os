@@ -1,7 +1,7 @@
 // The consumption of a participant is computed along one path
 // (decision 0065, a value is written once): `participant_curve()` of the
 // core. The consumption curve (`consumption.curve()`), the indicators
-// (`kpis.series_of()`) and the battery dispatch all read it, so a simulated
+// (`kpis.variable_series()`) and the battery dispatch all read it, so a simulated
 // device — a planned heat pump — enters the one aggregate they all read, and
 // a measured participant reads the same with or without it.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -44,9 +44,9 @@ async function readers(participant: string) {
     `select value, series from participant_curve($1, 'consumption_energy', $2, $3, '1 hour')`, [participant, FROM, TO])).rows;
   const curve = (await db.query<{ value: number; series: Record<string, string> }>(
     `select value, series from consumption.curve($1, $2, $3, '1 hour')`, [participant, FROM, TO])).rows;
-  const kind = Object.values(core[0]?.series ?? {})[0] ?? 'measured';
-  const indicators = (await db.query<{ s: string }>(
-    `select s from kpis.series_of('participant', $1, 'consumption_energy', $2, $3, $4) s order by s`, [participant, kind, FROM, TO])).rows.map((r) => r.s);
+  const variable = await one<{ ids: string[]; kind: string | null }>(
+    db, `select ids, kind from kpis.variable_series('participant', $1, 'consumption_energy', null, $2, $3)`, [participant, FROM, TO]);
+  const indicators = Object.fromEntries(variable.ids.map((id) => [id, variable.kind]));
   const [battery] = await dispatch(db, { perimeter: { kind: 'participant', id: participant }, from: FROM, to: TO });
   const inputs = (await one<{ inputs: any }>(db, 'select inputs from battery.estimates where id = $1', [battery.estimateId])).inputs;
   return {
@@ -62,7 +62,7 @@ async function readers(participant: string) {
 /** Every reader reads the one aggregate of the core. */
 function onePath(r: Awaited<ReturnType<typeof readers>>): void {
   expect(r.curve).toEqual({ values: r.values, series: r.series });
-  expect(r.indicators).toEqual(Object.keys(r.series).sort());
+  expect(r.indicators).toEqual(r.series);
   expect(r.battery).toEqual({ kwh: r.kwh, series: r.series });
 }
 
