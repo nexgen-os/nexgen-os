@@ -72,6 +72,15 @@ A variable reads one of two things:
   organisation's, then the region's and the country's of its pack; for a
   project, its own country's. A factor or a price is never a literal of a
   formula.
+- `{"parameter": "<attribute type>", "by_segment": {"<segment>": "<attribute type>"}}`:
+  the attribute type a participant of a segment reads in place of the
+  parameter, chosen by `kpis.parameter_by_segment()` — the most specific
+  segment named that the participant's own segment is or refines, else the
+  parameter. A project reads the choice its participants share; when they
+  differ, the parameter, and `inputs.fallbacks` says `{"segments": "mixed"}`.
+  `self_consumption_savings` reads `energy_price_household` for a
+  residential participant and `energy_price_business` for a professional
+  one.
 
 ### Hour by hour when the series exists
 
@@ -172,10 +181,12 @@ currency pattern (`XXX`, ISO 4217's "no currency"): its series is kept in
 the currency of its object's country, like a price, and `portfolio()`
 never adds two currencies. The savings read the core's price attribute
 types (`energy_price_household`, `energy_price_business`,
-`grid_fees_and_taxes`, quantity `energy_price`) through `parameter_of()`.
+`grid_fees_and_taxes`, quantity `energy_price`) through `parameter_of()`;
+`self_consumption_savings` reads the price of the participant's segment,
+`self_consumption_savings_household` and `_business` one price each.
 
 Two templates: `energy_community_report` (flows, storage, rates,
-environment, economy, by month) and `pv_performance` (yield and use, by
+environment, economy at the price of each participant's segment, by month) and `pv_performance` (yield and use, by
 month).
 
 ## What it reads of the core
