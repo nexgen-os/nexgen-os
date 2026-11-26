@@ -63,6 +63,32 @@ so that an export gives it back as it came.
 A PV array of the `solar` module keeps its own azimuth and tilt; this module
 does not say which face it stands on.
 
+## What the envelope loses
+
+Two reads of the faces of a building, computed and never stored:
+
+- `building.transmission_heat_loss(building)`: H_T, the direct transmission
+  heat transfer coefficient of the envelope in W/K, the sum of `area_m2` x
+  `u_value` over the faces facing outside (`is_external`), the direct term
+  of EN ISO 13789, with each face's share (`faces`). A face facing outside
+  without its area or its transmittance (`missing`, with what it `lacks`),
+  or a face that does not say which side it faces (`undecided`), leaves
+  `h_t_w_per_k` null; so does a building with no face described. Thermal
+  bridges, the ground, unheated spaces and ventilation are not modelled, and
+  `not_modelled` says so. Refuses `building_not_found`.
+- `building.heating_need(building, temperature series, from, to, base)`: the
+  transmission heat need of `[from, to)` by the degree-day method, H_T x the
+  heating degree-days of the series against the base x 24 h, in kWh. The
+  degree-days are `weather.degree_days()`'s (`weather_module_required`
+  without the module); the base is the caller's, from the pack, the study or
+  the standard it cites. A day without a temperature is counted in
+  `days_missing`, never as zero; solar and internal gains are not modelled.
+
+```sql
+select building.heating_need(:building, :temperature, '2025-10-01', '2026-05-01', 15);
+-- {"kwh": 9216.0, "h_t_w_per_k": 160, "degree_days": 2400, "days": 212, "days_missing": 0, …}
+```
+
 ## Importers
 
 `modules/building/src` writes what the format libraries read (they touch no
