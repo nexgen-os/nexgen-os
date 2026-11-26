@@ -282,6 +282,80 @@
       "source_code": "it_arera_tiad",
       "reference": "The shared energy is, in each hour, the minimum of the energy injected by the plants of the configuration and the energy withdrawn by its final customers; the TIAD applies from 1 March 2023 at the earliest",
       "valid_from": "2023-03-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 180.0,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Italy, 2024, band KWH2500-4999, component NRG_SUP: 0.1800 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_household",
+      "value": 180.0,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Italy, 2025, band KWH2500-4999, component NRG_SUP: 0.1800 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 126.7,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Italy, 2024, band MWH2000-19999, component NRG_SUP: 0.1267 EUR/kWh",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "energy_price_business",
+      "value": 131.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Italy, 2025, band MWH2000-19999, component NRG_SUP: 0.1312 EUR/kWh",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 139.3,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Italy, 2024, band KWH2500-4999, components NETC 0.0480 and TAX_FEE_LEV_CHRG 0.0913 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "value": 133.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_household_prices",
+      "reference": "nrg_pc_204_c, Italy, 2025, band KWH2500-4999, components NETC 0.0444 and TAX_FEE_LEV_CHRG 0.0888 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 90.6,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Italy, 2024, band MWH2000-19999, components NETC 0.0187 and TAX_FEE_LEV_CHRG 0.0719 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 91.3,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "it_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Italy, 2025, band MWH2000-19999, components NETC 0.0227 and TAX_FEE_LEV_CHRG 0.0686 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
     }
   ]
 }

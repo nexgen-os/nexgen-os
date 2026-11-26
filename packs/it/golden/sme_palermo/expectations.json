@@ -36,6 +36,26 @@
       "country": "IT",
       "source_code": "it_ispra_r430_2026",
       "source": "packs/it/defaults.json: ISPRA, Rapporti 430/2026, Tabella 1.7, the factor of electricity consumption in 2024, 192.6 g CO2/kWh."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 131.2,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_eurostat_business_prices",
+      "source": "packs/it/defaults.json: Eurostat nrg_pc_205_c, Italy, 2025, energy and supply of the band MWH2000-19999."
+    },
+    {
+      "object": "participant:workshop",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 91.3,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_eurostat_business_prices",
+      "source": "packs/it/defaults.json: Eurostat nrg_pc_205_c, Italy, 2025, network costs and taxes of the band MWH2000-19999 (0.0227 + 0.0686 EUR/kWh), the row a business reads by its professional segment; a household reads 133.2."
     }
   ],
   "operators": [

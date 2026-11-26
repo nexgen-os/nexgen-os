@@ -37,8 +37,21 @@
       "object": "participant:home",
       "attribute_type": "energy_price_household",
       "at": "2026-06-15",
-      "refusal": "parameter_missing",
-      "source": "packs/it loads no Eurostat price yet: its figures were not read on the dataset."
+      "value": 180.0,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_eurostat_household_prices",
+      "source": "packs/it/defaults.json: Eurostat nrg_pc_204_c, Italy, 2025, energy and supply of the household band."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 133.2,
+      "level": "country",
+      "country": "IT",
+      "source_code": "it_eurostat_household_prices",
+      "source": "packs/it/defaults.json: Eurostat nrg_pc_204_c, Italy, 2025, network costs and taxes of the household band (0.0444 + 0.0888 EUR/kWh)."
     }
   ],
   "perimeter": {
