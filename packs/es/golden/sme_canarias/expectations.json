@@ -55,9 +55,9 @@
     {
       "object": "participant:workshop",
       "indicator": "self_consumption_savings_business",
-      "value": 9.0243,
+      "value": 5.4538,
       "tolerance": 1e-06,
-      "source": "37 kWh at 90.9 + 153.0 €/MWh, the business energy price and grid fees and taxes of the pack, 2025."
+      "source": "37 kWh at 90.9 + 56.5 €/MWh, the business energy price and the grid fees and taxes of a professional consumer of the pack (nrg_pc_205_c), 2025."
     }
   ]
 }

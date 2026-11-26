@@ -53,9 +53,9 @@
     {
       "object": "participant:sme",
       "indicator": "self_consumption_savings_business",
-      "value": 22.2999,
+      "value": 24.9306,
       "tolerance": 1e-06,
-      "source": "111 kWh at 101.0 + 99.9 €/MWh, the business energy price and the grid fees and taxes of packs/nl, 2025."
+      "source": "111 kWh at 101.0 + 123.6 €/MWh, the business energy price and the grid fees and taxes of a professional consumer of packs/nl (nrg_pc_205_c), 2025."
     },
     {
       "object": "participant:sme",

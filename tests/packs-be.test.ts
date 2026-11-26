@@ -66,7 +66,7 @@ describe('the be pack', () => {
     const be = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones, region_level, municipality_scheme, pack_version from countries where code = 'BE'`);
     expect(be).toEqual({ name: 'Belgium', currency: 'EUR', languages: ['fr', 'nl', 'de'], time_zones: ['Europe/Brussels'], region_level: 'region',
-      municipality_scheme: 'nis', pack_version: '0.4.2' });
+      municipality_scheme: 'nis', pack_version: '0.5.0' });
     const regions = await db.query<{ code: string }>(`select code from regions where country = 'BE' and kind = 'subdivision' order by code`);
     expect(regions.rows.map((r) => r.code)).toEqual(['BE-BRU', 'BE-VLG', 'BE-WAL']);
     // Its names in the languages of the country, as ISO 3166-2 writes them.
@@ -148,7 +148,16 @@ describe('the be pack', () => {
     }
     expect(await p(brussels, 'energy_price_household', '2024-06-01')).toMatchObject({ value: 156.4, valid_from: '2024-01-01' });
     expect(await p(brussels, 'energy_price_household')).toMatchObject({ value: 154.1, valid_from: '2025-01-01' });
-    expect(await p(brussels, 'grid_fees_and_taxes')).toMatchObject({ value: 199.5 });
+    expect(await p(brussels, 'grid_fees_and_taxes')).toMatchObject({ value: 199.5, conditions: {} });
+    // A professional consumer, and every segment refining it, reads the non-household band;
+    // a residential one keeps the household band. One attribute type, two rows a year.
+    const school = await inRegion(org, 'BE-BRU');
+    const household = await inRegion(org, 'BE-BRU');
+    await db.query(`update participants set segment = 'public_entity' where id = $1`, [school]);
+    await db.query(`update participants set segment = 'individual' where id = $1`, [household]);
+    expect(await p(school, 'grid_fees_and_taxes')).toMatchObject({ value: 92.9, conditions: { segment: 'professional' }, source_code: 'be_eurostat_business_prices' });
+    expect(await p(school, 'grid_fees_and_taxes', '2024-06-01')).toMatchObject({ value: 84.7, valid_from: '2024-01-01' });
+    expect(await p(household, 'grid_fees_and_taxes')).toMatchObject({ value: 199.5, conditions: {}, source_code: 'be_eurostat_household_prices' });
     await expect(p(flanders, 'pv_specific_yield_fallback')).rejects.toThrow(/parameter_missing: pv_specific_yield_fallback .* reached country BE/);
     // An organisation that knows better holds the attribute type as an attribute, and wins.
     await db.query(`insert into attributes (object_kind, object_id, attribute_type, value, source) values ('organisation', $1, 'metering_step', '"PT5M"'::jsonb, 'supply contract')`, [org]);
@@ -167,7 +176,7 @@ describe('the be pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'be' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'be', version: '0.4.2', file: 'supabase/seed/11_pack_be.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'be', version: '0.5.0', file: 'supabase/seed/11_pack_be.sql', state: 'up_to_date' }]);
   });
 });
 
