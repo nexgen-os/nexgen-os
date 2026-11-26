@@ -1,0 +1,83 @@
+{
+  "name": "The bill of a business of Grenoble",
+  "description": "A workshop with PV on its roof still takes energy from the grid: what it costs, its energy part, its grid fees and taxes and the excise among them, and what it emits, every price and factor read from the pack for a professional participant.",
+  "period": {
+    "from": "2026-06-15T09:00:00Z",
+    "to": "2026-06-15T13:00:00Z",
+    "step": "1 hour"
+  },
+  "organisation": "A business of the case",
+  "project": {
+    "name": "Workshop roof PV",
+    "kind": "pv_roof",
+    "country": "FR"
+  },
+  "participants": [
+    {
+      "ref": "plant",
+      "name": "Workshop",
+      "category": "prosumer",
+      "segment": "business",
+      "place": {
+        "country": "FR",
+        "region": "FR-38",
+        "municipality": "38185",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            5.7245,
+            45.1885
+          ]
+        }
+      },
+      "meters": [
+        {
+          "ref": "plant",
+          "identifier": "30006000000002",
+          "scheme": "prm"
+        }
+      ],
+      "devices": [
+        {
+          "ref": "pv",
+          "type": "solar",
+          "name": "Roof PV",
+          "rated_power_kw": 100
+        }
+      ]
+    }
+  ],
+  "series": [
+    {
+      "object": "device:pv",
+      "quantity": "production_energy",
+      "values": [
+        50,
+        70,
+        75,
+        60
+      ],
+      "source": "An input of the case: hourly volumes made up for it, consistent at every hour (production = injection + self-consumption)."
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "injection_energy",
+      "values": [
+        5,
+        10,
+        15,
+        5
+      ]
+    },
+    {
+      "object": "meter:plant",
+      "quantity": "offtake_energy",
+      "values": [
+        40,
+        30,
+        25,
+        45
+      ]
+    }
+  ]
+}
