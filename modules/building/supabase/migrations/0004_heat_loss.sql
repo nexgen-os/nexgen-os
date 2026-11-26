@@ -90,13 +90,19 @@ declare
   v_dd      double precision;
   v_days    int;
   v_missing int;
+  v_tz      text;
 begin
   if to_regprocedure('weather.degree_days(uuid, timestamptz, timestamptz, double precision, text)') is null then
     raise exception 'weather_module_required: the degree-days of a heating need are read by the weather module' using errcode = 'feature_not_supported';
   end if;
-  execute 'select sum(d.degree_days), count(*) filter (where d.degree_days is not null)::int, count(*) filter (where d.degree_days is null)::int
+  execute 'select sum(d.degree_days), count(*) filter (where d.degree_days is not null)::int
              from weather.degree_days($1, $2, $3, $4, ''heating'') d'
-     into v_dd, v_days, v_missing using p_series_id, p_from, p_to, p_base;
+     into v_dd, v_days using p_series_id, p_from, p_to, p_base;
+  -- The local days of the period, in the time zone degree_days() cut them in:
+  -- those without a temperature are missing, whether or not a row says so.
+  execute 'select weather.time_zone_of($1)' into v_tz using p_series_id;
+  select count(*)::int - v_days into v_missing
+    from generate_series((p_from at time zone v_tz)::date, ((p_to at time zone v_tz) - interval '1 microsecond')::date, interval '1 day');
   return jsonb_build_object(
     'kwh', case when v_h is null or v_days = 0 then null else round(v_h * v_dd::numeric * 24 / 1000, 3) end,
     'h_t_w_per_k', v_h,
