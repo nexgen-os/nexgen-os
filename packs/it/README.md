@@ -3,7 +3,7 @@
 The values Italy decides that a function of the model reads, compiled by
 `nexgen-os pack build it` into
 [`supabase/seed/14_pack_it.sql`](../../supabase/seed/14_pack_it.sql).
-Version 0.2.0, certification `community`: checked by the toolchain, read by
+Version 0.3.0, certification `community`: checked by the toolchain, read by
 no Italian professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads an
 Italian register yet, and an address is found by the open geocoders of the
@@ -38,6 +38,10 @@ country's ([0021](../../docs/decisions/0021-one-cascade-of-defaults.md)).
 |---|---|---|
 | `bidding_zone` | by region, from 1 January 2021: NORD `10Y1001A1001A73I` (Piemonte, Valle d'Aosta, Lombardia, Trentino-Alto Adige, Veneto, Friuli Venezia Giulia, Liguria, Emilia-Romagna), CNOR `10Y1001A1001A70O` (Toscana, Marche), CSUD `10Y1001A1001A71M` (Umbria, Lazio, Abruzzo, Campania), SUD `10Y1001A1001A788` (Molise, Puglia, Basilicata), CALA `10Y1001C--00096J` (Calabria), SICI `10Y1001A1001A75E`, SARD `10Y1001A1001A74G`; null for the country, which has seven | GME list of the market zones; ARERA deliberation 103/2019/R/eel; ENTSO-E area list for the codes |
 | `control_area` | `10YIT-GRTN-----B` for the whole country | ENTSO-E area list |
+| `energy_price_household` | 180.0 €/MWh (2024 and 2025): energy and supply of the household band KWH2500-4999, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `energy_price_business` | 126.7 €/MWh (2024), 131.2 €/MWh (2025): energy and supply of the non-household band MWH2000-19999, VAT excluded | Eurostat `nrg_pc_205_c` |
+| `grid_fees_and_taxes` | 139.3 €/MWh (2024), 133.2 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 90.6 €/MWh (2024), 91.3 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it | Eurostat `nrg_pc_205_c` |
 | `grid_co2_factor` | 0.1926 kg CO2/kWh consumed, 2024: network losses and the imported share included | ISPRA, Rapporti 430/2026, Tabella 1.7 |
 | `vat_rate_electricity` | 0.22, the ordinary rate, from 1 October 2013, which the common parts of a condominium (`coproperty`) bear too; 0.10 for an `individual` participant (domestic use) | DPR 633/1972, article 16 and table A, part III, number 103; Agenzia delle Entrate, answer 142 of 3 March 2021 |
 | `sharing_perimeter` | `["same_substation"]` for a project `it_cer` or `it_autoconsumatore_a_distanza`, from 24 January 2024 | the incentive of the decree 414/2023 on the energy shared under one primary substation, as the Chamber of Deputies' note states it |
@@ -91,8 +95,8 @@ figures an installation must find from it (`tests/golden.test.ts`,
 | Case | Kind | What it checks |
 |---|---|---|
 | `cer_bologna` | `it_cer` in Bologna | a flat in by its primary substation, a shop out on another; the perimeter refused before 24 January 2024; the hourly settlement period; the zone NORD; the domestic VAT of a household; the shares of a proportional key and the shared rate |
-| `household_roma` | `pv_roof` in Roma | the operator of a meter found by its POD prefix (Areti), the zone CSUD, the control area, the domestic VAT, no household price loaded, self-consumption of a house |
-| `sme_palermo` | `pv_roof` in Palermo | the zone SICI and its refusal before 2021, the ordinary VAT of a business, the operator by POD prefix (e-distribuzione), self-consumption of a workshop and the CO2 it avoids at the ISPRA factor |
+| `household_roma` | `pv_roof` in Roma | the operator of a meter found by its POD prefix (Areti), the zone CSUD, the control area, the domestic VAT, the household price and network costs, self-consumption of a house |
+| `sme_palermo` | `pv_roof` in Palermo | the zone SICI and its refusal before 2021, the ordinary VAT of a business, its business price and the network costs of a professional, the operator by POD prefix (e-distribuzione), self-consumption of a workshop and the CO2 it avoids at the ISPRA factor |
 
 ## What to check next
 
@@ -130,12 +134,8 @@ figures an installation must find from it (`tests/golden.test.ts`,
   confirmed, so `grid.market_of()` gives none for an Italian place.
 - **Metering step**: the step of the readings of the second-generation
   meters was not read on the regulator's text: not loaded.
-- **Prices, network costs and taxes**: the Eurostat figures for Italy
-  (`nrg_pc_204_c`, `nrg_pc_205_c`) could not be read on the dataset itself:
-  `energy_price_household`, `energy_price_business` and
-  `grid_fees_and_taxes` are not loaded, and the cases show the refusal.
-  The excise on electricity (accisa), whose amounts depend on the use and
-  the monthly consumption, is not loaded either; nor are the time bands
+- **Excise and time bands**: the excise on electricity (accisa), whose
+  amounts depend on the use and the monthly consumption, is not loaded; nor are the time bands
   F1, F2 and F3 of the regulator (`offpeak_hours`).
 - **VAT**: the 10 % of number 103 also covers the electricity of
   extractive, agricultural and manufacturing enterprises, which no segment

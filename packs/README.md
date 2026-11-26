@@ -169,5 +169,5 @@ professional of the country read it, written with the day in `pack.json`.
 | [`de`](de/README.md) | 0.2.0, `community`: compiled into `supabase/seed/13_pack_de.sql` |
 | [`es`](es/README.md) | 0.6.0, `community`: compiled into `supabase/seed/12_pack_es.sql` |
 | [`fr`](fr/README.md) | 0.5.0, `community`: compiled into `supabase/seed/10_pack_fr.sql` |
-| [`it`](it/README.md) | 0.2.0, `community`: compiled into `supabase/seed/14_pack_it.sql` |
+| [`it`](it/README.md) | 0.3.0, `community`: compiled into `supabase/seed/14_pack_it.sql` |
 | [`nl`](nl/README.md) | 0.3.0, `community`: compiled into `supabase/seed/15_pack_nl.sql` |
