@@ -5,6 +5,14 @@
       "attribute_type": "sharing_max_distance_m",
       "at": "2026-06-15",
       "value": 20000,
+      "level": "project",
+      "source": "The project's own distance, the derogation granted (scenario.json), read before the pack's 2 km."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "sharing_max_distance_derogation_m",
+      "at": "2026-06-15",
+      "value": 20000,
       "level": "country",
       "country": "FR",
       "conditions": {
@@ -12,11 +20,11 @@
         "density_class": "rural_very_dispersed"
       },
       "source_code": "fr_arrete_acc_perimeter",
-      "source": "packs/fr/defaults.json: 20 km by derogation in a rural municipality, the arrêté of 21 November 2019 as amended in 2023; Arandas is rural_very_dispersed in packs/fr/municipalities.json."
+      "source": "packs/fr/defaults.json: 20 km at most by derogation, on request to the minister in a rural municipality, the arrêté of 21 November 2019 as amended in 2023; Arandas is rural_very_dispersed in packs/fr/municipalities.json."
     },
     {
       "object": "participant:sawmill",
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "at": "2026-06-15",
       "value": 20000,
       "level": "country",

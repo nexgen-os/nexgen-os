@@ -1,6 +1,6 @@
 {
   "name": "A collective self-consumption in rural Ain, within 20 km",
-  "description": "A barn roof of Arandas (rural, very dispersed) shares with a farm of Arandas and a dairy and a sawmill of Anglefort (a rural town): rural municipalities extend the perimeter to 20 km. The sawmill, 23 km from the barn, breaks it for both. The settlement leaves the sawmill out of the sharing and keeps the barn; the example engine shares among the others.",
+  "description": "A barn roof of Arandas (rural, very dispersed) shares with a farm of Arandas and a dairy and a sawmill of Anglefort (a rural town): rural municipalities allow the perimeter to reach 20 km on request to the minister, and the project records the derogation granted. The sawmill, 23 km from the barn, breaks it for both. The settlement leaves the sawmill out of the sharing and keeps the barn; the example engine shares among the others.",
   "period": {
     "from": "2026-06-15T09:00:00Z",
     "to": "2026-06-15T13:00:00Z",
@@ -127,6 +127,13 @@
     }
   ],
   "attributes": [
+    {
+      "object": "project",
+      "attribute_type": "sharing_max_distance_m",
+      "value": 20000,
+      "valid_from": "2026-01-01T00:00:00Z",
+      "source": "The derogation the minister granted the operation, an input of the case: 20 km between the members furthest apart, the most a derogation may grant where every member is in a rural municipality."
+    },
     {
       "object": "project",
       "attribute_type": "allocation_key",

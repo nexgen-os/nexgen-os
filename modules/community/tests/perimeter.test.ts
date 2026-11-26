@@ -37,25 +37,37 @@ afterAll(async () => {
 });
 
 describe('France: an extended collective self-consumption', () => {
-  it('holds the two participants furthest apart within the smallest distance any of their municipalities allows', async () => {
+  it('holds the two participants furthest apart within the distance of the rules, and a greater one only once the project records its derogation', async () => {
     const acc = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'ACC', 'fr_acc', 'FR') returning id`, [org])).id;
-    // Arandas (rural, 20 km), Belley (urban belt, 10 km): 10 km holds for all.
+    // Arandas (rural, 20 km by derogation), Belley (urban belt, 10 km by derogation), 8 km apart.
     await join(acc, 'Plant', 'producer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 0) });
     await join(acc, 'Near', 'consumer', { country: 'FR', region: 'FR-01', municipality: '01034', geometry: east(5.4, 45.8, 8) });
+    const before = await check(acc);
+    // No derogation granted: the general 2 km hold, and the criterion says what a request may grant, 10 km for all.
+    expect(before.Near.in_perimeter).toBe(false);
+    expect(before.Near.criteria[0]).toMatchObject({ criterion: 'max_distance_between_members', in: false, value_m: 2000, derogation_m: 10000 });
+    expect(before.Near.criteria[0].value_from).toMatchObject({ level: 'country', conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter' });
+    expect(before.Near.criteria[0].derogation_from).toMatchObject({ conditions: { project_kind: 'fr_acc', density_class: 'urban_belt' }, source_code: 'fr_arrete_acc_perimeter' });
+    expect(before.Near.rule).toMatchObject({ criteria: ['max_distance_between_members'], level: 'country', conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter' });
+
+    // The derogation granted is the project's own distance, its decision the source, from the day it is granted.
+    await db.query(`select set_attribute('project', $1, 'sharing_max_distance_m', '10000'::jsonb, '2026-05-01', null, 'Decision of the minister granting the derogation, 1 May 2026', 'published')`, [acc]);
+    expect((await check(acc, '2026-04-30')).Near.in_perimeter).toBe(false);
     const r = await check(acc);
     expect(r.Near.in_perimeter).toBe(true);
-    expect(r.Near.criteria[0]).toMatchObject({ criterion: 'max_distance_between_members', in: true, value_m: 10000 });
+    expect(r.Near.criteria[0]).toMatchObject({ criterion: 'max_distance_between_members', in: true, value_m: 10000, derogation_m: 10000 });
     expect(r.Near.criteria[0].distance_m).toBeCloseTo(8000, -2);
-    expect(r.Near.criteria[0].value_from).toMatchObject({ conditions: { project_kind: 'fr_acc', density_class: 'urban_belt' }, source_code: 'fr_arrete_acc_perimeter' });
-    expect(r.Near.rule).toMatchObject({ criteria: ['max_distance_between_members'], level: 'country', conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter' });
+    expect(r.Near.criteria[0].value_from).toMatchObject({ level: 'project', object_id: acc, reference: 'Decision of the minister granting the derogation, 1 May 2026', quality: 'published' });
 
     // A third member 12 km from the plant: the pair furthest apart breaks the rule, both its ends are out.
     await join(acc, 'Far', 'consumer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 12) });
     const again = await check(acc);
     expect([again.Plant.in_perimeter, again.Near.in_perimeter, again.Far.in_perimeter]).toEqual([false, true, false]);
-    // A member in Lyon (a large urban centre, 2 km) brings every distance down to 2 km.
+    // A member in Lyon (a large urban centre) allows no derogation: none is said, the project's decision is still read.
     await join(acc, 'City', 'consumer', { country: 'FR', region: 'FR-69M', municipality: '69123', geometry: east(5.4, 45.8, 1) });
-    expect((await check(acc)).City.criteria[0]).toMatchObject({ value_m: 2000, in: false });
+    const city = (await check(acc)).City.criteria[0];
+    expect(city).toMatchObject({ value_m: 10000, in: false });
+    expect(city).not.toHaveProperty('derogation_m');
   });
 
   it('answers null for a participant without a place on the map, and refuses a project with no rule by name', async () => {

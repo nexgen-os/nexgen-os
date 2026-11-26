@@ -45,7 +45,7 @@ describe('the fr pack', () => {
     const fr = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones[1] tz, region_level, municipality_scheme, pack_version from countries where code = 'FR'`);
     expect(fr).toEqual({ name: 'France', currency: 'EUR', languages: ['fr'], tz: 'Europe/Paris', region_level: 'department',
-      municipality_scheme: 'insee', pack_version: '0.5.0' });
+      municipality_scheme: 'insee', pack_version: '0.6.0' });
     const departments = await one<{ n: number; regions: number }>(db,
       `select count(*) filter (where parent_code is not null or code ~ '^FR-97')::int n, count(*) filter (where parent_code is null and code !~ '^FR-97')::int regions from regions where country = 'FR' and kind = 'subdivision'`);
     expect(departments).toEqual({ n: 103, regions: 13 });
@@ -176,7 +176,7 @@ describe('the fr pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'fr' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'fr', version: '0.5.0', file: 'supabase/seed/10_pack_fr.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'fr', version: '0.6.0', file: 'supabase/seed/10_pack_fr.sql', state: 'up_to_date' }]);
   });
 
   it('reads the national address register with house-number precision and the department as region', async () => {
@@ -249,10 +249,14 @@ describe('what France decides per frame, segment and municipality', () => {
     const unlisted = await memberOf(acc, 'Ailleurs', '01007', 'FR-01');
     expect(await p(arandas, 'density_class')).toMatchObject({ value: 'rural_very_dispersed', level: 'municipality', region: 'FR-01013', source_code: 'fr_insee_density_grid' });
     expect(await p(lyon, 'sharing_max_distance_m')).toMatchObject({ value: 2000, level: 'country', conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter' });
-    expect(await p(belley, 'sharing_max_distance_m')).toMatchObject({ value: 10000, conditions: { project_kind: 'fr_acc', density_class: 'urban_belt' } });
-    expect(await p(arandas, 'sharing_max_distance_m')).toMatchObject({ value: 20000, conditions: { project_kind: 'fr_acc', density_class: 'rural_very_dispersed' } });
-    // A municipality the pack does not list has no class: the general rule holds.
+    // The greater distances are granted on request to the minister: the pack says what a derogation may grant, never applies it.
+    expect(await p(belley, 'sharing_max_distance_m')).toMatchObject({ value: 2000, conditions: { project_kind: 'fr_acc' } });
+    expect(await p(belley, 'sharing_max_distance_derogation_m')).toMatchObject({ value: 10000, conditions: { project_kind: 'fr_acc', density_class: 'urban_belt' } });
+    expect(await p(arandas, 'sharing_max_distance_derogation_m')).toMatchObject({ value: 20000, conditions: { project_kind: 'fr_acc', density_class: 'rural_very_dispersed' } });
+    // A municipality the pack does not list has no class: the general rule holds, and no derogation is said.
     expect(await p(unlisted, 'sharing_max_distance_m')).toMatchObject({ value: 2000, conditions: { project_kind: 'fr_acc' } });
+    await expect(p(unlisted, 'sharing_max_distance_derogation_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_derogation_m/);
+    await expect(p(lyon, 'sharing_max_distance_derogation_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_derogation_m/);
     // An individual self-consumption has no perimeter.
     const aci = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'Toiture', 'fr_aci', 'FR') returning id`, [org])).id;
     const roof = await memberOf(aci, 'Ferme', '01013', 'FR-01');

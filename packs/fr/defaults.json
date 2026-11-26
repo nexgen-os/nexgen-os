@@ -373,7 +373,7 @@
       "valid_from": "2023-10-08"
     },
     {
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",
         "density_class": "urban_belt"
@@ -385,7 +385,7 @@
       "valid_from": "2023-10-08"
     },
     {
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",
         "density_class": "small_town"
@@ -397,7 +397,7 @@
       "valid_from": "2023-10-08"
     },
     {
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",
         "density_class": "rural_town"
@@ -409,7 +409,7 @@
       "valid_from": "2023-10-08"
     },
     {
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",
         "density_class": "rural_dispersed"
@@ -421,7 +421,7 @@
       "valid_from": "2023-10-08"
     },
     {
-      "attribute_type": "sharing_max_distance_m",
+      "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",
         "density_class": "rural_very_dispersed"
