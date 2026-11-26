@@ -19,7 +19,7 @@ const OF_0_4_0 = [
   'modules/community/supabase/migrations/0003_participant_category.sql',
 ];
 /** Written after 0.4.0, applied by the same `migrate`. */
-const SINCE_0_4_0 = ['modules/solar/supabase/migrations/0005_system_loss.sql'];
+const SINCE_0_4_0 = ['modules/solar/supabase/migrations/0005_system_loss.sql', 'modules/community/supabase/migrations/0005_derogation.sql'];
 
 let old: string;
 let db: PGlite;
