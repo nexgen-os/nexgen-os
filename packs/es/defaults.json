@@ -68,6 +68,29 @@
       "valid_from": "2025-01-01"
     },
     {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 55.1,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Spain, 2024, band MWH2000-19999, components NETC 0.0187 and TAX_FEE_LEV_CHRG 0.0364 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 56.5,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "es_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Spain, 2025, band MWH2000-19999, components NETC 0.0184 and TAX_FEE_LEV_CHRG 0.0381 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
       "attribute_type": "grid_co2_factor",
       "value": 0.10305,
       "unit": "KiloGM-PER-KiloW-HR",

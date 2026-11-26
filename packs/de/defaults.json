@@ -132,6 +132,29 @@
       "valid_from": "2025-01-01"
     },
     {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 128.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Germany, 2024, band MWH2000-19999, components NETC 0.0543 and TAX_FEE_LEV_CHRG 0.0739 EUR/kWh, VAT excluded",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 132.2,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "de_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, Germany, 2025, band MWH2000-19999, components NETC 0.0554 and TAX_FEE_LEV_CHRG 0.0768 EUR/kWh, VAT excluded",
+      "valid_from": "2025-01-01"
+    },
+    {
       "attribute_type": "injection_price_reference",
       "value": 78.51,
       "unit": "EUR-PER-MegaW-HR",

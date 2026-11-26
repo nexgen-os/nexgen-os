@@ -103,6 +103,29 @@
       "valid_from": "2025-01-01"
     },
     {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 84.7,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2024, band MWH2000-19999, components NETC 0.0217 and TAX_FEE_LEV_CHRG 0.0630 EUR/kWh, VAT excluded; a national mean, the network costs differ by region",
+      "valid_from": "2024-01-01",
+      "valid_to": "2025-01-01"
+    },
+    {
+      "attribute_type": "grid_fees_and_taxes",
+      "condition": {
+        "segment": "professional"
+      },
+      "value": 92.9,
+      "unit": "EUR-PER-MegaW-HR",
+      "source_code": "be_eurostat_business_prices",
+      "reference": "nrg_pc_205_c, 2025, band MWH2000-19999, components NETC 0.0319 and TAX_FEE_LEV_CHRG 0.0610 EUR/kWh, VAT excluded; a national mean, the network costs differ by region",
+      "valid_from": "2025-01-01"
+    },
+    {
       "attribute_type": "vat_rate_electricity",
       "value": 0.06,
       "unit": "UNITLESS",

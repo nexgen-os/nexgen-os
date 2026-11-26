@@ -2,8 +2,8 @@
   "$schema": "../schema/pack.1.json",
   "country": "ES",
   "name": "Spain",
-  "version": "0.5.0",
-  "checksum": "sha256:2db7a8f063bd554e5fec6748ee1ae1ba0a78b17e8049f49c35129cb163969288",
+  "version": "0.6.0",
+  "checksum": "sha256:327625c14af6b3860ef66f75bba8cef97e34d967129e6fd595e86081f9fdf65e",
   "schema_min": "0.3.0",
   "seed_sequence": 12,
   "certification": {
