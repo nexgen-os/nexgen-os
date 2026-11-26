@@ -52,7 +52,7 @@ the most specific row the object meets
 [0044](../docs/decisions/0044-a-condition-has-one-shape.md)):
 
 ```json
-{ "attribute_type": "sharing_max_distance_m", "condition": { "project_kind": "fr_acc", "density_class": "rural_town" },
+{ "attribute_type": "sharing_max_distance_derogation_m", "condition": { "project_kind": "fr_acc", "density_class": "rural_town" },
   "value": 20000, "unit": "M", "source_code": "fr_arrete_acc_perimeter", "reference": "Article 1", "valid_from": "2023-10-08" }
 ```
 
@@ -83,7 +83,10 @@ energy sharing operation is a value like any other: `sharing_perimeter`
 (the criteria any one of which suffices) with the values the criteria read
 (`sharing_max_distance_m`, `sharing_radius_m`,
 `sharing_municipality_extension_m`), each for the frame of projects that
-decides it; `community.check_perimeter()` reads them. A value that depends on the company, a contract or an option is
+decides it; `community.check_perimeter()` reads them. A greater distance the
+rules grant only on request is `sharing_max_distance_derogation_m`, said and
+never applied by itself: the derogation granted is the project's own
+`sharing_max_distance_m`, with the decision as its source. A value that depends on the company, a contract or an option is
 `null` with its reference. Nothing is deleted: a value that changes gets a
 `valid_to`, and the new value is a new row starting that day.
 

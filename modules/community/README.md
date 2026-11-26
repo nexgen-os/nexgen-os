@@ -110,11 +110,24 @@ otherwise):
 
 | Criterion | Reads | Measures |
 |---|---|---|
-| `max_distance_between_members` | `sharing_max_distance_m`, the smallest any participant's place gives (a density class, a municipality) | the greatest distance from the participant to another |
+| `max_distance_between_members` | `sharing_max_distance_m`, the project's own (a derogation granted) or the smallest any participant's place gives (a municipality); beside it, `sharing_max_distance_derogation_m`, what a derogation may grant | the greatest distance from the participant to another |
 | `radius_around_producer` | `sharing_radius_m`, the smallest any participant's place gives | the distance to the nearest producer |
 | `same_municipality` | the municipality of the place; `sharing_municipality_extension_m` for a producer's technology | whether a producer is in the participant's municipality |
 | `same_substation` | `grid.same_substation()`, when `grid` is installed | whether the participant and the producers sit downstream of one substation |
 | `same_region` | the region of the place | whether the producers are in its region |
+
+A greater distance the rules grant only on request (in France, by the
+density class of the municipalities, on request to the minister) is never
+applied by itself. The criterion says it as `derogation_m`, the smallest any
+participant's place allows, with `derogation_from`, and only when every place
+allows one; once the derogation is granted, the project records it as its own
+`sharing_max_distance_m`, the decision as its source and its date as
+`valid_from`, and the criterion reads it first:
+
+```sql
+select set_attribute('project', :project, 'sharing_max_distance_m', '20000'::jsonb,
+                     '2026-05-01', null, 'Decision of the minister granting the derogation', 'published');
+```
 
 Each row is a figure that says where it comes from: `in_perimeter`, each
 criterion with its answer, its value, its distance and the default it was
