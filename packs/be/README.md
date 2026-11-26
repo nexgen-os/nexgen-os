@@ -3,7 +3,7 @@
 The values Belgium decides that a function of the model reads, compiled by
 `nexgen-os pack build be` into
 [`supabase/seed/11_pack_be.sql`](../../supabase/seed/11_pack_be.sql).
-Version 0.4.0, certification `community`: checked by the toolchain, read by
+Version 0.5.0, certification `community`: checked by the toolchain, read by
 no Belgian professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.
 
@@ -53,7 +53,8 @@ language of the request first.
 | `imbalance_settlement_period` | `PT15M` | Elia open data, imbalance prices per quarter-hour |
 | `energy_price_household` | 156.4 €/MWh (2024), 154.1 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 110.8 €/MWh (2024), 102.5 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
-| `grid_fees_and_taxes` | 176.9 €/MWh (2024), 199.5 €/MWh (2025): network costs and taxes of the household band, VAT excluded; a national mean | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes` | 176.9 €/MWh (2024), 199.5 €/MWh (2025): network costs and taxes of the household band (`segment` residential, and any participant without a professional segment), VAT excluded; a national mean | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 84.7 €/MWh (2024), 92.9 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it; a national mean | Eurostat `nrg_pc_205_c` |
 | `vat_rate_electricity` | 0.06 from 1 April 2023, for a private customer, a ratio kept for simulation | FPS Finance, "Uw energiefactuur" |
 | `vat_rate_electricity`, `vat_code_electricity` (`segment` `professional`) | 0.21 and `BE-S-21` from 1 April 2023: a contract with a company number is presumed professional unless the customer declares a mainly non-professional consumption, and keeps the normal rate | FPS Finance, circular 2023/C/64 |
 | `vat_code_electricity` | `BE-S-06` over the same period: the sale tax of Ekwo OS's pack for Belgium (`taxes.json`) the rate above mirrors, which an invoice takes ([with Ekwo OS](../../docs/with-ekwo-os.md#one-source-on-a-shared-database)) | FPS Finance, "Uw energiefactuur" |

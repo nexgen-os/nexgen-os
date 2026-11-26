@@ -3,7 +3,7 @@
 The values Germany decides that a function of the model reads, compiled by
 `nexgen-os pack build de` into
 [`supabase/seed/13_pack_de.sql`](../../supabase/seed/13_pack_de.sql).
-Version 0.1.0, certification `community`: checked by the toolchain, read by
+Version 0.2.0, certification `community`: checked by the toolchain, read by
 no German professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads a
 German register yet, and an address is found by the open geocoders of the
@@ -40,7 +40,8 @@ value first, then the country's
 | `metering_step` | `PT15M`: a metered load profile for a consumer above 100 000 kWh a year or with a smart metering system; any other meter gives index readings only | MsbG § 55 (1) |
 | `energy_price_household` | 165.4 €/MWh (2024), 148.1 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 123.5 €/MWh (2024), 105.2 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
-| `grid_fees_and_taxes` | 229.4 €/MWh (2024), 237.1 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes` | 229.4 €/MWh (2024), 237.1 €/MWh (2025): network costs and taxes of the household band (`segment` residential, and any participant without a professional segment), VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 128.2 €/MWh (2024), 132.2 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it | Eurostat `nrg_pc_205_c` |
 | `injection_price_reference` | 78.51 €/MWh (2024), 89.32 €/MWh (2025): mean day-ahead wholesale price | Bundesnetzagentur, SMARD data 2025 (press release of 4 January 2026) |
 | `grid_co2_factor` | 0.363 kg CO2/kWh consumed, 2024 | Umweltbundesamt |
 | `market_co2_factor` | 0.72456 kg CO2/kWh, the residual mix of 2024 (direct emissions, for electricity disclosure) | Association of Issuing Bodies, European Residual Mixes 2024, Table 2, page 7 (final version of 11 August 2025) |

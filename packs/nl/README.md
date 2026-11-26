@@ -3,7 +3,7 @@
 The values the Netherlands decide that a function of the model reads,
 compiled by `nexgen-os pack build nl` into
 [`supabase/seed/15_pack_nl.sql`](../../supabase/seed/15_pack_nl.sql).
-Version 0.2.0, certification `community`: checked by the toolchain, read by
+Version 0.3.0, certification `community`: checked by the toolchain, read by
 no Dutch professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words.
 
@@ -47,7 +47,8 @@ language a page or an agent speaks is the application's.
 | `sharing_settlement_period` (`nl_energie_delen`, `nl_energiegemeenschap`) | `PT15M`: electricity is shared per imbalance settlement period | Energiewet, article 2.30, first paragraph, d |
 | `energy_price_household` | 170.2 €/MWh (2024), 146.7 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 116.9 €/MWh (2024), 101.0 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
-| `grid_fees_and_taxes` | 64.3 €/MWh (2024), 99.9 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes` | 64.3 €/MWh (2024), 99.9 €/MWh (2025): network costs and taxes of the household band (`segment` residential, and any participant without a professional segment), VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 120.1 €/MWh (2024), 123.6 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it | Eurostat `nrg_pc_205_c` |
 | `grid_co2_factor` | 0.20 kg CO2/kWh produced, 2024, all production renewable and not | CBS, Energie- en emissiefactoren elektriciteit, update 2024, table 1 (integral method) |
 | `vat_rate_electricity` | 0.21 from 1 January 2023 | Wet op de omzetbelasting 1968, article 9, first paragraph; electricity is not in table I |
 | `voltage_levels` | low voltage up to 1 kV, medium voltage up to 35 kV, high voltage up to 150 kV, extra-high voltage 220 and 380 kV | Netcode elektriciteit, article 8.1 |

@@ -3,7 +3,7 @@
 The values Spain decides that a function of the model reads, compiled by
 `nexgen-os pack build es` into
 [`supabase/seed/12_pack_es.sql`](../../supabase/seed/12_pack_es.sql).
-Version 0.5.0, certification `community`: checked by the toolchain, read by
+Version 0.6.0, certification `community`: checked by the toolchain, read by
 no Spanish professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; no connector of this repository reads a
 Spanish register yet, and an address is found by the open geocoders of the
@@ -40,7 +40,8 @@ of the Canary Islands is written on `ES-CN`).
 | `bidding_zone`, `control_area` | `10YES-REE------0` for the whole country, the one area code the list gives both functions | ENTSO-E list of EIC codes |
 | `energy_price_household` | 110.8 €/MWh (2024), 110.8 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 93.5 €/MWh (2024), 90.9 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
-| `grid_fees_and_taxes` | 127.5 €/MWh (2024), 153.0 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes` | 127.5 €/MWh (2024), 153.0 €/MWh (2025): network costs and taxes of the household band (`segment` residential, and any participant without a professional segment), VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 55.1 €/MWh (2024), 56.5 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it | Eurostat `nrg_pc_205_c` |
 | `grid_co2_factor` | 0.10305 kg CO2/kWh (2024), 0.10839 kg CO2/kWh (2025): the CO2 of the electricity generated, renewables at zero | Red Eléctrica, REData, emissions and emission factor of the non-renewable generation, national, yearly |
 | `vat_rate_electricity` | 0.21 from 1 January 2025 to 21 March 2026; null in the Canary Islands, Ceuta and Melilla, outside the territory of VAT | Ley 37/1992, articles 90 and 3 |
 | `offpeak_hours` | null for the country (the periods follow the access tariff); `[["00:00", "08:00"]]` for a `residential` participant: period 3 of the 2.0 TD tariff on working days, every hour of weekends, 6 January and fixed national holidays being period 3 too | CNMC Circular 3/2020, article 7.3 |

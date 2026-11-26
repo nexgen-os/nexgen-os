@@ -3,7 +3,7 @@
 The values France decides that a function of the model reads, compiled by
 `nexgen-os pack build fr` into
 [`supabase/seed/10_pack_fr.sql`](../../supabase/seed/10_pack_fr.sql).
-Version 0.4.0, certification `community`: checked by the toolchain, read by
+Version 0.5.0, certification `community`: checked by the toolchain, read by
 no French professional yet. Installing it needs the `grid` module. Nothing
 here is code or law in words; the national address register answers in
 [`packages/connectors/ban`](../../packages/connectors/ban/README.md).
@@ -51,7 +51,8 @@ the pack does not list has no class, and the general rule (2 km) holds.
 | `market_co2_factor` | 0.02352 kg CO2/kWh, the residual mix of 2024 (direct emissions, for electricity disclosure) | Association of Issuing Bodies, European Residual Mixes 2024, Table 2, page 7 (final version of 11 August 2025) |
 | `energy_price_household` | 152.3 €/MWh (2024), 108.8 €/MWh (2025), band 2 500–4 999 kWh, energy and supply | Eurostat `nrg_pc_204_c` |
 | `energy_price_business` | 111.0 €/MWh (2024), 88.2 €/MWh (2025), band 2 000–19 999 MWh | Eurostat `nrg_pc_205_c` |
-| `grid_fees_and_taxes` | 136.3 €/MWh (2024), 153.2 €/MWh (2025): network costs and taxes of the household band, VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes` | 136.3 €/MWh (2024), 153.2 €/MWh (2025): network costs and taxes of the household band (`segment` residential, and any participant without a professional segment), VAT excluded | Eurostat `nrg_pc_204_c` |
+| `grid_fees_and_taxes`, `professional` | 56.7 €/MWh (2024), 59.2 €/MWh (2025): network costs and taxes of the non-household band MWH2000-19999, VAT excluded, for a `professional` participant and the segments refining it | Eurostat `nrg_pc_205_c` |
 | `injection_price_reference` | 58 €/MWh (2024), 61.1 €/MWh (2025): yearly mean day-ahead price | RTE, Bilan électrique 2024 and 2025 |
 | `vat_rate_electricity` | 0.20 from 1 August 2025, subscription and energy alike, a ratio kept for simulation | BOFiP BOI-RES-TVA-000209 |
 | `vat_code_electricity` | `FR-S-20` over the same period: the sale tax of Ekwo OS's pack for France (`taxes.json`) the rate above mirrors, which an invoice takes ([with Ekwo OS](../../docs/with-ekwo-os.md#one-source-on-a-shared-database)) | BOFiP BOI-RES-TVA-000209 |
