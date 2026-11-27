@@ -142,9 +142,13 @@ Refusals: `project_not_found`, `participants_missing`, `producer_missing`,
 `community.check_power(project, day)` reads the installed power of the
 operation against the greatest its rules allow:
 `{max_kw, installed_kw, within, producers, value_from}`. The cap is
-`sharing_max_power_kw`, resolved for the project by `parameter_of()` (a
-default of its pack for the kind of the project, or the project's own
-attribute with its source); the power is never entered, it is the sum of
+`sharing_max_power_kw`, resolved by `parameter_of()` for each participant
+taking part on the day — the project's own attribute with its source first
+(a cap granted by derogation, recorded with its decision), then the default
+of its pack for the participant's region and the kind of the project — and
+the smallest applies, as a perimeter holds for the whole operation; without
+a participant taking part, the project's is read. In France the pack gives
+5 MW on the mainland and 0.5 MW in the non-interconnected zones. The power is never entered, it is the sum of
 `installed_power()` of the producers and prosumers taking part, computed
 from their devices ([0065](../../docs/decisions/0065-a-value-is-written-once.md)).
 `within` is null when either is missing.

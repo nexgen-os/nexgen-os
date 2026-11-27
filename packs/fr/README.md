@@ -140,13 +140,19 @@ figures an installation must find from it (`tests/golden.test.ts`,
   hours of wind: no official page gives a national mean in kWh/kWp; RTE
   publishes load factors (solar 12.8 % in 2024 and 13.6 % in 2025, onshore
   wind 21.8 % and 21.4 %), which are not the attribute type's quantity.
-- **Energy sharing**: the 5 MW ceiling (`sharing_max_power_kw`) since the
-  order of 21 February 2025 amending the order of 21 November 2019 (0.5 MW
-  in the non-interconnected zones), and whether that order also moved the
-  distances, to be read on the consolidated text on Légifrance, which could
-  not be opened when this pack was written; the distances are those of the
-  2023 amendment, as the professional guide of the photovoltaic sector
-  states them, and the Légifrance identifier of the order is to be confirmed.
+- **Energy sharing**: the ceiling (`sharing_max_power_kw`) of an `fr_acc`,
+  below 5 MW on the mainland and 0.5 MW in the non-interconnected zones
+  (FR-2A, FR-2B, FR-971 to FR-976), is loaded from 6 March 2025, the day
+  after the order of 21 February 2025 amending the order of 21 November
+  2019 was published in the Journal officiel; the figures are those of the
+  professional guide of the photovoltaic sector (photovoltaique.info, read
+  on 27 November 2026), Légifrance refusing an automated reading. Still to
+  be read by a person on the consolidated text: the article numbers, the
+  day the order took effect, the ceilings before it (3 MW), and the 10 MW a
+  derogation grants to an operation of a municipality or an EPCI of public
+  bodies, which a project records as its own `sharing_max_power_kw` with
+  the decision as its source. The distances are those of the 2023
+  amendment, as the same guide states them.
 - **Excise on electricity** (`electricity_excise`): the categories of the
   law follow the subscribed power (up to 36 kVA, up to 250 kVA, above), which
   the pack approximates by the segment; the rate of a household before the
