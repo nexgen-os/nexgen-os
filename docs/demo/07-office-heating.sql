@@ -8,8 +8,8 @@
 -- setpoint of the building, the boiler's flow temperature, a winter week of
 -- gas consumption, and the second heat pump planned to replace the boiler
 -- once the facades are insulated, with the insulation design as a document.
--- A heat loss computed for either envelope would be a figure of a `thermal`
--- module, which does not ship yet.
+-- The heat loss of the envelope is read from its faces, never stored
+-- (`building.transmission_heat_loss()`).
 
 insert into organisations (id, name) values
   ('00000000-0000-4000-8000-000700000001', 'Beispiel Immobilien GmbH');
@@ -39,6 +39,11 @@ update building.surfaces set u_value = 1.4, material = 'concrete, 1979 cladding'
  where building_id = '00000000-0000-4000-8000-000700000020' and kind = 'facade';
 update building.surfaces set u_value = 0.22, material = 'bitumen, insulated 2015', is_external = true
  where id = '00000000-0000-4000-8000-000700000035';
+-- The areas of the faces, from the footprint (about 44.6 by 33.4 m) and the
+-- height of 21 m.
+update building.surfaces set area_m2 = 936 where id in ('00000000-0000-4000-8000-000700000031', '00000000-0000-4000-8000-000700000032');
+update building.surfaces set area_m2 = 701 where id in ('00000000-0000-4000-8000-000700000033', '00000000-0000-4000-8000-000700000034');
+update building.surfaces set area_m2 = 1489 where id = '00000000-0000-4000-8000-000700000035';
 
 insert into meters (id, organisation_id, participant_id, name, identifier, scheme, resource, direction) values
   ('00000000-0000-4000-8000-000700000041', '00000000-0000-4000-8000-000700000001', '00000000-0000-4000-8000-000700000010', 'Electricity', '400000000000000311', 'gs1_gsrn', 'electricity', 'both'),
@@ -89,6 +94,8 @@ insert into documents (object_kind, object_id, name, kind, uri, media_type, sour
 -- The envelope today:
 --   select s.name, s.u_value, s.material from building.surfaces s
 --    where s.building_id = '00000000-0000-4000-8000-000700000020' order by s.name;
+-- What it loses through them, 4911.18 W/K, 93 % through the facades:
+--   select building.transmission_heat_loss('00000000-0000-4000-8000-000700000020');
 -- Daily gas over the week:
 --   select bucket::date, value m3 from resample('00000000-0000-4000-8000-000700000071', '2026-01-19', '2026-01-26', '1 day');
 -- What is planned:

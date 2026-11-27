@@ -22,7 +22,7 @@ so that the queries at the end of each file can be copied as they are.
 | `04-farm-solar.sql` | agriculture, ground and carport PV | FR | a farm as one participant, PV on roof, ground and carport, import and export meters carried by the farm, a PVGIS estimate of `solar` (`solar.estimates`) with the orientation it assumed (the GeoJSON test adds its barn, stable, field and car park with `building`) |
 | `05-district-open-data.sql` | city, open data | SN | a district plan with a perimeter, six participants with their plots (`building.sites`) and buildings known by OpenStreetMap ids and floors in a projected CRS, a plot the cadastre split into two |
 | `06-drone-survey.sql` | capture, 3D | IT | a client's place surveyed by drone, the client as the participant of the study: orthophoto, video and photos as documents, roof faces of the `building` module measured from the survey with their source, a point cloud kept as a document |
-| `07-office-heating.sql` | heating, thermal | DE | an office with its facades' U-values (`building`), a boiler and a heat pump behind their meters, a setpoint and a flow temperature as series, a second heat pump planned to replace the boiler and the insulation design as a document |
+| `07-office-heating.sql` | heating, thermal | DE | an office with its facades' areas and U-values and the heat loss they give (`building`), a boiler and a heat pump behind their meters, a setpoint and a flow temperature as series, a second heat pump planned to replace the boiler and the insulation design as a document |
 
 `yield.ts` is not a dataset: it computes the yield of a PV system as an estimate and
 reads it back by month, the twenty-minute path of the
