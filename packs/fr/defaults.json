@@ -373,6 +373,101 @@
       "valid_from": "2023-10-08"
     },
     {
+      "attribute_type": "sharing_max_power_kw",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 5000,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: the installed power of the production of an extended collective self-consumption operation, all its installations together and in peak power for photovoltaics, is below 5 MW in mainland France",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-2A",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-2B",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-971",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-972",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-973",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-974",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
+      "attribute_type": "sharing_max_power_kw",
+      "region": "FR-976",
+      "condition": {
+        "project_kind": "fr_acc"
+      },
+      "value": 500,
+      "unit": "KiloW",
+      "source_code": "fr_arrete_acc_perimeter",
+      "reference": "As amended by the arrêté du 21 février 2025, published in the Journal officiel of 5 March 2025 and read from the day after: below 0.5 MW in the non-interconnected zones",
+      "valid_from": "2025-03-06"
+    },
+    {
       "attribute_type": "sharing_max_distance_derogation_m",
       "condition": {
         "project_kind": "fr_acc",

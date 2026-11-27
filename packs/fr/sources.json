@@ -225,8 +225,8 @@
     },
     {
       "code": "fr_arrete_acc_perimeter",
-      "name": "Arrêté du 21 novembre 2019 fixant le critère de proximité géographique de l'autoconsommation collective étendue, as amended by the arrêté du 19 septembre 2023",
-      "description": "The order that sets the greatest distance between the participants of an extended collective self-consumption operation, and the derogations by density class of the municipalities.",
+      "name": "Arrêté du 21 novembre 2019 fixant le critère de proximité géographique de l'autoconsommation collective étendue, as amended by the arrêtés du 19 septembre 2023 and du 21 février 2025",
+      "description": "The order that sets the greatest distance between the participants of an extended collective self-consumption operation, the derogations by density class of the municipalities, and the greatest installed power of the operation.",
       "kind": "text",
       "url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000039417630",
       "license": "Licence Ouverte 2.0",

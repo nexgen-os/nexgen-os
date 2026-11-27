@@ -116,26 +116,35 @@ describe('Wallonia: a renewable energy community', () => {
 });
 
 describe('the power of an operation', () => {
-  it('is the sum of the installed powers of its producers, read against the cap its rules say, and nothing where none is said', async () => {
+  it('is the sum of the installed powers of its producers, read against the smallest cap its rules say at their places', async () => {
     const acc = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'ACC power', 'fr_acc', 'FR') returning id`, [org])).id;
     const plant = await join(acc, 'Plant', 'producer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 0) });
     const farm = await join(acc, 'Farm', 'prosumer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 1) });
     await join(acc, 'Home', 'consumer', { country: 'FR', region: 'FR-01', municipality: '01013', geometry: east(5.4, 45.8, 2) });
     const power = async () => (await one<{ p: Record<string, any> }>(db, `select community.check_power($1, '2026-06-01') p`, [acc])).p;
 
-    // No device carries a power, no rule caps it: nothing decided.
-    expect(await power()).toMatchObject({ max_kw: null, installed_kw: null, within: null, value_from: null });
+    // No device carries a power yet; the cap is the pack's for the kind of the project, at its participants' places.
+    expect(await power()).toMatchObject({
+      max_kw: 5000, installed_kw: null, within: null,
+      value_from: { level: 'country', value: 5000, conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter' },
+    });
 
     await db.query(`select install_device($1, 'solar', 'Roof', p_rated_power_kw => 250)`, [plant]);
     await db.query(`select install_device($1, 'solar', 'Barn', p_rated_power_kw => 36)`, [farm]);
     expect(await power()).toMatchObject({
-      installed_kw: 286, within: null,
+      installed_kw: 286, within: true,
       producers: [{ name: 'Farm', installed_kw: 36 }, { name: 'Plant', installed_kw: 250 }],
     });
 
-    // The cap, said for the project with its source: 300 kW holds, 250 does not.
+    // A participant in a non-interconnected zone: its region's smaller cap holds for the whole operation.
+    const island = await join(acc, 'Island', 'consumer', { country: 'FR', region: 'FR-2A', geometry: east(8.7, 41.9, 0) });
+    expect(await power()).toMatchObject({ max_kw: 500, installed_kw: 286, within: true, value_from: { level: 'region', region: 'FR-2A', value: 500 } });
+    await db.query(`update participants set leave_date = '2026-05-31' where id = $1`, [island]);
+    expect(await power()).toMatchObject({ max_kw: 5000, within: true });
+
+    // The cap, said for the project with its source (a derogation, an agreement): it comes before the pack's. 300 kW holds, 250 does not.
     await db.query(`select set_attribute('project', $1, 'sharing_max_power_kw', '300'::jsonb, null, null, 'the operation''s agreement')`, [acc]);
-    expect(await power()).toMatchObject({ max_kw: 300, installed_kw: 286, within: true, value_from: { level: 'object', value: 300 } });
+    expect(await power()).toMatchObject({ max_kw: 300, installed_kw: 286, within: true, value_from: { level: 'project', value: 300 } });
     await db.query(`update attributes set value = '250' where object_id = $1 and attribute_type = 'sharing_max_power_kw'`, [acc]);
     expect(await power()).toMatchObject({ max_kw: 250, within: false });
   });

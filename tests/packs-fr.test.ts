@@ -45,7 +45,7 @@ describe('the fr pack', () => {
     const fr = await one<Record<string, unknown>>(db,
       `select name, currency, languages, time_zones[1] tz, region_level, municipality_scheme, pack_version from countries where code = 'FR'`);
     expect(fr).toEqual({ name: 'France', currency: 'EUR', languages: ['fr'], tz: 'Europe/Paris', region_level: 'department',
-      municipality_scheme: 'insee', pack_version: '0.6.0' });
+      municipality_scheme: 'insee', pack_version: '0.7.0' });
     const departments = await one<{ n: number; regions: number }>(db,
       `select count(*) filter (where parent_code is not null or code ~ '^FR-97')::int n, count(*) filter (where parent_code is null and code !~ '^FR-97')::int regions from regions where country = 'FR' and kind = 'subdivision'`);
     expect(departments).toEqual({ n: 103, regions: 13 });
@@ -176,7 +176,7 @@ describe('the fr pack', () => {
   it('passes pack check: the committed seed is the exact output of the pack', async () => {
     const report = await checkPacks(repoRoot, { pack: 'fr' });
     expect(report.problems).toEqual([]);
-    expect(report.packs).toEqual([{ pack: 'fr', version: '0.6.0', file: 'supabase/seed/10_pack_fr.sql', state: 'up_to_date' }]);
+    expect(report.packs).toEqual([{ pack: 'fr', version: '0.7.0', file: 'supabase/seed/10_pack_fr.sql', state: 'up_to_date' }]);
   });
 
   it('reads the national address register with house-number precision and the department as region', async () => {
@@ -257,10 +257,16 @@ describe('what France decides per frame, segment and municipality', () => {
     expect(await p(unlisted, 'sharing_max_distance_m')).toMatchObject({ value: 2000, conditions: { project_kind: 'fr_acc' } });
     await expect(p(unlisted, 'sharing_max_distance_derogation_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_derogation_m/);
     await expect(p(lyon, 'sharing_max_distance_derogation_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_derogation_m/);
+    // The power of the operation: below 5 MW on the mainland since the order of 21 February 2025, 0.5 MW in the non-interconnected zones.
+    expect(await p(lyon, 'sharing_max_power_kw')).toMatchObject({ value: 5000, level: 'country', conditions: { project_kind: 'fr_acc' }, source_code: 'fr_arrete_acc_perimeter', valid_from: '2025-03-06' });
+    const ajaccio = await memberOf(acc, 'Ajaccio', '2A004', 'FR-2A');
+    expect(await p(ajaccio, 'sharing_max_power_kw')).toMatchObject({ value: 500, level: 'region', region: 'FR-2A', conditions: { project_kind: 'fr_acc' } });
+    await expect(p(lyon, 'sharing_max_power_kw', '2025-03-05')).rejects.toThrow(/parameter_missing: sharing_max_power_kw/);
     // An individual self-consumption has no perimeter.
     const aci = (await one<{ id: string }>(db, `insert into projects (organisation_id, name, kind, country) values ($1, 'Toiture', 'fr_aci', 'FR') returning id`, [org])).id;
     const roof = await memberOf(aci, 'Ferme', '01013', 'FR-01');
     await expect(p(roof, 'sharing_max_distance_m')).rejects.toThrow(/parameter_missing: sharing_max_distance_m/);
+    await expect(p(roof, 'sharing_max_power_kw')).rejects.toThrow(/parameter_missing: sharing_max_power_kw/);
   });
 
   it('sets the excise on electricity by segment, in the euro\'s unit of the energy price', async () => {
