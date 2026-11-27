@@ -1,0 +1,12 @@
+{
+  "$schema": "../schema/module.1.json",
+  "code": "flexibility",
+  "name": "Flexibility",
+  "description": "What a device can be asked upwards and downwards from its operating point, with the same id, and the power a generator can give up interval by interval, read from its production series.",
+  "version": "0.1.0",
+  "schema": "flexibility",
+  "requires": {
+    "core": "0.3.0"
+  },
+  "licence": "AGPL-3.0-only"
+}
