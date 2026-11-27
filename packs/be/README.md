@@ -106,6 +106,7 @@ figures an installation must find from it (`tests/golden.test.ts`,
 | `sharing_brussels_building` | `be_energy_sharing` in Brussels | no perimeter decided for Brussels (`parameter_missing`), the operator of BE-BRU by region, the shares within a building |
 | `household_pv_battery` | `individual_self_consumption` in Gent | the battery's figures from the generic level of the `battery` module, the household price and fees, self-consumption through a battery |
 | `sme_pv` | `pv_roof` in Antwerpen | the business price, a PVWatts yield within 0.1 %, specific yield and savings |
+| `household_offtake_cost` | `individual_self_consumption` in Gent | the cost of the energy a household takes from the grid, its energy part and its grid fees and taxes, from the household rows of the pack; the excise and the location-based emissions refused by name |
 
 ## What to check next
 

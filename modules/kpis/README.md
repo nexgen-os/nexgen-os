@@ -158,6 +158,10 @@ place's own production is `direct + discharge`; what is not injected is
 | `scope2_location_based` | `offtake_co2`: the energy taken from the grid hour by hour at the carbon intensity of the zone, or `offtake * factor` month by month | kg, GHG Protocol Scope 2, location-based |
 | `scope2_market_based` | `offtake * factor`, `market_co2_factor`: the supplier's disclosed mix as an attribute over the contract's period, else the residual mix of the country (its pack) | kg, GHG Protocol Scope 2, market-based |
 | `self_consumption_savings_household`, `_business` | `(direct + discharge) * (energy_price + grid_fees) / 1000`, the household or business energy price and `grid_fees_and_taxes` per MWh | an `amount` in the currency of the place |
+| `offtake_cost` | `offtake * (energy_price + grid_fees) / 1000`, the energy price of the participant's segment (`by_segment`) and `grid_fees_and_taxes` of its segment, VAT excluded | an amount: `offtake_energy_cost` plus `offtake_grid_fees_and_taxes` |
+| `offtake_energy_cost` | `offtake * energy_price / 1000`, `energy_price_household`, `energy_price_business` for a professional participant | an amount |
+| `offtake_grid_fees_and_taxes` | `offtake * grid_fees / 1000`, `grid_fees_and_taxes` as the pack declares it for the participant's segment | an amount: network costs, taxes and levies, the excise among them |
+| `offtake_excise` | `offtake * excise / 1000`, `electricity_excise` as the pack declares it for the participant's segment | an amount, a part of `offtake_grid_fees_and_taxes`, never added to it |
 | `injection_value` | `injection * price / 1000`, `injection_price_reference` | an amount |
 | `offtake_change_rate` | `offtake / offtake_year_before` | ratio: below 1 the place saves, above it rebounds |
 | `battery_charged_energy`, `battery_discharged_energy` | `charge`, `discharge` | kWh, of a battery, a participant's, a project's |
@@ -185,9 +189,16 @@ types (`energy_price_household`, `energy_price_business`,
 `self_consumption_savings` reads the price of the participant's segment,
 `self_consumption_savings_household` and `_business` one price each.
 
-Two templates: `energy_community_report` (flows, storage, rates,
-environment, economy at the price of each participant's segment, by month) and `pv_performance` (yield and use, by
-month).
+Three templates: `energy_community_report` (flows, storage, rates,
+environment, economy at the price of each participant's segment, by month), `pv_performance` (yield and use, by
+month) and `offtake_cost_breakdown` (what the energy taken from the grid costs, its energy part, its grid fees and
+taxes and the excise among them, and its scope 2 emissions, by month).
+
+Every price, tax and emission factor these indicators read is a row of a
+country pack (`packs/<cc>/defaults.json`), declared once and chosen by the
+segment of the participant: no figure of a price or a factor lives in the
+module. Where a pack declares none, the indicator is refused by name
+(`parameter_missing`), never computed at zero.
 
 ## What it reads of the core
 
