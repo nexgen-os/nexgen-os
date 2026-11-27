@@ -1,0 +1,98 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 108.8,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_eurostat_household_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_204_c, 2025."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 153.2,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_eurostat_household_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_204_c, 2025, network costs and taxes of the household band."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "electricity_excise",
+      "at": "2026-06-15",
+      "value": 30.85,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "segment": "residential"
+      },
+      "source_code": "fr_bofip_electricity_excise",
+      "source": "packs/fr/defaults.json: 30.85 €/MWh for a household from 1 February 2026; an individual is a residential segment."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.02,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_rte_bilan_2025",
+      "source": "packs/fr/defaults.json: RTE, Bilan électrique 2025."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "offtake_cost",
+      "value": 1.572,
+      "tolerance": 1e-06,
+      "source": "6 kWh taken at 108.8 + 153.2 €/MWh, the household energy price and grid fees and taxes of the pack, 2025."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_energy_cost",
+      "value": 0.6528,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 108.8 €/MWh."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_grid_fees_and_taxes",
+      "value": 0.9192,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 153.2 €/MWh."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_excise",
+      "value": 0.1851,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 30.85 €/MWh, a part of the grid fees and taxes above."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings",
+      "value": 2.096,
+      "tolerance": 1e-06,
+      "source": "8 kWh consumed on the spot at the same two rows of the pack as the offtake: 14 − 6."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "scope2_location_based",
+      "value": 0.12,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 0.02 kg/kWh, month by month with no series of the zone."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "scope2_market_based",
+      "value": 0.14112,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 0.02352 kg/kWh, the residual mix of FR in 2024."
+    }
+  ]
+}

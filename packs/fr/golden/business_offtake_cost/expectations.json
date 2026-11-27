@@ -1,0 +1,101 @@
+{
+  "defaults": [
+    {
+      "object": "participant:plant",
+      "attribute_type": "energy_price_business",
+      "at": "2026-06-15",
+      "value": 88.2,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_eurostat_business_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_205_c, 2025, band MWH2000-19999."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 59.2,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "segment": "professional"
+      },
+      "source_code": "fr_eurostat_business_prices",
+      "source": "packs/fr/defaults.json: Eurostat nrg_pc_205_c, 2025, network costs and taxes of a professional consumer; a business is a professional segment."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "electricity_excise",
+      "at": "2026-06-15",
+      "value": 26.58,
+      "level": "country",
+      "country": "FR",
+      "conditions": {
+        "segment": "professional"
+      },
+      "source_code": "fr_bofip_electricity_excise",
+      "source": "packs/fr/defaults.json: 26.58 €/MWh for a small or medium business from 1 February 2026; a business is a professional segment."
+    },
+    {
+      "object": "participant:plant",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "value": 0.02,
+      "level": "country",
+      "country": "FR",
+      "source_code": "fr_rte_bilan_2025",
+      "source": "packs/fr/defaults.json: RTE, Bilan électrique 2025."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:plant",
+      "indicator": "offtake_cost",
+      "value": 20.636,
+      "tolerance": 1e-06,
+      "source": "140 kWh taken at 88.2 + 59.2 €/MWh, the business energy price and the grid fees and taxes of a professional consumer of the pack, 2025."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "offtake_energy_cost",
+      "value": 12.348,
+      "tolerance": 1e-06,
+      "source": "140 kWh at 88.2 €/MWh, chosen by the segment of the participant."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "offtake_grid_fees_and_taxes",
+      "value": 8.288,
+      "tolerance": 1e-06,
+      "source": "140 kWh at 59.2 €/MWh."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "offtake_excise",
+      "value": 3.7212,
+      "tolerance": 1e-06,
+      "source": "140 kWh at 26.58 €/MWh, a part of the grid fees and taxes above."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "self_consumption_savings",
+      "value": 32.428,
+      "tolerance": 1e-06,
+      "source": "220 kWh consumed on the spot at the same two rows of the pack as the offtake: 255 − 35."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "scope2_location_based",
+      "value": 2.8,
+      "tolerance": 1e-06,
+      "source": "140 kWh at 0.02 kg/kWh, month by month with no series of the zone."
+    },
+    {
+      "object": "participant:plant",
+      "indicator": "scope2_market_based",
+      "value": 3.2928,
+      "tolerance": 1e-06,
+      "source": "140 kWh at 0.02352 kg/kWh, the residual mix of FR in 2024."
+    }
+  ]
+}

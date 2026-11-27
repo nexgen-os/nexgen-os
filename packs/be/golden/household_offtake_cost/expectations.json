@@ -1,0 +1,87 @@
+{
+  "defaults": [
+    {
+      "object": "participant:home",
+      "attribute_type": "energy_price_household",
+      "at": "2026-06-15",
+      "value": 154.1,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_eurostat_household_prices",
+      "source": "packs/be/defaults.json: Eurostat nrg_pc_204_c, 2025, energy and supply of the household band."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_fees_and_taxes",
+      "at": "2026-06-15",
+      "value": 199.5,
+      "level": "country",
+      "country": "BE",
+      "source_code": "be_eurostat_household_prices",
+      "source": "packs/be/defaults.json: Eurostat nrg_pc_204_c, 2025, network costs and taxes of the household band."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "electricity_excise",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/be declares no excise on electricity of its own: it is inside the taxes of the Eurostat band, refused by name alone."
+    },
+    {
+      "object": "participant:home",
+      "attribute_type": "grid_co2_factor",
+      "at": "2026-06-15",
+      "refusal": "parameter_missing",
+      "source": "packs/be decides no emission factor of grid electricity yet: refused by name, never guessed."
+    }
+  ],
+  "kpis": [
+    {
+      "object": "participant:home",
+      "indicator": "offtake_cost",
+      "value": 2.1216,
+      "tolerance": 1e-06,
+      "source": "6 kWh taken at 154.1 + 199.5 €/MWh, the household energy price and grid fees and taxes of the pack, 2025."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_energy_cost",
+      "value": 0.9246,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 154.1 €/MWh."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_grid_fees_and_taxes",
+      "value": 1.197,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 199.5 €/MWh."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "offtake_excise",
+      "refusal": "parameter_missing",
+      "source": "No excise declared by packs/be: the indicator is refused by name, not computed at zero."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "self_consumption_savings",
+      "value": 2.8288,
+      "tolerance": 1e-06,
+      "source": "8 kWh consumed on the spot at the same two rows of the pack as the offtake: 14 − 6."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "scope2_market_based",
+      "value": 0.79038,
+      "tolerance": 1e-06,
+      "source": "6 kWh at 0.13173 kg/kWh, the residual mix of BE in 2024."
+    },
+    {
+      "object": "participant:home",
+      "indicator": "scope2_location_based",
+      "refusal": "parameter_missing",
+      "source": "No emission factor of grid electricity in packs/be and no series of the zone: refused by name."
+    }
+  ]
+}
