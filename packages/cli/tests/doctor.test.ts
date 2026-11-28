@@ -25,7 +25,7 @@ describe('doctor', () => {
   it('finds nothing wrong on a fresh installation', async () => {
     const r = await doctor(sqlClient(db), await readCatalogue(repoRoot));
     expect(r.problems).toEqual([]);
-    expect(r.schemaVersion).toBe('0.5.0');
+    expect(r.schemaVersion).toBe('0.6.0');
     expect(r.postgis).toMatch(/^3\./);
     expect(r.applied).toEqual({ core: 28, 'module:grid': 2, 'module:solar': 7, 'module:weather': 3, 'pack:fr': 1 });
     expect(r.modules.map((m) => m.code)).toEqual(['grid', 'solar', 'weather']);
@@ -134,11 +134,11 @@ describe('status and the command line', () => {
     const org = await organisation(db, 'Status firm');
     await participant(db, { organisation_id: org, name: 'One', country: 'ZZ', time_zone: 'UTC' });
     const r = await status(sqlClient(db));
-    expect(r).toMatchObject({ schemaVersion: '0.5.0', packs: ['fr'], counts: { organisations: 1, participants: 1, devices: 0, series: 0 } });
+    expect(r).toMatchObject({ schemaVersion: '0.6.0', packs: ['fr'], counts: { organisations: 1, participants: 1, devices: 0, series: 0 } });
     expect([...r.modules].sort()).toEqual(['grid', 'solar', 'weather']);
     const cli = await run(['status']);
     expect(cli.code).toBe(0);
-    expect(cli.out).toMatch(/^Nexgen OS 0\.5\.0\nmodules {8}grid, solar, weather\npacks {10}fr\norganisations {2}1\nparticipants/);
+    expect(cli.out).toMatch(/^Nexgen OS 0\.6\.0\nmodules {8}grid, solar, weather\npacks {10}fr\norganisations {2}1\nparticipants/);
   });
 
   it('init through the command line: a dry run, then the run, then nothing to apply', async () => {

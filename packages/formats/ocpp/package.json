@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/ocpp",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "The Open Charge Point Protocol, OCPP 1.6J, 2.0.1 and 2.1: frames, station identity, connector states, meter values, sessions, charging profiles and remote starts and stops read into plain shapes and written back. No database, no dependency.",
   "license": "MIT",
   "repository": {

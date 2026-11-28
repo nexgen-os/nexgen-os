@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/easee",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Easee charging stations read from their cloud as a Nexgen OS connector: the chargers of an account, their lifetime energy register and power, and their sessions, as sessions and series of the charger.",
   "license": "MIT",
   "repository": {
@@ -33,6 +33,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@nexgen-os/connector": "^0.5.0"
+    "@nexgen-os/connector": "^0.6.0"
   }
 }

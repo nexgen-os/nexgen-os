@@ -1,6 +1,6 @@
 {
   "name": "@nexgen-os/dsmr",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "What the P1 port of a smart meter says: DSMR telegrams (2.2 to 5.0.2, e-MUCS) and P1M5 dongle messages read into plain values, each with its direction, phase and tariff register, dated by the meter clock in UTC with the caller's time zone; problems by name. No database, no network.",
   "license": "MIT",
   "repository": {

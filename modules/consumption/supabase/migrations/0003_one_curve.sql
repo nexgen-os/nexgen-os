@@ -59,3 +59,5 @@ comment on function consumption.curve(uuid, timestamptz, timestamptz, interval) 
 
 grant execute on function consumption.curve_series(uuid, timestamptz, timestamptz) to authenticated, service_role;
 grant execute on function consumption.curve(uuid, timestamptz, timestamptz, interval) to authenticated, service_role;
+
+update nexgen.modules set version = '0.6.0' where code = 'consumption';

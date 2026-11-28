@@ -114,3 +114,5 @@ comment on function solar.power_warnings(uuid) is
   'What does not add up in the power of a PV system, one row a warning {code, message, figures}: kwp_not_modules (an array whose kwp_dc differs by more than 1 % from its module count times its module product''s unit power), kwp_over_roof (the PV systems of its participant carry more than its roof, carport and ground faces times pv_power_per_area). Reads, never refuses.';
 
 grant execute on function solar.power_warnings(uuid) to authenticated, service_role;
+
+update nexgen.modules set version = '0.6.0' where code = 'solar';
