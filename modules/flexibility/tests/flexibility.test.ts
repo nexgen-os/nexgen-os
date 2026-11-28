@@ -1,7 +1,8 @@
 // The `flexibility` module: a PV system of 10 kW whose production is read
 // hour by hour over a morning, the power it can give up worked out by hand —
 // its operating point, capped by the power downwards it declares, read from
-// a power series or from an energy series turned into its mean power.
+// a power series or from an energy series turned into its mean power — and
+// an activation asked of it, carried out as a command of `actions`.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { store } from '@nexgen-os/core';
@@ -34,7 +35,7 @@ const available = async (seriesId: string, step = '1 hour') =>
     .map((r) => [r.bucket.toISOString(), Number(r.operating_kw.toFixed(6)), Number(r.available_kw.toFixed(6))]);
 
 beforeAll(async () => {
-  db = await freshDatabase(['flexibility']);
+  db = await freshDatabase(['actions', 'flexibility']);
   const org = await organisation(db, 'A solar cooperative');
   await organisation(db, 'Another company', USER_B);
   // A country is data: Testland, its currency and its time zone, as a pack writes them.
@@ -106,5 +107,43 @@ describe('the power a generator can give up', () => {
 
   it('is not read by another organisation', async () => {
     expect(await asUser(db, USER_B, () => refusal(() => available(power)))).toBe('series_not_found');
+  });
+});
+
+describe('an activation', () => {
+  const activate = (kw: number, direction = 'down', from = at(0), to = at(30)) =>
+    db.query<{ id: string }>(`select flexibility.activate($1, $2, $3, $4, $5, null, 'aggregator', 'ACT-1') id`, [pv, direction, from, to, kw]);
+
+  beforeAll(async () => {
+    await db.query(`update flexibility.devices set power_down_kw = 4, power_up_kw = 0, min_step_kw = 0.5, min_duration = '15 minutes', max_duration = '1 hour' where id = $1`, [pv]);
+  });
+
+  it('is kept with the command that carries it out, on the setpoint series of power of the device, at its start', async () => {
+    const { id } = (await activate(3)).rows[0];
+    const a = await one<{ direction: string; requested_kw: string; requested_role: string; external_ref: string; same_org: boolean; command_id: string }>(db,
+      `select a.direction, a.requested_kw::text, a.requested_role, a.external_ref, a.organisation_id = d.organisation_id same_org, a.command_id
+         from flexibility.activations a join devices d on d.id = a.device_id where a.id = $1`, [id]);
+    expect(a).toMatchObject({ direction: 'down', requested_kw: '3.000', requested_role: 'aggregator', external_ref: 'ACT-1', same_org: true });
+    const c = await one<{ kind: string; status: string; object_id: string; value: number; due_at: Date; source_ref: string; series_kind: string; quantity_code: string }>(db,
+      `select x.kind, x.status, x.object_id, x.value, x.due_at, x.source_ref, s.kind series_kind, s.quantity_code
+         from actions.actions x join series s on s.id = x.series_id where x.id = $1`, [a.command_id]);
+    expect(c).toMatchObject({ kind: 'command', status: 'proposed', object_id: pv, value: 3, source_ref: `flexibility.activations:${id}`, series_kind: 'setpoint', quantity_code: 'power' });
+    expect(c.due_at.toISOString()).toBe(at(0));
+  });
+
+  it('is refused by name when the device cannot be asked it', async () => {
+    expect(await refusal(() => activate(5))).toBe('activation_power_invalid');
+    expect(await refusal(() => activate(1, 'up'))).toBe('activation_power_invalid');
+    expect(await refusal(() => activate(1.2))).toBe('activation_step_invalid');
+    expect(await refusal(() => activate(1, 'down', at(0), at(10)))).toBe('activation_duration_invalid');
+    expect(await refusal(() => activate(1, 'down', at(0), at(120)))).toBe('activation_duration_invalid');
+    expect(await refusal(() => activate(1, 'down', at(30), at(0)))).toBe('activation_period_invalid');
+    expect(await refusal(() => activate(1, 'sideways'))).toBe('direction_invalid');
+    expect(await refusal(() => db.query(`select flexibility.activate(gen_random_uuid(), 'down', now(), now() + interval '30 minutes', 1)`))).toBe('device_not_flexible');
+  });
+
+  it('is read by the organisation of its device and by nobody else', async () => {
+    expect((await asUser(db, USER_A, () => db.query('select id from flexibility.activations'))).rows).toHaveLength(1);
+    expect((await asUser(db, USER_B, () => db.query('select id from flexibility.activations'))).rows).toHaveLength(0);
   });
 });
