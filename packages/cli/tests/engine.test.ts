@@ -68,7 +68,7 @@ describe('plan', () => {
     // Between two releases, the migrations of the next one follow the last
     // version migration; cutting the release adds its own, last (docs/releasing.md).
     const versions = names.filter((n) => /^supabase\/migrations\/\d{14}_schema_version_\d+_\d+_\d+\.sql$/.test(n));
-    expect(versions.at(-1)).toBe('supabase/migrations/20261121100000_schema_version_0_5_0.sql');
+    expect(versions.at(-1)).toBe('supabase/migrations/20261128030000_schema_version_0_6_0.sql');
     expect(names.slice(0, names.indexOf(versions.at(-1)!)).every((n) => n.startsWith('supabase/migrations/'))).toBe(true);
     expect(names.at(-1)).toBe('supabase/seed/0001_core_vocabularies.sql');
     expect([...c.modules.keys()]).toEqual(['actions', 'battery', 'billing', 'building', 'charging', 'community', 'consumption', 'energy_contracts', 'flexibility', 'forecast', 'grid', 'kpis', 'solar', 'weather']);
@@ -90,7 +90,7 @@ describe('install on a database', () => {
     expect(after.n).toBe(before.n);
     const scopes = await db.query<{ scope: string; n: number }>('select scope, count(*)::int n from nexgen.schema_migrations group by 1 order by 1');
     expect(scopes.rows).toEqual([
-      { scope: 'core', n: 27 },
+      { scope: 'core', n: 28 },
       { scope: 'module:grid', n: 2 },
       { scope: 'pack:fr', n: 1 },
     ]);

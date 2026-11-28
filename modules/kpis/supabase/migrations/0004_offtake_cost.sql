@@ -49,3 +49,5 @@ insert into kpis.templates (code, name, granularity, layout, description) values
       {"name": "Emissions", "sections": [
         {"name": "Scope 2", "indicators": ["scope2_location_based", "scope2_market_based"]}]}]}',
    'What the energy a participant or a project takes from the grid costs month by month, its energy part, its grid fees and taxes and the excise among them, and what it emits; every price and factor read from the pack of the place for the participant''s segment.');
+
+update nexgen.modules set version = '0.6.0' where code = 'kpis';

@@ -8,6 +8,12 @@ release may break, and says how. How a release is cut:
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-28
+
+The `flexibility` module; the heat loss and the heating need of a building; what the energy taken from the grid costs, by the segment of each participant; the power cap and the derogation to the distance of an energy sharing operation; one installed power and one path to the series of a participant; a device that moves through the works by named transitions; and the connectors that no longer bring the AGPL core with them.
+
+**Compatibility.** The schema moves to 0.6.0 (`supabase/migrations/20261128030000_schema_version_0_6_0.sql`). Nothing raises a floor: `nexgen-os` 0.6.0 still brings forward an installation from 0.3.0 on, and `@nexgen-os/mcp` 0.6.0 still speaks to one from 0.4.0 on. What an installation reaches only after `nexgen-os migrate` is what this release adds: `set_device_status()`, `installed_power()`, `participant_series()`, the derogation attribute type, and the module migrations listed below. The modules that change move on — `battery` 0.5.0, `building` 0.6.0, `community` 0.7.0, `consumption`, `kpis` and `solar` 0.6.0, and the new `flexibility` at 0.2.0 — and the packs `be` 0.5.0, `de` 0.2.0, `es` 0.6.0, `fr` 0.7.0, `it` 0.3.0 and `nl` 0.3.0. Several figures move on purpose; each entry under *Changed* says what moves.
+
 ### Added
 
 - `flexibility.activate(device, direction, start, end, kW, …)` and `flexibility.activations`, module `flexibility` 0.2.0, which now requires `actions` (decision 0058): an activation asked of a flexible device by a grid operator, an aggregator or an energy manager, with who asked, in which role and under which reference, checked against what the device declares (power in its direction, minimum step, shortest and longest activation) and carried out as a command of `actions` on the setpoint series of power of the device at its start. Refused by name: `device_not_flexible`, `direction_invalid`, `activation_period_invalid`, `activation_duration_invalid`, `activation_power_invalid`, `activation_step_invalid`. `modules/flexibility/supabase/migrations/0002_activations.sql`.
