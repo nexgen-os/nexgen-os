@@ -120,7 +120,7 @@ the data protection law of the country concerned.
 
 ## 7. Licences, no warranty, no liability
 
-The core and the modules are licensed under the GNU Affero General Public
+The core schema and the modules are licensed under the GNU Affero General Public
 License, version 3 (AGPL-3.0): use them, change them, run them for others,
 and publish what you change. As its sections 15 and 16 state, the program is
 provided "as is", without warranty of any kind, express or implied,
@@ -132,7 +132,7 @@ conveys it, be liable to you for damages, including any general, special,
 incidental or consequential damages. Section 17 asks a court to apply the
 local law that most closely approximates an absolute waiver of liability.
 
-The format libraries and the connectors are licensed under the MIT licence,
+The core package, the format libraries and the connectors are licensed under the MIT licence,
 which provides them "as is", without warranty of any kind, and excludes any
 liability of the authors or copyright holders for any claim, damages or
 other liability arising from the software or its use. The data you read

@@ -1,6 +1,6 @@
 # 0005 — The core is AGPL, the libraries MIT, and a sign-off is enough to contribute
 
-> Status: accepted
+> Status: accepted · amended by [0066](0066-the-core-package-is-mit.md)
 
 ## Context
 
@@ -16,8 +16,10 @@ split.
 ## Decision
 
 **The core and the modules are AGPL-3.0.** The schema, its functions, the
-modules, the installer and the core package: whoever runs a modified copy
-as a service offers its source to the people who use it. The computations
+modules, the installer and the MCP server: whoever runs a modified copy
+as a service offers its source to the people who use it. The core package,
+`@nexgen-os/core`, the TypeScript they all build on, is MIT
+([0066](0066-the-core-package-is-mit.md)). The computations
 of a PV yield, the project's own pure functions, are an MIT package the
 `solar` module computes with ([0063](0063-the-computations-of-a-pv-yield-are-mit.md)).
 
@@ -27,9 +29,9 @@ connector wrapping a third party's tool keeps that tool's licence for the
 tool itself.
 
 **What a package ships keeps its promise.** A format library or a
-connector ships only what any product may take: licences that are
-permissive, or whose copyleft stays in the files of the package that
-carries it (MPL-2.0). The core, the command line and the MCP server ship
+connector, like the core package, ships only what any product may take:
+licences that are permissive, or whose copyleft stays in the files of the
+package that carries it (MPL-2.0). The command line and the MCP server ship
 only what an AGPL-3.0 work may be distributed with. No package ships a
 licence that forbids commercial use, a source-available licence, or a
 package that names no licence. The check reads `package-lock.json` on
@@ -44,8 +46,11 @@ have the right to submit it under the project's licences. The repository's
 check refuses a commit without it.
 
 **There is no contributor licence agreement**, and nothing in the sign-off
-lets anyone, the maintainers included, relicense the core: it is AGPL-3.0,
-and the libraries are MIT, for good.
+lets anyone, the maintainers included, relicense a contribution: a
+contributor's change keeps the licence it was submitted under, and the
+libraries are MIT for good. The project licenses again only the code it
+wrote under its own identity ([0063](0063-the-computations-of-a-pv-yield-are-mit.md),
+[0066](0066-the-core-package-is-mit.md)).
 
 **Paid services sit beside the open core, not inside it.** Hosting,
 support, studies and commercial platforms built on the foundation are
@@ -54,8 +59,9 @@ services around it; no part of the open model is held back for them
 
 ## What it forbids
 
-- A contributor licence agreement, or any clause that would let the core
-  change licence.
+- A contributor licence agreement, or any clause that would let a
+  contributor's change take another licence than the one it was submitted
+  under.
 - A commit without its sign-off.
 - A feature of the open model reserved to a paid service.
 - A dependency that a format library or a connector would ship under GPL,
@@ -72,3 +78,4 @@ services around it; no part of the open model is held back for them
   is MIT.
 - [0063](0063-the-computations-of-a-pv-yield-are-mit.md) — the
   computations of a PV yield are an MIT package.
+- [0066](0066-the-core-package-is-mit.md) — the core package is MIT.

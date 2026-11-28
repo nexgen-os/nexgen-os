@@ -8,9 +8,9 @@ need to do that without guessing. Humans are welcome to read it too.
 
 Nexgen OS is a world model for energy assets — organisations, projects, participants, their meters, devices and series — and the open source operating system built on it, driven by AI agents that work as users of the model
 ([0039](docs/decisions/0039-an-agent-is-a-user-of-the-model.md)).
-It is **open source software** (AGPL-3.0 for the core and the modules,
-MIT for the format libraries, the connectors and the computations of a PV
-yield, `@nexgen-os/solar`), in a Postgres database
+It is **open source software** (AGPL-3.0 for the core schema and the modules,
+MIT for the core package `@nexgen-os/core`, the format libraries, the
+connectors and the computations of a PV yield, `@nexgen-os/solar`), in a Postgres database
 the user owns, on their own
 [Supabase](https://supabase.com) project, with PostGIS. Modules add what a
 trade computes (`building`, `weather`, `solar`…), packs add what a
