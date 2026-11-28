@@ -43,8 +43,9 @@ Contributions are accepted under the Developer Certificate of Origin
 `Signed-off-by: Your Name <you@example.org>` to each commit
 (`git commit -s`), you certify that you wrote the change or have the right
 to submit it under the project's licences. There is no contributor licence
-agreement, and nothing in the sign-off lets anyone relicense the core: it is
-AGPL-3.0, and the format libraries are MIT, for good. A contribution to
+agreement, and nothing in the sign-off lets anyone relicense a contribution:
+the core schema and the modules are AGPL-3.0, and the core package and the
+format libraries are MIT ([0066](docs/decisions/0066-the-core-package-is-mit.md)). A contribution to
 the AGPL side is never moved to an MIT package without its author's
 agreement ([0063](docs/decisions/0063-the-computations-of-a-pv-yield-are-mit.md)).
 

@@ -1,4 +1,4 @@
-// Copies the repository's LICENSE (AGPL-3.0) into the package being built:
+// Copies the repository's LICENSE (AGPL-3.0) into an AGPL package being built:
 // npm ships a LICENSE found at the package root, and one copy of the text is
 // kept in the repository. Run from a package folder: `node ../../scripts/copy-license.mjs`.
 import { copyFileSync } from 'node:fs';

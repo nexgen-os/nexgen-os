@@ -1,7 +1,8 @@
 # `@nexgen-os/core` — what the code of Nexgen OS shares
 
-The TypeScript every other package builds on. AGPL-3.0, like the core schema
-it speaks to.
+The TypeScript every other package builds on. MIT, so that any product can
+speak to an installation through it; the core schema it speaks to stays
+AGPL-3.0 ([0066](../../docs/decisions/0066-the-core-package-is-mit.md)).
 
 | File | Holds |
 |---|---|

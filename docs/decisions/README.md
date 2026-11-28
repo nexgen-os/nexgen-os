@@ -107,6 +107,7 @@ describes; its record is written once the fix has shipped.
 - [0005](0005-agpl-core-mit-libraries-sign-off.md) · The core is AGPL, the libraries MIT, and a sign-off is enough to contribute · accepted
 - [0063](0063-the-computations-of-a-pv-yield-are-mit.md) · The computations of a PV yield are an MIT package; the solar module that writes them stays AGPL · accepted
 - [0064](0064-an-mit-package-reaches-no-agpl-package.md) · An MIT package reaches no AGPL package; what a connector speaks is an MIT package of its own · accepted
+- [0066](0066-the-core-package-is-mit.md) · The core package, `@nexgen-os/core`, is MIT; the schema, the modules, the command line and the MCP server stay AGPL · proposed
 
 ## Records of single modules
 

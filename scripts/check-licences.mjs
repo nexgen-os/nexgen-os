@@ -4,9 +4,9 @@
  * cannot ship.
  *
  * The format libraries and the connectors are MIT so that any product, open
- * or not, can take them (decision 0005): what they bring with them has to
- * allow the same. The core, the command line and the MCP server are
- * AGPL-3.0: what they bring with them has to be free software they can be
+ * or not, can take them (decision 0005), and so is the core package
+ * (decision 0066): what they bring with them has to allow the same. The
+ * command line and the MCP server are AGPL-3.0: what they bring with them has to be free software they can be
  * distributed with. Neither ever ships a licence that forbids commercial use,
  * a source-available licence, or a package that names no licence at all.
  *
