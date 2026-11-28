@@ -7,6 +7,5 @@ __pycache__/
 *.egg-info/
 packages/cli/LICENSE
 .venv-sdk/
-packages/core/LICENSE
 packages/mcp/LICENSE
 sbom/

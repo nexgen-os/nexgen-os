@@ -120,6 +120,15 @@ describe('what a package ships', () => {
     }
   });
 
+  it('keeps the core package MIT, with its own licence file and none copied from the repository (decision 0066)', () => {
+    const repoLock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+    const core = JSON.parse(readFileSync(new URL('../packages/core/package.json', import.meta.url), 'utf8'));
+    expect(core.license).toBe('MIT');
+    expect(repoLock.packages['packages/core'].license).toBe('MIT');
+    expect(readFileSync(new URL('../packages/core/LICENSE', import.meta.url), 'utf8')).toMatch(/^MIT License\n/);
+    expect(core.scripts.build).not.toMatch(/copy-license/);
+  });
+
   it('holds for every package of this repository today', () => {
     const repoLock = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
     expect(licenceProblems(repoLock, workspaces())).toEqual([]);

@@ -228,8 +228,8 @@ foundation a supplier builds that relationship on:
   store or charge, sized and settled by the modules above;
 - **the customer base and its data owned by the supplier**, in its own
   database, under its own rules, exportable at any time;
-- **an engine that stays open**: the core and the modules are AGPL, the
-  connectors and format libraries MIT, so that what a supplier builds on
+- **an engine that stays open**: the core schema and the modules are AGPL,
+  the core package, the connectors and format libraries MIT, so that what a supplier builds on
   never closes on it.
 
 ## Plugged into what exists, open to everyone who knows.
@@ -239,9 +239,9 @@ BIM authoring tools, the 3D viewers, the photogrammetry pipelines, the home
 and building automation platforms, the energy management systems. Nexgen OS
 is the shared model they can all read from and write to.
 
-The core is free software under **AGPL-3.0**, so that what is built on it
-stays open. The format libraries and the connectors are **MIT**, so they can
-go anywhere, including into tools that will never use Nexgen OS. Services
+The core schema and the modules are free software under **AGPL-3.0**, so
+that what is built on them stays open. The core package, the format
+libraries and the connectors are **MIT**, so they can go anywhere, including into tools that will never use Nexgen OS. Services
 around it — hosted platforms, licensed data, studies, agents operated for
 you — pay for the work, and never gate it
 ([docs/services.md](docs/services.md)).

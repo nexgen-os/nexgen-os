@@ -86,7 +86,7 @@ as is and ends with the queries a page would run, are in
 The path from an empty database to a house with its yearly yield is
 [below](#twenty-minutes-to-the-same-house-with-its-yield). Connectors and
 format libraries are MIT and can live inside any product; the
-[licence](#licence) says what the AGPL asks of the core.
+[licence](#licence) says what the AGPL asks of the schema and the modules.
 
 ## For an energy supplier
 
@@ -120,8 +120,8 @@ and its data in the supplier's own database, and an engine that stays open.
   produce, store, charge or share, sized and settled by their modules, and
   invoiced through the [billing bridge](#invoicing-and-ekwo-os).
 - **Data and engine that stay the supplier's**: the database, the keys and
-  the export are its own; the core and the modules are AGPL, the connectors
-  and format libraries MIT ([licence](#licence)). The app, its hosting and
+  the export are its own; the core schema and the modules are AGPL, the core
+  package, the connectors and format libraries MIT ([licence](#licence)). The app, its hosting and
   its support are services built on the foundation
   ([docs/services.md](docs/services.md)).
 
@@ -382,20 +382,21 @@ How to install both, and what the bridge needs when they share a database:
 
 ## Licence
 
-The core, the modules, the packs and the installer are AGPL-3.0
-([LICENSE](LICENSE)). The format libraries, the connectors and the
-Python client are MIT, each folder with its own `LICENSE`, so that a reader or a connector
-can live inside any product. So are the computations of a PV yield,
+The core schema, the modules, the packs, the installer and the MCP server are AGPL-3.0
+([LICENSE](LICENSE)). The format libraries, the connectors, the
+Python client and the core package, [`@nexgen-os/core`](packages/core/README.md),
+are MIT, each folder with its own `LICENSE`, so that a reader, a connector or
+the code that speaks to the database can live inside any product
+([0066](docs/decisions/0066-the-core-package-is-mit.md)). So are the computations of a PV yield,
 [`@nexgen-os/solar`](packages/solar/README.md): the PVWatts model, the Faiman
 cell temperature, the typical year and the exceedance levels, with no
 dependency, for an application that embeds them; the `solar` module that
 writes them as estimates stays AGPL ([0063](docs/decisions/0063-the-computations-of-a-pv-yield-are-mit.md)).
 An MIT package reaches no AGPL package at run time: what a connector speaks
 is [`@nexgen-os/connector`](packages/connector/README.md), MIT, and the
-continuous integration refuses an MIT package that brings the core with it,
-outside the connectors still on their way ([0064](docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).
+continuous integration refuses an MIT package that brings an AGPL one with it ([0064](docs/decisions/0064-an-mit-package-reaches-no-agpl-package.md)).
 
 In practice: a product that reads and writes a Nexgen OS database through
 its tables, its functions or the MCP server keeps its own licence; a
-modified core or module offered to users over a network publishes its
+modified schema or module offered to users over a network publishes its
 changes under the AGPL.

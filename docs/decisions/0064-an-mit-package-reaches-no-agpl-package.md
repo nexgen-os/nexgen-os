@@ -74,8 +74,8 @@ without its author's agreement (0005 holds).
 
 ## What it forbids
 
-- An MIT package whose dependencies, however far, reach the core, a module,
-  the command line, the MCP server or any package under the AGPL, outside
+- An MIT package whose dependencies, however far, reach the schema, a
+  module, the command line, the MCP server or any package under the AGPL, outside
   `STILL_CROSSING`; a name added to that list.
 - A definition of `@nexgen-os/connector` written again in the core, a
   module or a connector, instead of imported or re-exported.
@@ -90,3 +90,5 @@ without its author's agreement (0005 holds).
   what it brings carries its source.
 - [0063](0063-the-computations-of-a-pv-yield-are-mit.md) — the computations
   of a PV yield are an MIT package; the same line, drawn for them first.
+- [0066](0066-the-core-package-is-mit.md) — the core package is MIT, and is
+  judged as one.
