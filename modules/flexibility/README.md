@@ -58,6 +58,12 @@ select flexibility.activate('<device>', 'down', '2026-06-01T06:00:00Z', '2026-06
                             null, 'aggregator', '<reference of the requester>');
 ```
 
+An aggregator, a grid operator or an energy manager whose platform asks
+activations is a connector of the core: `collectActivations()` of
+`@nexgen-os/core` keeps what it asked, each activation through
+`activate()`, once per device and reference
+([connectors](../../packages/connectors/README.md)).
+
 The availability is a read: the production is written once, in its series, and the
 availability is computed from it each time it is asked for. An
 availability the operator of the device publishes is a series of the

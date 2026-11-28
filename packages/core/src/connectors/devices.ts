@@ -86,7 +86,8 @@ export type CommandReport = (db: Db, actionId: string, at: string, failure: stri
 
 interface ConnectorRow { organisation_id: string; source_code: string }
 
-async function connectorOf(db: Db, connectorId: string, sourceCode: string): Promise<ConnectorRow> {
+/** The organisation's `connectors` row, checked against the source a connector reads. Refuses `connector_not_found`, `connector_source_mismatch`. */
+export async function connectorOf(db: Db, connectorId: string, sourceCode: string): Promise<ConnectorRow> {
   const connector = (await db.query<ConnectorRow>(
     `select organisation_id, source_code from connectors where id = $1`, [connectorId])).rows[0];
   if (!connector) throw new GestureError(`connector_not_found: ${connectorId}`);

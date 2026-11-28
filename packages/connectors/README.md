@@ -29,6 +29,7 @@ A connector comes in one of two kinds:
 | `MeterDataProvider` | readings of a meter from a grid operator's hub, by identifier and scheme | `series` of kind `measured` on the meter |
 | `DeviceReadingsProvider` | series of a device from its maker's platform, an aggregator or its local interface, by its identifier in the platform's scheme | `series` of kind `measured` on the device |
 | `CommandCarrier` | the answer of a device to a command of the `actions` module: the instant it acknowledged it, or why not | the command done and its value in the setpoint or command series of the device, or failed with why (`actions.report()`) |
+| `ActivationProvider` | the activations an aggregator, a grid operator or an energy manager asked of the flexible devices it knows: device by identifier, direction, start and end, power asked, its reference | `flexibility.activations`, each through `flexibility.activate()` and carried out as a proposed command of `actions` |
 | `PlacesProvider` | places around a point, with their external identifier, address and attributes | `participants` / `building.buildings`, `identifiers`, `attributes` with `source_code` |
 | `Geocoder` (in [`@nexgen-os/connector`](../connector/README.md)) | an address ⇄ a point | the participant's address and point, with precision and source |
 
@@ -56,6 +57,24 @@ in its series; refused, unanswered or not sent, it failed and says why
 person proposes it again. A module that keeps more of a command than its
 value passes its own `report`. A carrier sends what a person validated; it
 never decides, and never writes a series itself.
+
+An aggregator is reached the same way, by the identifier its platform
+knows a flexible device by
+([decision 0058](../../docs/decisions/0058-a-flexible-device-is-a-device-an-activation-is-a-command.md)).
+`collectActivations(db, provider, { connectorId, from, to })` tells the
+provider the flexible devices of the connector's organisation that carry an
+identifier in its scheme — a device is declared to an aggregator by that
+identifier and its row of `flexibility.devices`, nothing else — and keeps
+each activation it answers through `flexibility.activate()`, with the
+provider's market role and the platform's reference: checked against what
+the device declares, carried out as a command proposed with `source =
+'detector'`, which a person validates before a carrier sends it. An
+activation answered again, same device and reference, is kept once
+(`already_received`); one for an identifier of no device of the
+organisation (`identifier_unknown`), without a reference
+(`external_ref_required`) or refused by `activate()` writes nothing and says
+why, the others are kept. What the device delivered is read from the series
+of its meter, never sent back by the connector.
 
 `storeSeries(db, target, series, { issuedAt })` writes what a weather or
 meter connector returned through `store()`, the one write path of the core:
